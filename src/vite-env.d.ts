@@ -1,0 +1,27 @@
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  /** Public URL for exported magnet mesh (e.g. `/magnet.glb` or `/magnet.stl`). */
+  readonly VITE_MAGNET_CAD_URL?: string;
+  /** Uniform scale applied after centering (use ~0.001 if the mesh is in millimeters). */
+  readonly VITE_MAGNET_CAD_SCALE?: string;
+  readonly VITE_MAGNET_CAD_RX_DEG?: string;
+  readonly VITE_MAGNET_CAD_RY_DEG?: string;
+  readonly VITE_MAGNET_CAD_RZ_DEG?: string;
+  /** DTAM Twin API base (`/api/dtam` via Vite proxy, or `http://127.0.0.1:8080`). */
+  readonly VITE_DTAM_API_URL?: string;
+  /** Google ADK API base (`/api/agents` via Vite proxy → :8001). */
+  readonly VITE_ADK_API_URL?: string;
+  /** ADK app name from GET /list-apps (default dtam). */
+  readonly VITE_ADK_APP_NAME?: string;
+  /** Fixed local demo user id for ADK sessions. */
+  readonly VITE_ADK_USER_ID?: string;
+  /** Comma-separated model options `id:Label,...` for the Agents picker. */
+  readonly VITE_ADK_MODELS?: string;
+  /** Default selected model id. */
+  readonly VITE_ADK_MODEL?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}

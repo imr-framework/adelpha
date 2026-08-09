@@ -1,0 +1,82 @@
+{
+  "name": "adelpha-digital-twin",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Adelpha digital twin observer GUI for DTAM",
+  "author": "Adelpha / Geethanath lab",
+  "main": "electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "electron:dev": "npm run build && electron .",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:mac:dir": "npm run build && electron-builder --mac --dir"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^1.0.1",
+    "@react-three/drei": "^9.117.3",
+    "@react-three/fiber": "^8.17.10",
+    "gsap": "^3.15.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.170.0",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/three": "^0.170.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^35.2.1",
+    "electron-builder": "^26.0.12",
+    "typescript": "~5.6.3",
+    "vite": "^5.4.11"
+  },
+  "build": {
+    "appId": "org.adelpha.digital-twin-ui",
+    "productName": "Adelpha Digital Twin",
+    "copyright": "Copyright © Adelpha / Geethanath lab",
+    "directories": {
+      "output": "release",
+      "buildResources": "electron/build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/main.cjs",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.cjs"
+    },
+    "mac": {
+      "category": "public.app-category.education",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "extendInfo": {
+        "NSCameraUsageDescription": "Adelpha uses the camera for optional head-pose tracking in the twin viewport."
+      }
+    },
+    "dmg": {
+      "title": "Adelpha Digital Twin"
+    }
+  }
+}

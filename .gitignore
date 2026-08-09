@@ -1,0 +1,22 @@
+node_modules
+dist
+.DS_Store
+release/
+.cache/
+
+# Local env (keep .env.example tracked)
+.env
+.env.local
+.env.*.local
+
+# Documentation (Zensical)
+site/
+.zensical/
+.venv/
+
+# IDE / OS
+.vscode/
+.idea/
+
+# Coding Editor
+.PROJECT/

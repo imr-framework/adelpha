@@ -1,0 +1,15 @@
+[project]
+name = "digital-twin-ui"
+version = "0.1.0"
+description = "DTAM digital twin observer GUI — Vite + React Three Fiber dashboard."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[dependency-groups]
+docs = [
+    "zensical>=0.0.50",
+]
+
+[tool.uv]
+package = false
