@@ -29,6 +29,8 @@ const MIME = {
   ".ttf": "font/ttf",
   ".map": "application/json",
   ".wasm": "application/wasm",
+  ".task": "application/octet-stream",
+  ".tflite": "application/octet-stream",
   ".glb": "model/gltf-binary",
   ".stl": "application/octet-stream",
 };
