@@ -37,6 +37,7 @@ import { SystemConsole } from "./twin/SystemConsole";
 import { AgentChatPanel } from "./twin/AgentChatPanel";
 import { ViewportToolRail, type ViewportToolId } from "./twin/ViewportToolRail";
 import { CameraFeed, type HeadPose } from "./twin/CameraFeed";
+import { useHeadMotionStore } from "./twin/headMotionStore";
 import type { AssessMode } from "./twin/dtamTypes";
 import { LaunchScreen } from "./twin/launch/LaunchScreen";
 import { shouldPlayLaunchIntro } from "./twin/launch/launchConfig";
@@ -365,6 +366,12 @@ export default function App() {
       setPanelWidth((w) => Math.max(w, PANEL_CHAT_MIN_WIDTH));
     }
   }
+
+  const motionShareRequestId = useHeadMotionStore((s) => s.shareRequestId);
+  useEffect(() => {
+    if (motionShareRequestId <= 0) return;
+    switchPanelMode("agents");
+  }, [motionShareRequestId]);
 
   useEffect(() => {
     const onWinResize = () => {

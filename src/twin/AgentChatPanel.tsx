@@ -6,16 +6,20 @@ import {
   adkUserId,
   createAdkSession,
   defaultAdkModelId,
+  extractChatPlots,
   extractEventText,
   extractToolHints,
+  fetchAdkArtifact,
   listAdkApps,
   preferAppName,
   runAdkWithFallback,
+  type AdkChatPlot,
   type AdkInlineImage,
   type AdkModelOption,
 } from "./adkApi";
 import type { SystemState } from "./dtamTypes";
 import { pushConsole } from "./consoleLog";
+import { useHeadMotionStore } from "./headMotionStore";
 
 export type ChatRole = "user" | "assistant" | "system";
 
@@ -26,7 +30,23 @@ export type ChatMessage = {
   author?: string;
   pending?: boolean;
   tools?: string[];
+  /** Forecast / tool PNGs for this turn */
+  plots?: AdkChatPlot[];
 };
+
+function mergePlots(prev: AdkChatPlot[] | undefined, next: AdkChatPlot[]): AdkChatPlot[] {
+  if (!next.length) return prev ?? [];
+  const out = [...(prev ?? [])];
+  for (const p of next) {
+    const dup = out.some(
+      (x) =>
+        x.pngBase64 === p.pngBase64 ||
+        (x.toolName === p.toolName && x.caption === p.caption && x.pngBase64.slice(0, 64) === p.pngBase64.slice(0, 64)),
+    );
+    if (!dup) out.push(p);
+  }
+  return out;
+}
 
 /** Merge SSE/text chunks: prefer cumulative snapshots over naive append (avoids duplicated answers). */
 function mergeStreamText(prev: string, piece: string): string {
@@ -146,11 +166,15 @@ export function AgentChatPanel({ systemState }: Props) {
   const [online, setOnline] = useState<boolean | null>(null);
   const [status, setStatus] = useState("Checking ADK…");
   const attachContext = true;
+  const shareRequestId = useHeadMotionStore((s) => s.shareRequestId);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const modelMenuRef = useRef<HTMLDivElement | null>(null);
+  const sendMessageRef = useRef<
+    (raw: string, opts?: { displayText?: string; skipMotionContext?: boolean }) => Promise<void>
+  >(async () => {});
 
   const selectedModel: AdkModelOption =
     models.find((m) => m.id === modelId) ?? models[0] ?? { id: modelId, label: modelId };
@@ -285,7 +309,10 @@ export function AgentChatPanel({ systemState }: Props) {
     }
   }
 
-  async function sendMessage(raw: string) {
+  async function sendMessage(
+    raw: string,
+    opts?: { displayText?: string; skipMotionContext?: boolean },
+  ) {
     const text = raw.trim();
     const images = attachments;
     if ((!text && !images.length) || busy) return;
@@ -302,7 +329,9 @@ export function AgentChatPanel({ systemState }: Props) {
     }
 
     const display =
-      text || (images.length ? `(${images.length} image${images.length > 1 ? "s" : ""} attached)` : "");
+      opts?.displayText?.trim() ||
+      text ||
+      (images.length ? `(${images.length} image${images.length > 1 ? "s" : ""} attached)` : "");
     const userMsg: ChatMessage = { id: uid(), role: "user", text: display };
     const assistantId = uid();
     setMessages((m) => [
@@ -319,7 +348,12 @@ export function AgentChatPanel({ systemState }: Props) {
       setListening(false);
     }
 
-    const outbound = attachContext ? `${twinContextBlock(systemState)}${text}` : text;
+    const motionBlock = opts?.skipMotionContext
+      ? ""
+      : useHeadMotionStore.getState().motionContextBlock();
+    const outbound = attachContext
+      ? `${twinContextBlock(systemState)}${motionBlock}${text}`
+      : text;
     const ac = new AbortController();
     abortRef.current = ac;
 
@@ -339,6 +373,7 @@ export function AgentChatPanel({ systemState }: Props) {
           onEvent: (event) => {
             const piece = extractEventText(event);
             const tools = extractToolHints(event);
+            const plots = extractChatPlots(event);
             const author = event.author;
             setMessages((prev) =>
               prev.map((msg) => {
@@ -351,10 +386,43 @@ export function AgentChatPanel({ systemState }: Props) {
                   text: piece ? mergeStreamText(msg.text, piece) : msg.text,
                   author: author ?? msg.author,
                   tools: nextTools,
+                  plots: mergePlots(msg.plots, plots),
                   pending: true,
                 };
               }),
             );
+
+            // Artifact-only responses: fetch PNG when inline base64 is absent.
+            for (const plot of plots) {
+              if (plot.pngBase64.length > 32) continue;
+              if (!plot.artifactName || plot.artifactVersion == null) continue;
+              void fetchAdkArtifact({
+                appName,
+                userId,
+                sessionId: sid,
+                artifactName: plot.artifactName,
+                versionId: plot.artifactVersion,
+                signal: ac.signal,
+              }).then((art) => {
+                if (!art?.dataBase64) return;
+                setMessages((prev) =>
+                  prev.map((msg) => {
+                    if (msg.id !== assistantId) return msg;
+                    const withoutStub = (msg.plots ?? []).filter((x) => x.id !== plot.id);
+                    return {
+                      ...msg,
+                      plots: mergePlots(withoutStub, [
+                        {
+                          ...plot,
+                          mimeType: art.mimeType || plot.mimeType,
+                          pngBase64: art.dataBase64,
+                        },
+                      ]),
+                    };
+                  }),
+                );
+              });
+            }
           },
         },
       );
@@ -403,6 +471,21 @@ export function AgentChatPanel({ systemState }: Props) {
       setBusy(false);
     }
   }
+  sendMessageRef.current = sendMessage;
+
+  useEffect(() => {
+    if (shareRequestId <= 0) return;
+    const prompt = useHeadMotionStore.getState().consumeShareRequest();
+    if (!prompt) return;
+    const t = window.setTimeout(() => {
+      void sendMessageRef.current(prompt, {
+        displayText:
+          "Shared optical head-motion log (last ~60s) — please summarize for retrospective correction.",
+        skipMotionContext: true,
+      });
+    }, 120);
+    return () => window.clearTimeout(t);
+  }, [shareRequestId]);
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -496,6 +579,24 @@ export function AgentChatPanel({ systemState }: Props) {
                 </>
               )}
             </div>
+            {m.plots?.length ? (
+              <div className="agent-plots">
+                {m.plots
+                  .filter((p) => p.pngBase64.length > 32)
+                  .map((p) => (
+                    <figure key={p.id} className="agent-plot">
+                      <img
+                        className="agent-plot-img"
+                        src={`data:${p.mimeType || "image/png"};base64,${p.pngBase64}`}
+                        alt={p.caption || `Plot from ${p.toolName}`}
+                      />
+                      {p.caption ? (
+                        <figcaption className="agent-plot-caption">{p.caption}</figcaption>
+                      ) : null}
+                    </figure>
+                  ))}
+              </div>
+            ) : null}
           </div>
         ))}
 

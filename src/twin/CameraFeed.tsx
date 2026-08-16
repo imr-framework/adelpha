@@ -5,11 +5,8 @@ import {
   ImageSegmenter,
   type NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
-import {
-  downloadTextFile,
-  HeadMotionRecorder,
-  type HeadMotionSample,
-} from "./headMotionLog";
+import { type HeadMotionSample } from "./headMotionLog";
+import { useHeadMotionStore } from "./headMotionStore";
 
 export type HeadPose = {
   yaw: number;
@@ -692,12 +689,15 @@ export function CameraFeed({
   const faceSeenRef = useRef(false);
   const maskStyleRef = useRef<FaceMaskStyle>(readMaskStyle());
   const bgModeRef = useRef<CameraBgMode>(readBgMode());
-  const recorderRef = useRef(new HeadMotionRecorder());
   const lastMatrixRef = useRef<number[] | null>(null);
   const onPoseUpdateRef = useRef(onPoseUpdate);
   const onPreviewStreamChangeRef = useRef(onPreviewStreamChange);
   onPoseUpdateRef.current = onPoseUpdate;
   onPreviewStreamChangeRef.current = onPreviewStreamChange;
+
+  const sampleCount = useHeadMotionStore((s) => s.sampleCount);
+  const hasReference = useHeadMotionStore((s) => s.hasReference);
+  const refAgeMs = useHeadMotionStore((s) => s.refAgeMs);
 
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState("Starting camera…");
@@ -707,9 +707,6 @@ export function CameraFeed({
   const [maskStyle, setMaskStyle] = useState<FaceMaskStyle>(() => maskStyleRef.current);
   const [bgMode, setBgMode] = useState<CameraBgMode>(() => bgModeRef.current);
   const [segmenterReady, setSegmenterReady] = useState(false);
-  const [sampleCount, setSampleCount] = useState(0);
-  const [hasReference, setHasReference] = useState(false);
-  const [refAgeMs, setRefAgeMs] = useState<number | null>(null);
   const [motionMenuOpen, setMotionMenuOpen] = useState(false);
 
   function cycleMaskStyle() {
@@ -747,35 +744,26 @@ export function CameraFeed({
       setStatus("Need a tracked face to set reference");
       return;
     }
-    recorderRef.current.setReference(matrix);
-    setHasReference(true);
-    setRefAgeMs(0);
+    useHeadMotionStore.getState().setReference(matrix);
     setStatus("Reference pose set — R_rel logged from now");
   }
 
   function clearMotionLog() {
-    recorderRef.current.clear();
-    setSampleCount(0);
+    useHeadMotionStore.getState().clearLog();
     setStatus("Motion log cleared");
   }
 
   function downloadMotionJson() {
-    const payload = recorderRef.current.toExport();
-    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    downloadTextFile(
-      `adelpha-head-motion-${stamp}.json`,
-      `${JSON.stringify(payload, null, 2)}\n`,
-      "application/json",
-    );
+    useHeadMotionStore.getState().downloadJson();
   }
 
   function downloadMotionCsv() {
-    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    downloadTextFile(
-      `adelpha-head-motion-${stamp}.csv`,
-      `${recorderRef.current.toCsv()}\n`,
-      "text/csv",
-    );
+    useHeadMotionStore.getState().downloadCsv();
+  }
+
+  function shareMotionWithAgent() {
+    useHeadMotionStore.getState().requestShareWithAgent();
+    setStatus("Shared motion context → Agents tab");
   }
 
   useEffect(() => {
@@ -981,7 +969,7 @@ export function CameraFeed({
 
             const wallMs = Date.now();
             const pose = { ...smoothedRef.current };
-            const sample = recorderRef.current.push({
+            const sample = useHeadMotionStore.getState().pushSample({
               matrix: matrixCopy,
               yaw: pose.yaw,
               pitch: pose.pitch,
@@ -995,9 +983,6 @@ export function CameraFeed({
               setHeadPose(pose);
               setTracking(true);
               setStatus("");
-              setSampleCount(recorderRef.current.sampleCount);
-              setHasReference(recorderRef.current.hasReference);
-              setRefAgeMs(sample.t_rel_ms);
               onPoseUpdateRef.current?.(pose, {
                 pose,
                 matrix: matrixCopy,
@@ -1011,6 +996,7 @@ export function CameraFeed({
           } else if (faceSeenRef.current && now - lastUiAtRef.current >= UI_INTERVAL_MS) {
             lastUiAtRef.current = now;
             setTracking(false);
+            useHeadMotionStore.getState().setTracking(false);
             setStatus("No face detected");
           }
         } catch {
@@ -1199,6 +1185,15 @@ export function CameraFeed({
                 disabled={sampleCount === 0}
               >
                 Download CSV
+              </button>
+              <button
+                type="button"
+                className="camera-mask-btn"
+                onClick={shareMotionWithAgent}
+                title="Open Agents tab and send a summary of the recent motion log"
+                disabled={sampleCount === 0}
+              >
+                Share with agent
               </button>
               <button
                 type="button"

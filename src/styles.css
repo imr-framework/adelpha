@@ -1604,6 +1604,35 @@ body,
   margin: 0.75em 0;
 }
 
+.agent-plots {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.agent-plot {
+  margin: 0;
+  padding: 0;
+}
+
+.agent-plot-img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #0a0a0b;
+}
+
+.agent-plot-caption {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
 .agent-tools {
   display: flex;
   flex-wrap: wrap;

@@ -184,6 +184,74 @@ export class HeadMotionRecorder {
     this.nextIndex = 0;
   }
 
+  latest(): HeadMotionSample | null {
+    return this.samples[this.samples.length - 1] ?? null;
+  }
+
+  /** Samples within the last `windowMs` (or last `maxPoints` if window is sparse). */
+  recent(windowMs = 60_000, maxPoints = 60): HeadMotionSample[] {
+    if (!this.samples.length) return [];
+    const cutoff = Date.now() - windowMs;
+    let slice = this.samples.filter((s) => s.t_wall_ms >= cutoff);
+    if (slice.length < 8) {
+      slice = this.samples.slice(-Math.min(maxPoints, this.samples.length));
+    }
+    if (slice.length <= maxPoints) return slice;
+    // Downsample evenly for agent context size.
+    const out: HeadMotionSample[] = [];
+    const step = (slice.length - 1) / (maxPoints - 1);
+    for (let i = 0; i < maxPoints; i++) {
+      out.push(slice[Math.round(i * step)]!);
+    }
+    return out;
+  }
+
+  /** Compact rotation stats over recent samples that have R_rel. */
+  recentStats(windowMs = 60_000): {
+    n: number;
+    duration_s: number | null;
+    yaw_rms_deg: number | null;
+    pitch_rms_deg: number | null;
+    roll_rms_deg: number | null;
+    yaw_peak_deg: number | null;
+    pitch_peak_deg: number | null;
+    roll_peak_deg: number | null;
+  } {
+    const slice = this.recent(windowMs, 500);
+    const withRel = slice.filter((s) => s.R_rel != null || s.detected);
+    if (!withRel.length) {
+      return {
+        n: 0,
+        duration_s: null,
+        yaw_rms_deg: null,
+        pitch_rms_deg: null,
+        roll_rms_deg: null,
+        yaw_peak_deg: null,
+        pitch_peak_deg: null,
+        roll_peak_deg: null,
+      };
+    }
+    const yaws = withRel.map((s) => s.yaw);
+    const pitches = withRel.map((s) => s.pitch);
+    const rolls = withRel.map((s) => s.roll);
+    const rms = (xs: number[]) =>
+      Math.sqrt(xs.reduce((a, v) => a + v * v, 0) / xs.length);
+    const peak = (xs: number[]) =>
+      xs.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
+    const t0 = withRel[0]!.t_wall_ms;
+    const t1 = withRel[withRel.length - 1]!.t_wall_ms;
+    return {
+      n: withRel.length,
+      duration_s: (t1 - t0) / 1000,
+      yaw_rms_deg: rms(yaws),
+      pitch_rms_deg: rms(pitches),
+      roll_rms_deg: rms(rolls),
+      yaw_peak_deg: peak(yaws),
+      pitch_peak_deg: peak(pitches),
+      roll_peak_deg: peak(rolls),
+    };
+  }
+
   push(args: {
     matrix: ArrayLike<number>;
     yaw: number;
@@ -310,6 +378,82 @@ export class HeadMotionRecorder {
 
     return [header, ...lines].join("\n");
   }
+}
+
+function fmt(v: number | null | undefined, digits = 2): string {
+  if (v == null || !Number.isFinite(v)) return "—";
+  return v.toFixed(digits);
+}
+
+function fmtMat9(R: number[] | null | undefined): string {
+  if (!R || R.length < 9) return "—";
+  return `[${R.map((v) => v.toFixed(4)).join(", ")}]`;
+}
+
+/** Compact text block prepended to agent messages (not the full log). */
+export function formatMotionContextBlock(
+  recorder: HeadMotionRecorder,
+  opts?: { windowMs?: number; maxPoints?: number },
+): string {
+  const windowMs = opts?.windowMs ?? 60_000;
+  const maxPoints = opts?.maxPoints ?? 40;
+  if (recorder.sampleCount === 0) return "";
+
+  const latest = recorder.latest();
+  const stats = recorder.recentStats(windowMs);
+  const recent = recorder.recent(windowMs, maxPoints);
+  const lines: string[] = [
+    "[Optical head-motion context — MediaPipe Face Landmarker demo]",
+    `samples_total=${recorder.sampleCount} reference_set=${recorder.hasReference}`,
+  ];
+  if (recorder.referenceWallMs != null) {
+    lines.push(`reference_wall_ms=${recorder.referenceWallMs}`);
+  }
+  if (latest) {
+    lines.push(
+      `latest_euler_deg: yaw=${fmt(latest.yaw)} pitch=${fmt(latest.pitch)} roll=${fmt(latest.roll)}`,
+    );
+    lines.push(`latest_R_rel_row_major_3x3: ${fmtMat9(latest.R_rel)}`);
+    if (latest.t_rel_ms != null) {
+      lines.push(`t_rel_s=${fmt(latest.t_rel_ms / 1000, 2)}`);
+    }
+  }
+  lines.push(
+    `window_${Math.round(windowMs / 1000)}s: n=${stats.n} duration_s=${fmt(stats.duration_s)} ` +
+      `rms_deg(yaw/pitch/roll)=${fmt(stats.yaw_rms_deg)}/${fmt(stats.pitch_rms_deg)}/${fmt(stats.roll_rms_deg)} ` +
+      `peak_abs_deg=${fmt(stats.yaw_peak_deg)}/${fmt(stats.pitch_peak_deg)}/${fmt(stats.roll_peak_deg)}`,
+  );
+  lines.push(
+    `downsampled_trace (t_rel_s,yaw,pitch,roll,R_rel_ok) — ${recent.length} points:`,
+  );
+  for (const s of recent) {
+    const tRel =
+      s.t_rel_ms != null ? (s.t_rel_ms / 1000).toFixed(2) : "null";
+    lines.push(
+      `  ${tRel},${s.yaw.toFixed(2)},${s.pitch.toFixed(2)},${s.roll.toFixed(2)},${s.R_rel ? 1 : 0}`,
+    );
+  }
+  lines.push(
+    "Note: camera-frame optical demo; calibrate before MRI correction. Prefer R_rel when reference_set=true.",
+  );
+  lines.push("");
+  return `${lines.join("\n")}\n`;
+}
+
+/** User-facing share prompt with embedded motion context. */
+export function formatMotionSharePrompt(recorder: HeadMotionRecorder): string {
+  const body = formatMotionContextBlock(recorder, {
+    windowMs: 60_000,
+    maxPoints: 48,
+  });
+  if (!body.trim()) {
+    return "I do not have optical head-motion samples yet. Please enable the camera, track a face, and optionally Set reference first.";
+  }
+  return (
+    "Please summarize this optical head-motion log for MRI retrospective correction planning. " +
+    "Comment on rotation magnitude, whether a reference pose is set, and any caveats of monocular webcam tracking.\n\n" +
+    body
+  );
 }
 
 export function downloadTextFile(filename: string, text: string, mime: string) {

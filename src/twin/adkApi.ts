@@ -273,6 +273,130 @@ export function extractToolHints(event: AdkEvent): string[] {
   return hints;
 }
 
+/** Forecast / advisory plot attached to a chat turn (from tool functionResponse). */
+export type AdkChatPlot = {
+  id: string;
+  toolName: string;
+  mimeType: string;
+  /** Raw base64 without data: URL prefix */
+  pngBase64: string;
+  caption?: string;
+  artifactName?: string;
+  artifactVersion?: string | number;
+};
+
+function asRecord(v: unknown): Record<string, unknown> | null {
+  if (v && typeof v === "object" && !Array.isArray(v)) return v as Record<string, unknown>;
+  return null;
+}
+
+function pickString(obj: Record<string, unknown>, keys: string[]): string | undefined {
+  for (const k of keys) {
+    const v = obj[k];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return undefined;
+}
+
+function stripDataUrlBase64(raw: string): string {
+  const comma = raw.indexOf(",");
+  if (raw.startsWith("data:") && comma >= 0) return raw.slice(comma + 1);
+  return raw;
+}
+
+/** Pull plot_png_base64 (and caption) from a tool functionResponse payload. */
+export function extractChatPlots(event: AdkEvent): AdkChatPlot[] {
+  const plots: AdkChatPlot[] = [];
+  const parts = event.content?.parts ?? [];
+
+  for (let i = 0; i < parts.length; i++) {
+    const fr = parts[i]?.functionResponse;
+    if (!fr?.name) continue;
+    const root = asRecord(fr.response);
+    if (!root) continue;
+
+    // Common wrappers: response itself, response.data, response.result, response.output
+    const candidates: Record<string, unknown>[] = [root];
+    for (const nest of ["data", "result", "output", "plot"]) {
+      const inner = asRecord(root[nest]);
+      if (inner) candidates.push(inner);
+    }
+
+    for (const obj of candidates) {
+      const b64 = pickString(obj, [
+        "plot_png_base64",
+        "png_base64",
+        "image_base64",
+        "plotBase64",
+      ]);
+      const mime =
+        pickString(obj, ["mime_type", "mimeType"]) || "image/png";
+      const caption = pickString(obj, ["caption", "title", "alt"]);
+      const artifactName = pickString(obj, ["artifact_name", "artifactName"]);
+      const verRaw = obj.artifact_version ?? obj.artifactVersion;
+      const artifactVersion =
+        typeof verRaw === "string" || typeof verRaw === "number" ? verRaw : undefined;
+
+      if (!b64 && !(artifactName && artifactVersion != null)) continue;
+
+      plots.push({
+        id: `${event.id ?? "evt"}-${fr.name}-${i}-${plots.length}`,
+        toolName: fr.name,
+        mimeType: mime,
+        pngBase64: b64 ? stripDataUrlBase64(b64) : "",
+        caption,
+        artifactName,
+        artifactVersion,
+      });
+      break; // one plot per functionResponse part
+    }
+  }
+
+  return plots;
+}
+
+/** Optional ADK artifact download when tool only returns artifact refs. */
+export async function fetchAdkArtifact(params: {
+  appName: string;
+  userId: string;
+  sessionId: string;
+  artifactName: string;
+  versionId: string | number;
+  signal?: AbortSignal;
+}): Promise<{ mimeType: string; dataBase64: string } | null> {
+  const url =
+    `${adkBaseUrl()}/apps/${encodeURIComponent(params.appName)}` +
+    `/users/${encodeURIComponent(params.userId)}` +
+    `/sessions/${encodeURIComponent(params.sessionId)}` +
+    `/artifacts/${encodeURIComponent(params.artifactName)}` +
+    `/versions/${encodeURIComponent(String(params.versionId))}`;
+
+  const res = await fetch(url, { cache: "no-store", signal: params.signal });
+  if (!res.ok) return null;
+
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    const json = (await res.json()) as Record<string, unknown>;
+    const data =
+      pickString(json, ["plot_png_base64", "png_base64", "data", "inlineData"]) ||
+      pickString(asRecord(json.data) ?? {}, ["plot_png_base64", "png_base64", "data"]);
+    if (!data) return null;
+    return {
+      mimeType: pickString(json, ["mime_type", "mimeType"]) || "image/png",
+      dataBase64: stripDataUrlBase64(data),
+    };
+  }
+
+  const buf = await res.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]!);
+  return {
+    mimeType: contentType.split(";")[0]?.trim() || "image/png",
+    dataBase64: btoa(binary),
+  };
+}
+
 export function preferAppName(apps: string[], preferred = adkAppName()): string | null {
   if (!apps.length) return null;
   const hit = apps.find((a) => a === preferred || a.toLowerCase() === preferred.toLowerCase());
