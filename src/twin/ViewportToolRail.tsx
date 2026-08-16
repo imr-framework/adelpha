@@ -8,10 +8,13 @@ import {
 
 export type ViewportToolId = "magnet" | "emi" | "rf" | "camera" | "gradient";
 
-const POS_KEY = "twin_view_tool_rail_pos";
+const POS_KEY = "twin_view_tool_rail_pos_v2";
 const MARGIN = 10;
 
 type RailPos = { x: number; y: number };
+
+/** Align with `.viewport-dashboard-btn` (top: 12px, left: 64px) — close sits at left. */
+const DEFAULT_POS: RailPos = { x: 12, y: 12 };
 
 const TOOLS: { id: ViewportToolId; label: string; icon: ReactNode }[] = [
   {
@@ -152,7 +155,7 @@ export function ViewportToolRail({
   onActiveChange: (id: ViewportToolId) => void;
 }) {
   const [open, setOpen] = useState(true);
-  const [pos, setPos] = useState<RailPos>(() => readSavedPos() ?? { x: 12, y: 120 });
+  const [pos, setPos] = useState<RailPos>(() => readSavedPos() ?? DEFAULT_POS);
   const [dragging, setDragging] = useState(false);
 
   const railRef = useRef<HTMLDivElement | null>(null);
