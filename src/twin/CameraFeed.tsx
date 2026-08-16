@@ -5,11 +5,29 @@ import {
   ImageSegmenter,
   type NormalizedLandmark,
 } from "@mediapipe/tasks-vision";
+import {
+  downloadTextFile,
+  HeadMotionRecorder,
+  type HeadMotionSample,
+} from "./headMotionLog";
 
 export type HeadPose = {
   yaw: number;
   pitch: number;
   roll: number;
+};
+
+/** Full pose frame for charts + retrospective motion logs. */
+export type HeadPoseFrame = {
+  pose: HeadPose;
+  /** Absolute MediaPipe facial transform, column-major 4×4. */
+  matrix: number[];
+  /** Relative rotation vs reference, row-major 3×3 (null until Set reference). */
+  R_rel: number[] | null;
+  t_rel: number[] | null;
+  t_wall_ms: number;
+  t_rel_ms: number | null;
+  sample: HeadMotionSample;
 };
 
 type Connection = { start: number; end: number };
@@ -556,6 +574,99 @@ function drawFaceMask(
       );
       break;
   }
+
+  drawNoseTracker(ctx, landmarks, video, canvas, dpr);
+}
+
+/** MediaPipe face-mesh indices along the nose bridge → tip → alae. */
+const NOSE_BRIDGE = [168, 6, 197, 195, 5, 4, 1] as const;
+const NOSE_TIP = 1;
+const NOSE_ALEA = [98, 327] as const;
+
+/** Highlight nose tip + bridge so motion tracking is visually obvious. */
+function drawNoseTracker(
+  ctx: CanvasRenderingContext2D,
+  landmarks: NormalizedLandmark[],
+  video: HTMLVideoElement,
+  canvas: HTMLCanvasElement,
+  dpr: number,
+) {
+  const tipLm = landmarks[NOSE_TIP];
+  if (!tipLm) return;
+  const tip = landmarkToCanvas(tipLm, video, canvas);
+
+  ctx.save();
+
+  ctx.beginPath();
+  let started = false;
+  for (const idx of NOSE_BRIDGE) {
+    const lm = landmarks[idx];
+    if (!lm) continue;
+    const p = landmarkToCanvas(lm, video, canvas);
+    if (!started) {
+      ctx.moveTo(p.x, p.y);
+      started = true;
+    } else {
+      ctx.lineTo(p.x, p.y);
+    }
+  }
+  if (started) {
+    ctx.strokeStyle = "rgba(255, 196, 72, 0.95)";
+    ctx.lineWidth = 2.2 * dpr;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.shadowColor = "rgba(255, 180, 40, 0.75)";
+    ctx.shadowBlur = 10 * dpr;
+    ctx.stroke();
+  }
+
+  ctx.shadowBlur = 0;
+  for (const idx of NOSE_ALEA) {
+    const lm = landmarks[idx];
+    if (!lm) continue;
+    const p = landmarkToCanvas(lm, video, canvas);
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(tip.x, tip.y);
+    ctx.strokeStyle = "rgba(255, 196, 72, 0.55)";
+    ctx.lineWidth = 1.2 * dpr;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2.4 * dpr, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255, 220, 120, 0.95)";
+    ctx.fill();
+  }
+
+  const r = 7 * dpr;
+  ctx.beginPath();
+  ctx.arc(tip.x, tip.y, r, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(255, 90, 70, 0.95)";
+  ctx.lineWidth = 2 * dpr;
+  ctx.shadowColor = "rgba(255, 70, 50, 0.85)";
+  ctx.shadowBlur = 12 * dpr;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(tip.x, tip.y, 2.5 * dpr, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255, 240, 230, 0.98)";
+  ctx.shadowBlur = 8 * dpr;
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = "rgba(255, 240, 220, 0.9)";
+  ctx.lineWidth = 1.2 * dpr;
+  ctx.beginPath();
+  ctx.moveTo(tip.x - r * 1.6, tip.y);
+  ctx.lineTo(tip.x - r * 0.45, tip.y);
+  ctx.moveTo(tip.x + r * 0.45, tip.y);
+  ctx.lineTo(tip.x + r * 1.6, tip.y);
+  ctx.moveTo(tip.x, tip.y - r * 1.6);
+  ctx.lineTo(tip.x, tip.y - r * 0.45);
+  ctx.moveTo(tip.x, tip.y + r * 0.45);
+  ctx.lineTo(tip.x, tip.y + r * 1.6);
+  ctx.stroke();
+
+  ctx.restore();
 }
 
 /** Live webcam feed with MediaPipe Face Landmarker head-pose tracking. */
@@ -563,7 +674,7 @@ export function CameraFeed({
   onPoseUpdate,
   onPreviewStreamChange,
 }: {
-  onPoseUpdate?: (pose: HeadPose) => void;
+  onPoseUpdate?: (pose: HeadPose, frame?: HeadPoseFrame) => void;
   /** Canvas-capture stream of the composited stage (matches main view / BG mode). */
   onPreviewStreamChange?: (stream: MediaStream | null) => void;
 }) {
@@ -581,6 +692,8 @@ export function CameraFeed({
   const faceSeenRef = useRef(false);
   const maskStyleRef = useRef<FaceMaskStyle>(readMaskStyle());
   const bgModeRef = useRef<CameraBgMode>(readBgMode());
+  const recorderRef = useRef(new HeadMotionRecorder());
+  const lastMatrixRef = useRef<number[] | null>(null);
   const onPoseUpdateRef = useRef(onPoseUpdate);
   const onPreviewStreamChangeRef = useRef(onPreviewStreamChange);
   onPoseUpdateRef.current = onPoseUpdate;
@@ -594,6 +707,10 @@ export function CameraFeed({
   const [maskStyle, setMaskStyle] = useState<FaceMaskStyle>(() => maskStyleRef.current);
   const [bgMode, setBgMode] = useState<CameraBgMode>(() => bgModeRef.current);
   const [segmenterReady, setSegmenterReady] = useState(false);
+  const [sampleCount, setSampleCount] = useState(0);
+  const [hasReference, setHasReference] = useState(false);
+  const [refAgeMs, setRefAgeMs] = useState<number | null>(null);
+  const [motionMenuOpen, setMotionMenuOpen] = useState(false);
 
   function cycleMaskStyle() {
     const idx = MASK_STYLES.findIndex((s) => s.id === maskStyleRef.current);
@@ -610,7 +727,6 @@ export function CameraFeed({
   function cycleBgMode() {
     const idx = BG_MODES.findIndex((m) => m.id === bgModeRef.current);
     const next = BG_MODES[(idx + 1) % BG_MODES.length]!;
-    // Skip black mode if segmenter failed to load.
     if (next.id === "black" && !segmenterRef.current) {
       bgModeRef.current = "scene";
       setBgMode("scene");
@@ -623,6 +739,43 @@ export function CameraFeed({
     } catch {
       /* ignore */
     }
+  }
+
+  function setReferencePose() {
+    const matrix = lastMatrixRef.current;
+    if (!matrix) {
+      setStatus("Need a tracked face to set reference");
+      return;
+    }
+    recorderRef.current.setReference(matrix);
+    setHasReference(true);
+    setRefAgeMs(0);
+    setStatus("Reference pose set — R_rel logged from now");
+  }
+
+  function clearMotionLog() {
+    recorderRef.current.clear();
+    setSampleCount(0);
+    setStatus("Motion log cleared");
+  }
+
+  function downloadMotionJson() {
+    const payload = recorderRef.current.toExport();
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    downloadTextFile(
+      `adelpha-head-motion-${stamp}.json`,
+      `${JSON.stringify(payload, null, 2)}\n`,
+      "application/json",
+    );
+  }
+
+  function downloadMotionCsv() {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    downloadTextFile(
+      `adelpha-head-motion-${stamp}.csv`,
+      `${recorderRef.current.toCsv()}\n`,
+      "text/csv",
+    );
   }
 
   useEffect(() => {
@@ -820,17 +973,40 @@ export function CameraFeed({
           }
 
           if (matrix && matrix.length >= 16) {
+            const matrixCopy = Array.from(matrix);
+            lastMatrixRef.current = matrixCopy;
             const raw = matrixToEulerAngles(matrix);
             smoothedRef.current = emaPose(smoothedRef.current, raw);
             faceSeenRef.current = true;
 
+            const wallMs = Date.now();
+            const pose = { ...smoothedRef.current };
+            const sample = recorderRef.current.push({
+              matrix: matrixCopy,
+              yaw: pose.yaw,
+              pitch: pose.pitch,
+              roll: pose.roll,
+              detected: true,
+              wallMs,
+            });
+
             if (now - lastUiAtRef.current >= UI_INTERVAL_MS) {
               lastUiAtRef.current = now;
-              const pose = { ...smoothedRef.current };
               setHeadPose(pose);
-              onPoseUpdateRef.current?.(pose);
               setTracking(true);
               setStatus("");
+              setSampleCount(recorderRef.current.sampleCount);
+              setHasReference(recorderRef.current.hasReference);
+              setRefAgeMs(sample.t_rel_ms);
+              onPoseUpdateRef.current?.(pose, {
+                pose,
+                matrix: matrixCopy,
+                R_rel: sample.R_rel,
+                t_rel: sample.t_rel,
+                t_wall_ms: sample.t_wall_ms,
+                t_rel_ms: sample.t_rel_ms,
+                sample,
+              });
             }
           } else if (faceSeenRef.current && now - lastUiAtRef.current >= UI_INTERVAL_MS) {
             lastUiAtRef.current = now;
@@ -914,46 +1090,127 @@ export function CameraFeed({
       </div>
 
       {ready && !error ? (
-        <div className="camera-head-hud" aria-live="polite">
-          <div className="camera-head-hud-title">
-            Head pose
-            <span className={`camera-head-dot${tracking ? " camera-head-dot-on" : ""}`} aria-hidden />
+        <div className="camera-head-hud-stack">
+          <div className="camera-head-hud" aria-live="polite">
+            <div className="camera-head-hud-title">
+              Head pose
+              <span className={`camera-head-dot${tracking ? " camera-head-dot-on" : ""}`} aria-hidden />
+            </div>
+            <div className="camera-head-row">
+              <span>Yaw</span>
+              <strong>{formatDeg(headPose.yaw)}</strong>
+            </div>
+            <div className="camera-head-row">
+              <span>Pitch</span>
+              <strong>{formatDeg(headPose.pitch)}</strong>
+            </div>
+            <div className="camera-head-row">
+              <span>Roll</span>
+              <strong>{formatDeg(headPose.roll)}</strong>
+            </div>
+            <div className="camera-head-row">
+              <span>Log</span>
+              <strong>{sampleCount}</strong>
+            </div>
+            <div className="camera-head-row">
+              <span>R_rel</span>
+              <strong>
+                {hasReference
+                  ? refAgeMs != null
+                    ? `+${(refAgeMs / 1000).toFixed(1)}s`
+                    : "on"
+                  : "unset"}
+              </strong>
+            </div>
+            <button
+              type="button"
+              className="camera-mask-btn"
+              onClick={cycleBgMode}
+              title={
+                segmenterReady
+                  ? "Toggle full scene vs black background"
+                  : "Background remover unavailable — full scene only"
+              }
+              disabled={!segmenterReady}
+            >
+              BG · {BG_MODES.find((m) => m.id === bgMode)?.label ?? bgMode}
+              {!segmenterReady ? " (n/a)" : ""}
+            </button>
+            <button
+              type="button"
+              className="camera-mask-btn"
+              onClick={cycleMaskStyle}
+              title="Cycle face mask style"
+            >
+              Mask · {MASK_STYLES.find((s) => s.id === maskStyle)?.label ?? maskStyle}
+            </button>
+            <button
+              type="button"
+              className={`camera-mask-btn${motionMenuOpen ? " camera-mask-btn-active" : ""}`}
+              onClick={() => setMotionMenuOpen((v) => !v)}
+              aria-expanded={motionMenuOpen}
+              aria-controls="camera-motion-menu"
+              title="Motion log commands"
+            >
+              Motion · {motionMenuOpen ? "Hide" : "Menu"}
+            </button>
+            {status ? <p className="camera-head-hint">{status}</p> : null}
           </div>
-          <div className="camera-head-row">
-            <span>Yaw</span>
-            <strong>{formatDeg(headPose.yaw)}</strong>
-          </div>
-          <div className="camera-head-row">
-            <span>Pitch</span>
-            <strong>{formatDeg(headPose.pitch)}</strong>
-          </div>
-          <div className="camera-head-row">
-            <span>Roll</span>
-            <strong>{formatDeg(headPose.roll)}</strong>
-          </div>
-          <button
-            type="button"
-            className="camera-mask-btn"
-            onClick={cycleBgMode}
-            title={
-              segmenterReady
-                ? "Toggle full scene vs black background"
-                : "Background remover unavailable — full scene only"
-            }
-            disabled={!segmenterReady}
-          >
-            BG · {BG_MODES.find((m) => m.id === bgMode)?.label ?? bgMode}
-            {!segmenterReady ? " (n/a)" : ""}
-          </button>
-          <button
-            type="button"
-            className="camera-mask-btn"
-            onClick={cycleMaskStyle}
-            title="Cycle face mask style"
-          >
-            Mask · {MASK_STYLES.find((s) => s.id === maskStyle)?.label ?? maskStyle}
-          </button>
-          {status ? <p className="camera-head-hint">{status}</p> : null}
+
+          {motionMenuOpen ? (
+            <div
+              id="camera-motion-menu"
+              className="camera-head-hud camera-head-hud-motion"
+              role="dialog"
+              aria-label="Motion log"
+            >
+              <div className="camera-head-hud-title">Motion log</div>
+              <div className="camera-head-row">
+                <span>Samples</span>
+                <strong>{sampleCount}</strong>
+              </div>
+              <div className="camera-head-row">
+                <span>Reference</span>
+                <strong>{hasReference ? "set" : "unset"}</strong>
+              </div>
+              <button
+                type="button"
+                className="camera-mask-btn"
+                onClick={setReferencePose}
+                title="Set current pose as reference (T0) for relative rotation matrices"
+                disabled={!tracking}
+              >
+                Set reference
+              </button>
+              <button
+                type="button"
+                className="camera-mask-btn"
+                onClick={downloadMotionJson}
+                title="Download motion log JSON (matrices for retrospective correction)"
+                disabled={sampleCount === 0}
+              >
+                Download JSON
+              </button>
+              <button
+                type="button"
+                className="camera-mask-btn"
+                onClick={downloadMotionCsv}
+                title="Download motion log CSV"
+                disabled={sampleCount === 0}
+              >
+                Download CSV
+              </button>
+              <button
+                type="button"
+                className="camera-mask-btn"
+                onClick={clearMotionLog}
+                title="Clear recorded samples (keeps reference)"
+                disabled={sampleCount === 0}
+              >
+                Clear log
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

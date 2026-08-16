@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import ReactMarkdown from "react-markdown";
 import {
   adkAppName,
   adkModelOptions,
@@ -26,6 +27,19 @@ export type ChatMessage = {
   pending?: boolean;
   tools?: string[];
 };
+
+/** Merge SSE/text chunks: prefer cumulative snapshots over naive append (avoids duplicated answers). */
+function mergeStreamText(prev: string, piece: string): string {
+  if (!piece) return prev;
+  if (!prev) return piece;
+  if (piece === prev) return prev;
+  if (piece.startsWith(prev)) return piece;
+  if (prev.startsWith(piece)) return prev;
+  if (prev.endsWith(piece)) return prev;
+  // Exact full-answer replay
+  if (piece.length > 48 && prev.includes(piece)) return prev;
+  return prev + piece;
+}
 
 type Props = {
   systemState: SystemState | null;
@@ -334,7 +348,7 @@ export function AgentChatPanel({ systemState }: Props) {
                   : msg.tools;
                 return {
                   ...msg,
-                  text: piece ? msg.text + piece : msg.text,
+                  text: piece ? mergeStreamText(msg.text, piece) : msg.text,
                   author: author ?? msg.author,
                   tools: nextTools,
                   pending: true,
@@ -470,8 +484,17 @@ export function AgentChatPanel({ systemState }: Props) {
               </div>
             ) : null}
             <div className="agent-bubble-text">
-              {m.text}
-              {m.pending ? <span className="agent-typing">▍</span> : null}
+              {m.role === "assistant" ? (
+                <div className="agent-md">
+                  {m.text ? <ReactMarkdown>{m.text}</ReactMarkdown> : null}
+                  {m.pending ? <span className="agent-typing">▍</span> : null}
+                </div>
+              ) : (
+                <>
+                  {m.text}
+                  {m.pending ? <span className="agent-typing">▍</span> : null}
+                </>
+              )}
             </div>
           </div>
         ))}
