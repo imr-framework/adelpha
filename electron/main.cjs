@@ -3,13 +3,16 @@
  * Serves the Vite `dist/` build on a loopback port and proxies:
  *   /api/dtam/*  → Twin API  (default http://127.0.0.1:8080)
  *   /api/agents/* → Agents API (default http://127.0.0.1:8001)
+ * Hosts a real shell PTY for the in-app xterm terminal.
  */
-const { app, BrowserWindow, shell } = require("electron");
+const { app, BrowserWindow, shell, ipcMain } = require("electron");
 const http = require("http");
 const https = require("https");
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const { URL } = require("url");
+const pty = require("node-pty");
 
 const TWIN_TARGET = process.env.DTAM_TWIN_URL || "http://127.0.0.1:8080";
 const AGENTS_TARGET = process.env.DTAM_AGENTS_URL || "http://127.0.0.1:8001";
@@ -34,6 +37,95 @@ const MIME = {
   ".glb": "model/gltf-binary",
   ".stl": "application/octet-stream",
 };
+
+/** @type {Map<number, import('node-pty').IPty>} */
+const ptySessions = new Map();
+
+function defaultShell() {
+  if (process.platform === "win32") {
+    return process.env.COMSPEC || "powershell.exe";
+  }
+  return process.env.SHELL || "/bin/zsh";
+}
+
+function disposePty(webContentsId) {
+  const session = ptySessions.get(webContentsId);
+  if (!session) return;
+  try {
+    session.kill();
+  } catch {
+    /* ignore */
+  }
+  ptySessions.delete(webContentsId);
+}
+
+function registerTerminalIpc() {
+  ipcMain.handle("terminal:start", (event, { cols, rows } = {}) => {
+    const sender = event.sender;
+    const id = sender.id;
+    disposePty(id);
+
+    try {
+      const shellPath = defaultShell();
+      const cwd = app.getPath("home") || os.homedir();
+      const session = pty.spawn(shellPath, [], {
+        name: "xterm-256color",
+        cols: Math.max(20, cols || 80),
+        rows: Math.max(5, rows || 24),
+        cwd,
+        env: {
+          ...process.env,
+          TERM: "xterm-256color",
+          COLORTERM: "truecolor",
+        },
+      });
+
+      session.onData((data) => {
+        if (!sender.isDestroyed()) sender.send("terminal:data", data);
+      });
+
+      session.onExit(({ exitCode }) => {
+        ptySessions.delete(id);
+        if (!sender.isDestroyed()) sender.send("terminal:exit", exitCode ?? 0);
+      });
+
+      ptySessions.set(id, session);
+      return { ok: true, shell: shellPath, cwd };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  });
+
+  ipcMain.on("terminal:write", (event, data) => {
+    const session = ptySessions.get(event.sender.id);
+    if (!session || typeof data !== "string") return;
+    try {
+      session.write(data);
+    } catch {
+      /* ignore */
+    }
+  });
+
+  ipcMain.on("terminal:resize", (event, { cols, rows } = {}) => {
+    const session = ptySessions.get(event.sender.id);
+    if (!session) return;
+    const nextCols = Math.max(20, cols || 80);
+    const nextRows = Math.max(5, rows || 24);
+    if (session.cols === nextCols && session.rows === nextRows) return;
+    try {
+      session.resize(nextCols, nextRows);
+    } catch {
+      /* ignore */
+    }
+  });
+
+  ipcMain.on("terminal:dispose", (event) => {
+    disposePty(event.sender.id);
+  });
+}
 
 function distRoot() {
   return path.join(app.getAppPath(), "dist");
@@ -142,10 +234,15 @@ async function createWindow() {
     title: "Adelpha Digital Twin",
     backgroundColor: "#050505",
     webPreferences: {
+      preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
     },
+  });
+
+  win.webContents.on("destroyed", () => {
+    disposePty(win.webContents.id);
   });
 
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -157,6 +254,7 @@ async function createWindow() {
 }
 
 app.whenReady().then(() => {
+  registerTerminalIpc();
   createWindow().catch((err) => {
     console.error(err);
     app.quit();
@@ -170,6 +268,7 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
+  for (const id of [...ptySessions.keys()]) disposePty(id);
   if (localServer) {
     localServer.close();
     localServer = null;

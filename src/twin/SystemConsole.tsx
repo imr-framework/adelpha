@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useRef } from "react";
 import {
   useConsoleStore,
   type ConsoleEntry,
   type ConsoleLevel,
   type ConsoleTab,
 } from "./consoleLog";
-import { refreshSensorsBatch, useTwinStore } from "./telemetryStore";
+import { useTwinStore } from "./telemetryStore";
+import { TwinTerminal } from "./TwinTerminal";
 
 function formatClock(ts: number) {
   return new Date(ts).toLocaleTimeString(undefined, {
@@ -31,87 +32,6 @@ function levelClass(level: ConsoleLevel) {
   }
 }
 
-async function runCommand(raw: string) {
-  const line = raw.trim();
-  if (!line) return;
-
-  const emit = (level: ConsoleLevel, message: string) => {
-    useConsoleStore.getState().pushTerminal(level, message);
-  };
-
-  emit("CMD", `$ ${line}`);
-
-  const [cmd, ...args] = line.split(/\s+/);
-  const name = cmd.toLowerCase();
-  const store = useTwinStore.getState();
-
-  switch (name) {
-    case "help":
-      emit(
-        "INFO",
-        "Commands: help · clear · status · sensors · hide · forecast-hint",
-      );
-      break;
-    case "clear":
-      useConsoleStore.getState().clearTerminal();
-      break;
-    case "hide":
-      useConsoleStore.getState().setOpen(false);
-      emit("INFO", "Panel collapsed — expand from the header chevron");
-      break;
-    case "status": {
-      const s = store.systemState;
-      const h = store.health;
-      if (!s && !h) {
-        emit("WARN", "No twin state yet — is make twin-api running?");
-        break;
-      }
-      emit(
-        "INFO",
-        `connection=${store.connection} scanner=${h?.scanner_id ?? s?.scanner_id ?? "—"} mode=${h?.mode ?? s?.mode ?? "—"}`,
-      );
-      if (s) {
-        const t = s.thermal?.mean_magnet_temperature_c?.value;
-        const b0 = s.magnetic?.b0_t?.value;
-        const emi = s.emi?.rms_v?.value;
-        const rf = s.rf?.noise_floor_dbm_per_hz?.value;
-        emit(
-          "SUCCESS",
-          `twin=${s.twin_version} T=${t?.toFixed(3) ?? "—"}°C B0=${b0?.toExponential(4) ?? "—"}T EMI=${emi?.toExponential(3) ?? "—"}V RF=${rf?.toFixed(1) ?? "—"} dBm/Hz`,
-        );
-      }
-      break;
-    }
-    case "sensors": {
-      emit("INFO", "Fetching /sensors/batch …");
-      const batch = await refreshSensorsBatch();
-      if (!batch?.measurements?.length) {
-        emit("WARN", "No measurements returned");
-        break;
-      }
-      for (const m of batch.measurements) {
-        emit(
-          "INFO",
-          `${m.sensor_id} ${m.quantity}=${m.value.toPrecision(5)} ${m.unit}`,
-        );
-      }
-      emit("SUCCESS", `Batch complete (${batch.measurements.length} channels)`);
-      break;
-    }
-    case "forecast-hint":
-      emit(
-        "INFO",
-        "Use the Forecast card to POST /twin/forecast — predicted fields appear with predicted badges",
-      );
-      break;
-    case "echo":
-      emit("INFO", args.join(" ") || "(empty)");
-      break;
-    default:
-      emit("WARN", `Unknown command "${cmd}" — type help`);
-  }
-}
-
 function ConsoleLines({ entries }: { entries: ConsoleEntry[] }) {
   return (
     <>
@@ -133,7 +53,6 @@ const TABS: { id: ConsoleTab; label: string }[] = [
 
 export function SystemConsole() {
   const entries = useConsoleStore((s) => s.entries);
-  const terminalEntries = useConsoleStore((s) => s.terminalEntries);
   const open = useConsoleStore((s) => s.open);
   const tab = useConsoleStore((s) => s.tab);
   const setOpen = useConsoleStore((s) => s.setOpen);
@@ -142,52 +61,14 @@ export function SystemConsole() {
   const connection = useTwinStore((s) => s.connection);
   const live = connection === "connected";
 
-  const [draft, setDraft] = useState("");
-  const [history, setHistory] = useState<string[]>([]);
-  const [histIdx, setHistIdx] = useState<number | null>(null);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
-  const scrollDeps = tab === "system" ? entries : terminalEntries;
+  const terminalActive = open && tab === "terminal";
 
   useEffect(() => {
     const el = scrollerRef.current;
-    if (!el || !open) return;
+    if (!el || !open || tab !== "system") return;
     el.scrollTop = el.scrollHeight;
-  }, [scrollDeps, open, tab]);
-
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (tab !== "terminal") return;
-    const value = draft;
-    setDraft("");
-    setHistIdx(null);
-    if (value.trim()) {
-      setHistory((h) => [...h.slice(-49), value.trim()]);
-    }
-    await runCommand(value);
-  }
-
-  function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "ArrowUp") {
-      e.preventDefault();
-      if (!history.length) return;
-      const next = histIdx == null ? history.length - 1 : Math.max(0, histIdx - 1);
-      setHistIdx(next);
-      setDraft(history[next] ?? "");
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      if (histIdx == null) return;
-      const next = histIdx + 1;
-      if (next >= history.length) {
-        setHistIdx(null);
-        setDraft("");
-      } else {
-        setHistIdx(next);
-        setDraft(history[next] ?? "");
-      }
-    }
-  }
+  }, [entries, open, tab]);
 
   const title = tab === "terminal" ? "Terminal" : "Logging";
 
@@ -245,41 +126,30 @@ export function SystemConsole() {
         </div>
       </div>
 
-      {open ? (
-        <>
-          <div className="system-console-body" ref={scrollerRef}>
-            {tab === "system" ? <ConsoleLines entries={entries} /> : null}
-            {tab === "terminal" ? <ConsoleLines entries={terminalEntries} /> : null}
+      {/* Keep panels mounted so the PTY is not killed / resized on every tab toggle. */}
+      <div className="system-console-panels" aria-hidden={!open}>
+        <div
+          className={`system-console-panel${tab === "system" ? " is-active" : ""}`}
+          ref={scrollerRef}
+        >
+          <div className="system-console-body">
+            <ConsoleLines entries={entries} />
           </div>
-          {tab === "terminal" ? (
-            <form className="system-console-input-row" onSubmit={(e) => void onSubmit(e)}>
-              <span className="console-ts">[{formatClock(Date.now())}]</span>
-              <span className="console-prompt-prefix" aria-hidden>
-                $
-              </span>
-              <input
-                ref={inputRef}
-                className="system-console-input"
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={onKeyDown}
-                placeholder="help · clear · status · sensors"
-                spellCheck={false}
-                autoComplete="off"
-                aria-label="Terminal command"
-              />
-              {!draft ? <span className="console-cursor" aria-hidden>_</span> : null}
-            </form>
-          ) : (
-            <div className="system-console-input-row system-console-input-row-static">
-              <span className="console-ts">logging</span>
-              <span className="console-msg console-output-meta">
-                read-only system events · use Terminal for commands
-              </span>
-            </div>
-          )}
-        </>
-      ) : null}
+          <div className="system-console-input-row system-console-input-row-static">
+            <span className="console-ts">logging</span>
+            <span className="console-msg console-output-meta">
+              read-only system events · use Terminal for commands
+            </span>
+          </div>
+        </div>
+        <div
+          className={`system-console-panel system-console-xterm-host${
+            tab === "terminal" ? " is-active" : ""
+          }`}
+        >
+          <TwinTerminal active={terminalActive} />
+        </div>
+      </div>
     </div>
   );
 }

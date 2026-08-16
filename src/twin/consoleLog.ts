@@ -41,13 +41,10 @@ function readTabPref(): ConsoleTab {
 
 type ConsoleStore = {
   entries: ConsoleEntry[];
-  terminalEntries: ConsoleEntry[];
   open: boolean;
   tab: ConsoleTab;
   push: (level: ConsoleLevel, message: string) => void;
-  pushTerminal: (level: ConsoleLevel, message: string) => void;
   clear: () => void;
-  clearTerminal: () => void;
   setOpen: (open: boolean) => void;
   setTab: (tab: ConsoleTab) => void;
 };
@@ -61,14 +58,6 @@ export const useConsoleStore = create<ConsoleStore>((set) => ({
       message: "Logging ready — system events appear here",
     },
   ],
-  terminalEntries: [
-    {
-      id: nextId++,
-      ts: Date.now(),
-      level: "INFO",
-      message: "Terminal ready — type help for commands",
-    },
-  ],
   open: readOpenPref(),
   tab: readTabPref(),
   push: (level, message) =>
@@ -78,15 +67,7 @@ export const useConsoleStore = create<ConsoleStore>((set) => ({
         { id: nextId++, ts: Date.now(), level, message },
       ],
     })),
-  pushTerminal: (level, message) =>
-    set((s) => ({
-      terminalEntries: [
-        ...s.terminalEntries.slice(-(MAX_ENTRIES - 1)),
-        { id: nextId++, ts: Date.now(), level, message },
-      ],
-    })),
   clear: () => set({ entries: [] }),
-  clearTerminal: () => set({ terminalEntries: [] }),
   setOpen: (open) => {
     try {
       localStorage.setItem(OPEN_KEY, open ? "1" : "0");

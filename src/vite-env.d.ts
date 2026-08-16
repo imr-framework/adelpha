@@ -25,3 +25,21 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/** Electron preload bridge for a real shell PTY (absent in browser Vite). */
+interface AdelphaTerminalBridge {
+  available: true;
+  start: (
+    cols: number,
+    rows: number,
+  ) => Promise<{ ok: boolean; shell?: string; cwd?: string; error?: string }>;
+  write: (data: string) => void;
+  resize: (cols: number, rows: number) => void;
+  dispose: () => void;
+  onData: (cb: (data: string) => void) => () => void;
+  onExit: (cb: (code: number) => void) => () => void;
+}
+
+interface Window {
+  adelphaTerminal?: AdelphaTerminalBridge;
+}
