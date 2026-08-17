@@ -1,5 +1,20 @@
 # Digital Twin UI
 
+![React](https://img.shields.io/badge/REACT-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TYPESCRIPT-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/VITE-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Electron](https://img.shields.io/badge/ELECTRON-47848F?style=for-the-badge&logo=electron&logoColor=white)
+
+![Python](https://img.shields.io/badge/PYTHON-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Google ADK](https://img.shields.io/badge/GOOGLE%20ADK-4285F4?style=for-the-badge&logo=google&logoColor=white)
+![MCP](https://img.shields.io/badge/MCP-MODEL%20CONTEXT%20PROTOCOL-000000?style=for-the-badge&labelColor=555555)
+![Skills](https://img.shields.io/badge/SKILLS-AGENT%20SKILLS-2E7D32?style=for-the-badge&labelColor=555555)
+
+![A2A](https://img.shields.io/badge/A2A-AGENT%20TO%20AGENT-E65100?style=for-the-badge&labelColor=555555)
+![Docker](https://img.shields.io/badge/DOCKER-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![UV](https://img.shields.io/badge/UV-DE5FE9?style=for-the-badge&logo=python&logoColor=white)
+![Three.js](https://img.shields.io/badge/THREE.JS-000000?style=for-the-badge&logo=threedotjs&logoColor=white)
+
 **Full documentation** is a [Zensical](https://zensical.org/) site under `docs/`.
 
 ## Prerequisites
