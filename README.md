@@ -45,7 +45,7 @@ In a **second** terminal:
 ```bash
 cd ../digital_twin_ui
 npm install          # first time only
-npm run dev
+npm run electron:dev
 ```
 
 Open **http://localhost:5173/** (or the URL Vite prints). Within a few seconds you should see live **Thermal**, **B₀**, **EMI**, and **RF** values updating.
