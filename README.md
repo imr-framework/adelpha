@@ -21,7 +21,10 @@
 
 ## Install
 
-**Requirements:** [Node.js 18+](https://nodejs.org/) · a **DTAM** clone next to this repo · [uv](https://docs.astral.sh/uv/) (for DTAM Python deps)
+**Requirements:** 
+- [Node.js 18+](https://nodejs.org/)
+- **DTAM** clone next to this repo
+- [uv](https://docs.astral.sh/uv/) (for DTAM Python deps) 
 
 ```text
 ~/dtam              ← backend
