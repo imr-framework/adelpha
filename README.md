@@ -17,7 +17,7 @@
 </div>
 
 > [!NOTE]
-> Adelpha is a browser GUI — it does **not** run Python or Gemini. Live data comes from **[DTAM](https://github.com/LeoMcBills/dtam)** on your machine (`make twin-api` on port **8080**). Without that backend the app opens but stays disconnected.
+> Adelpha requires DTAM. Live data comes from **[DTAM](https://github.com/LeoMcBills/dtam)** on your machine (`make twin-api` on port **8080**). Without that backend the app opens but stays disconnected.
 
 ## Install
 
