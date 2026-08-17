@@ -35,6 +35,7 @@ In a terminal, from your **DTAM** clone (keep it running):
 #### Install
 
 ```bash
+cd dtam
 uv sync --all-groups
 ```
 
