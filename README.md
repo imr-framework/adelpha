@@ -1,3 +1,5 @@
+<div align="center">
+
 # Adelpha
 
 ![React](https://img.shields.io/badge/React-18-61DAFB.svg)
@@ -9,6 +11,8 @@
 ![MCP](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-blue.svg)
 ![Three.js](https://img.shields.io/badge/Three.js-R3F-black.svg)
 ![Development Status](https://img.shields.io/badge/status-Alpha-yellow.svg)
+
+</div>
 
 **Observer GUI for the DTAM digital twin — live thermal, \(B_0\), EMI, and RF telemetry beside a 3D magnet viewport, multi-workspace shell (Digital Twin · Imaging Console · Engineering Studio), and optional Agents chat over Google ADK. Built with React and React Three Fiber; pairs with the DTAM Twin API on `:8080`.**
 
