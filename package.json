@@ -61,7 +61,9 @@
     "extraMetadata": {
       "main": "electron/main.cjs"
     },
+    "icon": "electron/build/icon.icns",
     "mac": {
+      "icon": "electron/build/icon.icns",
       "category": "public.app-category.education",
       "target": [
         {

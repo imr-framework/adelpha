@@ -5,7 +5,7 @@
  *   /api/agents/* → Agents API (default http://127.0.0.1:8001)
  * Hosts a real shell PTY for the in-app xterm terminal.
  */
-const { app, BrowserWindow, shell, ipcMain } = require("electron");
+const { app, BrowserWindow, shell, ipcMain, session, systemPreferences } = require("electron");
 const http = require("http");
 const https = require("https");
 const fs = require("fs");
@@ -125,6 +125,50 @@ function registerTerminalIpc() {
   ipcMain.on("terminal:dispose", (event) => {
     disposePty(event.sender.id);
   });
+}
+
+function registerMediaPermissions() {
+  const ses = session.defaultSession;
+
+  // Without these, Chromium denies getUserMedia silently — no macOS camera prompt.
+  ses.setPermissionCheckHandler((_wc, permission) => {
+    return permission === "media" || permission === "mediaKeySystem" || permission === "fullscreen";
+  });
+
+  ses.setPermissionRequestHandler(async (_wc, permission, callback) => {
+    if (permission !== "media" && permission !== "mediaKeySystem") {
+      callback(false);
+      return;
+    }
+    if (process.platform === "darwin") {
+      try {
+        const status = systemPreferences.getMediaAccessStatus("camera");
+        if (status === "granted") {
+          callback(true);
+          return;
+        }
+        if (status === "denied" || status === "restricted") {
+          console.warn(
+            `[adelpha] Camera access is ${status}. Enable it in System Settings → Privacy & Security → Camera.`,
+          );
+          callback(false);
+          return;
+        }
+        const granted = await systemPreferences.askForMediaAccess("camera");
+        callback(Boolean(granted));
+        return;
+      } catch (err) {
+        console.warn("[adelpha] Camera permission request failed:", err);
+        callback(false);
+        return;
+      }
+    }
+    callback(true);
+  });
+
+  if (typeof ses.setDevicePermissionHandler === "function") {
+    ses.setDevicePermissionHandler((details) => details.deviceType === "videoInput");
+  }
 }
 
 function distRoot() {
@@ -254,6 +298,7 @@ async function createWindow() {
 }
 
 app.whenReady().then(() => {
+  registerMediaPermissions();
   registerTerminalIpc();
   createWindow().catch((err) => {
     console.error(err);
