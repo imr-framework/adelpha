@@ -25,25 +25,34 @@
 
 ```text
 ~/dtam              ← backend
-~/digital_twin_ui   ← this repo
+~/adelpha           ← this repo
 ```
 
 ### 1. Start the twin backend
 
 In a terminal, from your **DTAM** clone (keep it running):
 
+#### Install
+
 ```bash
-cd ../dtam
-uv sync              # first time only
+uv sync --all-groups
+```
+
+#### Servers
+Run the following servers (use different terminals for each).
+These servers also directly serve `Adelpha` if you are using it for you digital twin GUI.
+
+```bash
 make twin-api
+make agents-api
 ```
 
 ### 2. Start the GUI
 
-In a **second** terminal:
+In a **third** terminal:
 
 ```bash
-cd ../digital_twin_ui
+cd ..
 npm install          # first time only
 npm run electron:dev
 ```
