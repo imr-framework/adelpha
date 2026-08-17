@@ -1,6 +1,6 @@
-# Digital Twin UI
-
 <div align="center">
+
+# Adelpha
 
 <strong>Adelpha observer GUI for the DTAM digital twin</strong>
 

@@ -1,6 +1,6 @@
 [project]
 site_name = "Digital Twin UI"
-site_description = "DTAM observer GUI — Twin API (:8080) + optional Agents API (:8001)."
+site_description = "Adelpha observer GUI — workspaces, Twin API (:8080), optional Agents API (:8001)."
 site_author = "LeoMcBills"
 site_url = "http://127.0.0.1:8000/"
 copyright = """
@@ -21,6 +21,7 @@ nav = [
 
   { Guide = [
       { Architecture = "guide/architecture.md" },
+      { Workspaces = "guide/workspaces.md" },
       { "Twin API" = "guide/twin-api.md" },
       { Dashboard = "guide/dashboard.md" },
       { Configuration = "guide/configuration.md" },

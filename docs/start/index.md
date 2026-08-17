@@ -125,9 +125,12 @@ Vite listens on **5173** by default (`strictPort: false` — next free port if b
 | Check | Expect |
 | --- | --- |
 | Live indicator | Green blink when Twin API is reachable |
-| Thermal / \(B_0\) / EMI / RF | Updating ~every 1.5 s |
+| System Context pill | Shows `scanner_id / mode` from health or state |
+| Workspace switcher | **Digital Twin** by default; **⌘K** opens menu |
+| Thermal / \(B_0\) / EMI / RF | Updating ~every 1.5 s (Digital Twin workspace) |
 | Forecast | Predicted fields with `predicted` badges |
 | Agents tab | Online only if `make agents-api` is running |
+| Imaging Console | Switch workspace → three idle viewer panels + sequence editor |
 
 Production build:
 

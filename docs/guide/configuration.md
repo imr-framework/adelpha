@@ -82,6 +82,25 @@ server: {
 
 Place STL/GLB files under `public/` and set `VITE_MAGNET_CAD_URL` to a site-root path (not a filesystem absolute path). Millimeter meshes often need `VITE_MAGNET_CAD_SCALE≈0.001`. Scale and offsets are also adjustable in the side panel and persisted in `localStorage`.
 
+## Persisted client preferences
+
+Several UI choices survive reloads via `localStorage` (launch intro uses `sessionStorage`):
+
+| Key | Purpose |
+| --- | --- |
+| `adelpha_workspace_id` | Last selected workspace (`digital-twin`, `imaging-console`, `engineering-studio`) |
+| `adelpha-launch-seen` | **sessionStorage** — skip cinematic intro after first view in tab |
+| `twin_side_panel_width_px` | Side panel width (px) |
+| `twin_side_panel_collapsed` | Panel collapsed (`1` / absent) |
+| `twin_side_panel_mode` | `telemetry` or `agents` tab |
+| `twin_view_tool_rail_pos_v2` | Viewport tool rail `{x,y}` |
+| `twin_magnet_cad_view_v2` | CAD exploded / wireframe / temp map |
+| `twin_adk_model_id` | Selected Agents model |
+| `twin_system_console_open` / `twin_system_console_tab` | Console visibility and Logging vs Terminal |
+| `twin_face_mask_style` / `twin_camera_bg_mode` | Camera overlay preferences |
+
+Replay the launch intro any time: append `?replayIntro=1` to the URL.
+
 ## DTAM-side env (reference)
 
 ### Twin API (`make twin-api` → :8080)
