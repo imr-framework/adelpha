@@ -1,23 +1,16 @@
-<div align="center">
-
 # Adelpha
 
-<strong>Adelpha observer GUI for the DTAM digital twin</strong>
+![React](https://img.shields.io/badge/React-18-61DAFB.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg)
+![Vite](https://img.shields.io/badge/Vite-5.x-646CFF.svg)
+![Electron](https://img.shields.io/badge/Electron-Desktop-47848F.svg)
+![Python](https://img.shields.io/badge/python-v3.10+-blue.svg)
+![Google ADK](https://img.shields.io/badge/Google%20ADK-Latest-green.svg)
+![MCP](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-blue.svg)
+![Three.js](https://img.shields.io/badge/Three.js-R3F-black.svg)
+![Development Status](https://img.shields.io/badge/status-Alpha-yellow.svg)
 
-[![React][react-badge]][react-url]
-[![TypeScript][typescript-badge]][typescript-url]
-[![Vite][vite-badge]][vite-url]
-[![Electron][electron-badge]][electron-url]
-[![Python][python-badge]][python-url]
-[![Google ADK][adk-badge]][adk-url]
-[![MCP][mcp-badge]][mcp-url]
-[![Agent Skills][skills-badge]][skills-url]
-[![A2A][a2a-badge]][a2a-url]
-[![Docker][docker-badge]][docker-url]
-[![UV][uv-badge]][uv-url]
-[![Three.js][three-badge]][three-url]
-
-</div>
+**Observer GUI for the DTAM digital twin — live thermal, \(B_0\), EMI, and RF telemetry beside a 3D magnet viewport, multi-workspace shell (Digital Twin · Imaging Console · Engineering Studio), and optional Agents chat over Google ADK. Built with React and React Three Fiber; pairs with the DTAM Twin API on `:8080`.**
 
 > [!NOTE]
 > Adelpha is a browser GUI — it does **not** run Python or Gemini. Live data comes from **[DTAM](https://github.com/LeoMcBills/dtam)** on your machine (`make twin-api` on port **8080**). Without that backend the app opens but stays disconnected.
@@ -97,28 +90,3 @@ uv sync --group docs && make docs-serve
 | Port already in use | Use the alternate URL Vite prints in the terminal |
 
 More help → [`docs/start/index.md`](docs/start/index.md#troubleshooting)
-
-[react-badge]: https://img.shields.io/badge/REACT-61DAFB?style=for-the-badge&logo=react&logoColor=black
-[react-url]: https://react.dev/
-[typescript-badge]: https://img.shields.io/badge/TYPESCRIPT-3178C6?style=for-the-badge&logo=typescript&logoColor=white
-[typescript-url]: https://www.typescriptlang.org/
-[vite-badge]: https://img.shields.io/badge/VITE-646CFF?style=for-the-badge&logo=vite&logoColor=white
-[vite-url]: https://vite.dev/
-[electron-badge]: https://img.shields.io/badge/ELECTRON-47848F?style=for-the-badge&logo=electron&logoColor=white
-[electron-url]: https://www.electronjs.org/
-[python-badge]: https://img.shields.io/badge/PYTHON-3776AB?style=for-the-badge&logo=python&logoColor=white
-[python-url]: https://www.python.org/
-[adk-badge]: https://img.shields.io/badge/GOOGLE%20ADK-4285F4?style=for-the-badge&logo=google&logoColor=white
-[adk-url]: https://google.github.io/adk-docs/
-[mcp-badge]: https://img.shields.io/badge/MCP-MODEL%20CONTEXT%20PROTOCOL-000000?style=for-the-badge&labelColor=555555
-[mcp-url]: https://modelcontextprotocol.io/
-[skills-badge]: https://img.shields.io/badge/SKILLS-AGENT%20SKILLS-2E7D32?style=for-the-badge&labelColor=555555
-[skills-url]: https://agentskills.io/
-[a2a-badge]: https://img.shields.io/badge/A2A-AGENT%20TO%20AGENT-E65100?style=for-the-badge&labelColor=555555
-[a2a-url]: https://google.github.io/A2A/
-[docker-badge]: https://img.shields.io/badge/DOCKER-2496ED?style=for-the-badge&logo=docker&logoColor=white
-[docker-url]: https://www.docker.com/
-[uv-badge]: https://img.shields.io/badge/UV-DE5FE9?style=for-the-badge&logo=python&logoColor=white
-[uv-url]: https://docs.astral.sh/uv/
-[three-badge]: https://img.shields.io/badge/THREE.JS-000000?style=for-the-badge&logo=threedotjs&logoColor=white
-[three-url]: https://threejs.org/
