@@ -14,8 +14,6 @@
 
 </div>
 
-**Observer GUI for the DTAM digital twin — live thermal, \(B_0\), EMI, and RF telemetry beside a 3D magnet viewport, multi-workspace shell (Digital Twin · Imaging Console · Engineering Studio), and optional Agents chat over Google ADK. Built with React and React Three Fiber; pairs with the DTAM Twin API on `:8080`.**
-
 > [!NOTE]
 > Adelpha is a browser GUI — it does **not** run Python or Gemini. Live data comes from **[DTAM](https://github.com/LeoMcBills/dtam)** on your machine (`make twin-api` on port **8080**). Without that backend the app opens but stays disconnected.
 
