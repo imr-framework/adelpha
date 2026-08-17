@@ -1,21 +1,46 @@
 # Digital Twin UI
 
-![React](https://img.shields.io/badge/REACT-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TYPESCRIPT-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Vite](https://img.shields.io/badge/VITE-646CFF?style=for-the-badge&logo=vite&logoColor=white)
-![Electron](https://img.shields.io/badge/ELECTRON-47848F?style=for-the-badge&logo=electron&logoColor=white)
+<div align="center">
 
-![Python](https://img.shields.io/badge/PYTHON-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Google ADK](https://img.shields.io/badge/GOOGLE%20ADK-4285F4?style=for-the-badge&logo=google&logoColor=white)
-![MCP](https://img.shields.io/badge/MCP-MODEL%20CONTEXT%20PROTOCOL-000000?style=for-the-badge&labelColor=555555)
-![Skills](https://img.shields.io/badge/SKILLS-AGENT%20SKILLS-2E7D32?style=for-the-badge&labelColor=555555)
+<strong>Adelpha observer GUI for the DTAM digital twin</strong>
 
-![A2A](https://img.shields.io/badge/A2A-AGENT%20TO%20AGENT-E65100?style=for-the-badge&labelColor=555555)
-![Docker](https://img.shields.io/badge/DOCKER-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![UV](https://img.shields.io/badge/UV-DE5FE9?style=for-the-badge&logo=python&logoColor=white)
-![Three.js](https://img.shields.io/badge/THREE.JS-000000?style=for-the-badge&logo=threedotjs&logoColor=white)
+[![React][react-badge]][react-url]
+[![TypeScript][typescript-badge]][typescript-url]
+[![Vite][vite-badge]][vite-url]
+[![Electron][electron-badge]][electron-url]
+[![Python][python-badge]][python-url]
+[![Google ADK][adk-badge]][adk-url]
+[![MCP][mcp-badge]][mcp-url]
+[![Agent Skills][skills-badge]][skills-url]
+[![A2A][a2a-badge]][a2a-url]
+[![Docker][docker-badge]][docker-url]
+[![UV][uv-badge]][uv-url]
+[![Three.js][three-badge]][three-url]
 
-**Full documentation** is a [Zensical](https://zensical.org/) site under `docs/`.
+</div>
+
+> [!NOTE]
+> **This GUI does not run Python or Gemini itself.** It is a Vite/React client that talks to **DTAM** over HTTP — start `make twin-api` on `:8080` for telemetry and `make agents-api` on `:8001` for the Agents tab. Without the Twin API the UI opens but stays disconnected.
+>
+> **Full stack layout:** keep sibling clones — `~/dtam` (backends) and `~/digital_twin_ui` (this app). See [Quick start](#quick-start-all-pieces) below.
+
+## Documentation
+
+**The documentation lives under [`docs/`](docs/)** — build or preview with Zensical:
+
+```bash
+uv sync --group docs
+make docs-serve   # preview
+make docs         # strict build → site/
+```
+
+| Doc | Path |
+| --- | --- |
+| Home | [`docs/index.md`](docs/index.md) |
+| How to run | [`docs/start/index.md`](docs/start/index.md) |
+| Architecture | [`docs/guide/architecture.md`](docs/guide/architecture.md) |
+| Twin + Agents APIs | [`docs/guide/twin-api.md`](docs/guide/twin-api.md) |
+| Config | [`docs/guide/configuration.md`](docs/guide/configuration.md) |
 
 ## Prerequisites
 
@@ -122,22 +147,6 @@ Vite proxies (see `vite.config.ts`):
 | Side panels / live dashboard | Thermal, \(B_0\), EMI, RF update ~every 1.5 s |
 | Agents tab | Online only if `make agents-api` is running with a valid `GOOGLE_API_KEY` |
 
-## Documentation site
-
-```bash
-uv sync --group docs
-make docs-serve   # preview
-make docs         # strict build → site/
-```
-
-| Doc | Path |
-| --- | --- |
-| Home | [`docs/index.md`](docs/index.md) |
-| How to run | [`docs/start/index.md`](docs/start/index.md) |
-| Architecture | [`docs/guide/architecture.md`](docs/guide/architecture.md) |
-| Twin + Agents APIs | [`docs/guide/twin-api.md`](docs/guide/twin-api.md) |
-| Config | [`docs/guide/configuration.md`](docs/guide/configuration.md) |
-
 ## Scripts
 
 | Command | Action |
@@ -206,3 +215,28 @@ Vite · React · TypeScript · React Three Fiber · Zustand · Electron (desktop
 | Port 5173 busy | Vite picks the next free port (`strictPort: false`) — use the URL printed in the terminal |
 | “App can’t be opened” (Gatekeeper) | Unsigned build — Right-click the app → **Open** |
 | Desktop app open but no data | DTAM Twin API must be on **that** Mac at `127.0.0.1:8080` |
+
+[react-badge]: https://img.shields.io/badge/REACT-61DAFB?style=for-the-badge&logo=react&logoColor=black
+[react-url]: https://react.dev/
+[typescript-badge]: https://img.shields.io/badge/TYPESCRIPT-3178C6?style=for-the-badge&logo=typescript&logoColor=white
+[typescript-url]: https://www.typescriptlang.org/
+[vite-badge]: https://img.shields.io/badge/VITE-646CFF?style=for-the-badge&logo=vite&logoColor=white
+[vite-url]: https://vite.dev/
+[electron-badge]: https://img.shields.io/badge/ELECTRON-47848F?style=for-the-badge&logo=electron&logoColor=white
+[electron-url]: https://www.electronjs.org/
+[python-badge]: https://img.shields.io/badge/PYTHON-3776AB?style=for-the-badge&logo=python&logoColor=white
+[python-url]: https://www.python.org/
+[adk-badge]: https://img.shields.io/badge/GOOGLE%20ADK-4285F4?style=for-the-badge&logo=google&logoColor=white
+[adk-url]: https://google.github.io/adk-docs/
+[mcp-badge]: https://img.shields.io/badge/MCP-MODEL%20CONTEXT%20PROTOCOL-000000?style=for-the-badge&labelColor=555555
+[mcp-url]: https://modelcontextprotocol.io/
+[skills-badge]: https://img.shields.io/badge/SKILLS-AGENT%20SKILLS-2E7D32?style=for-the-badge&labelColor=555555
+[skills-url]: https://agentskills.io/
+[a2a-badge]: https://img.shields.io/badge/A2A-AGENT%20TO%20AGENT-E65100?style=for-the-badge&labelColor=555555
+[a2a-url]: https://google.github.io/A2A/
+[docker-badge]: https://img.shields.io/badge/DOCKER-2496ED?style=for-the-badge&logo=docker&logoColor=white
+[docker-url]: https://www.docker.com/
+[uv-badge]: https://img.shields.io/badge/UV-DE5FE9?style=for-the-badge&logo=python&logoColor=white
+[uv-url]: https://docs.astral.sh/uv/
+[three-badge]: https://img.shields.io/badge/THREE.JS-000000?style=for-the-badge&logo=threedotjs&logoColor=white
+[three-url]: https://threejs.org/
