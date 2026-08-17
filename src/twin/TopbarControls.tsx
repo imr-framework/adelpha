@@ -118,7 +118,7 @@ export function TopbarControls({
             <ChevronDown size={14} strokeWidth={1.75} aria-hidden />
           </button>
           {contextOpen ? (
-            <div className="topbar-menu" role="menu">
+            <div className="topbar-menu system-context-menu" role="menu">
               <div className="topbar-menu-section">System context</div>
               <div className="topbar-menu-row">
                 <span>Scanner</span>

@@ -253,8 +253,72 @@ body,
   backdrop-filter: blur(10px);
 }
 
+.system-context-menu,
+.workspace-menu {
+  border: 1px solid var(--border);
+  background: rgba(12, 12, 14, 0.98);
+  isolation: isolate;
+  overflow: hidden;
+}
+
 .workspace-menu {
   min-width: 230px;
+}
+
+.system-context-menu::before,
+.workspace-menu::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(130, 96, 251, 0.95),
+    rgba(110, 182, 255, 0.65)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  animation: topbar-menu-border 3s ease-in-out infinite;
+}
+
+@keyframes topbar-menu-border {
+  /* idle — default card border only */
+  0%,
+  33% {
+    opacity: 0;
+  }
+
+  /* fade gradient border in */
+  40% {
+    opacity: 1;
+  }
+
+  /* hold for one second */
+  73% {
+    opacity: 1;
+  }
+
+  /* fade away, then pause before next cycle */
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .system-context-menu::before,
+  .workspace-menu::before {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 .topbar-menu-section {
