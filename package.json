@@ -13,7 +13,9 @@
     "postinstall": "electron-builder install-app-deps",
     "electron:dev": "npm run build && electron .",
     "dist:mac": "npm run build && electron-builder --mac",
-    "dist:mac:dir": "npm run build && electron-builder --mac --dir"
+    "dist:mac:dir": "npm run build && electron-builder --mac --dir",
+    "dist:win": "npm run build && electron-builder --win --x64 --arm64 --config.npmRebuild=false",
+    "dist:linux": "npm run build && bash electron/build-linux.sh"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^1.0.1",
@@ -59,10 +61,11 @@
       "node_modules/node-pty/**",
       "dist/**"
     ],
+    "afterPack": "electron/afterPack.cjs",
     "extraMetadata": {
       "main": "electron/main.cjs"
     },
-    "icon": "electron/build/icon.icns",
+    "icon": "electron/build/icon.png",
     "mac": {
       "icon": "electron/build/icon.icns",
       "category": "public.app-category.education",
@@ -91,6 +94,53 @@
     },
     "dmg": {
       "title": "Adelpha Digital Twin"
+    },
+    "win": {
+      "icon": "electron/build/icon.png",
+      "executableName": "AdelphaDigitalTwin",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64", "arm64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Adelpha Digital Twin"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-win-${arch}-portable.${ext}"
+    },
+    "linux": {
+      "icon": "electron/build/icon.png",
+      "category": "Education",
+      "executableName": "adelpha-digital-twin",
+      "maintainer": "Adelpha / Geethanath lab <2021BME060@std.must.ac.ug>",
+      "synopsis": "Adelpha digital twin observer GUI for DTAM",
+      "desktop": {
+        "entry": {
+          "Name": "Adelpha Digital Twin",
+          "Comment": "The Intelligent Magnetic Resonance Framework"
+        }
+      },
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ]
     }
   }
 }
