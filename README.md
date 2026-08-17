@@ -54,6 +54,7 @@ In a **third** terminal:
 
 ```bash
 cd ..
+cd adelpha
 npm install          # first time only
 npm run electron:dev
 ```
