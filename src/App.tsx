@@ -1,3 +1,4 @@
+import { Settings } from "lucide-react";
 import { Canvas } from "@react-three/fiber";
 import {
   Suspense,
@@ -19,7 +20,6 @@ import {
   formatConfidence,
   formatFreqMHz,
   formatHz,
-  formatIsoTime,
   formatNoiseFloor,
   formatRmsV,
   formatTempC,
@@ -38,6 +38,14 @@ import { AgentChatPanel } from "./twin/AgentChatPanel";
 import { ViewportToolRail, type ViewportToolId } from "./twin/ViewportToolRail";
 import { CameraFeed, type HeadPose } from "./twin/CameraFeed";
 import { useHeadMotionStore } from "./twin/headMotionStore";
+import {
+  persistWorkspace,
+  readWorkspace,
+  TopbarAppMenu,
+  TopbarControls,
+  type WorkspaceId,
+} from "./twin/TopbarControls";
+import { ImagingConsole } from "./twin/ImagingConsole";
 import type { AssessMode } from "./twin/dtamTypes";
 import { LaunchScreen } from "./twin/launch/LaunchScreen";
 import { shouldPlayLaunchIntro } from "./twin/launch/launchConfig";
@@ -332,8 +340,13 @@ export default function App() {
   const [panelCollapsed, setPanelCollapsed] = useState(readPanelCollapsed);
   const [panelResizing, setPanelResizing] = useState(false);
   const [panelMode, setPanelMode] = useState<PanelMode>(readPanelMode);
+  const [workspace, setWorkspace] = useState<WorkspaceId>(readWorkspace);
   const mainRef = useRef<HTMLElement | null>(null);
   const resizeStart = useRef<{ x: number; width: number } | null>(null);
+
+  useEffect(() => {
+    persistWorkspace(workspace);
+  }, [workspace]);
 
   useEffect(() => {
     try {
@@ -584,23 +597,54 @@ export default function App() {
             <div className="subtitle">The Intelligent Magnetic Resonance Framework</div>
           </div>
         </div>
-        <div className="pill-row">
-          <span className="pill">{health?.scanner_id ?? systemState?.scanner_id ?? "—"}</span>
-          <span className="pill">{health?.mode ?? systemState?.mode ?? "—"}</span>
-          <span className="pill">{systemState?.twin_version ?? "—"}</span>
-          <span className="pill">{formatIsoTime(systemState?.timestamp)}</span>
+        <div className="topbar-right">
+          <TopbarControls
+            scannerId={health?.scanner_id ?? systemState?.scanner_id ?? "—"}
+            mode={health?.mode ?? systemState?.mode ?? "—"}
+            twinVersion={systemState?.twin_version ?? "—"}
+            workspace={workspace}
+            onWorkspaceChange={setWorkspace}
+          />
+          <div className="topbar-actions">
+            <button type="button" className="topbar-icon-btn" aria-label="Settings" title="Settings">
+              <Settings size={18} strokeWidth={1.75} aria-hidden />
+            </button>
+            <TopbarAppMenu workspace={workspace} />
+          </div>
         </div>
       </header>
 
       <main
         ref={mainRef}
-        className={`main${panelResizing ? " main-resizing" : ""}${panelCollapsed ? " main-panel-collapsed" : ""}`}
+        className={`main${panelResizing ? " main-resizing" : ""}${panelCollapsed ? " main-panel-collapsed" : ""}${
+          workspace !== "digital-twin" ? " main-alt-workspace" : ""
+        }`}
         style={
           panelCollapsed
             ? undefined
             : ({ ["--panel-width" as string]: `${panelWidth}px` } as CSSProperties)
         }
       >
+        {workspace === "imaging-console" ? (
+          <ImagingConsole />
+        ) : workspace !== "digital-twin" ? (
+          <section className="workspace-placeholder" aria-label="Workspace placeholder">
+            <div className="workspace-placeholder-card">
+              <h2>Engineering Studio</h2>
+              <p>
+                This workspace shell is ready. Switch back to{" "}
+                <button
+                  type="button"
+                  className="workspace-placeholder-link"
+                  onClick={() => setWorkspace("digital-twin")}
+                >
+                  Digital Twin
+                </button>{" "}
+                for live telemetry, the magnet viewport, and Agents.
+              </p>
+            </div>
+          </section>
+        ) : null}
         <section className="viewport">
           <div className="viewport-stage">
           <ViewportToolRail active={viewportTool} onActiveChange={onViewportToolChange} />
