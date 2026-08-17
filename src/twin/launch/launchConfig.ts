@@ -1,4 +1,4 @@
-/** Session key — full cinematic intro once per browser tab session. */
+/** Storage key — full cinematic intro once per browser tab, or once per install in Electron. */
 export const LAUNCH_SEEN_KEY = "adelpha-launch-seen";
 
 /** Dev replay: `?replayIntro=1` forces the full intro regardless of session. */
@@ -10,8 +10,8 @@ export const LAUNCH_REPLAY_PARAM = "replayIntro";
  */
 export const LAUNCH_FORCE_REPLAY = false;
 
-/** Total cinematic duration (seconds). Overlay fade occupies the final 0.5s. */
-export const LAUNCH_DURATION_S = 7.0;
+/** Total cinematic duration (seconds). Overlay fade occupies the final 0.35s. */
+export const LAUNCH_DURATION_S = 3.4;
 
 /** Reduced-motion brand hold before fade (seconds). */
 export const LAUNCH_REDUCED_DURATION_S = 1.0;
@@ -29,13 +29,18 @@ export const LAUNCH_COPY = {
   subtitle: "The Intelligent Magnetic Resonance Framework",
 } as const;
 
+function launchStore(): Storage {
+  // Packaged Electron starts a new session every launch; persist so the 7s intro is not replayed.
+  return window.adelphaTerminal ? localStorage : sessionStorage;
+}
+
 export function shouldPlayLaunchIntro(): boolean {
   if (typeof window === "undefined") return false;
   try {
     if (LAUNCH_FORCE_REPLAY) return true;
     const params = new URLSearchParams(window.location.search);
     if (params.get(LAUNCH_REPLAY_PARAM) === "1") return true;
-    return sessionStorage.getItem(LAUNCH_SEEN_KEY) !== "1";
+    return launchStore().getItem(LAUNCH_SEEN_KEY) !== "1";
   } catch {
     return true;
   }
@@ -43,7 +48,7 @@ export function shouldPlayLaunchIntro(): boolean {
 
 export function markLaunchSeen(): void {
   try {
-    sessionStorage.setItem(LAUNCH_SEEN_KEY, "1");
+    launchStore().setItem(LAUNCH_SEEN_KEY, "1");
   } catch {
     /* private mode / blocked storage */
   }

@@ -13,17 +13,17 @@ type LaunchScreenProps = {
   onComplete: () => void;
 };
 
-const PARTICLE_COUNT = 18;
+const PARTICLE_COUNT = 10;
 
-/** Stretched 7s timeline beats */
-const APPROACH_START = 0.5;
-const APPROACH_DUR = 2.1;
-const MEET_AT = 2.6;
-const FUSE_AT = 3.2;
-const RADIATE_AT = 3.85;
-const WORDMARK_AT = 3.95;
-const SUBTITLE_AT = 5.05;
-const HOLD_PULSE_AT = 5.85;
+/** Timeline beats for a ~3.4s intro */
+const APPROACH_START = 0.22;
+const APPROACH_DUR = 1.0;
+const MEET_AT = 1.22;
+const FUSE_AT = 1.5;
+const RADIATE_AT = 1.82;
+const WORDMARK_AT = 1.88;
+const SUBTITLE_AT = 2.38;
+const HOLD_PULSE_AT = 2.75;
 
 type FlightPoint = { x: number; y: number; rotation: number };
 
@@ -247,12 +247,12 @@ export function LaunchScreen({ onComplete }: LaunchScreenProps) {
       tl.to(targets, { scaleX: 0.72, duration: 0.14, ease: "sine.inOut" }, at);
       tl.to(targets, { scaleX: 1, duration: 0.16, ease: "sine.inOut" }, at + 0.14);
     };
-    beat(leftWings, 0.7);
-    beat(rightWings, 0.78);
-    beat(leftWings, 1.35);
-    beat(rightWings, 1.45);
-    beat(leftWings, 2.05);
-    beat(rightWings, 2.18);
+    beat(leftWings, 0.32);
+    beat(rightWings, 0.38);
+    beat(leftWings, 0.64);
+    beat(rightWings, 0.7);
+    beat(leftWings, 0.98);
+    beat(rightWings, 1.04);
 
     // Meet: face each other, align, compress
     tl.to(glow, { opacity: 0.5, scale: 1.2, duration: 0.55 }, MEET_AT);
@@ -358,7 +358,7 @@ export function LaunchScreen({ onComplete }: LaunchScreenProps) {
     );
 
     // Fade overlay
-    tl.to(root, { opacity: 0, duration: 0.5, ease: "power2.inOut" }, LAUNCH_DURATION_S - 0.5);
+    tl.to(root, { opacity: 0, duration: 0.35, ease: "power2.inOut" }, LAUNCH_DURATION_S - 0.35);
 
     return () => {
       tl.kill();

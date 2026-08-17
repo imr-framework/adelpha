@@ -1410,6 +1410,14 @@ body,
   display: block;
 }
 
+.viewport-stage canvas.camera-feed-person,
+.viewport-stage canvas.camera-feed-mask {
+  flex: none;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .camera-feed-person {
   background: #000000;
   z-index: 0;

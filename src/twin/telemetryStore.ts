@@ -11,7 +11,7 @@ import type {
   SystemState,
   TwinAssessment,
 } from "./dtamTypes";
-import { readMagnetCadUrl } from "./MagnetCAD";
+import { readMagnetCadUrl } from "./magnetCadUrl";
 import type { TwinTelemetry } from "./types";
 
 const CAD_VIEW_PREFS_KEY = "twin_magnet_cad_view_v2";

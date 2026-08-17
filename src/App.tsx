@@ -1,7 +1,7 @@
 import { Settings } from "lucide-react";
-import { Canvas } from "@react-three/fiber";
 import {
   Suspense,
+  lazy,
   useCallback,
   useEffect,
   useMemo,
@@ -12,8 +12,6 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { SceneTwin } from "./twin/SceneTwin";
-import { readMagnetCadUrl } from "./twin/MagnetCAD";
 import type { QuantitySource, TimestampedQuantity } from "./twin/dtamTypes";
 import {
   formatB0T,
@@ -34,9 +32,8 @@ import {
   useTwinStore,
 } from "./twin/telemetryStore";
 import { SystemConsole } from "./twin/SystemConsole";
-import { AgentChatPanel } from "./twin/AgentChatPanel";
 import { ViewportToolRail, type ViewportToolId } from "./twin/ViewportToolRail";
-import { CameraFeed, type HeadPose } from "./twin/CameraFeed";
+import type { HeadPose } from "./twin/CameraFeed";
 import { useHeadMotionStore } from "./twin/headMotionStore";
 import {
   persistWorkspace,
@@ -45,11 +42,23 @@ import {
   TopbarControls,
   type WorkspaceId,
 } from "./twin/TopbarControls";
-import { ImagingConsole } from "./twin/ImagingConsole";
 import type { AssessMode } from "./twin/dtamTypes";
 import { LaunchScreen } from "./twin/launch/LaunchScreen";
 import { shouldPlayLaunchIntro } from "./twin/launch/launchConfig";
 import "./styles.css";
+
+const TwinCanvas = lazy(() =>
+  import("./twin/TwinCanvas").then((m) => ({ default: m.TwinCanvas })),
+);
+const CameraFeed = lazy(() =>
+  import("./twin/CameraFeed").then((m) => ({ default: m.CameraFeed })),
+);
+const AgentChatPanel = lazy(() =>
+  import("./twin/AgentChatPanel").then((m) => ({ default: m.AgentChatPanel })),
+);
+const ImagingConsole = lazy(() =>
+  import("./twin/ImagingConsole").then((m) => ({ default: m.ImagingConsole })),
+);
 
 const HISTORY_POINTS = 140;
 const POSE_HISTORY_POINTS = 160;
@@ -313,7 +322,7 @@ export default function App() {
   const sensorsBatch = useTwinStore((s) => s.sensorsBatch);
   const view = useTwinStore((s) => s.view);
   const setView = useTwinStore((s) => s.setView);
-  const hasCadMagnet = Boolean(readMagnetCadUrl());
+  const hasCadMagnet = Boolean(import.meta.env.VITE_MAGNET_CAD_URL?.trim());
 
   const [showDashboard, setShowDashboard] = useState(false);
   const [showLaunch, setShowLaunch] = useState(shouldPlayLaunchIntro);
@@ -347,6 +356,10 @@ export default function App() {
   useEffect(() => {
     persistWorkspace(workspace);
   }, [workspace]);
+
+  useEffect(() => {
+    void import("./twin/TwinCanvas");
+  }, []);
 
   useEffect(() => {
     try {
@@ -564,7 +577,11 @@ export default function App() {
     }
   }
 
+  const showDashboardRef = useRef(showDashboard);
+  showDashboardRef.current = showDashboard;
+
   function onCameraPoseUpdate(pose: HeadPose) {
+    if (!showDashboardRef.current) return;
     setYawHistory((s) => [...s.slice(-(POSE_HISTORY_POINTS - 1)), pose.yaw]);
     setPitchHistory((s) => [...s.slice(-(POSE_HISTORY_POINTS - 1)), pose.pitch]);
     setRollHistory((s) => [...s.slice(-(POSE_HISTORY_POINTS - 1)), pose.roll]);
@@ -579,9 +596,7 @@ export default function App() {
 
   return (
     <div className="shell">
-      {showLaunch ? (
-        <LaunchScreen onComplete={() => setShowLaunch(false)} />
-      ) : null}
+      {showLaunch ? <LaunchScreen onComplete={() => setShowLaunch(false)} /> : null}
       <header className="topbar">
         <div className="brand">
           <img
@@ -626,7 +641,9 @@ export default function App() {
         }
       >
         {workspace === "imaging-console" ? (
-          <ImagingConsole />
+          <Suspense fallback={null}>
+            <ImagingConsole />
+          </Suspense>
         ) : workspace !== "digital-twin" ? (
           <section className="workspace-placeholder" aria-label="Workspace placeholder">
             <div className="workspace-placeholder-card">
@@ -655,25 +672,18 @@ export default function App() {
           >
             {showDashboard ? "Hide live dashboard" : "Open live dashboard"}
           </button>
-          {stageMode === "camera" ? (
-            <CameraFeed
-              onPoseUpdate={onCameraPoseUpdate}
-              onPreviewStreamChange={setCameraPreviewStream}
-            />
+          {showLaunch ? null : stageMode === "camera" ? (
+            <Suspense fallback={null}>
+              <CameraFeed
+                sharePreview={showDashboard}
+                onPoseUpdate={onCameraPoseUpdate}
+                onPreviewStreamChange={setCameraPreviewStream}
+              />
+            </Suspense>
           ) : (
-            <Canvas
-              shadows
-              dpr={[1, 2]}
-              gl={{
-                antialias: true,
-                powerPreference: "high-performance",
-                alpha: false,
-              }}
-            >
-              <Suspense fallback={null}>
-                <SceneTwin />
-              </Suspense>
-            </Canvas>
+            <Suspense fallback={null}>
+              <TwinCanvas />
+            </Suspense>
           )}
           {showDashboard ? (
             <div className="liquid-dashboard">
@@ -1119,7 +1129,9 @@ export default function App() {
             </div>
 
             {panelMode === "agents" ? (
-              <AgentChatPanel systemState={systemState} />
+              <Suspense fallback={null}>
+                <AgentChatPanel systemState={systemState} />
+              </Suspense>
             ) : (
               <>
           {lastError ? (

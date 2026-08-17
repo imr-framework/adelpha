@@ -17,7 +17,7 @@
 </div>
 
 > [!NOTE]
-> Adelpha requires DTAM. Live data comes from **[DTAM](https://github.com/LeoMcBills/dtam)** on your machine (`make twin-api` on port **8080**). Without that backend the app opens but stays disconnected.
+> Adelpha requires DTAM. Live data comes from **[DTAM](https://github.com/imr-framework/dtam)** on your machine (`make twin-api` on port **8080**). Without that backend the app opens but stays disconnected.
 
 ## Install
 
@@ -94,3 +94,9 @@ uv sync --group docs && make docs-serve
 | Port already in use | Use the alternate URL Vite prints in the terminal |
 
 More help → [`docs/start/index.md`](docs/start/index.md#troubleshooting)
+
+## Some fixes
+Incase your teminal does not load a shell in the dev mode, run the following command:
+```bash
+npx electron-rebuild -f -w node-pty
+```

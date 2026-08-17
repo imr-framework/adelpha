@@ -32,12 +32,12 @@ type Connection = { start: number; end: number };
 export type FaceMaskStyle = "mesh" | "contours" | "points" | "glow" | "neon" | "silhouette";
 
 const MASK_STYLES: { id: FaceMaskStyle; label: string }[] = [
+  { id: "silhouette", label: "Silhouette" },
   { id: "mesh", label: "Mesh" },
   { id: "contours", label: "Contours" },
   { id: "points", label: "Points" },
   { id: "glow", label: "Glow" },
   { id: "neon", label: "Neon" },
-  { id: "silhouette", label: "Silhouette" },
 ];
 
 const MASK_STYLE_KEY = "twin_face_mask_style";
@@ -56,8 +56,10 @@ const MODEL_URL =
 const SEGMENTER_MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter_landscape/float16/latest/selfie_segmenter_landscape.tflite";
 
-const UI_HZ = 20;
+const UI_HZ = 12;
 const UI_INTERVAL_MS = 1000 / UI_HZ;
+const INFER_HZ = 15;
+const INFER_INTERVAL_MS = 1000 / INFER_HZ;
 const EMA_ALPHA = 0.32;
 
 const ZERO_POSE: HeadPose = { yaw: 0, pitch: 0, roll: 0 };
@@ -69,7 +71,7 @@ function readMaskStyle(): FaceMaskStyle {
   } catch {
     /* ignore */
   }
-  return "mesh";
+  return "silhouette";
 }
 
 function readBgMode(): CameraBgMode {
@@ -340,12 +342,42 @@ function drawCover(
 /**
  * Composite the webcam frame onto a black backdrop using a person confidence mask.
  */
+function maskValue01(raw: number, categoryMode: boolean): number {
+  if (categoryMode) return raw > 0 ? 1 : 0;
+  if (raw > 1) return raw / 255;
+  return raw < 0 ? 0 : raw > 1 ? 1 : raw;
+}
+
+/** Selfie frames have the person in the center; invert if the mask says otherwise. */
+function shouldInvertPersonMask(
+  mask: Float32Array | Uint8Array,
+  w: number,
+  h: number,
+  categoryMode: boolean,
+): boolean {
+  if (w < 4 || h < 4) return false;
+  const at = (x: number, y: number) => maskValue01(mask[y * w + x] ?? 0, categoryMode);
+  const center = at(Math.floor(w / 2), Math.floor(h / 2));
+  const ix = Math.max(1, Math.floor(w * 0.04));
+  const iy = Math.max(1, Math.floor(h * 0.04));
+  const edge =
+    (at(ix, iy) +
+      at(w - 1 - ix, iy) +
+      at(ix, h - 1 - iy) +
+      at(w - 1 - ix, h - 1 - iy) +
+      at(Math.floor(w / 2), iy) +
+      at(Math.floor(w / 2), h - 1 - iy)) /
+    6;
+  return center < edge;
+}
+
 function drawPersonOnBlack(
   video: HTMLVideoElement,
   personMask: Float32Array | Uint8Array,
   maskW: number,
   maskH: number,
   categoryMode: boolean,
+  invert: boolean,
   work: HTMLCanvasElement,
   alpha: HTMLCanvasElement,
   out: HTMLCanvasElement,
@@ -362,11 +394,11 @@ function drawPersonOnBlack(
   if (!actx) return;
   const maskImage = actx.createImageData(maskW, maskH);
   const md = maskImage.data;
-  for (let i = 0; i < personMask.length; i++) {
-    const raw = personMask[i] ?? 0;
-    const conf = categoryMode ? (raw > 0 ? 1 : 0) : raw;
-    // Soft edge around the person silhouette.
-    const a = Math.max(0, Math.min(1, (conf - 0.2) / 0.45));
+  const n = Math.min(personMask.length, maskW * maskH);
+  for (let i = 0; i < n; i++) {
+    let person = maskValue01(personMask[i] ?? 0, categoryMode);
+    if (invert) person = 1 - person;
+    const a = Math.max(0, Math.min(1, (person - 0.12) / 0.45));
     const o = i * 4;
     md[o] = 255;
     md[o + 1] = 255;
@@ -575,12 +607,10 @@ function drawFaceMask(
   drawNoseTracker(ctx, landmarks, video, canvas, dpr);
 }
 
-/** MediaPipe face-mesh indices along the nose bridge → tip → alae. */
-const NOSE_BRIDGE = [168, 6, 197, 195, 5, 4, 1] as const;
+/** MediaPipe face-mesh index for the nose tip. */
 const NOSE_TIP = 1;
-const NOSE_ALEA = [98, 327] as const;
 
-/** Highlight nose tip + bridge so motion tracking is visually obvious. */
+/** Single high-contrast dot on the nose tip. */
 function drawNoseTracker(
   ctx: CanvasRenderingContext2D,
   landmarks: NormalizedLandmark[],
@@ -591,78 +621,16 @@ function drawNoseTracker(
   const tipLm = landmarks[NOSE_TIP];
   if (!tipLm) return;
   const tip = landmarkToCanvas(tipLm, video, canvas);
+  const r = Math.max(5, 6 * dpr);
 
   ctx.save();
-
-  ctx.beginPath();
-  let started = false;
-  for (const idx of NOSE_BRIDGE) {
-    const lm = landmarks[idx];
-    if (!lm) continue;
-    const p = landmarkToCanvas(lm, video, canvas);
-    if (!started) {
-      ctx.moveTo(p.x, p.y);
-      started = true;
-    } else {
-      ctx.lineTo(p.x, p.y);
-    }
-  }
-  if (started) {
-    ctx.strokeStyle = "rgba(255, 196, 72, 0.95)";
-    ctx.lineWidth = 2.2 * dpr;
-    ctx.lineJoin = "round";
-    ctx.lineCap = "round";
-    ctx.shadowColor = "rgba(255, 180, 40, 0.75)";
-    ctx.shadowBlur = 10 * dpr;
-    ctx.stroke();
-  }
-
-  ctx.shadowBlur = 0;
-  for (const idx of NOSE_ALEA) {
-    const lm = landmarks[idx];
-    if (!lm) continue;
-    const p = landmarkToCanvas(lm, video, canvas);
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-    ctx.lineTo(tip.x, tip.y);
-    ctx.strokeStyle = "rgba(255, 196, 72, 0.55)";
-    ctx.lineWidth = 1.2 * dpr;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 2.4 * dpr, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255, 220, 120, 0.95)";
-    ctx.fill();
-  }
-
-  const r = 7 * dpr;
   ctx.beginPath();
   ctx.arc(tip.x, tip.y, r, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(255, 90, 70, 0.95)";
-  ctx.lineWidth = 2 * dpr;
-  ctx.shadowColor = "rgba(255, 70, 50, 0.85)";
-  ctx.shadowBlur = 12 * dpr;
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.arc(tip.x, tip.y, 2.5 * dpr, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(255, 240, 230, 0.98)";
-  ctx.shadowBlur = 8 * dpr;
+  ctx.fillStyle = "rgba(255, 56, 56, 0.95)";
   ctx.fill();
-
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = "rgba(255, 240, 220, 0.9)";
-  ctx.lineWidth = 1.2 * dpr;
-  ctx.beginPath();
-  ctx.moveTo(tip.x - r * 1.6, tip.y);
-  ctx.lineTo(tip.x - r * 0.45, tip.y);
-  ctx.moveTo(tip.x + r * 0.45, tip.y);
-  ctx.lineTo(tip.x + r * 1.6, tip.y);
-  ctx.moveTo(tip.x, tip.y - r * 1.6);
-  ctx.lineTo(tip.x, tip.y - r * 0.45);
-  ctx.moveTo(tip.x, tip.y + r * 0.45);
-  ctx.lineTo(tip.x, tip.y + r * 1.6);
+  ctx.lineWidth = Math.max(1.5, 2 * dpr);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
   ctx.stroke();
-
   ctx.restore();
 }
 
@@ -670,10 +638,13 @@ function drawNoseTracker(
 export function CameraFeed({
   onPoseUpdate,
   onPreviewStreamChange,
+  sharePreview = false,
 }: {
   onPoseUpdate?: (pose: HeadPose, frame?: HeadPoseFrame) => void;
   /** Canvas-capture stream of the composited stage (matches main view / BG mode). */
   onPreviewStreamChange?: (stream: MediaStream | null) => void;
+  /** When false, skip captureStream (dashboard duplicate). */
+  sharePreview?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const personCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -685,19 +656,22 @@ export function CameraFeed({
   const animationRef = useRef<number | null>(null);
   const lastVideoTimeRef = useRef(-1);
   const lastUiAtRef = useRef(0);
+  const lastInferAtRef = useRef(0);
+  const visionRef = useRef<Awaited<ReturnType<typeof FilesetResolver.forVisionTasks>> | null>(null);
   const smoothedRef = useRef<HeadPose>(ZERO_POSE);
   const faceSeenRef = useRef(false);
   const maskStyleRef = useRef<FaceMaskStyle>(readMaskStyle());
-  const bgModeRef = useRef<CameraBgMode>(readBgMode());
+  const bgModeRef = useRef<CameraBgMode>(readBgMode() === "black" ? "scene" : readBgMode());
+  const maskInvertRef = useRef<boolean | null>(null);
   const lastMatrixRef = useRef<number[] | null>(null);
   const onPoseUpdateRef = useRef(onPoseUpdate);
   const onPreviewStreamChangeRef = useRef(onPreviewStreamChange);
   onPoseUpdateRef.current = onPoseUpdate;
   onPreviewStreamChangeRef.current = onPreviewStreamChange;
 
-  const sampleCount = useHeadMotionStore((s) => s.sampleCount);
-  const hasReference = useHeadMotionStore((s) => s.hasReference);
-  const refAgeMs = useHeadMotionStore((s) => s.refAgeMs);
+  const [logCount, setLogCount] = useState(0);
+  const [hasReference, setHasReference] = useState(false);
+  const [refAgeMs, setRefAgeMs] = useState<number | null>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState("Starting camera…");
@@ -721,12 +695,63 @@ export function CameraFeed({
     }
   }
 
+  function fillPersonBlack() {
+    const person = personCanvasRef.current;
+    const ctx = person?.getContext("2d");
+    if (!ctx || !person) return;
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, person.width, person.height);
+  }
+
+  function enableBlackBg() {
+    maskInvertRef.current = null;
+    bgModeRef.current = "black";
+    setBgMode("black");
+    fillPersonBlack();
+    try {
+      localStorage.setItem(BG_MODE_KEY, "black");
+    } catch {
+      /* ignore */
+    }
+  }
+
   function cycleBgMode() {
     const idx = BG_MODES.findIndex((m) => m.id === bgModeRef.current);
     const next = BG_MODES[(idx + 1) % BG_MODES.length]!;
     if (next.id === "black" && !segmenterRef.current) {
-      bgModeRef.current = "scene";
-      setBgMode("scene");
+      const vision = visionRef.current;
+      if (!vision) return;
+      setStatus("Loading background remover…");
+      void (async () => {
+        const opts = {
+          runningMode: "VIDEO" as const,
+          outputCategoryMask: true,
+          outputConfidenceMasks: true,
+        };
+        try {
+          try {
+            segmenterRef.current = await ImageSegmenter.createFromOptions(vision, {
+              ...opts,
+              baseOptions: { modelAssetPath: SEGMENTER_MODEL_URL, delegate: "CPU" },
+            });
+          } catch {
+            segmenterRef.current = await ImageSegmenter.createFromOptions(vision, {
+              ...opts,
+              baseOptions: { modelAssetPath: SEGMENTER_MODEL_URL, delegate: "GPU" },
+            });
+          }
+          setSegmenterReady(true);
+          setStatus("");
+          enableBlackBg();
+        } catch {
+          setSegmenterReady(false);
+          setStatus("Background remover unavailable");
+        }
+      })();
+      return;
+    }
+    if (next.id === "black") {
+      enableBlackBg();
       return;
     }
     bgModeRef.current = next.id;
@@ -745,11 +770,14 @@ export function CameraFeed({
       return;
     }
     useHeadMotionStore.getState().setReference(matrix);
+    setHasReference(true);
+    setRefAgeMs(0);
     setStatus("Reference pose set — R_rel logged from now");
   }
 
   function clearMotionLog() {
     useHeadMotionStore.getState().clearLog();
+    setLogCount(0);
     setStatus("Motion log cleared");
   }
 
@@ -778,8 +806,9 @@ export function CameraFeed({
       const overlay = canvasRef.current;
       if (!stage || !person || !overlay) return;
       const rect = stage.getBoundingClientRect();
-      const w = Math.max(1, Math.round(rect.width * (window.devicePixelRatio || 1)));
-      const h = Math.max(1, Math.round(rect.height * (window.devicePixelRatio || 1)));
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      const w = Math.max(1, Math.round(rect.width * dpr));
+      const h = Math.max(1, Math.round(rect.height * dpr));
       if (person.width !== w || person.height !== h) {
         person.width = w;
         person.height = h;
@@ -800,6 +829,7 @@ export function CameraFeed({
         setStatus("Loading vision models…");
         const vision = await FilesetResolver.forVisionTasks(WASM_CDN);
         if (cancelled) return;
+        visionRef.current = vision;
 
         landmarkerRef.current = await FaceLandmarker.createFromOptions(vision, {
           baseOptions: {
@@ -813,35 +843,12 @@ export function CameraFeed({
         });
         if (cancelled) return;
 
-        try {
-          setStatus("Loading background remover…");
-          segmenterRef.current = await ImageSegmenter.createFromOptions(vision, {
-            baseOptions: {
-              modelAssetPath: SEGMENTER_MODEL_URL,
-              delegate: "GPU",
-            },
-            runningMode: "VIDEO",
-            outputCategoryMask: true,
-            outputConfidenceMasks: true,
-          });
-          if (!cancelled) setSegmenterReady(true);
-        } catch {
-          segmenterRef.current = null;
-          if (!cancelled) {
-            setSegmenterReady(false);
-            if (bgModeRef.current === "black") {
-              bgModeRef.current = "scene";
-              setBgMode("scene");
-            }
-          }
-        }
-        if (cancelled) return;
-
         setStatus("Requesting camera…");
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
             width: { ideal: 1280 },
             height: { ideal: 720 },
+            frameRate: { ideal: 24, max: 30 },
             facingMode: "user",
           },
           audio: false,
@@ -892,40 +899,47 @@ export function CameraFeed({
         return;
       }
 
-      segmenter.segmentForVideo(video, now, (result) => {
-        const confidence = result.confidenceMasks;
-        const category = result.categoryMask;
-        let maskData: Float32Array | Uint8Array | null = null;
-        let maskW = 0;
-        let maskH = 0;
-        let categoryMode = false;
+      try {
+        segmenter.segmentForVideo(video, now, (result) => {
+          const confidence = result.confidenceMasks;
+          const category = result.categoryMask;
+          let maskData: Float32Array | Uint8Array | null = null;
+          let maskW = 0;
+          let maskH = 0;
+          let categoryMode = false;
 
-        const personConf = confidence?.[1] ?? confidence?.[0];
-        if (personConf) {
-          maskData = personConf.getAsFloat32Array();
-          maskW = personConf.width;
-          maskH = personConf.height;
-        } else if (category) {
-          maskData = category.getAsUint8Array();
-          maskW = category.width;
-          maskH = category.height;
-          categoryMode = true;
-        }
-
-        if (maskData && maskW && maskH) {
-          drawPersonOnBlack(video, maskData, maskW, maskH, categoryMode, work, alpha, person);
-        } else {
-          const ctx = person.getContext("2d");
-          if (ctx) {
-            ctx.fillStyle = "#000000";
-            ctx.fillRect(0, 0, person.width, person.height);
-            drawCover(ctx, video, person.width, person.height, video.videoWidth, video.videoHeight);
+          const personConf = confidence?.[1] ?? confidence?.[0];
+          if (personConf) {
+            maskData = personConf.getAsFloat32Array();
+            maskW = personConf.width;
+            maskH = personConf.height;
+          } else if (category) {
+            maskData = category.getAsUint8Array();
+            maskW = category.width;
+            maskH = category.height;
+            categoryMode = true;
           }
-        }
 
-        confidence?.forEach((m) => m.close());
-        category?.close();
-      });
+          if (maskData && maskW && maskH) {
+            if (maskInvertRef.current == null) {
+              maskInvertRef.current = shouldInvertPersonMask(maskData, maskW, maskH, categoryMode);
+            }
+            drawPersonOnBlack(
+              video,
+              maskData,
+              maskW,
+              maskH,
+              categoryMode,
+              maskInvertRef.current,
+              work,
+              alpha,
+              person,
+            );
+          }
+        });
+      } catch {
+        /* keep last composited frame */
+      }
     }
 
     function track() {
@@ -935,11 +949,11 @@ export function CameraFeed({
       const canvas = canvasRef.current;
       const landmarker = landmarkerRef.current;
       const now = performance.now();
+      const shouldInfer = now - lastInferAtRef.current >= INFER_INTERVAL_MS;
 
       if (
         video &&
         canvas &&
-        landmarker &&
         video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
         video.currentTime !== lastVideoTimeRef.current
       ) {
@@ -949,55 +963,70 @@ export function CameraFeed({
         try {
           renderPersonFrame(video, now);
 
-          const result = landmarker.detectForVideo(video, now);
-          const landmarks = result.faceLandmarks?.[0];
-          const matrix = result.facialTransformationMatrixes?.[0]?.data;
-          const ctx = canvas.getContext("2d");
+          if (shouldInfer && landmarker) {
+            lastInferAtRef.current = now;
+            const result = landmarker.detectForVideo(video, now);
+            const landmarks = result.faceLandmarks?.[0];
+            const matrix = result.facialTransformationMatrixes?.[0]?.data;
+            const ctx = canvas.getContext("2d");
 
-          if (landmarks && landmarks.length && ctx) {
-            drawFaceMask(ctx, landmarks, video, canvas, maskStyleRef.current);
-          } else if (ctx) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-          }
-
-          if (matrix && matrix.length >= 16) {
-            const matrixCopy = Array.from(matrix);
-            lastMatrixRef.current = matrixCopy;
-            const raw = matrixToEulerAngles(matrix);
-            smoothedRef.current = emaPose(smoothedRef.current, raw);
-            faceSeenRef.current = true;
-
-            const wallMs = Date.now();
-            const pose = { ...smoothedRef.current };
-            const sample = useHeadMotionStore.getState().pushSample({
-              matrix: matrixCopy,
-              yaw: pose.yaw,
-              pitch: pose.pitch,
-              roll: pose.roll,
-              detected: true,
-              wallMs,
-            });
-
-            if (now - lastUiAtRef.current >= UI_INTERVAL_MS) {
-              lastUiAtRef.current = now;
-              setHeadPose(pose);
-              setTracking(true);
-              setStatus("");
-              onPoseUpdateRef.current?.(pose, {
-                pose,
-                matrix: matrixCopy,
-                R_rel: sample.R_rel,
-                t_rel: sample.t_rel,
-                t_wall_ms: sample.t_wall_ms,
-                t_rel_ms: sample.t_rel_ms,
-                sample,
-              });
+            if (landmarks && landmarks.length && ctx) {
+              drawFaceMask(ctx, landmarks, video, canvas, maskStyleRef.current);
+            } else if (ctx) {
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
-          } else if (faceSeenRef.current && now - lastUiAtRef.current >= UI_INTERVAL_MS) {
-            lastUiAtRef.current = now;
-            setTracking(false);
-            useHeadMotionStore.getState().setTracking(false);
-            setStatus("No face detected");
+
+            if (matrix && matrix.length >= 16) {
+              const matrixCopy = Array.from(matrix);
+              lastMatrixRef.current = matrixCopy;
+              const raw = matrixToEulerAngles(matrix);
+              smoothedRef.current = emaPose(smoothedRef.current, raw);
+              faceSeenRef.current = true;
+
+              const wallMs = Date.now();
+              const pose = { ...smoothedRef.current };
+              const sample = useHeadMotionStore.getState().pushSample({
+                matrix: matrixCopy,
+                yaw: pose.yaw,
+                pitch: pose.pitch,
+                roll: pose.roll,
+                detected: true,
+                wallMs,
+              });
+
+              if (now - lastUiAtRef.current >= UI_INTERVAL_MS) {
+                lastUiAtRef.current = now;
+                setHeadPose(pose);
+                setTracking(true);
+                setStatus("");
+                setLogCount(sample.index + 1);
+                setHasReference(sample.R_rel != null);
+                setRefAgeMs(sample.t_rel_ms);
+                useHeadMotionStore.getState().syncHud({
+                  sampleCount: sample.index + 1,
+                  hasReference: sample.R_rel != null,
+                  refAgeMs: sample.t_rel_ms,
+                  latestYaw: pose.yaw,
+                  latestPitch: pose.pitch,
+                  latestRoll: pose.roll,
+                  tracking: true,
+                });
+                onPoseUpdateRef.current?.(pose, {
+                  pose,
+                  matrix: matrixCopy,
+                  R_rel: sample.R_rel,
+                  t_rel: sample.t_rel,
+                  t_wall_ms: sample.t_wall_ms,
+                  t_rel_ms: sample.t_rel_ms,
+                  sample,
+                });
+              }
+            } else if (faceSeenRef.current && now - lastUiAtRef.current >= UI_INTERVAL_MS) {
+              lastUiAtRef.current = now;
+              setTracking(false);
+              useHeadMotionStore.getState().setTracking(false);
+              setStatus("No face detected");
+            }
           }
         } catch {
           /* skip bad frame */
@@ -1009,10 +1038,14 @@ export function CameraFeed({
 
     void initialize();
     window.addEventListener("resize", syncCanvasSize);
+    const stageEl = personCanvasRef.current?.parentElement;
+    const ro = stageEl ? new ResizeObserver(syncCanvasSize) : null;
+    if (stageEl && ro) ro.observe(stageEl);
 
     return () => {
       cancelled = true;
       window.removeEventListener("resize", syncCanvasSize);
+      ro?.disconnect();
       if (animationRef.current != null) cancelAnimationFrame(animationRef.current);
       const video = videoRef.current;
       if (video) video.srcObject = null;
@@ -1029,7 +1062,7 @@ export function CameraFeed({
 
   // Share a canvas-capture preview stream with the live dashboard (matches composited view).
   useEffect(() => {
-    if (!ready) {
+    if (!ready || !sharePreview) {
       onPreviewStreamChangeRef.current?.(null);
       return;
     }
@@ -1049,7 +1082,7 @@ export function CameraFeed({
       preview?.getTracks().forEach((t) => t.stop());
       onPreviewStreamChangeRef.current?.(null);
     };
-  }, [ready]);
+  }, [ready, sharePreview]);
 
   return (
     <div className="camera-feed" aria-label="Live camera feed with head tracking">
@@ -1096,7 +1129,7 @@ export function CameraFeed({
             </div>
             <div className="camera-head-row">
               <span>Log</span>
-              <strong>{sampleCount}</strong>
+              <strong>{logCount}</strong>
             </div>
             <div className="camera-head-row">
               <span>R_rel</span>
@@ -1115,12 +1148,10 @@ export function CameraFeed({
               title={
                 segmenterReady
                   ? "Toggle full scene vs black background"
-                  : "Background remover unavailable — full scene only"
+                  : "Load background remover, then toggle full scene vs black"
               }
-              disabled={!segmenterReady}
             >
               BG · {BG_MODES.find((m) => m.id === bgMode)?.label ?? bgMode}
-              {!segmenterReady ? " (n/a)" : ""}
             </button>
             <button
               type="button"
@@ -1153,7 +1184,7 @@ export function CameraFeed({
               <div className="camera-head-hud-title">Motion log</div>
               <div className="camera-head-row">
                 <span>Samples</span>
-                <strong>{sampleCount}</strong>
+                <strong>{logCount}</strong>
               </div>
               <div className="camera-head-row">
                 <span>Reference</span>
@@ -1173,7 +1204,7 @@ export function CameraFeed({
                 className="camera-mask-btn"
                 onClick={downloadMotionJson}
                 title="Download motion log JSON (matrices for retrospective correction)"
-                disabled={sampleCount === 0}
+                disabled={logCount === 0}
               >
                 Download JSON
               </button>
@@ -1182,7 +1213,7 @@ export function CameraFeed({
                 className="camera-mask-btn"
                 onClick={downloadMotionCsv}
                 title="Download motion log CSV"
-                disabled={sampleCount === 0}
+                disabled={logCount === 0}
               >
                 Download CSV
               </button>
@@ -1191,7 +1222,7 @@ export function CameraFeed({
                 className="camera-mask-btn"
                 onClick={shareMotionWithAgent}
                 title="Open Agents tab and send a summary of the recent motion log"
-                disabled={sampleCount === 0}
+                disabled={logCount === 0}
               >
                 Share with agent
               </button>
@@ -1200,7 +1231,7 @@ export function CameraFeed({
                 className="camera-mask-btn"
                 onClick={clearMotionLog}
                 title="Clear recorded samples (keeps reference)"
-                disabled={sampleCount === 0}
+                disabled={logCount === 0}
               >
                 Clear log
               </button>

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, lazy, Suspense } from "react";
 import {
   useConsoleStore,
   type ConsoleEntry,
@@ -6,7 +6,10 @@ import {
   type ConsoleTab,
 } from "./consoleLog";
 import { useTwinStore } from "./telemetryStore";
-import { TwinTerminal } from "./TwinTerminal";
+
+const TwinTerminal = lazy(() =>
+  import("./TwinTerminal").then((m) => ({ default: m.TwinTerminal })),
+);
 
 function formatClock(ts: number) {
   return new Date(ts).toLocaleTimeString(undefined, {
@@ -62,7 +65,12 @@ export function SystemConsole() {
   const live = connection === "connected";
 
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const [terminalMounted, setTerminalMounted] = useState(false);
   const terminalActive = open && tab === "terminal";
+
+  if (tab === "terminal" && !terminalMounted) {
+    setTerminalMounted(true);
+  }
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -147,7 +155,11 @@ export function SystemConsole() {
             tab === "terminal" ? " is-active" : ""
           }`}
         >
-          <TwinTerminal active={terminalActive} />
+          {terminalMounted ? (
+            <Suspense fallback={null}>
+              <TwinTerminal active={terminalActive} />
+            </Suspense>
+          ) : null}
         </div>
       </div>
     </div>

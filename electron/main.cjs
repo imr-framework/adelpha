@@ -16,6 +16,11 @@ const pty = require("node-pty");
 
 const TWIN_TARGET = process.env.DTAM_TWIN_URL || "http://127.0.0.1:8080";
 const AGENTS_TARGET = process.env.DTAM_AGENTS_URL || "http://127.0.0.1:8001";
+const STATIC_CACHE_MAX_BYTES = 8 * 1024 * 1024;
+
+app.commandLine.appendSwitch("ignore-gpu-blocklist");
+app.commandLine.appendSwitch("enable-gpu-rasterization");
+app.commandLine.appendSwitch("enable-zero-copy");
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -172,7 +177,12 @@ function registerMediaPermissions() {
 }
 
 function distRoot() {
-  return path.join(app.getAppPath(), "dist");
+  const packed = path.join(app.getAppPath(), "dist");
+  const unpacked = packed.replace(`${path.sep}app.asar${path.sep}`, `${path.sep}app.asar.unpacked${path.sep}`);
+  if (unpacked !== packed && fs.existsSync(path.join(unpacked, "index.html"))) {
+    return unpacked;
+  }
+  return packed;
 }
 
 function proxyRequest(req, res, targetBase, stripPrefix) {
@@ -208,6 +218,9 @@ function proxyRequest(req, res, targetBase, stripPrefix) {
   req.pipe(upstream);
 }
 
+/** @type {Map<string, { mime: string, data: Buffer, immutable: boolean }>} */
+const staticCache = new Map();
+
 function serveStatic(req, res, root) {
   const urlPath = decodeURIComponent((req.url || "/").split("?")[0]);
   let rel = urlPath === "/" ? "/index.html" : urlPath;
@@ -221,6 +234,12 @@ function serveStatic(req, res, root) {
   }
 
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+    const extMissing = path.extname(rel).toLowerCase();
+    if (extMissing && extMissing !== ".html") {
+      res.writeHead(404);
+      res.end("Not found");
+      return;
+    }
     filePath = path.join(root, "index.html");
   }
 
@@ -231,8 +250,24 @@ function serveStatic(req, res, root) {
   }
 
   const ext = path.extname(filePath).toLowerCase();
-  res.writeHead(200, { "content-type": MIME[ext] || "application/octet-stream" });
-  fs.createReadStream(filePath).pipe(res);
+  const mime = MIME[ext] || "application/octet-stream";
+  const immutable = ext === ".js" || ext === ".css" || ext === ".wasm" || ext === ".woff2";
+  const cacheControl =
+    ext === ".html" || urlPath === "/" ? "no-cache" : immutable ? "public, max-age=31536000, immutable" : "public, max-age=86400";
+
+  let payload = staticCache.get(filePath);
+  if (!payload) {
+    const data = fs.readFileSync(filePath);
+    payload = { mime, data, immutable };
+    if (data.length <= STATIC_CACHE_MAX_BYTES) staticCache.set(filePath, payload);
+  }
+
+  res.writeHead(200, {
+    "content-type": payload.mime,
+    "content-length": payload.data.length,
+    "cache-control": cacheControl,
+  });
+  res.end(payload.data);
 }
 
 function createLocalServer() {
@@ -277,12 +312,20 @@ async function createWindow() {
     minHeight: 700,
     title: "Adelpha Digital Twin",
     backgroundColor: "#050505",
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      spellcheck: false,
+      backgroundThrottling: false,
+      v8CacheOptions: "bypassHeatCheck",
     },
+  });
+
+  win.once("ready-to-show", () => {
+    if (!win.isDestroyed()) win.show();
   });
 
   win.webContents.on("destroyed", () => {

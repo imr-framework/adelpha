@@ -29,6 +29,15 @@ type HeadMotionState = {
     detected: boolean;
     wallMs?: number;
   }) => HeadMotionSample;
+  syncHud: (patch: {
+    sampleCount: number;
+    hasReference: boolean;
+    refAgeMs: number | null;
+    latestYaw: number;
+    latestPitch: number;
+    latestRoll: number;
+    tracking: boolean;
+  }) => void;
   setReference: (matrix: ArrayLike<number>) => void;
   clearLog: () => void;
   setTracking: (tracking: boolean) => void;
@@ -50,19 +59,7 @@ export const useHeadMotionStore = create<HeadMotionState>((set, get) => ({
   shareRequestId: 0,
   sharePrompt: null,
 
-  pushSample: (args) => {
-    const sample = recorder.push(args);
-    set({
-      sampleCount: recorder.sampleCount,
-      hasReference: recorder.hasReference,
-      refAgeMs: sample.t_rel_ms,
-      latestYaw: sample.yaw,
-      latestPitch: sample.pitch,
-      latestRoll: sample.roll,
-      tracking: args.detected,
-    });
-    return sample;
-  },
+  pushSample: (args) => recorder.push(args),
 
   setReference: (matrix) => {
     recorder.setReference(matrix);
@@ -81,6 +78,15 @@ export const useHeadMotionStore = create<HeadMotionState>((set, get) => ({
   },
 
   setTracking: (tracking) => set({ tracking }),
+  syncHud: (patch: {
+    sampleCount: number;
+    hasReference: boolean;
+    refAgeMs: number | null;
+    latestYaw: number;
+    latestPitch: number;
+    latestRoll: number;
+    tracking: boolean;
+  }) => set(patch),
 
   downloadJson: () => {
     const payload = recorder.toExport();
