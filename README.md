@@ -116,6 +116,8 @@ Preview the docs site locally:
 uv sync --group docs && make docs-serve
 ```
 
+Published docs (GitHub Pages): [imr-framework.github.io/adelpha](https://imr-framework.github.io/adelpha/)
+
 ## Troubleshooting
 
 | Symptom | Fix |

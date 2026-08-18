@@ -2,7 +2,8 @@
 site_name = "Digital Twin UI"
 site_description = "Adelpha observer GUI — workspaces, Twin API (:8080), optional Agents API (:8001)."
 site_author = "LeoMcBills"
-site_url = "http://127.0.0.1:8000/"
+site_url = "https://imr-framework.github.io/adelpha/"
+repo_url = "https://github.com/imr-framework/adelpha"
 copyright = """
 Copyright &copy; 2026 Digital Twin UI contributors
 """

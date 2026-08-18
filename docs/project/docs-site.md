@@ -28,3 +28,27 @@ make docs-serve  # live preview (default http://127.0.0.1:8000)
 - Mermaid is enabled via `pymdownx.superfences`.
 - Navigation tabs are explicit in `zensical.toml` (`nav`).
 - Math uses Arithmatex + MathJax (`docs/javascripts/mathjax.js`).
+
+## GitHub Pages
+
+Published at **[imr-framework.github.io/adelpha](https://imr-framework.github.io/adelpha/)** on pushes to `main`.
+
+### One-time repo setup
+
+1. Open **Settings → Pages** on GitHub.
+2. Under **Build and deployment**, set **Source** to **GitHub Actions** (not “Deploy from a branch”).
+3. Merge or push `.github/workflows/docs.yml` to `main`.
+
+The workflow installs Zensical, runs `zensical build --strict --clean`, and uploads the `site/` folder via the official Pages deploy action.
+
+### Local vs production URL
+
+`zensical.toml` sets `site_url` to the GitHub Pages URL so instant navigation and sitemap links resolve correctly in production. Local preview still works with `make docs-serve` (default `http://127.0.0.1:8000/`).
+
+### Manual deploy check
+
+```bash
+uv sync --group docs
+make docs
+# inspect ./site/ before pushing
+```
