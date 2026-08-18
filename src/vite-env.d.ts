@@ -42,4 +42,7 @@ interface AdelphaTerminalBridge {
 
 interface Window {
   adelphaTerminal?: AdelphaTerminalBridge;
+  adelphaApp?: {
+    quit: () => void;
+  };
 }

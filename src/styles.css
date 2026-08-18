@@ -254,7 +254,8 @@ body,
 }
 
 .system-context-menu,
-.workspace-menu {
+.workspace-menu,
+.app-menu {
   border: 1px solid var(--border);
   background: rgba(12, 12, 14, 0.98);
   isolation: isolate;
@@ -266,7 +267,8 @@ body,
 }
 
 .system-context-menu::before,
-.workspace-menu::before {
+.workspace-menu::before,
+.app-menu::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -315,7 +317,8 @@ body,
 
 @media (prefers-reduced-motion: reduce) {
   .system-context-menu::before,
-  .workspace-menu::before {
+  .workspace-menu::before,
+  .app-menu::before {
     animation: none;
     opacity: 0;
   }
@@ -388,6 +391,12 @@ body,
   font-size: 10px;
   color: var(--muted);
   letter-spacing: 0.04em;
+}
+
+.topbar-menu-divider {
+  height: 1px;
+  margin: 8px 4px;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .main-alt-workspace {
