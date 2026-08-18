@@ -58,7 +58,21 @@ In a **third** terminal:
 ```bash
 cd ..
 cd adelpha
-npm install          # first time only
+npm install
+```
+You can now build from source
+```bash
+# Mac OS
+npm run dist:mac
+
+# Windows
+npm run dist:win
+
+# Debian
+npm run dist:linux
+```
+If you want to run in development mode, do
+```bash
 npm run electron:dev
 ```
 
