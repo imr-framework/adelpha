@@ -61,6 +61,9 @@ cd adelpha
 npm install
 ```
 You can now build from source. Run any of the following commands based on what operating system (OS) your machine is running.
+
+Once the executable files are ready, you will find the required setup in the `release` directory.
+
 ```bash
 # Mac OS
 npm run dist:mac
