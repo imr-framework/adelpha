@@ -60,7 +60,7 @@ cd ..
 cd adelpha
 npm install
 ```
-You can now build from source. Run any of the following commands based on what operating system (OS) machine is running.
+You can now build from source. Run any of the following commands based on what operating system (OS) your machine is running.
 ```bash
 # Mac OS
 npm run dist:mac
