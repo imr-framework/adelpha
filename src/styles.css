@@ -1327,6 +1327,7 @@ body,
 }
 
 .main {
+  position: relative;
   flex: 1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--panel-width, 380px);
@@ -1799,6 +1800,82 @@ body,
 .dash-bar-emi {
   background: linear-gradient(180deg, #ff6c7c 0%, #ff1f3d 100%);
   box-shadow: 0 0 10px rgba(255, 31, 61, 0.55);
+}
+
+.settings-overlay {
+  position: absolute;
+  inset: 0;
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.settings-card {
+  width: min(92vw, 1480px);
+  height: min(82vh, 920px);
+  min-width: 75%;
+  min-height: 75%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(
+    165deg,
+    rgba(22, 22, 24, 0.58) 0%,
+    rgba(8, 8, 9, 0.5) 55%,
+    rgba(2, 2, 3, 0.54) 100%
+  );
+  box-shadow:
+    0 24px 68px rgba(0, 0, 0, 0.62),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+  padding: 14px 16px 16px;
+  transform: translate(-2.4%, -3.8%);
+}
+
+.settings-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.settings-card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #f1f3f5;
+}
+
+.settings-card-close {
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(18, 18, 18, 0.55);
+  color: #f2f2f2;
+  cursor: pointer;
+  padding: 0;
+}
+
+.settings-card-close:hover {
+  background: rgba(32, 32, 32, 0.78);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.settings-card-body {
+  flex: 1;
+  min-height: 0;
 }
 
 .chart-modal-backdrop {

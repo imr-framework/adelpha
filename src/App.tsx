@@ -1,4 +1,4 @@
-import { Settings } from "lucide-react";
+import { Settings, X } from "lucide-react";
 import {
   Suspense,
   lazy,
@@ -325,6 +325,7 @@ export default function App() {
   const hasCadMagnet = Boolean(import.meta.env.VITE_MAGNET_CAD_URL?.trim());
 
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [showLaunch, setShowLaunch] = useState(shouldPlayLaunchIntro);
   const [viewportTool, setViewportTool] = useState<ViewportToolId>("magnet");
   const [stageMode, setStageMode] = useState<"magnet" | "camera">("magnet");
@@ -356,6 +357,15 @@ export default function App() {
   useEffect(() => {
     persistWorkspace(workspace);
   }, [workspace]);
+
+  useEffect(() => {
+    if (!showSettings) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowSettings(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showSettings]);
 
   useEffect(() => {
     void import("./twin/TwinCanvas");
@@ -621,7 +631,15 @@ export default function App() {
             onWorkspaceChange={setWorkspace}
           />
           <div className="topbar-actions">
-            <button type="button" className="topbar-icon-btn" aria-label="Settings" title="Settings">
+            <button
+              type="button"
+              className={`topbar-icon-btn${showSettings ? " is-open" : ""}`}
+              aria-label="Settings"
+              title="Settings"
+              aria-expanded={showSettings}
+              aria-controls="settings-card"
+              onClick={() => setShowSettings((v) => !v)}
+            >
               <Settings size={18} strokeWidth={1.75} aria-hidden />
             </button>
             <TopbarAppMenu workspace={workspace} />
@@ -1454,6 +1472,37 @@ export default function App() {
             )}
         </aside>
         )}
+        {showSettings ? (
+          <div
+            className="settings-overlay"
+            onClick={() => setShowSettings(false)}
+          >
+            <div
+              id="settings-card"
+              className="settings-card"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="settings-card-title"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="settings-card-head">
+                <h2 id="settings-card-title" className="settings-card-title">
+                  Settings
+                </h2>
+                <button
+                  type="button"
+                  className="settings-card-close"
+                  aria-label="Close settings"
+                  title="Close"
+                  onClick={() => setShowSettings(false)}
+                >
+                  <X size={16} strokeWidth={1.75} aria-hidden />
+                </button>
+              </div>
+              <div className="settings-card-body" />
+            </div>
+          </div>
+        ) : null}
       </main>
     </div>
   );
