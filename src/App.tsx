@@ -1,4 +1,4 @@
-import { Settings, X } from "lucide-react";
+import { Settings } from "lucide-react";
 import {
   Suspense,
   lazy,
@@ -44,6 +44,7 @@ import {
 } from "./twin/TopbarControls";
 import type { AssessMode } from "./twin/dtamTypes";
 import { LaunchScreen } from "./twin/launch/LaunchScreen";
+import { SettingsCard } from "./twin/SettingsCard";
 import { shouldPlayLaunchIntro } from "./twin/launch/launchConfig";
 import "./styles.css";
 
@@ -1477,30 +1478,7 @@ export default function App() {
             className="settings-overlay"
             onClick={() => setShowSettings(false)}
           >
-            <div
-              id="settings-card"
-              className="settings-card"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="settings-card-title"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="settings-card-head">
-                <h2 id="settings-card-title" className="settings-card-title">
-                  Settings
-                </h2>
-                <button
-                  type="button"
-                  className="settings-card-close"
-                  aria-label="Close settings"
-                  title="Close"
-                  onClick={() => setShowSettings(false)}
-                >
-                  <X size={16} strokeWidth={1.75} aria-hidden />
-                </button>
-              </div>
-              <div className="settings-card-body" />
-            </div>
+            <SettingsCard onClose={() => setShowSettings(false)} />
           </div>
         ) : null}
       </main>
