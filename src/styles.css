@@ -1824,9 +1824,9 @@ body,
 }
 
 .settings-card {
-  --set-accent: #8b5cf6;
-  --set-accent-soft: rgba(139, 92, 246, 0.16);
-  --set-accent-border: rgba(167, 139, 250, 0.55);
+  --set-accent: #8260fb;
+  --set-accent-soft: rgba(130, 96, 251, 0.16);
+  --set-accent-border: rgba(130, 96, 251, 0.55);
   --set-ok: #34d399;
   position: relative;
   width: min(92vw, 1480px);
@@ -2194,7 +2194,7 @@ body,
   width: min(240px, 46vw);
 }
 
-.settings-select-wrap select {
+.settings-select-trigger {
   appearance: none;
   width: 100%;
   height: 40px;
@@ -2205,26 +2205,48 @@ body,
   color: #f4f4f5;
   font: inherit;
   font-size: 13px;
+  text-align: left;
   cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.settings-select-wrap select:hover,
+.settings-select-trigger:hover,
 .settings-input:hover {
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-.settings-select-wrap select option {
-  background: #18181b;
-  color: #f4f4f5;
+.settings-select-wrap.is-open .settings-select-trigger,
+.settings-select-wrap.is-open .settings-select-trigger:hover {
+  color: var(--text);
+  border-color: transparent;
+  background:
+    linear-gradient(rgba(12, 12, 14, 0.98), rgba(12, 12, 14, 0.98)) padding-box,
+    linear-gradient(135deg, rgba(130, 96, 251, 0.95), rgba(110, 182, 255, 0.65)) border-box;
 }
 
-.settings-select-wrap svg {
+.settings-select-chevron {
   position: absolute;
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: #a1a1aa;
   pointer-events: none;
+}
+
+.settings-select-menu {
+  right: auto;
+  z-index: 80;
+  min-width: 0;
+}
+
+.settings-select-check {
+  width: 14px;
+  height: 14px;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
 }
 
 .settings-input {
@@ -2240,10 +2262,14 @@ body,
 }
 
 .settings-input:focus,
-.settings-select-wrap select:focus,
+.settings-select-trigger:focus-visible,
 .settings-search:focus-within {
   outline: none;
   border-color: var(--set-accent-border);
+}
+
+.settings-select-wrap.is-open .settings-select-trigger:focus-visible {
+  border-color: transparent;
 }
 
 .settings-segment {
@@ -2259,7 +2285,7 @@ body,
   min-width: 78px;
   height: 30px;
   padding: 0 12px;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
   color: #d4d4d8;
@@ -2270,8 +2296,10 @@ body,
 }
 
 .settings-segment button.is-active {
-  background: var(--set-accent);
-  color: #fff;
+  color: var(--text);
+  background:
+    linear-gradient(rgba(12, 12, 14, 0.98), rgba(12, 12, 14, 0.98)) padding-box,
+    linear-gradient(135deg, rgba(130, 96, 251, 0.95), rgba(110, 182, 255, 0.65)) border-box;
 }
 
 .settings-btn {
@@ -2295,13 +2323,17 @@ body,
 
 .settings-btn-accent {
   border-color: transparent;
-  background: var(--set-accent);
-  color: #fff;
+  color: var(--text);
+  background:
+    linear-gradient(rgba(12, 12, 14, 0.98), rgba(12, 12, 14, 0.98)) padding-box,
+    linear-gradient(135deg, rgba(130, 96, 251, 0.95), rgba(110, 182, 255, 0.65)) border-box;
 }
 
 .settings-btn-accent:hover {
-  background: #7c4feb;
-  border-color: transparent;
+  color: #e8deff;
+  background:
+    linear-gradient(rgba(16, 16, 18, 0.98), rgba(16, 16, 18, 0.98)) padding-box,
+    linear-gradient(135deg, rgba(130, 96, 251, 1), rgba(110, 182, 255, 0.7)) border-box;
 }
 
 .settings-btn-inline {

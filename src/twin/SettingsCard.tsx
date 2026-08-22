@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import {
   Bell,
   Box,
@@ -891,6 +892,8 @@ function Switch({ checked, onChange }: { checked: boolean; onChange: (value: boo
   );
 }
 
+const SETTINGS_SELECT_OPEN = "adelpha:settings-select-open";
+
 function Select({
   value,
   onChange,
@@ -902,16 +905,129 @@ function Select({
   options: { value: string; label: string }[];
   compact?: boolean;
 }) {
+  const listId = useId();
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const instance = useRef({});
+  const [open, setOpen] = useState(false);
+  const [menuBox, setMenuBox] = useState<CSSProperties>({});
+
+  const selected = options.find((opt) => opt.value === value) ?? options[0];
+
+  const placeMenu = () => {
+    const trigger = wrapRef.current;
+    if (!trigger) return;
+    const r = trigger.getBoundingClientRect();
+    const width = Math.max(r.width, compact ? 220 : r.width);
+    const gap = 8;
+    const menuHeight = menuRef.current?.offsetHeight ?? options.length * 42 + 16;
+    const spaceBelow = window.innerHeight - r.bottom - 12;
+    const openUp = spaceBelow < menuHeight && r.top > spaceBelow;
+    let left = r.left;
+    if (left + width > window.innerWidth - 12) {
+      left = Math.max(12, window.innerWidth - width - 12);
+    }
+    setMenuBox({
+      position: "fixed",
+      top: openUp ? r.top - gap - menuHeight : r.bottom + gap,
+      left,
+      width,
+    });
+  };
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    placeMenu();
+  }, [open, compact, options.length]);
+
+  useEffect(() => {
+    if (!open) return;
+    window.dispatchEvent(new CustomEvent(SETTINGS_SELECT_OPEN, { detail: instance.current }));
+
+    const scrollRoot = wrapRef.current?.closest(".settings-panel-scroll");
+    const onOther = (e: Event) => {
+      if ((e as CustomEvent).detail !== instance.current) setOpen(false);
+    };
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (wrapRef.current?.contains(t) || menuRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      setOpen(false);
+    };
+    const onReposition = () => placeMenu();
+
+    window.addEventListener(SETTINGS_SELECT_OPEN, onOther);
+    document.addEventListener("mousedown", onDoc);
+    window.addEventListener("keydown", onKey, true);
+    window.addEventListener("resize", onReposition);
+    scrollRoot?.addEventListener("scroll", onReposition);
+
+    return () => {
+      window.removeEventListener(SETTINGS_SELECT_OPEN, onOther);
+      document.removeEventListener("mousedown", onDoc);
+      window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("resize", onReposition);
+      scrollRoot?.removeEventListener("scroll", onReposition);
+    };
+  }, [open, compact, options.length]);
+
   return (
-    <div className={`settings-select-wrap${compact ? " is-compact" : ""}`}>
-      <select value={value} onChange={(e) => onChange(e.target.value)}>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown size={14} strokeWidth={1.8} aria-hidden />
+    <div
+      ref={wrapRef}
+      className={`settings-select-wrap${compact ? " is-compact" : ""}${open ? " is-open" : ""}`}
+    >
+      <button
+        type="button"
+        className="settings-select-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? listId : undefined}
+        onClick={() => setOpen((v) => !v)}
+      >
+        {selected?.label}
+      </button>
+      <ChevronDown className="settings-select-chevron" size={14} strokeWidth={1.8} aria-hidden />
+      {open
+        ? createPortal(
+            <div
+              ref={menuRef}
+              id={listId}
+              className="topbar-menu workspace-menu settings-select-menu"
+              role="listbox"
+              aria-label="Options"
+              style={menuBox}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {options.map((opt) => {
+                const isSelected = opt.value === value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    className={`topbar-menu-item${isSelected ? " is-selected" : ""}`}
+                    onClick={() => {
+                      onChange(opt.value);
+                      setOpen(false);
+                    }}
+                  >
+                    <span className="settings-select-check" aria-hidden>
+                      {isSelected ? <Check size={14} strokeWidth={2} /> : null}
+                    </span>
+                    <span>{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
