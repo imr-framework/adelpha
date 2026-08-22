@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Box,
   ChevronDown,
+  LogOut,
   Menu,
   MonitorDot,
   ScanLine,
@@ -256,6 +257,23 @@ export function TopbarAppMenu({ workspace }: AppMenuProps) {
               <div className="topbar-menu-hint">No additional destinations in this workspace.</div>
             </>
           )}
+          <div className="topbar-menu-divider" />
+          <button
+            type="button"
+            role="menuitem"
+            className="topbar-menu-item"
+            onClick={() => {
+              setOpen(false);
+              if (window.adelphaApp?.quit) {
+                window.adelphaApp.quit();
+                return;
+              }
+              window.close();
+            }}
+          >
+            <LogOut size={16} strokeWidth={1.75} aria-hidden />
+            <span>Exit Adelpha</span>
+          </button>
         </div>
       ) : null}
     </div>

@@ -130,6 +130,10 @@ function registerTerminalIpc() {
   ipcMain.on("terminal:dispose", (event) => {
     disposePty(event.sender.id);
   });
+
+  ipcMain.on("app:quit", () => {
+    app.quit();
+  });
 }
 
 function registerMediaPermissions() {

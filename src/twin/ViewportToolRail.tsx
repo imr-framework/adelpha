@@ -3,8 +3,18 @@ import {
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
-  type ReactNode,
 } from "react";
+import {
+  AudioLines,
+  Axis3d,
+  Camera,
+  Ellipsis,
+  Magnet,
+  Menu,
+  RadioTower,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 
 export type ViewportToolId = "magnet" | "emi" | "rf" | "camera" | "gradient";
 
@@ -16,97 +26,12 @@ type RailPos = { x: number; y: number };
 /** Align with `.viewport-dashboard-btn` (top: 12px, left: 64px) — close sits at left. */
 const DEFAULT_POS: RailPos = { x: 12, y: 12 };
 
-const TOOLS: { id: ViewportToolId; label: string; icon: ReactNode }[] = [
-  {
-    id: "magnet",
-    label: "Magnet",
-    icon: (
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden>
-        <path
-          d="M7 4v8.5a5 5 0 0 0 10 0V4"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-        />
-        <path d="M7 4h3.2v4.5H7V4zm6.8 0H17v4.5h-3.2V4z" fill="currentColor" opacity="0.85" />
-      </svg>
-    ),
-  },
-  {
-    id: "emi",
-    label: "EMI",
-    icon: (
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden>
-        <path
-          d="M4 12c1.6-2.4 3.2-3.6 4.8-3.6S12.4 11.2 14 12s3.2 1.2 4.8 0 3.2-3.6 1.2-5.4"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-        />
-        <path
-          d="M4 17c1.6-2 3.2-3 4.8-3S12.4 16.4 14 17s3.2 1 4.8 0"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-          opacity="0.7"
-        />
-      </svg>
-    ),
-  },
-  {
-    id: "rf",
-    label: "RF",
-    icon: (
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden>
-        <circle cx="12" cy="17" r="1.6" fill="currentColor" />
-        <path
-          d="M8.2 13.6a5.2 5.2 0 0 1 7.6 0M5.6 10.4a9 9 0 0 1 12.8 0M3.4 7.4a12.4 12.4 0 0 1 17.2 0"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-        />
-      </svg>
-    ),
-  },
-  {
-    id: "camera",
-    label: "Camera",
-    icon: (
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden>
-        <rect x="3.5" y="7" width="17" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.7" />
-        <path
-          d="M8.5 7 9.8 5.2A1.4 1.4 0 0 1 11 4.5h2a1.4 1.4 0 0 1 1.2.7L15.5 7"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.7" />
-      </svg>
-    ),
-  },
-  {
-    id: "gradient",
-    label: "Gradient",
-    icon: (
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden>
-        <path d="M6 18 18 6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-        <path
-          d="M7.5 14.5h3M9.5 11.5h4M12 8.5h4.5"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-        />
-        <path
-          d="M5 19h4M15 5h4"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-          opacity="0.55"
-        />
-      </svg>
-    ),
-  },
+const TOOLS: { id: ViewportToolId; label: string; Icon: LucideIcon }[] = [
+  { id: "magnet", label: "Magnet", Icon: Magnet },
+  { id: "emi", label: "EMI", Icon: AudioLines },
+  { id: "rf", label: "RF", Icon: RadioTower },
+  { id: "camera", label: "Camera", Icon: Camera },
+  { id: "gradient", label: "Gradient", Icon: Axis3d },
 ];
 
 function readSavedPos(): RailPos | null {
@@ -259,14 +184,7 @@ export function ViewportToolRail({
           aria-label="Open view tools"
           onClick={() => setOpen(true)}
         >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden>
-            <path
-              d="M5 8h14M5 12h14M5 16h14"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-          </svg>
+          <Menu size={18} strokeWidth={1.75} aria-hidden />
           <span className="view-tool-rail-tag">Tools</span>
         </button>
         <button
@@ -279,7 +197,7 @@ export function ViewportToolRail({
           onPointerUp={onGripPointerUp}
           onPointerCancel={onGripPointerUp}
         >
-          <span className="view-tool-rail-grip-dots" aria-hidden />
+          <Ellipsis size={16} strokeWidth={2} aria-hidden />
         </button>
       </div>
     );
@@ -299,14 +217,7 @@ export function ViewportToolRail({
         aria-label="Collapse tools"
         onClick={() => setOpen(false)}
       >
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden>
-          <path
-            d="M7 7l10 10M17 7 7 17"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-        </svg>
+        <X size={16} strokeWidth={1.75} aria-hidden />
         <span className="view-tool-rail-tag">Close</span>
       </button>
 
@@ -320,23 +231,26 @@ export function ViewportToolRail({
         onPointerUp={onGripPointerUp}
         onPointerCancel={onGripPointerUp}
       >
-        <span className="view-tool-rail-grip-dots" aria-hidden />
+        <Ellipsis size={16} strokeWidth={2} aria-hidden />
       </button>
 
       <div className="view-tool-rail-shell">
-        {TOOLS.map((tool) => (
-          <button
-            key={tool.id}
-            type="button"
-            className={`view-tool-rail-btn${active === tool.id ? " view-tool-rail-btn-active" : ""}`}
-            aria-label={tool.label}
-            aria-pressed={active === tool.id}
-            onClick={() => onActiveChange(tool.id)}
-          >
-            {tool.icon}
-            <span className="view-tool-rail-tag">{tool.label}</span>
-          </button>
-        ))}
+        {TOOLS.map((tool) => {
+          const Icon = tool.Icon;
+          return (
+            <button
+              key={tool.id}
+              type="button"
+              className={`view-tool-rail-btn${active === tool.id ? " view-tool-rail-btn-active" : ""}`}
+              aria-label={tool.label}
+              aria-pressed={active === tool.id}
+              onClick={() => onActiveChange(tool.id)}
+            >
+              <Icon size={18} strokeWidth={1.75} aria-hidden />
+              <span className="view-tool-rail-tag">{tool.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

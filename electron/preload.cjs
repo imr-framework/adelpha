@@ -3,7 +3,10 @@
  */
 const { contextBridge, ipcRenderer } = require("electron");
 
-contextBridge.exposeInMainWorld("adelphaTerminal", {
+contextBridge.exposeInMainWorld("adelphaApp", {
+  quit: () => ipcRenderer.send("app:quit"),
+});
+
   available: true,
   start: (cols, rows) => ipcRenderer.invoke("terminal:start", { cols, rows }),
   write: (data) => {
