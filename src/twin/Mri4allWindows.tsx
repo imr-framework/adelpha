@@ -34,7 +34,6 @@ import {
   pingDevice,
   resetDevice,
   saveConfig,
-  scannerAssetUrl,
   sendDicoms,
   studyExportUrl,
   testDevice,
@@ -43,7 +42,9 @@ import {
   type StudyExam,
   type StudyPreview,
 } from "./mri/api";
+import { getScannerProfile, useScannerModel } from "./scannerModel";
 import { Overlay } from "./ImagingOverlay";
+import { ADELPHA_VERSION } from "./adelphaVersion";
 
 export type ViewerTarget = {
   label: string;
@@ -381,7 +382,12 @@ export function ConfigDialog({ onClose }: { onClose: () => void }) {
 }
 
 export function StatusDialog({ onClose }: { onClose: () => void }) {
-  const [about, setAbout] = useState<{ model: string; serial: string; version: string } | null>(null);
+  const [modelId] = useScannerModel();
+  const profile = getScannerProfile(modelId);
+  const [about, setAbout] = useState<{ model: string; serial: string }>({
+    model: profile.displayName,
+    serial: profile.serial,
+  });
   const [svc, setSvc] = useState<{ acq: boolean | null; recon: boolean | null; mode: string } | null>(null);
   const [ping, setPing] = useState<"idle" | "ok" | "bad">("idle");
   const [test, setTest] = useState<"idle" | "ok" | "bad">("idle");
@@ -394,9 +400,20 @@ export function StatusDialog({ onClose }: { onClose: () => void }) {
       .catch(() => setDisk(null));
   };
   useEffect(() => {
+    setAbout({ model: profile.displayName, serial: profile.serial });
+    if (profile.family !== "mri4all") return;
     void fetchAbout()
-      .then((a) => setAbout({ model: a.system.model || "Adelpha", serial: a.system.serial_number || "—", version: a.version }))
-      .catch(() => setAbout({ model: "Adelpha", serial: "—", version: "—" }));
+      .then((a) => {
+        setAbout({
+          model: profile.displayName,
+          serial: a.system.serial_number || profile.serial,
+        });
+      })
+      .catch(() => {
+        setAbout({ model: profile.displayName, serial: profile.serial });
+      });
+  }, [profile]);
+  useEffect(() => {
     refresh();
     const t = window.setInterval(refresh, 500);
     void pingDevice().then((p) => setPing(p.ok || p.simulation ? "ok" : "bad"));
@@ -409,12 +426,12 @@ export function StatusDialog({ onClose }: { onClose: () => void }) {
       <div className="m4-status-hero">
         <div className="m4-status-copy">
           <p className="m4-gold">
-            <strong>MRI4ALL {about?.model ?? "…"}</strong>
+            <strong>{about.model}</strong>
           </p>
-          <p>Serial Number {about?.serial ?? "…"}</p>
-          <p>Software Version {about?.version ?? "…"}</p>
+          <p>Serial Number {about.serial}</p>
+          <p>Software Version {ADELPHA_VERSION}</p>
         </div>
-        <img className="m4-scanner" src={scannerAssetUrl()} alt="MRI4ALL scanner" />
+        <img className="m4-scanner" src={profile.preview} alt={profile.alt} />
       </div>
       <div className="m4-divider" />
       <div className="m4-status-rows">
@@ -549,16 +566,16 @@ export function StudyDialog({
             <thead>
               <tr>
                 <th>Patient</th>
-                <th>ACC</th>
                 <th>Date / Time</th>
+                <th>ACC</th>
               </tr>
             </thead>
             <tbody>
               {exams.map((e) => (
                 <tr key={e.id} className={selected?.id === e.id ? "is-selected" : undefined} onClick={() => selectExam(e)}>
                   <td>{e.patientName}</td>
-                  <td>{e.acc.toUpperCase()}</td>
                   <td>{e.examTime}</td>
+                  <td>{e.acc.toUpperCase()}</td>
                 </tr>
               ))}
             </tbody>

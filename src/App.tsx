@@ -45,6 +45,7 @@ import {
 import type { AssessMode } from "./twin/dtamTypes";
 import { LaunchScreen } from "./twin/launch/LaunchScreen";
 import { SettingsCard } from "./twin/SettingsCard";
+import { applyConsoleTheme, readConsoleTheme } from "./twin/consoleTheme";
 import { shouldPlayLaunchIntro } from "./twin/launch/launchConfig";
 import "./styles.css";
 
@@ -358,6 +359,10 @@ export default function App() {
   useEffect(() => {
     persistWorkspace(workspace);
   }, [workspace]);
+
+  useEffect(() => {
+    applyConsoleTheme(readConsoleTheme());
+  }, []);
 
   useEffect(() => {
     if (!showSettings) return;

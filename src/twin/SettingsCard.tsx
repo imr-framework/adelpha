@@ -23,7 +23,12 @@ import {
   X,
 } from "lucide-react";
 
-/** Settings UI is a local draft only — controls must not persist or drive the twin. */
+import { useConsoleTheme } from "./consoleTheme";
+import { SCANNER_MODELS, useScannerModel, type ScannerModelId } from "./scannerModel";
+import { ADELPHA_VERSION } from "./adelphaVersion";
+
+/** Most settings are a local draft only and must not persist or drive the twin.
+ *  Console theme and scanner model persist and update the Imaging Console. */
 export type SettingsSectionId =
   | "profile"
   | "appearance"
@@ -87,7 +92,7 @@ const PANEL_COPY: Record<SettingsSectionId, { title: string; subtitle: string }>
   },
   appearance: {
     title: "Appearance",
-    subtitle: "Theme, density, and visual preferences for Adelpha.",
+    subtitle: "Theme, density, and visual preferences for Adelpha and the Imaging Console.",
   },
   notifications: {
     title: "Notifications",
@@ -99,7 +104,7 @@ const PANEL_COPY: Record<SettingsSectionId, { title: string; subtitle: string }>
   },
   "imaging-console": {
     title: "Imaging Console",
-    subtitle: "Sequence defaults and console behavior for acquisition.",
+    subtitle: "Theme, sequence defaults, and console behavior for acquisition.",
   },
   "digital-twin": {
     title: "Digital Twin",
@@ -370,6 +375,18 @@ type PanelProps = {
 };
 
 function ModelPanel({ draft, patch }: PanelProps) {
+  const [currentModel, setCurrentModel] = useScannerModel();
+  const selected = SCANNER_MODELS.find((model) => model.id === currentModel) ?? SCANNER_MODELS[0];
+  const isMri4all = selected.family === "mri4all";
+  const variantOptions = SCANNER_MODELS.filter((model) =>
+    isMri4all ? model.family === "mri4all" : model.family === "halbach",
+  );
+
+  const choose = (id: ScannerModelId) => {
+    setCurrentModel(id);
+    patch("currentModel", id);
+  };
+
   return (
     <>
       <SettingsSection title="Active model">
@@ -381,13 +398,12 @@ function ModelPanel({ draft, patch }: PanelProps) {
               layout="stack"
             >
               <Select
-                value={draft.currentModel}
-                onChange={(v) => patch("currentModel", v)}
-                options={[
-                  { value: "halbach-48", label: "48 mT Halbach — MRI Uganda" },
-                  { value: "halbach-47", label: "47 mT Halbach — Prototype" },
-                  { value: "halbach-64", label: "64 mT Halbach — Research" },
-                ]}
+                value={currentModel}
+                onChange={(v) => choose(v as ScannerModelId)}
+                options={variantOptions.map((model) => ({
+                  value: model.id,
+                  label: model.label,
+                }))}
               />
             </SettingsRow>
             <button type="button" className="settings-btn">
@@ -396,19 +412,43 @@ function ModelPanel({ draft, patch }: PanelProps) {
             <dl className="settings-specs">
               <div>
                 <dt>Type</dt>
-                <dd>Halbach</dd>
+                <dd>{selected.type}</dd>
               </div>
               <div>
                 <dt>Field strength</dt>
-                <dd>48 mT</dd>
+                <dd>{selected.field}</dd>
+              </div>
+              <div>
+                <dt>Serial number</dt>
+                <dd>{selected.serial}</dd>
+              </div>
+              <div>
+                <dt>Software version</dt>
+                <dd>{ADELPHA_VERSION}</dd>
               </div>
             </dl>
           </div>
-          <div className="settings-model-preview">
-            <img
-              src="/settings/3D_models/halbach.png"
-              alt="48 mT Halbach scanner model"
-            />
+          <div className="settings-model-cards" role="group" aria-label="Scanner models">
+            <button
+              type="button"
+              className={`settings-model-card${isMri4all ? "" : " is-active"}`}
+              aria-pressed={!isMri4all}
+              onClick={() => {
+                if (isMri4all) choose("halbach-48");
+              }}
+            >
+              <img src="/settings/3D_models/halbach.png" alt="" />
+              <span>Halbach</span>
+            </button>
+            <button
+              type="button"
+              className={`settings-model-card is-contain${isMri4all ? " is-active" : ""}`}
+              aria-pressed={isMri4all}
+              onClick={() => choose("mri4all-z1")}
+            >
+              <img src="/settings/3D_models/mri4all.png" alt="" />
+              <span>MRI4ALL</span>
+            </button>
           </div>
         </div>
       </SettingsSection>
@@ -623,6 +663,7 @@ function GenericPanel({
       return (
         <>
           <SettingsSection title="Theme">
+            <ConsoleThemeRow />
             <SettingsRow title="Color mode">
               <Segmented
                 value={draft.theme}
@@ -696,6 +737,9 @@ function GenericPanel({
     case "imaging-console":
       return (
         <>
+          <SettingsSection title="Appearance">
+            <ConsoleThemeRow />
+          </SettingsSection>
           <SettingsSection title="Acquisition">
             <SettingsRow title="Default sequence" layout="stack">
               <Select
@@ -810,7 +854,7 @@ function GenericPanel({
       return (
         <>
           <SettingsSection title="Application">
-            <SettingsRow title="Current version" description="Adelpha Digital Twin 0.1.0">
+            <SettingsRow title="Current version" description={`Adelpha Digital Twin ${ADELPHA_VERSION}`}>
               <button type="button" className="settings-btn">
                 Check for updates
               </button>
@@ -832,7 +876,7 @@ function GenericPanel({
             <dl className="settings-specs">
               <div>
                 <dt>Version</dt>
-                <dd>0.1.0</dd>
+                <dd>{ADELPHA_VERSION}</dd>
               </div>
               <div>
                 <dt>Lab</dt>
@@ -845,6 +889,25 @@ function GenericPanel({
     default:
       return null;
   }
+}
+
+function ConsoleThemeRow() {
+  const [consoleTheme, setTheme] = useConsoleTheme();
+  return (
+    <SettingsRow
+      title="Console theme"
+      description="Adelpha violet, or the legacy MRI4ALL navy and gold."
+    >
+      <Segmented
+        value={consoleTheme}
+        onChange={setTheme}
+        options={[
+          { value: "adelpha", label: "Adelpha" },
+          { value: "mri4all", label: "MRI4ALL" },
+        ]}
+      />
+    </SettingsRow>
+  );
 }
 
 function SettingsSection({ title, children }: { title: string; children: ReactNode }) {

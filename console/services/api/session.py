@@ -18,8 +18,6 @@ from common.types import (
     ScanTask,
     SystemInformation,
 )
-from common.version import mri4all_version
-
 from services.api.models import ValidateResponse
 from services.api.sequences_api import get_sequence_info, validate_parameters
 
@@ -40,7 +38,7 @@ class ConsoleSession:
         self.system = SystemInformation(
             name="Adelpha",
             model="Halbach",
-            software_version=mri4all_version.get_version_string(),
+            software_version="0.1.0",
         )
         self.queue: List[ScanQueueEntry] = []
 

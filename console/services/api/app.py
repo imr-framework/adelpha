@@ -271,13 +271,12 @@ def duplicate_scan(scan_id: str):
 
 @app.get("/about")
 def about():
-    from common.version import mri4all_version
     import common.runtime as rt
 
     return {
         "title": "MRI4ALL Console",
         "subtitle": "The Open-Source MRI Software",
-        "version": mri4all_version.get_version_string(),
+        "version": app.version,
         "url": "https://mri4all.org",
         "base": rt.get_base_path(),
         "system": session.system.model_dump(),

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchAbout } from "./mri/api";
+import { ADELPHA_VERSION } from "./adelphaVersion";
 import type { PatientInformation } from "./mri/types";
 import { Overlay } from "./ImagingOverlay";
 
@@ -204,7 +205,7 @@ export function AboutDialog({ onClose }: { onClose: () => void }) {
   const [text, setText] = useState("Loading…");
   useEffect(() => {
     void fetchAbout()
-      .then((a) => setText(`${a.title}\n${a.subtitle}\nVersion ${a.version}\n${a.url}\nBase: ${a.base}`))
+      .then((a) => setText(`${a.title}\n${a.subtitle}\nVersion ${ADELPHA_VERSION}\n${a.url}\nBase: ${a.base}`))
       .catch((e) => setText(e instanceof Error ? e.message : "Unable to load"));
   }, []);
   return (
