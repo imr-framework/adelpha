@@ -26,9 +26,11 @@ import {
 import { useConsoleTheme } from "./consoleTheme";
 import { SCANNER_MODELS, useScannerModel, type ScannerModelId } from "./scannerModel";
 import { ADELPHA_VERSION } from "./adelphaVersion";
+import { useWorkspacePrefs } from "./workspacePrefs";
+import type { WorkspaceId } from "./TopbarControls";
 
 /** Most settings are a local draft only and must not persist or drive the twin.
- *  Console theme and scanner model persist and update the Imaging Console. */
+ *  Console theme, scanner model, and workspace prefs persist and apply immediately. */
 export type SettingsSectionId =
   | "profile"
   | "appearance"
@@ -711,29 +713,7 @@ function GenericPanel({
         </>
       );
     case "workspace":
-      return (
-        <>
-          <SettingsSection title="Defaults">
-            <SettingsRow title="Startup workspace" layout="stack">
-              <Select
-                value={draft.defaultWorkspace}
-                onChange={(v) => patch("defaultWorkspace", v)}
-                options={[
-                  { value: "digital-twin", label: "Digital Twin" },
-                  { value: "imaging-console", label: "Imaging Console" },
-                  { value: "engineering-studio", label: "Engineering Studio" },
-                ]}
-              />
-            </SettingsRow>
-            <SettingsRow title="Restore layout on launch">
-              <Switch checked={draft.restoreLayout} onChange={(v) => patch("restoreLayout", v)} />
-            </SettingsRow>
-            <SettingsRow title="Remember side panel width">
-              <Switch checked={draft.rememberPanel} onChange={(v) => patch("rememberPanel", v)} />
-            </SettingsRow>
-          </SettingsSection>
-        </>
-      );
+      return <WorkspacePanel />;
     case "imaging-console":
       return (
         <>
@@ -889,6 +869,49 @@ function GenericPanel({
     default:
       return null;
   }
+}
+
+function WorkspacePanel() {
+  const [prefs, setPrefs] = useWorkspacePrefs();
+  return (
+    <>
+      <SettingsSection title="Defaults">
+        <SettingsRow
+          title="Startup workspace"
+          description="Opened on launch. Also used now if Restore layout is off."
+          layout="stack"
+        >
+          <Select
+            value={prefs.startupWorkspace}
+            onChange={(v) => setPrefs({ startupWorkspace: v as WorkspaceId })}
+            options={[
+              { value: "digital-twin", label: "Digital Twin" },
+              { value: "imaging-console", label: "Imaging Console" },
+              { value: "engineering-studio", label: "Engineering Studio" },
+            ]}
+          />
+        </SettingsRow>
+        <SettingsRow
+          title="Restore layout on launch"
+          description="Reopen the last workspace and side panel state."
+        >
+          <Switch
+            checked={prefs.restoreLayout}
+            onChange={(v) => setPrefs({ restoreLayout: v })}
+          />
+        </SettingsRow>
+        <SettingsRow
+          title="Remember side panel width"
+          description="Keep the telemetry panel width across sessions."
+        >
+          <Switch
+            checked={prefs.rememberPanel}
+            onChange={(v) => setPrefs({ rememberPanel: v })}
+          />
+        </SettingsRow>
+      </SettingsSection>
+    </>
+  );
 }
 
 function ConsoleThemeRow() {

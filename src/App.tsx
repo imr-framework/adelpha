@@ -37,7 +37,6 @@ import type { HeadPose } from "./twin/CameraFeed";
 import { useHeadMotionStore } from "./twin/headMotionStore";
 import {
   persistWorkspace,
-  readWorkspace,
   TopbarAppMenu,
   TopbarControls,
   type WorkspaceId,
@@ -46,6 +45,11 @@ import type { AssessMode } from "./twin/dtamTypes";
 import { LaunchScreen } from "./twin/launch/LaunchScreen";
 import { SettingsCard } from "./twin/SettingsCard";
 import { applyConsoleTheme, readConsoleTheme } from "./twin/consoleTheme";
+import {
+  readWorkspacePrefs,
+  resolveLaunchWorkspace,
+  useWorkspacePrefs,
+} from "./twin/workspacePrefs";
 import { shouldPlayLaunchIntro } from "./twin/launch/launchConfig";
 import "./styles.css";
 
@@ -136,6 +140,7 @@ function readPanelMode(): PanelMode {
 function readPanelWidth(): number {
   if (typeof localStorage === "undefined") return PANEL_DEFAULT_WIDTH;
   try {
+    if (!readWorkspacePrefs().rememberPanel) return PANEL_DEFAULT_WIDTH;
     const n = Number(localStorage.getItem(PANEL_WIDTH_KEY));
     if (Number.isFinite(n) && n >= PANEL_MIN_WIDTH) return n;
   } catch {
@@ -147,6 +152,7 @@ function readPanelWidth(): number {
 function readPanelCollapsed(): boolean {
   if (typeof localStorage === "undefined") return false;
   try {
+    if (!readWorkspacePrefs().restoreLayout) return false;
     return localStorage.getItem(PANEL_COLLAPSED_KEY) === "1";
   } catch {
     return false;
@@ -348,17 +354,29 @@ export default function App() {
   const [assessMode, setAssessMode] = useState<AssessMode>("observe");
   const [assessError, setAssessError] = useState<string | null>(null);
 
+  const [workspacePrefs] = useWorkspacePrefs();
   const [panelWidth, setPanelWidth] = useState(readPanelWidth);
   const [panelCollapsed, setPanelCollapsed] = useState(readPanelCollapsed);
   const [panelResizing, setPanelResizing] = useState(false);
   const [panelMode, setPanelMode] = useState<PanelMode>(readPanelMode);
-  const [workspace, setWorkspace] = useState<WorkspaceId>(readWorkspace);
+  const [workspace, setWorkspace] = useState<WorkspaceId>(resolveLaunchWorkspace);
   const mainRef = useRef<HTMLElement | null>(null);
   const resizeStart = useRef<{ x: number; width: number } | null>(null);
 
   useEffect(() => {
     persistWorkspace(workspace);
   }, [workspace]);
+
+  useEffect(() => {
+    if (workspacePrefs.restoreLayout) return;
+    setWorkspace(workspacePrefs.startupWorkspace);
+    setPanelCollapsed(false);
+  }, [workspacePrefs.restoreLayout, workspacePrefs.startupWorkspace]);
+
+  useEffect(() => {
+    if (workspacePrefs.rememberPanel) return;
+    setPanelWidth(PANEL_DEFAULT_WIDTH);
+  }, [workspacePrefs.rememberPanel]);
 
   useEffect(() => {
     applyConsoleTheme(readConsoleTheme());
@@ -378,12 +396,13 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!workspacePrefs.rememberPanel) return;
     try {
       localStorage.setItem(PANEL_WIDTH_KEY, String(panelWidth));
     } catch {
       /* ignore */
     }
-  }, [panelWidth]);
+  }, [panelWidth, workspacePrefs.rememberPanel]);
 
   useEffect(() => {
     try {
