@@ -8,7 +8,7 @@ import {
   ScanLine,
   Wrench,
 } from "lucide-react";
-import { IMAGING_CONSOLE_MENU } from "./ImagingConsole";
+import { IMAGING_MENU } from "./ImagingConsole";
 
 export type WorkspaceId = "digital-twin" | "imaging-console" | "engineering-studio";
 
@@ -238,17 +238,30 @@ export function TopbarAppMenu({ workspace }: AppMenuProps) {
         <div className="topbar-menu app-menu" role="menu">
           {workspace === "imaging-console" ? (
             <>
-              <div className="topbar-menu-section">Imaging Console</div>
-              {IMAGING_CONSOLE_MENU.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  role="menuitem"
-                  className="topbar-menu-item"
-                  onClick={() => setOpen(false)}
-                >
-                  <span>{item}</span>
-                </button>
+              {IMAGING_MENU.map((group) => (
+                <div key={group.section}>
+                  <div className="topbar-menu-section">{group.section}</div>
+                  {group.items.map((item) =>
+                    "heading" in item ? (
+                      <div key={`${group.section}-h-${item.heading}`} className="topbar-menu-hint">
+                        {item.heading}
+                      </div>
+                    ) : (
+                      <button
+                        key={item.id}
+                        type="button"
+                        role="menuitem"
+                        className={`topbar-menu-item${item.indent ? " is-indent" : ""}`}
+                        onClick={() => {
+                          setOpen(false);
+                          window.dispatchEvent(new CustomEvent("adelpha:imaging-menu", { detail: item.id }));
+                        }}
+                      >
+                        <span>{item.label}</span>
+                      </button>
+                    ),
+                  )}
+                </div>
               ))}
             </>
           ) : (

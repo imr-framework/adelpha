@@ -3,11 +3,13 @@
  * Serves the Vite `dist/` build on a loopback port and proxies:
  *   /api/dtam/*  → Twin API  (default http://127.0.0.1:8080)
  *   /api/agents/* → Agents API (default http://127.0.0.1:8001)
+ *   /api/mri/*   → MRI4ALL API (default http://127.0.0.1:8002)
  * Hosts a real shell PTY for the in-app xterm terminal.
  */
 const { app, BrowserWindow, shell, ipcMain, session, systemPreferences } = require("electron");
 const http = require("http");
 const https = require("https");
+const net = require("net");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -16,6 +18,7 @@ const pty = require("node-pty");
 
 const TWIN_TARGET = process.env.DTAM_TWIN_URL || "http://127.0.0.1:8080";
 const AGENTS_TARGET = process.env.DTAM_AGENTS_URL || "http://127.0.0.1:8001";
+const MRI_TARGET = process.env.MRI4ALL_API_URL || "http://127.0.0.1:8002";
 const STATIC_CACHE_MAX_BYTES = 8 * 1024 * 1024;
 
 app.commandLine.appendSwitch("ignore-gpu-blocklist");
@@ -214,12 +217,35 @@ function proxyRequest(req, res, targetBase, stripPrefix) {
     }
     res.end(
       JSON.stringify({
-        detail: `Upstream ${targetBase} unreachable (${err.message}). Is the DTAM API running?`,
+        detail: `Upstream ${targetBase} unreachable (${err.message}). Is the API running?`,
       }),
     );
   });
 
   req.pipe(upstream);
+}
+
+function proxyWebSocket(req, socket, head, targetBase, stripPrefix) {
+  const incoming = new URL(req.url || "/", "http://127.0.0.1");
+  const rewritten = incoming.pathname.replace(stripPrefix, "") || "/";
+  const target = new URL(rewritten + incoming.search, targetBase);
+  const port = Number(target.port) || (target.protocol === "https:" ? 443 : 80);
+  const upstream = net.connect(port, target.hostname, () => {
+    const headerLines = Object.entries(req.headers)
+      .filter(([key]) => {
+        const k = key.toLowerCase();
+        return k !== "origin" && k !== "referer" && k !== "host";
+      })
+      .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : value}`);
+    upstream.write(
+      `GET ${target.pathname}${target.search} HTTP/1.1\r\nHost: ${target.host}\r\n${headerLines.join("\r\n")}\r\n\r\n`,
+    );
+    if (head && head.length) upstream.write(head);
+    upstream.pipe(socket);
+    socket.pipe(upstream);
+  });
+  upstream.on("error", () => socket.destroy());
+  socket.on("error", () => upstream.destroy());
 }
 
 /** @type {Map<string, { mime: string, data: Buffer, immutable: boolean }>} */
@@ -287,7 +313,20 @@ function createLocalServer() {
         proxyRequest(req, res, AGENTS_TARGET, /^\/api\/agents/);
         return;
       }
+      if (pathname.startsWith("/api/mri")) {
+        proxyRequest(req, res, MRI_TARGET, /^\/api\/mri/);
+        return;
+      }
       serveStatic(req, res, root);
+    });
+
+    server.on("upgrade", (req, socket, head) => {
+      const pathname = (req.url || "/").split("?")[0];
+      if (pathname.startsWith("/api/mri")) {
+        proxyWebSocket(req, socket, head, MRI_TARGET, /^\/api\/mri/);
+        return;
+      }
+      socket.destroy();
     });
 
     server.once("error", reject);

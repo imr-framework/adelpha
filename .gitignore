@@ -12,7 +12,7 @@ release/
 # Documentation (Zensical)
 site/
 .zensical/
-.venv/
+.mri4all/
 
 # IDE / OS
 .vscode/

@@ -40,6 +40,12 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/agents/, ""),
       },
+      "/api/mri": {
+        target: "http://127.0.0.1:8002",
+        changeOrigin: true,
+        ws: true,
+        rewrite: (path) => path.replace(/^\/api\/mri/, ""),
+      },
     },
   },
 });

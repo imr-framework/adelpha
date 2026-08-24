@@ -1,0 +1,7 @@
+fastapi>=0.110
+uvicorn[standard]>=0.27
+websockets>=12.0
+pydantic>=2.2
+pydicom>=1.2.2
+typing_extensions>=4.0
+

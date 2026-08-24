@@ -18,8 +18,8 @@ interface ImportMetaEnv {
   readonly VITE_ADK_USER_ID?: string;
   /** Comma-separated model options `id:Label,...` for the Agents picker. */
   readonly VITE_ADK_MODELS?: string;
-  /** Default selected model id. */
-  readonly VITE_ADK_MODEL?: string;
+  /** MRI4ALL console API (`/api/mri` via Vite/Electron proxy → :8002). */
+  readonly VITE_MRI_API_URL?: string;
 }
 
 interface ImportMeta {
