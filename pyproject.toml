@@ -1,7 +1,7 @@
 [project]
-name = "digital-twin-ui"
+name = "adelpha"
 version = "0.1.0"
-description = "DTAM digital twin observer GUI — Vite + React Three Fiber dashboard."
+description = "Adelpha — Intelligent Magnetic Resonance Framework (Electron/React GUI + MRI console API)."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []

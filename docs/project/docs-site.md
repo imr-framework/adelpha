@@ -4,7 +4,7 @@ icon: lucide/book-open
 
 # Docs site (Zensical)
 
-Documentation is built with [Zensical](https://zensical.org/docs/), the same toolchain used by DTAM.
+Documentation is built with [Zensical](https://zensical.org/docs/).
 
 ## Commands
 
@@ -18,6 +18,8 @@ make docs-serve  # live preview (default http://127.0.0.1:8000)
 | --- | --- |
 | `zensical.toml` | Site config and navigation |
 | `docs/` | Markdown sources |
+| `docs/assets/adelpha-logo.svg` | Header / home-page logo (same mark as the app) |
+| `docs/assets/favicon.png` | Browser tab icon |
 | `site/` | Build output (gitignored) |
 | `.zensical/` | Local cache (gitignored) |
 

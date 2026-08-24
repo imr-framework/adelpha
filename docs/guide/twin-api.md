@@ -2,21 +2,25 @@
 icon: lucide/globe
 ---
 
-# Twin API & Agents API (GUI contract)
+# Twin API, Agents API, and MRI API (GUI contract)
 
-Authoritative DTAM docs: Twin HTTP API in the DTAM repo (`docs/platform/twin-api.md`). Interactive OpenAPI: `http://127.0.0.1:8080/docs` when the Twin API is running.
+Authoritative DTAM docs: Twin HTTP API in the DTAM repo (`docs/platform/twin-api.md`). Interactive OpenAPI: `http://127.0.0.1:8080/docs` when the Twin API is running. Imaging Console routes: `http://127.0.0.1:8002/docs` when the MRI API is running.
 
 ## Backends this GUI expects
 
-| Backend | DTAM command | Default URL | Vite proxy | Required? |
+| Backend | Command | Default URL | Vite / Electron proxy | Required? |
 | --- | --- | --- | --- | --- |
-| Twin HTTP API | `make twin-api` | `http://127.0.0.1:8080` | `/api/dtam` → `:8080` | **Yes** |
-| Agents API (ADK) | `make agents-api` | `http://127.0.0.1:8001` | `/api/agents` → `:8001` | No (Agents tab only) |
+| Twin HTTP API | DTAM `make twin-api` | `http://127.0.0.1:8080` | `/api/dtam` → `:8080` | **Yes** (Digital Twin) |
+| Agents API (ADK) | DTAM `make agents-api` | `http://127.0.0.1:8001` | `/api/agents` → `:8001` | No (Agents tab only) |
+| MRI console API | `python -m services.api` from `console/` | `http://127.0.0.1:8002` | `/api/mri` → `:8002` | **Yes** (Imaging Console) |
 
 ```bash
 # From the DTAM repository — leave each process running in its own terminal
 make twin-api      # Twin REST for telemetry / forecast / assess
 make agents-api    # ADK api_server for Agents chat (needs GOOGLE_API_KEY)
+
+# From adelpha/console
+python -m services.api
 ```
 
 GUI base URLs (env):
@@ -25,6 +29,7 @@ GUI base URLs (env):
 | --- | --- | --- |
 | `VITE_DTAM_API_URL` | `/api/dtam` | Twin API (via proxy) |
 | `VITE_ADK_API_URL` | `/api/agents` | Agents API (via proxy) |
+| `VITE_MRI_API_URL` | `/api/mri` | MRI console API (via proxy) |
 
 ## Twin API endpoints used
 
@@ -95,3 +100,20 @@ export async function fetchTwinState() {
 ```
 
 Errors from the twin routes are HTTP 500 with `{ "detail": "..." }`; the UI shows `detail` in an error banner.
+
+## MRI console API (Imaging Console)
+
+The façade lives in `console/services/api/app.py`. Groups used by the UI:
+
+| Area | Examples |
+| --- | --- |
+| Health / about | `GET /health`, `GET /about` (version is Adelpha **0.1.0**) |
+| Exam | start / end exam, current exam |
+| Scans | list, create, prepare, edit, stop, patch name, duplicate, delete |
+| Studies | list, preview, export, clone, DICOM send |
+| Device | ping, test, reset, disk, scanner PNG |
+| Services | acq/recon start, stop, kill |
+| Logs | `GET /logs/{acq\|recon\|ui\|api}` |
+| Events | WebSocket `/events` |
+
+Restarting this process clears the in-memory exam. See [Imaging Console](imaging-console.md).

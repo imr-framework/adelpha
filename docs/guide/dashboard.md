@@ -12,12 +12,12 @@ Shows **Adelpha** branding plus application-level controls on the right:
 | --- | --- |
 | **System Context** | Pill showing `scanner_id / mode`. Dropdown lists scanner, mode, and `twin_version` (configuration). |
 | **Workspace switcher** | Labeled pill (e.g. **Digital Twin ▾**) with workspace icon. **⌘K** / **Ctrl+K** opens the menu. |
-| **Settings** | Settings shell button |
+| **Settings** | Settings shell — Workspace, console theme, and 3D model persist; most other rows are a draft |
 | **Menu** | Hamburger — in **Imaging Console** shows Exam · Control · Help · Debug |
 
 Connection health is reflected in the console live indicator and telemetry freshness, not as a separate clock pill.
 
-See [Workspaces](workspaces.md) for switching between Digital Twin, Imaging Console, and Engineering Studio.
+See [Workspaces](workspaces.md) and [Imaging Console](imaging-console.md).
 
 ## Side panels (Digital Twin)
 
@@ -28,7 +28,7 @@ See [Workspaces](workspaces.md) for switching between Digital Twin, Imaging Cons
 5. **Raw sensors** — on-demand `GET /sensors/batch`.
 6. **View / CAD** — exploded slider, wireframe, temperature map (when an STL is configured).
 
-Panel width, collapse state, and Telemetry vs Agents tab persist in `localStorage`.
+Panel width, collapse state, and Telemetry vs Agents tab persist in `localStorage` according to **Settings → Workspace** (remember panel width / restore layout).
 
 ## Provenance
 
@@ -108,7 +108,7 @@ On first load per browser **session**, a cinematic Adelpha intro plays (~7 s). S
 
 ## Out of scope
 
-- Shim / gradient / safety override **commands** (no such Twin API actuators)
+- Shim / gradient / safety override **commands** on the Twin API (no such actuators)
 - Treating predicted values as live measurements
 - Embedding Python / Gemini SDKs in the browser (use DTAM `make agents-api` instead)
-- Live scan execution from Imaging Console (UI shell only today)
+- Opening the Red Pitaya socket from TypeScript (Imaging Console uses the Python façade on `:8002`)

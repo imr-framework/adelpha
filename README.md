@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="public/logos/adelpha-gradient-logo.svg" alt="Adelpha" width="180" />
+
 # Adelpha
 
 ![React](https://img.shields.io/badge/React-18-61DAFB.svg)
@@ -16,120 +18,102 @@
 
 </div>
 
+**Adelpha** is the Intelligent Magnetic Resonance Framework: a dark-mode Electron/React observer for [DTAM](https://github.com/imr-framework/dtam) and an **Imaging Console** that talks to a local MRI4ALL FastAPI façade (not the Qt UI).
+
 > [!NOTE]
-> Adelpha requires DTAM. Live data comes from **[DTAM](https://github.com/imr-framework/dtam)** on your machine (`make twin-api` on port **8080**). Without that backend the app opens but stays disconnected.
+> Live twin telemetry requires **[DTAM](https://github.com/imr-framework/dtam)** (`make twin-api` on port **8080**). The Imaging Console requires the MRI API on port **8002**. Without those backends the app still opens, but those surfaces stay disconnected.
+
+Version **0.1.0**.
 
 ## Install
 
-**Requirements:** 
+**Requirements:**
 - [Node.js 18+](https://nodejs.org/)
-- **DTAM** clone next to this repo
-- [uv](https://docs.astral.sh/uv/) (for DTAM Python deps) 
+- A **DTAM** clone next to this repo (for the Digital Twin)
+- Python 3.10+ (for the Imaging Console API)
+- [uv](https://docs.astral.sh/uv/) (DTAM Python deps and optional docs)
 
 ```text
-~/dtam              ← backend
+~/dtam              ← twin + agents backends
 ~/adelpha           ← this repo
 ```
 
-### 1. Start the twin backend
+### 1. Twin backend (Digital Twin workspace)
 
-In a terminal, from your **DTAM** clone (keep it running):
-
-#### Install
+From your **DTAM** clone:
 
 ```bash
 cd dtam
 uv sync --all-groups
+make twin-api          # :8080 — required for telemetry
+make agents-api        # :8001 — optional, Agents chat (needs GOOGLE_API_KEY)
 ```
 
-#### Servers
-Run the following servers (use different terminals for each).
-These servers also directly serve `Adelpha` if you are using it for you digital twin GUI.
+### 2. MRI console API (Imaging Console workspace)
+
+From this repo, in a Python environment that has `console/requirements.txt` installed:
 
 ```bash
-make twin-api
-make agents-api
+cd adelpha/console
+python -m services.api    # :8002
 ```
 
-### 2. Start the GUI
+If `/opt/mri4all` is not writable, data lives under `adelpha/.mri4all/`. Restarting this API **clears the in-memory exam** — register the patient again.
 
-In a **third** terminal:
+TypeScript never opens the Red Pitaya socket. Sequence execution stays in the Python console (FLOCRA / pypulseq / MaRCoS).
+
+### 3. Start the GUI
 
 ```bash
-cd ..
 cd adelpha
 npm install
+npm run electron:dev    # production Vite build + Electron (typical)
+# or
+npm run dev             # Vite on :5173 (browser; HMR)
 ```
-You can now build from source. Run any of the following commands based on what operating system (OS) your machine is running.
 
-Once the executable files are ready, you will find the required setup in the `release` directory.
+`electron:dev` does **not** hot-reload UI changes — rebuild/restart after CSS or TypeScript edits.
+
+Packaged apps:
 
 ```bash
-# Mac OS
-npm run dist:mac
-
-# Windows
+npm run dist:mac      # → release/
 npm run dist:win
-
-# Debian
 npm run dist:linux
 ```
-If you want to run in development mode, do
-```bash
-npm run electron:dev
-```
-
-Open **http://localhost:5173/** (or the URL Vite prints). Within a few seconds you should see live **Thermal**, **B₀**, **EMI**, and **RF** values updating.
-
-### Optional: Agents chat
-
-For the **Agents** side-panel tab, start a third process in DTAM (requires `GOOGLE_API_KEY` in the DTAM repo `.env`):
-
-```bash
-cd ../dtam && make agents-api
-```
-
-Telemetry works without this; only chat stays offline.
 
 ## Verify
 
 ```bash
-curl -s http://127.0.0.1:8080/health
+curl -s http://127.0.0.1:8080/health    # Twin API
+curl -s http://127.0.0.1:8002/health    # MRI console API
 ```
 
-Expect `"status":"ok"` and `"connected":true`. In the GUI, the console **Logging** tab should show a green live indicator.
+In the GUI, the console **Logging** tab should show a green live indicator when DTAM is up. Switch the workspace to **Imaging Console** (⌘K) for registration, sequences, Study Viewer, Status, logs, and configuration.
 
 ## Documentation
 
-Detailed setup, workspaces, desktop app, env vars, and troubleshooting:
-
 | Topic | Link |
 | --- | --- |
-| Full getting started | [`docs/start/index.md`](docs/start/index.md) |
-| Workspaces (Digital Twin · Imaging Console) | [`docs/guide/workspaces.md`](docs/guide/workspaces.md) |
+| Getting started | [`docs/start/index.md`](docs/start/index.md) |
+| Workspaces | [`docs/guide/workspaces.md`](docs/guide/workspaces.md) |
+| Imaging Console | [`docs/guide/imaging-console.md`](docs/guide/imaging-console.md) |
 | Configuration & proxies | [`docs/guide/configuration.md`](docs/guide/configuration.md) |
-| macOS desktop package | [`docs/start/index.md#macos-desktop-package`](docs/start/index.md) |
-
-Preview the docs site locally:
 
 ```bash
 uv sync --group docs && make docs-serve
 ```
 
-Published docs (GitHub Pages): [imr-framework.github.io/adelpha](https://imr-framework.github.io/adelpha/)
+Published docs: [imr-framework.github.io/adelpha](https://imr-framework.github.io/adelpha/)
 
 ## Troubleshooting
 
 | Symptom | Fix |
 | --- | --- |
-| Disconnected / no live data | Start `make twin-api` in DTAM and leave that terminal open |
-| Agents tab offline | Run `make agents-api` in DTAM; set `GOOGLE_API_KEY` in DTAM `.env` |
-| Port already in use | Use the alternate URL Vite prints in the terminal |
-
-More help → [`docs/start/index.md`](docs/start/index.md#troubleshooting)
-
-## Some fixes
-Incase your teminal does not load a shell in the dev mode, run the following command:
-```bash
-npx electron-rebuild -f -w node-pty
-```
+| Disconnected / no live twin data | Start `make twin-api` in DTAM |
+| Agents tab offline | `make agents-api` in DTAM; `GOOGLE_API_KEY` in DTAM `.env` |
+| Imaging Console empty / API errors | Start `python -m services.api` from `console/` |
+| Exam vanished after API restart | Expected — in-memory session; register again |
+| UI change not visible in Electron | Restart `npm run electron:dev` |
+| Terminal has no shell in Electron | `npx electron-rebuild -f -w node-pty` |
+| Port already in use | Use the URL Vite prints |

@@ -5,10 +5,10 @@ install:
 	npm install
 
 docs:
-	uv run zensical build --strict
+	uv run --group docs zensical build --strict
 
 docs-serve:
-	uv run zensical serve
+	uv run --group docs zensical serve
 
 clean:
 	rm -rf site .zensical dist

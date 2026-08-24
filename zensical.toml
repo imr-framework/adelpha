@@ -1,15 +1,18 @@
 [project]
-site_name = "Digital Twin UI"
-site_description = "Adelpha observer GUI — workspaces, Twin API (:8080), optional Agents API (:8001)."
+site_name = "Adelpha"
+site_description = "Intelligent Magnetic Resonance Framework — Digital Twin, Imaging Console, Twin API (:8080), MRI API (:8002)."
 site_author = "LeoMcBills"
 site_url = "https://imr-framework.github.io/adelpha/"
 repo_url = "https://github.com/imr-framework/adelpha"
 copyright = """
-Copyright &copy; 2026 Digital Twin UI contributors
+Copyright &copy; 2026 Adelpha contributors
 """
 extra_javascript = [
   "javascripts/mathjax.js",
   "https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js",
+]
+extra_css = [
+  "stylesheets/extra.css",
 ]
 
 nav = [
@@ -23,6 +26,7 @@ nav = [
   { Guide = [
       { Architecture = "guide/architecture.md" },
       { Workspaces = "guide/workspaces.md" },
+      { "Imaging Console" = "guide/imaging-console.md" },
       { "Twin API" = "guide/twin-api.md" },
       { Dashboard = "guide/dashboard.md" },
       { Configuration = "guide/configuration.md" },
@@ -37,6 +41,8 @@ nav = [
 
 [project.theme]
 language = "en"
+logo = "assets/adelpha-logo.svg"
+favicon = "assets/favicon.png"
 features = [
   "announce.dismiss",
   "content.code.annotate",
@@ -62,7 +68,6 @@ features = [
 ]
 
 [project.theme.icon]
-logo = "lucide/monitor"
 repo = "fontawesome/brands/github"
 
 [[project.theme.palette]]

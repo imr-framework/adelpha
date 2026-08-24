@@ -3,6 +3,21 @@ revision = 3
 requires-python = ">=3.10"
 
 [[package]]
+name = "adelpha"
+version = "0.1.0"
+source = { virtual = "." }
+
+[package.dev-dependencies]
+docs = [
+    { name = "zensical" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+docs = [{ name = "zensical", specifier = ">=0.0.50" }]
+
+[[package]]
 name = "click"
 version = "8.4.2"
 source = { registry = "https://pypi.org/simple" }
@@ -31,21 +46,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/2a/78/6e9e20106224083cf
 wheels = [
     { url = "https://files.pythonhosted.org/packages/51/25/2a75b47cb057b1e164c604fb81ab690a6cdb5e2260ce651194eae90f64a3/deepmerge-2.1.0-py3-none-any.whl", hash = "sha256:8f148339a91d680a75ecb74ade235d9e759a93df373a0b04e9d31c8666cfeb75", size = 14345, upload-time = "2026-06-22T05:46:06.742Z" },
 ]
-
-[[package]]
-name = "digital-twin-ui"
-version = "0.1.0"
-source = { virtual = "." }
-
-[package.dev-dependencies]
-docs = [
-    { name = "zensical" },
-]
-
-[package.metadata]
-
-[package.metadata.requires-dev]
-docs = [{ name = "zensical", specifier = ">=0.0.50" }]
 
 [[package]]
 name = "jinja2"

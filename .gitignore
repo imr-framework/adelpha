@@ -8,6 +8,8 @@ release/
 .env
 .env.local
 .env.*.local
+.venv/
+.venv-docs/
 
 # Documentation (Zensical)
 site/
