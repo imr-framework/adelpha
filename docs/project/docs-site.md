@@ -18,8 +18,9 @@ make docs-serve  # live preview (default http://127.0.0.1:8000)
 | --- | --- |
 | `zensical.toml` | Site config and navigation |
 | `docs/` | Markdown sources |
-| `docs/assets/adelpha-logo.svg` | Header / home-page logo (same mark as the app) |
-| `docs/assets/favicon.png` | Browser tab icon |
+| `docs/assets/adelpha-logo.svg` | Header / home-page logo (wide butterfly mark) |
+| `docs/assets/adelpha-icon.svg` | Browser tab icon (circular Adelpha mark) |
+| `docs/assets/favicon.png` | PNG fallback of the same circular mark |
 | `site/` | Build output (gitignored) |
 | `.zensical/` | Local cache (gitignored) |
 

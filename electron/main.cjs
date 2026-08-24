@@ -348,12 +348,14 @@ async function createWindow() {
     console.error(`[adelpha] Missing ${path.join(root, "index.html")}. Run: npm run build`);
   }
 
+  const iconPath = path.join(__dirname, "build", "icon.png");
   const win = new BrowserWindow({
     width: 1440,
     height: 900,
     minWidth: 1024,
     minHeight: 700,
     title: "Adelpha Digital Twin",
+    icon: iconPath,
     backgroundColor: "#050505",
     show: false,
     webPreferences: {
@@ -384,6 +386,10 @@ async function createWindow() {
 }
 
 app.whenReady().then(() => {
+  const iconPath = path.join(__dirname, "build", "icon.png");
+  if (process.platform === "darwin" && app.dock && fs.existsSync(iconPath)) {
+    app.dock.setIcon(iconPath);
+  }
   registerMediaPermissions();
   registerTerminalIpc();
   createWindow().catch((err) => {
