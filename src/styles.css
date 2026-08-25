@@ -2109,12 +2109,42 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .viewport-context-kicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 4px 8px 5px;
   font-size: 9.5px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--inspect-label);
+}
+
+.viewport-context-keys {
+  flex: 0 0 auto;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  text-align: right;
+  white-space: nowrap;
+  color: rgba(185, 192, 202, 0.46);
+}
+
+.viewport-context-item:hover .viewport-context-keys {
+  color: rgba(214, 220, 228, 0.7);
+}
+
+/*
+ * Every chord shares one right edge. Rows with a check tick already sit that
+ * far in (tick width + flex gap), so tickless rows and section headers offset
+ * by the same amount instead of hugging the panel edge.
+ */
+.viewport-context-kicker > .viewport-context-keys,
+.viewport-context-item > .viewport-context-keys:last-child {
+  margin-right: 24px;
 }
 
 /* Full-bleed hairline: negative inline margins cancel the menu padding. */

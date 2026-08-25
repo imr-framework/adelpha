@@ -24,6 +24,16 @@ import { requestOpenSettings } from "./settingsOpen";
 
 const DRAG_PX = 6;
 
+const IS_MAC =
+  typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.userAgent);
+
+/** Control + Command chords, so they never collide with plain typing. */
+const SHORTCUTS = {
+  inspection: IS_MAC ? "⌃⌘I" : "Ctrl+Meta+I",
+  rotation: IS_MAC ? "⌃⌘R" : "Ctrl+Meta+R",
+  recenter: IS_MAC ? "⌃⌘C" : "Ctrl+Meta+C",
+};
+
 type MenuPos = { x: number; y: number };
 
 export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
@@ -90,6 +100,22 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
       window.removeEventListener("keydown", onKey);
     };
   }, [enabled]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const onChord = (event: KeyboardEvent) => {
+      if (!event.ctrlKey || !event.metaKey || event.altKey) return;
+      const key = event.key.toLowerCase();
+      if (key !== "i" && key !== "r" && key !== "c") return;
+      event.preventDefault();
+      setPos(null);
+      if (key === "i") setInspectionMode(!inspectionMode);
+      else if (key === "r") setOrbitMode(orbitMode === "turntable" ? "free" : "turntable");
+      else recenterViewport();
+    };
+    window.addEventListener("keydown", onChord);
+    return () => window.removeEventListener("keydown", onChord);
+  }, [enabled, inspectionMode, orbitMode, setInspectionMode, setOrbitMode]);
 
   useLayoutEffect(() => {
     const stage = hostRef.current?.parentElement;
@@ -197,6 +223,7 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
           >
             <LocateFixed size={15} strokeWidth={1.7} aria-hidden />
             <span>Recenter view</span>
+            <kbd className="viewport-context-keys">{SHORTCUTS.recenter}</kbd>
           </button>
 
           <div className="viewport-context-rule" />
@@ -205,13 +232,17 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
           <ToggleRow
             icon={MousePointerClick}
             label="Inspection"
+            keys={SHORTCUTS.inspection}
             checked={inspectionMode}
             onToggle={() => run(() => setInspectionMode(!inspectionMode))}
           />
 
           <div className="viewport-context-rule" />
 
-          <div className="viewport-context-kicker">Rotation</div>
+          <div className="viewport-context-kicker">
+            <span>Rotation</span>
+            <kbd className="viewport-context-keys">{SHORTCUTS.rotation}</kbd>
+          </div>
           <ToggleRow
             icon={RotateCw}
             label="Side to side"
@@ -265,12 +296,14 @@ function ToggleRow({
   label,
   checked,
   onToggle,
+  keys,
   radio = false,
 }: {
   icon: typeof Box;
   label: string;
   checked: boolean;
   onToggle: () => void;
+  keys?: string;
   radio?: boolean;
 }) {
   return (
@@ -283,6 +316,7 @@ function ToggleRow({
     >
       <Icon size={15} strokeWidth={1.7} aria-hidden />
       <span>{label}</span>
+      {keys ? <kbd className="viewport-context-keys">{keys}</kbd> : null}
       <Check size={14} strokeWidth={2.2} aria-hidden className="viewport-context-tick" />
     </button>
   );
