@@ -179,7 +179,7 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
               <button
                 type="button"
                 role="menuitem"
-                className={`viewport-context-item${selectedPart ? "" : " is-primary"}`}
+                className="viewport-context-item"
                 onClick={() => run(() => showAllParts(scannerId))}
               >
                 <Eye size={15} strokeWidth={1.7} aria-hidden />
@@ -192,7 +192,7 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
           <button
             type="button"
             role="menuitem"
-            className={`viewport-context-item${selectedPart || hiddenCount > 0 ? "" : " is-primary"}`}
+            className="viewport-context-item"
             onClick={() => run(() => recenterViewport())}
           >
             <LocateFixed size={15} strokeWidth={1.7} aria-hidden />

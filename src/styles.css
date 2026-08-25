@@ -1833,6 +1833,23 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .viewport-stage {
+  /*
+   * Shared look for floating viewport panels: an opaque polished panel rather
+   * than frosted glass, so labels read the same over every viewport preset.
+   */
+  --inspect-surface: linear-gradient(165deg, #0e0f12 0%, #08090b 58%, #050607 100%);
+  --inspect-edge: rgba(255, 255, 255, 0.09);
+  --inspect-hairline: rgba(255, 255, 255, 0.07);
+  --inspect-row: rgba(255, 255, 255, 0.04);
+  --inspect-accent: rgba(130, 96, 251, 0.55);
+  --inspect-title: #f5f6f8;
+  --inspect-label: rgba(160, 166, 176, 0.82);
+  --inspect-value: rgba(238, 240, 243, 0.94);
+  --inspect-lift:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 18px 40px -20px rgba(0, 0, 0, 0.9),
+    0 0 0 1px rgba(0, 0, 0, 0.45);
   position: relative;
   flex: 1;
   min-height: 0;
@@ -2071,15 +2088,12 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .viewport-context-menu {
   position: absolute;
   z-index: 20;
-  width: 228px;
-  padding: 10px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(16, 16, 20, 0.28);
-  box-shadow:
-    0 18px 48px rgba(0, 0, 0, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(28px) saturate(160%);
+  width: 232px;
+  padding: 9px;
+  border-radius: 14px;
+  border: 1px solid var(--inspect-edge);
+  background: var(--inspect-surface);
+  box-shadow: var(--inspect-lift);
   animation: viewport-context-in 140ms ease-out;
 }
 
@@ -2095,23 +2109,25 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .viewport-context-kicker {
-  padding: 4px 8px 6px;
-  font-size: 10px;
+  padding: 4px 8px 5px;
+  font-size: 9.5px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(155, 160, 168, 0.78);
+  color: var(--inspect-label);
 }
 
+/* Full-bleed hairline: negative inline margins cancel the menu padding. */
 .viewport-context-rule {
   height: 1px;
-  margin: 8px 4px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.12),
-    transparent
-  );
+  margin: 6px -9px;
+  background: var(--inspect-hairline);
+}
+
+@media (min-resolution: 2dppx) {
+  .viewport-context-rule {
+    height: 0.5px;
+  }
 }
 
 .viewport-context-item {
@@ -2145,10 +2161,10 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   background: rgba(255, 255, 255, 0.06);
 }
 
+/* Emphasis without a resting fill, which reads as "already chosen". */
 .viewport-context-item.is-primary {
-  min-height: 38px;
-  margin-bottom: 2px;
-  background: rgba(255, 255, 255, 0.06);
+  min-height: 36px;
+  background: transparent;
   color: #fff;
   font-weight: 550;
 }
@@ -2172,7 +2188,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .viewport-context-menu {
+  .viewport-context-menu,
+  .part-inspect-card,
+  .part-hidden-tray {
     animation: none;
   }
 }
@@ -2186,8 +2204,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   z-index: 18;
   display: grid;
   align-content: start;
-  gap: 10px;
-  width: min(292px, calc(100% - 32px));
+  gap: 8px;
+  width: min(296px, calc(100% - 32px));
   max-height: calc(100% - 24px);
   pointer-events: none;
 }
@@ -2197,34 +2215,25 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   pointer-events: auto;
 }
 
-.part-inspect-card {
+.part-inspect-card,
+.part-hidden-tray {
   overflow: auto;
-  padding: 12px 12px 13px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(16, 16, 20, 0.28);
-  box-shadow:
-    0 18px 48px rgba(0, 0, 0, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(28px) saturate(160%);
-  color: var(--m4-text);
+  border-radius: 14px;
+  border: 1px solid var(--inspect-edge);
+  background: var(--inspect-surface);
+  box-shadow: var(--inspect-lift);
+  color: var(--inspect-value);
   animation: viewport-context-in 140ms ease-out;
+}
+
+.part-inspect-card {
+  padding: 12px 13px 14px;
 }
 
 .part-hidden-tray {
   display: grid;
   gap: 8px;
-  overflow: auto;
-  padding: 10px 10px 11px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(16, 16, 20, 0.28);
-  box-shadow:
-    0 18px 48px rgba(0, 0, 0, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(28px) saturate(160%);
-  color: var(--m4-text);
-  animation: viewport-context-in 140ms ease-out;
+  padding: 11px 12px 12px;
 }
 
 .part-hidden-head {
@@ -2232,32 +2241,36 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 0 2px;
 }
 
 .part-hidden-all {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 4px 9px 4px 8px;
+  border: 1px solid var(--inspect-hairline);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(238, 240, 243, 0.86);
+  background: var(--inspect-row);
+  color: rgba(238, 240, 243, 0.8);
   font-size: 11px;
+  letter-spacing: 0.01em;
   cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
 }
 
 .part-hidden-all:hover {
-  background: rgba(130, 96, 251, 0.22);
-  border-color: rgba(130, 96, 251, 0.5);
+  background: rgba(130, 96, 251, 0.2);
+  border-color: var(--inspect-accent);
   color: #fff;
 }
 
 .part-hidden-list {
   display: grid;
-  gap: 5px;
-  max-height: 176px;
+  gap: 4px;
+  max-height: 180px;
   overflow: auto;
   margin: 0;
   padding: 0;
@@ -2267,21 +2280,25 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .part-hidden-chip {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   width: 100%;
-  padding: 6px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--inspect-row);
   color: rgba(238, 240, 243, 0.72);
   font-size: 12px;
   text-align: left;
   cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
 }
 
 .part-hidden-chip:hover {
-  border-color: rgba(130, 96, 251, 0.5);
-  background: rgba(130, 96, 251, 0.16);
+  border-color: var(--inspect-accent);
+  background: rgba(130, 96, 251, 0.14);
   color: #fff;
 }
 
@@ -2295,37 +2312,11 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .part-hidden-restore {
   flex: 0 0 auto;
   opacity: 0;
+  transition: opacity 120ms ease;
 }
 
 .part-hidden-chip:hover .part-hidden-restore {
-  opacity: 1;
-}
-
-.part-properties-panel {
-  position: absolute;
-  top: 12px;
-  right: 324px;
-  z-index: 22;
-  width: min(292px, calc(100% - 32px));
-  max-height: calc(100% - 24px);
-  overflow: auto;
-  display: grid;
-  gap: 10px;
-  padding: 12px 12px 13px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(16, 16, 20, 0.28);
-  box-shadow:
-    0 18px 48px rgba(0, 0, 0, 0.38),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(28px) saturate(160%);
-  color: var(--m4-text);
-  animation: viewport-context-in 140ms ease-out;
-}
-
-.part-properties-panel .part-inspect-color,
-.part-properties-panel .part-inspect-meta {
-  margin: 0;
+  opacity: 0.9;
 }
 
 .part-inspect-color-value {
@@ -2343,46 +2334,56 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .part-inspect-kicker {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(155, 160, 168, 0.78);
+  color: var(--inspect-label);
 }
 
 .part-inspect-actions {
   display: flex;
-  gap: 4px;
+  gap: 2px;
+  margin-right: -4px;
 }
 
 .part-inspect-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: rgba(238, 240, 243, 0.78);
+  color: rgba(238, 240, 243, 0.62);
   cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
 }
 
 .part-inspect-icon:hover,
 .part-inspect-icon.is-active {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.07);
   color: #fff;
+}
+
+.part-inspect-icon:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--inspect-accent);
 }
 
 .part-inspect-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 8px 2px 0;
-  font-size: 16px;
+  margin: 9px 0 0;
+  color: var(--inspect-title);
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
 }
 
 .part-inspect-chip {
@@ -2398,49 +2399,52 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 8px;
-  margin: 5px 2px 10px;
-  font-size: 12px;
+  margin: 4px 0 2px;
+  font-size: 11.5px;
   color: var(--m4-muted);
 }
 
 .part-inspect-sim {
   padding: 2px 7px;
   border-radius: 999px;
-  background: rgba(130, 96, 251, 0.22);
+  background: rgba(130, 96, 251, 0.2);
   color: #d7ccff;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
+/* Hairline rows read lighter than a stack of filled pills. */
 .part-inspect-dl {
   display: grid;
-  gap: 8px;
   margin: 0;
 }
 
 .part-inspect-dl > div {
   display: grid;
-  gap: 2px;
-  padding: 8px 9px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  gap: 3px;
+  padding: 9px 0;
+  border-top: 1px solid var(--inspect-hairline);
+}
+
+.part-inspect-dl > div:last-child {
+  padding-bottom: 0;
 }
 
 .part-inspect-dl dt {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(155, 160, 168, 0.78);
+  color: var(--inspect-label);
 }
 
 .part-inspect-dl dd {
   margin: 0;
   font-size: 12.5px;
-  line-height: 1.4;
-  color: var(--m4-text);
+  line-height: 1.45;
+  color: var(--inspect-value);
   word-break: break-word;
 }
 
@@ -2449,10 +2453,14 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .part-inspect-readings {
-  margin: 4px 0 0;
+  display: grid;
+  gap: 2px;
+  margin: 5px 0 0;
   padding: 0;
   list-style: none;
-  color: rgba(238, 240, 243, 0.82);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: rgba(238, 240, 243, 0.76);
 }
 
 .part-inspect-muted {
