@@ -159,10 +159,10 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
 
           <div className="viewport-context-rule" />
 
-          <div className="viewport-context-kicker">Parts</div>
+          <div className="viewport-context-kicker">Mode</div>
           <ToggleRow
             icon={MousePointerClick}
-            label="Inspection mode"
+            label="Inspection"
             checked={inspectionMode}
             onToggle={() => run(() => setInspectionMode(!inspectionMode))}
           />
