@@ -2,15 +2,18 @@ import { useEffect, useState } from "react";
 
 export type OrbitMode = "free" | "turntable";
 
-const KEY = "adelpha.orbitMode";
+const KEY = "adelpha.orbitMode.v2";
 const EVENT = "adelpha:orbit-mode";
 
 export function readOrbitMode(): OrbitMode {
   try {
-    return localStorage.getItem(KEY) === "turntable" ? "turntable" : "free";
+    const value = localStorage.getItem(KEY);
+    if (value === "free") return "free";
+    if (value === "turntable") return "turntable";
   } catch {
-    return "free";
+    /* ignore */
   }
+  return "turntable";
 }
 
 export function setOrbitMode(value: OrbitMode) {

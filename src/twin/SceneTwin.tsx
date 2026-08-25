@@ -12,15 +12,25 @@ import { subscribeViewportRecenter } from "./viewportRecenter";
 import { readOrbitMode, useOrbitMode, type OrbitMode } from "./orbitMode";
 
 const MODEL_ORBIT_CENTER: [number, number, number] = [0, 0.345, 0];
-const DEFAULT_DISTANCE = 0.42;
 const DEFAULT_POLAR = THREE.MathUtils.degToRad(68);
 const DEFAULT_AZIMUTH = THREE.MathUtils.degToRad(42);
 const TURNTABLE_POLAR = Math.PI / 2;
 const TURNTABLE_AZIMUTH = 0;
+const CAMERA_FOV_DEG = 45;
+const ACTION = CameraControlsImpl.ACTION;
 
-function cameraPositionAt(polar: number, azimuth: number): [number, number, number] {
+function framingDistance(userScale: number, explodeParts: boolean): number {
+  if (explodeParts) return Math.max(0.26, userScale * 1.25);
+  return 0.11;
+}
+
+function cameraPositionAt(
+  polar: number,
+  azimuth: number,
+  distance: number,
+): [number, number, number] {
   const offset = new THREE.Vector3().setFromSpherical(
-    new THREE.Spherical(DEFAULT_DISTANCE, polar, azimuth),
+    new THREE.Spherical(distance, polar, azimuth),
   );
   return [
     MODEL_ORBIT_CENTER[0] + offset.x,
@@ -28,10 +38,6 @@ function cameraPositionAt(polar: number, azimuth: number): [number, number, numb
     MODEL_ORBIT_CENTER[2] + offset.z,
   ];
 }
-
-const DEFAULT_CAMERA_POSITION = cameraPositionAt(DEFAULT_POLAR, DEFAULT_AZIMUTH);
-const TURNTABLE_CAMERA_POSITION = cameraPositionAt(TURNTABLE_POLAR, TURNTABLE_AZIMUTH);
-const ACTION = CameraControlsImpl.ACTION;
 
 function applyPanButtons(controls: CameraControlsImpl, panWithLeft: boolean) {
   controls.mouseButtons.left = panWithLeft ? ACTION.OFFSET : ACTION.ROTATE;
@@ -54,8 +60,15 @@ function applyOrbitLimits(controls: CameraControlsImpl, mode: OrbitMode, animate
   controls.maxPolarAngle = THREE.MathUtils.degToRad(160);
 }
 
-function applyDefaultView(controls: CameraControlsImpl, animate: boolean, mode: OrbitMode) {
-  const position = mode === "turntable" ? TURNTABLE_CAMERA_POSITION : DEFAULT_CAMERA_POSITION;
+function applyDefaultView(
+  controls: CameraControlsImpl,
+  animate: boolean,
+  mode: OrbitMode,
+  distance: number,
+) {
+  const polar = mode === "turntable" ? TURNTABLE_POLAR : DEFAULT_POLAR;
+  const azimuth = mode === "turntable" ? TURNTABLE_AZIMUTH : DEFAULT_AZIMUTH;
+  const position = cameraPositionAt(polar, azimuth, distance);
   void controls.setLookAt(
     position[0],
     position[1],
@@ -67,6 +80,7 @@ function applyDefaultView(controls: CameraControlsImpl, animate: boolean, mode: 
   );
   void controls.setFocalOffset(0, 0, 0, animate);
   void controls.zoomTo(1, animate);
+  applyOrbitLimits(controls, mode, animate);
 }
 
 export function SceneTwin() {
@@ -83,6 +97,8 @@ export function SceneTwin() {
   const lastPose = useRef<string>("");
   const targetScratch = useRef(new THREE.Vector3());
   const positionScratch = useRef(new THREE.Vector3());
+  const distance = framingDistance(cad?.scale ?? view.magnet_cad_scale, cad?.explodeParts ?? false);
+  const homePosition = cameraPositionAt(TURNTABLE_POLAR, TURNTABLE_AZIMUTH, distance);
 
   const bindControls = useCallback((controls: CameraControlsImpl | null) => {
     if (controls && controls !== controlsRef.current) {
@@ -90,11 +106,10 @@ export function SceneTwin() {
       controls.minDistance = 0.001;
       controls.draggingSmoothTime = 0.04;
       controls.smoothTime = 0.12;
-      applyDefaultView(controls, false, readOrbitMode());
-      applyOrbitLimits(controls, readOrbitMode(), false);
+      applyDefaultView(controls, false, readOrbitMode(), distance);
     }
     controlsRef.current = controls;
-  }, []);
+  }, [distance]);
 
   useEffect(() => {
     const syncModifiers = (event: KeyboardEvent) => {
@@ -117,13 +132,18 @@ export function SceneTwin() {
   }, [orbitMode]);
 
   useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    applyDefaultView(controls, false, readOrbitMode(), distance);
+  }, [cad?.url, scannerId, distance]);
+
+  useEffect(() => {
     return subscribeViewportRecenter(() => {
       const controls = controlsRef.current;
       if (!controls) return;
-      applyDefaultView(controls, true, readOrbitMode());
-      applyOrbitLimits(controls, readOrbitMode(), true);
+      applyDefaultView(controls, true, readOrbitMode(), distance);
     });
-  }, []);
+  }, [distance]);
 
   const b0Ratio = telemetry.b0_mT / Math.max(telemetry.b0_setpoint_mT, 1e-6);
 
@@ -135,15 +155,15 @@ export function SceneTwin() {
     const target = controls
       ? controls.getTarget(targetScratch.current, false)
       : targetScratch.current.set(...MODEL_ORBIT_CENTER);
-    const distance = position.distanceTo(target);
+    const dist = position.distanceTo(target);
     const pose = {
       position: [position.x, position.y, position.z] as [number, number, number],
       target: [target.x, target.y, target.z] as [number, number, number],
-      distance,
+      distance: dist,
     };
     const key = `${pose.position.map((v) => v.toFixed(4)).join(",")}|${pose.target
       .map((v) => v.toFixed(4))
-      .join(",")}|${distance.toFixed(4)}`;
+      .join(",")}|${dist.toFixed(4)}`;
     if (key === lastPose.current) return;
     lastPose.current = key;
     setCameraPose(pose);
@@ -153,8 +173,8 @@ export function SceneTwin() {
     <>
       <PerspectiveCamera
         makeDefault
-        position={DEFAULT_CAMERA_POSITION}
-        fov={45}
+        position={homePosition}
+        fov={CAMERA_FOV_DEG}
         near={0.0001}
         far={100000}
       />

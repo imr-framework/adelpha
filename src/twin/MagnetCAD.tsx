@@ -221,7 +221,7 @@ function MagnetMotionGroup({
   });
 
   return (
-    <group ref={root} position={position} rotation={rotation}>
+    <group ref={root} position={position} rotation={rotation} scale={scale}>
       <group ref={prim} />
     </group>
   );

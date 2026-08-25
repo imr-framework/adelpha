@@ -11,6 +11,7 @@ export function TwinCanvas() {
       shadows
       dpr={[1, 1.5]}
       style={{ background: viewportBg }}
+      onContextMenu={(event) => event.preventDefault()}
       gl={{
         antialias: true,
         powerPreference: "high-performance",
