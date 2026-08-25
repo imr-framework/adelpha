@@ -303,6 +303,7 @@ function MagnetMotionGroup({
   const { gl } = useThree();
   const [scannerId] = useScannerModel();
   const selectPart = usePartInspectorStore((s) => s.selectPart);
+  const inspectionMode = usePartInspectorStore((s) => s.inspectionMode);
 
   useLayoutEffect(() => {
     if (!prim.current) return;
@@ -312,10 +313,11 @@ function MagnetMotionGroup({
 
   useEffect(() => {
     const canvas = gl.domElement;
+    if (!inspectionMode) canvas.style.cursor = "";
     return () => {
       canvas.style.cursor = "";
     };
-  }, [gl]);
+  }, [gl, inspectionMode]);
 
   useFrame(() => {
     if (!root.current) return;
@@ -336,24 +338,25 @@ function MagnetMotionGroup({
       rotation={rotation}
       scale={scale}
       onPointerOver={(event) => {
-        if (!event.object.userData.partId) return;
+        if (!inspectionMode || !event.object.userData.partId) return;
         gl.domElement.style.cursor = "pointer";
       }}
       onPointerOut={() => {
         gl.domElement.style.cursor = "";
       }}
       onClick={(event) => {
-        if (event.button !== 0) return;
+        if (!inspectionMode || event.button !== 0) return;
         const partId = event.object.userData.partId as string | undefined;
         const cadName = (event.object.userData.cadName as string | undefined) ?? partId;
         if (!partId || !cadName) return;
         selectPart({ partId, cadName, scannerId });
       }}
       onPointerDown={(event) => {
-        if (event.button !== 2) return;
+        if (!inspectionMode || event.button !== 2) return;
         press.current = { ...clientXY(event), button: event.button };
       }}
       onPointerUp={(event) => {
+        if (!inspectionMode) return;
         if (event.button !== 2 || !press.current || press.current.button !== 2) return;
         const point = clientXY(event);
         const dx = point.x - press.current.x;

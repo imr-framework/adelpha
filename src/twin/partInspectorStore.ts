@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { type ScannerModelId } from "./scannerModel";
 
 const KEY = "adelpha.partBindings.v1";
+const INSPECT_KEY = "adelpha.inspectionMode";
 
 export type PartBinding = {
   displayName: string;
@@ -61,6 +62,24 @@ function writeBindings(map: BindingsMap) {
   }
 }
 
+function readInspectionMode(): boolean {
+  if (typeof localStorage === "undefined") return false;
+  try {
+    return localStorage.getItem(INSPECT_KEY) === "on";
+  } catch {
+    return false;
+  }
+}
+
+function writeInspectionMode(on: boolean) {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(INSPECT_KEY, on ? "on" : "off");
+  } catch {
+    /* quota / private mode */
+  }
+}
+
 export function humanizePartName(name: string): string {
   const cleaned = name
     .replace(/[_-]+/g, " ")
@@ -87,8 +106,11 @@ type PartInspectorStore = {
   selected: SelectedCadPart | null;
   bindings: BindingsMap;
   catalog: CatalogMap;
+  /** Parts are only clickable in the viewport while this is on. */
+  inspectionMode: boolean;
   selectPart: (part: SelectedCadPart) => void;
   clearSelection: () => void;
+  setInspectionMode: (on: boolean) => void;
   setPartCatalog: (scannerId: string, parts: CadPartRef[]) => void;
   patchBinding: (scannerId: string, partId: string, patch: Partial<PartBinding>) => void;
 };
@@ -97,8 +119,13 @@ export const usePartInspectorStore = create<PartInspectorStore>((set) => ({
   selected: null,
   bindings: readBindings(),
   catalog: {},
+  inspectionMode: readInspectionMode(),
   selectPart: (part) => set({ selected: part }),
   clearSelection: () => set({ selected: null }),
+  setInspectionMode: (on) => {
+    writeInspectionMode(on);
+    set(on ? { inspectionMode: true } : { inspectionMode: false, selected: null });
+  },
   setPartCatalog: (scannerId, parts) =>
     set((state) => ({
       catalog: { ...state.catalog, [scannerId]: parts },

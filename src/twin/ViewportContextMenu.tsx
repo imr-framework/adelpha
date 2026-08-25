@@ -1,5 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Box, Check, Layers, LocateFixed, Move3d, Palette, RotateCw, SlidersHorizontal, Thermometer } from "lucide-react";
+import {
+  Box,
+  Check,
+  Layers,
+  LocateFixed,
+  MousePointerClick,
+  Move3d,
+  Palette,
+  RotateCw,
+  SlidersHorizontal,
+  Thermometer,
+} from "lucide-react";
 import { useTwinStore } from "./telemetryStore";
 import { recenterViewport } from "./viewportRecenter";
 import { useOrbitMode } from "./orbitMode";
@@ -21,6 +32,8 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
   const [orbitMode, setOrbitMode] = useOrbitMode();
   const [modelColors, setModelColors] = useModelColors();
   const selectedPart = usePartInspectorStore((s) => s.selected);
+  const inspectionMode = usePartInspectorStore((s) => s.inspectionMode);
+  const setInspectionMode = usePartInspectorStore((s) => s.setInspectionMode);
 
   useEffect(() => {
     if (!enabled) {
@@ -143,6 +156,16 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
             <LocateFixed size={15} strokeWidth={1.7} aria-hidden />
             <span>Recenter view</span>
           </button>
+
+          <div className="viewport-context-rule" />
+
+          <div className="viewport-context-kicker">Parts</div>
+          <ToggleRow
+            icon={MousePointerClick}
+            label="Inspection mode"
+            checked={inspectionMode}
+            onToggle={() => run(() => setInspectionMode(!inspectionMode))}
+          />
 
           <div className="viewport-context-rule" />
 

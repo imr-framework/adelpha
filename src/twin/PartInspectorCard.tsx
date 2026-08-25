@@ -33,13 +33,13 @@ export function PartInspectorCard() {
   const selected = usePartInspectorStore((s) => s.selected);
   const bindings = usePartInspectorStore((s) => s.bindings);
   const clearSelection = usePartInspectorStore((s) => s.clearSelection);
-  const exploded = useTwinStore((s) => s.view.exploded);
   const telemetry = useTwinStore((s) => s.telemetry);
   const systemState = useTwinStore((s) => s.systemState);
   const connection = useTwinStore((s) => s.connection);
   const sensorsBatch = useTwinStore((s) => s.sensorsBatch);
+  const inspectionMode = usePartInspectorStore((s) => s.inspectionMode);
   const [scannerId] = useScannerModel();
-  const explodeParts = Boolean(cadForScanner(scannerId)?.explodeParts);
+  const hasCad = Boolean(cadForScanner(scannerId));
 
   const binding = selected ? resolvePartBinding(selected, bindings) : null;
   const sensors = useMemo(
@@ -57,10 +57,10 @@ export function PartInspectorCard() {
   const twinMode = systemState?.mode ?? "—";
   const connected = connection === "connected";
 
-  if (!selected && explodeParts && exploded > 0.08) {
+  if (!selected && inspectionMode && hasCad) {
     return (
       <div className="part-inspect-hint">
-        Click a part to inspect · Right-click Properties to edit in Settings
+        Inspection mode · click a part to inspect
       </div>
     );
   }

@@ -1485,8 +1485,8 @@ export default function App() {
               {hasCadMagnet ? (
                 <p className="muted" style={{ margin: "0 0 10px", fontSize: 12, lineHeight: 1.4 }}>
                   {cadForScanner(scannerId)?.explodeParts
-                    ? "Click a part in the viewport to inspect it. Right-click Properties to edit it in Settings → Model library."
-                    : "Click the magnet in the viewport to inspect it. Right-click Properties to edit it in Settings → Model library."}
+                    ? "Right-click the viewport and turn on Inspection mode, then click a part to inspect it. Right-click Properties to edit it in Settings → Model library."
+                    : "Right-click the viewport and turn on Inspection mode, then click the magnet to inspect it. Right-click Properties to edit it in Settings → Model library."}
                 </p>
               ) : null}
               {hasCadMagnet ? (
