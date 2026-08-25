@@ -29,6 +29,7 @@ import {
   refreshSensorsBatch,
   requestAssess,
   requestForecast,
+  scaleForScannerModel,
   useTwinStore,
 } from "./twin/telemetryStore";
 import { SystemConsole } from "./twin/SystemConsole";
@@ -44,6 +45,7 @@ import {
 import type { AssessMode } from "./twin/dtamTypes";
 import { LaunchScreen } from "./twin/launch/LaunchScreen";
 import { SettingsCard } from "./twin/SettingsCard";
+import { cadForScanner, useScannerModel } from "./twin/scannerModel";
 import { applyConsoleTheme, readConsoleTheme } from "./twin/consoleTheme";
 import {
   readWorkspacePrefs,
@@ -330,7 +332,8 @@ export default function App() {
   const sensorsBatch = useTwinStore((s) => s.sensorsBatch);
   const view = useTwinStore((s) => s.view);
   const setView = useTwinStore((s) => s.setView);
-  const hasCadMagnet = Boolean(import.meta.env.VITE_MAGNET_CAD_URL?.trim());
+  const [scannerId] = useScannerModel();
+  const hasCadMagnet = Boolean(cadForScanner(scannerId));
 
   const [showDashboard, setShowDashboard] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -381,6 +384,10 @@ export default function App() {
   useEffect(() => {
     applyConsoleTheme(readConsoleTheme());
   }, []);
+
+  useEffect(() => {
+    setView({ magnet_cad_scale: scaleForScannerModel(scannerId) });
+  }, [scannerId, setView]);
 
   useEffect(() => {
     if (!showSettings) return;
@@ -1460,9 +1467,9 @@ export default function App() {
                     <input
                       type="range"
                       min={0.0001}
-                      max={0.25}
+                      max={1}
                       step={0.0001}
-                      value={Math.min(Math.max(view.magnet_cad_scale, 0.0001), 0.25)}
+                      value={Math.min(Math.max(view.magnet_cad_scale, 0.0001), 1)}
                       onChange={(e) => setView({ magnet_cad_scale: Number(e.target.value) })}
                     />
                   </label>

@@ -25,12 +25,14 @@ import {
 
 import { useConsoleTheme } from "./consoleTheme";
 import { SCANNER_MODELS, useScannerModel, type ScannerModelId } from "./scannerModel";
+import { VIEWPORT_BG_PRESETS, useViewportBg } from "./viewportBg";
+import { useModelColors } from "./useModelColors";
 import { ADELPHA_VERSION } from "./adelphaVersion";
 import { useWorkspacePrefs } from "./workspacePrefs";
 import type { WorkspaceId } from "./TopbarControls";
 
 /** Most settings are a local draft only and must not persist or drive the twin.
- *  Console theme, scanner model, and workspace prefs persist and apply immediately. */
+ *  Console theme, scanner model, viewport background, model colors, and workspace prefs persist and apply immediately. */
 export type SettingsSectionId =
   | "profile"
   | "appearance"
@@ -379,10 +381,7 @@ type PanelProps = {
 function ModelPanel({ draft, patch }: PanelProps) {
   const [currentModel, setCurrentModel] = useScannerModel();
   const selected = SCANNER_MODELS.find((model) => model.id === currentModel) ?? SCANNER_MODELS[0];
-  const isMri4all = selected.family === "mri4all";
-  const variantOptions = SCANNER_MODELS.filter((model) =>
-    isMri4all ? model.family === "mri4all" : model.family === "halbach",
-  );
+  const variantOptions = SCANNER_MODELS.filter((model) => model.family === selected.family);
 
   const choose = (id: ScannerModelId) => {
     setCurrentModel(id);
@@ -433,10 +432,10 @@ function ModelPanel({ draft, patch }: PanelProps) {
           <div className="settings-model-cards" role="group" aria-label="Scanner models">
             <button
               type="button"
-              className={`settings-model-card${isMri4all ? "" : " is-active"}`}
-              aria-pressed={!isMri4all}
+              className={`settings-model-card${selected.family === "halbach" ? " is-active" : ""}`}
+              aria-pressed={selected.family === "halbach"}
               onClick={() => {
-                if (isMri4all) choose("halbach-48");
+                if (selected.family !== "halbach") choose("halbach-48");
               }}
             >
               <img src="/settings/3D_models/halbach.png" alt="" />
@@ -444,15 +443,20 @@ function ModelPanel({ draft, patch }: PanelProps) {
             </button>
             <button
               type="button"
-              className={`settings-model-card is-contain${isMri4all ? " is-active" : ""}`}
-              aria-pressed={isMri4all}
-              onClick={() => choose("mri4all-z1")}
+              className={`settings-model-card is-contain${selected.family === "delta" ? " is-active" : ""}`}
+              aria-pressed={selected.family === "delta"}
+              onClick={() => choose("delta-v2")}
             >
-              <img src="/settings/3D_models/mri4all.png" alt="" />
-              <span>MRI4ALL</span>
+              <img src="/settings/3D_models/delta.png" alt="" />
+              <span>Delta v2</span>
             </button>
           </div>
         </div>
+      </SettingsSection>
+
+      <SettingsSection title="Viewport">
+        <ViewportBgRow />
+        <UseModelColorsRow />
       </SettingsSection>
 
       <SettingsSection title="Model source">
@@ -485,9 +489,6 @@ function ModelPanel({ draft, patch }: PanelProps) {
               { value: "ultra", label: "Ultra" },
             ]}
           />
-        </SettingsRow>
-        <SettingsRow title="Materials & textures" description="Use physically based materials.">
-          <Switch checked={draft.pbrMaterials} onChange={(v) => patch("pbrMaterials", v)} />
         </SettingsRow>
         <SettingsRow
           title="Show internal components"
@@ -752,6 +753,10 @@ function GenericPanel({
     case "digital-twin":
       return (
         <>
+          <SettingsSection title="Viewport">
+            <ViewportBgRow />
+            <UseModelColorsRow />
+          </SettingsSection>
           <SettingsSection title="Observer">
             <SettingsRow title="Telemetry rate" description="Display refresh for live sensors.">
               <Select
@@ -911,6 +916,55 @@ function WorkspacePanel() {
         </SettingsRow>
       </SettingsSection>
     </>
+  );
+}
+
+function UseModelColorsRow() {
+  const [enabled, setEnabled] = useModelColors();
+  return (
+    <SettingsRow
+      title="Use model colors"
+      description="Show colors and textures from the CAD file. Off keeps the studio look."
+    >
+      <Switch checked={enabled} onChange={setEnabled} />
+    </SettingsRow>
+  );
+}
+
+function ViewportBgRow() {
+  const [color, setColor] = useViewportBg();
+  return (
+    <SettingsRow
+      title="Background color"
+      description="Change the twin viewport behind the CAD."
+      layout="stack"
+    >
+      <div className="settings-viewport-bg">
+        <div className="settings-viewport-swatches" role="group" aria-label="Viewport background presets">
+          {VIEWPORT_BG_PRESETS.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              className={`settings-viewport-swatch${color === preset.color ? " is-active" : ""}`}
+              style={{ background: preset.color }}
+              aria-label={preset.label}
+              aria-pressed={color === preset.color}
+              title={preset.label}
+              onClick={() => setColor(preset.color)}
+            />
+          ))}
+        </div>
+        <label className="settings-viewport-custom">
+          <span>Custom</span>
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            aria-label="Custom viewport background"
+          />
+        </label>
+      </div>
+    </SettingsRow>
   );
 }
 

@@ -11,7 +11,7 @@ import type {
   SystemState,
   TwinAssessment,
 } from "./dtamTypes";
-import { readMagnetCadUrl } from "./magnetCadUrl";
+import { cadForScanner, readScannerModel } from "./scannerModel";
 import type { TwinTelemetry } from "./types";
 
 const CAD_VIEW_PREFS_KEY = "twin_magnet_cad_view_v2";
@@ -20,6 +20,7 @@ const POLL_MS = 1500;
 
 type CadViewPrefs = {
   magnet_cad_scale?: number;
+  magnet_cad_scale_by_model?: Record<string, number>;
   cad_offset_x?: number;
   cad_offset_y?: number;
   cad_offset_z?: number;
@@ -38,7 +39,7 @@ function readCadViewPrefs(): CadViewPrefs {
     const legacy = localStorage.getItem(CAD_VIEW_PREFS_LEGACY_KEY);
     if (legacy) {
       const o = JSON.parse(legacy) as CadViewPrefs;
-      const hasCad = Boolean(readMagnetCadUrl());
+      const hasCad = Boolean(cadForScanner());
       const migrated: CadViewPrefs = {
         magnet_cad_scale: o.magnet_cad_scale,
         show_symbolic_internals: true,
@@ -69,12 +70,24 @@ function writeCadViewPrefs(prefs: CadViewPrefs) {
   }
 }
 
-function initialMagnetCadScale(): number {
-  const saved = readCadViewPrefs().magnet_cad_scale;
-  if (typeof saved === "number" && saved > 0) return saved;
+export function scaleForScannerModel(id = readScannerModel()): number {
+  const saved = readCadViewPrefs();
+  const byModel = saved.magnet_cad_scale_by_model?.[id];
+  if (typeof byModel === "number" && byModel > 0) return byModel;
+  const cad = cadForScanner(id);
+  if (cad && typeof saved.magnet_cad_scale === "number" && saved.magnet_cad_scale > 0) {
+    const looksLikeLegacyHalbach = saved.magnet_cad_scale < 0.05;
+    if (cad.explodeParts ? !looksLikeLegacyHalbach : looksLikeLegacyHalbach) {
+      return saved.magnet_cad_scale;
+    }
+  }
   const env = Number(import.meta.env.VITE_MAGNET_CAD_SCALE);
-  if (Number.isFinite(env) && env > 0) return env;
-  return readMagnetCadUrl() ? 0.0012 : 1;
+  if (cad && !cad.explodeParts && Number.isFinite(env) && env > 0) return env;
+  return cad?.scale ?? 1;
+}
+
+function initialMagnetCadScale(): number {
+  return scaleForScannerModel();
 }
 
 function initialCadOffsetX(): number {
@@ -104,7 +117,7 @@ function initialShowSymbolicInternals(): boolean {
 function initialShowGenericHousing(): boolean {
   const saved = readCadViewPrefs().show_generic_housing;
   if (typeof saved === "boolean") return saved;
-  return !readMagnetCadUrl();
+  return !cadForScanner();
 }
 
 function initialWireframe(): boolean {
@@ -274,8 +287,13 @@ export const useTwinStore = create<TwinStore>((set) => ({
         "hybrid_render" in patch ||
         "show_temperature_map" in patch
       ) {
+        const prev = readCadViewPrefs();
         writeCadViewPrefs({
           magnet_cad_scale: view.magnet_cad_scale,
+          magnet_cad_scale_by_model: {
+            ...prev.magnet_cad_scale_by_model,
+            [readScannerModel()]: view.magnet_cad_scale,
+          },
           cad_offset_x: view.cad_offset_x,
           cad_offset_y: view.cad_offset_y,
           cad_offset_z: view.cad_offset_z,

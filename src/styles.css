@@ -2760,6 +2760,52 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   color: #fff;
 }
 
+.settings-viewport-bg {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+}
+
+.settings-viewport-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-viewport-swatch {
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+}
+
+.settings-viewport-swatch:hover,
+.settings-viewport-swatch.is-active {
+  box-shadow: 0 0 0 2px var(--set-accent);
+}
+
+.settings-viewport-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+.settings-viewport-custom input[type="color"] {
+  width: 36px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
 .settings-btn {
   appearance: none;
   height: 34px;

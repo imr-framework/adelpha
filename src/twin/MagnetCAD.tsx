@@ -13,6 +13,107 @@ const CAD_WIREFRAME_COLOR = new THREE.Color("#cfefff");
 const CAD_WIREFRAME_EMISSIVE = new THREE.Color("#8dd8ff");
 const CAD_EDGE_COLOR = new THREE.Color("#e3f6ff");
 
+function snapshotCadMaterial(material: THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial) {
+  material.userData.cadRest = {
+    color: material.color.clone(),
+    map: material.map,
+    emissive: material.emissive.clone(),
+    emissiveIntensity: material.emissiveIntensity,
+    metalness: material.metalness,
+    roughness: material.roughness,
+    opacity: material.opacity,
+    transparent: material.transparent,
+    depthWrite: material.depthWrite,
+    wireframe: material.wireframe,
+    envMapIntensity: material.envMapIntensity,
+    side: material.side,
+  };
+}
+
+function restoreCadMaterial(material: THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial) {
+  const rest = material.userData.cadRest as
+    | {
+        color: THREE.Color;
+        map: THREE.Texture | null;
+        emissive: THREE.Color;
+        emissiveIntensity: number;
+        metalness: number;
+        roughness: number;
+        opacity: number;
+        transparent: boolean;
+        depthWrite: boolean;
+        wireframe: boolean;
+        envMapIntensity: number;
+        side: THREE.Side;
+      }
+    | undefined;
+  if (!rest) return;
+  material.color.copy(rest.color);
+  material.map = rest.map;
+  material.emissive.copy(rest.emissive);
+  material.emissiveIntensity = rest.emissiveIntensity;
+  material.metalness = rest.metalness;
+  material.roughness = rest.roughness;
+  material.opacity = rest.opacity;
+  material.transparent = rest.transparent;
+  material.depthWrite = rest.depthWrite;
+  material.wireframe = rest.wireframe;
+  material.envMapIntensity = rest.envMapIntensity;
+  material.side = rest.side;
+  material.needsUpdate = true;
+}
+
+function applyCadSolidLook(
+  material: THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial,
+  emissiveIntensity = 0.04,
+) {
+  material.map = null;
+  material.color.copy(CAD_SOLID_COLOR);
+  material.emissive.copy(CAD_TECH_EMISSIVE);
+  material.emissiveIntensity = emissiveIntensity;
+  material.metalness = 0.58;
+  material.roughness = 0.3;
+  material.transparent = false;
+  material.opacity = 1;
+  material.depthWrite = true;
+  material.wireframe = false;
+  material.side = THREE.DoubleSide;
+  material.needsUpdate = true;
+}
+
+function applyCadHybridLook(material: THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial) {
+  applyCadSolidLook(material, 0.06);
+  material.metalness = 0.62;
+  material.roughness = 0.24;
+}
+
+function applyCadDisplayLook(
+  material: THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial,
+  useModelColors: boolean,
+  hybrid: boolean,
+) {
+  if (useModelColors) restoreCadMaterial(material);
+  else if (hybrid) applyCadHybridLook(material);
+  else applyCadSolidLook(material);
+}
+
+function applyCadWireframeLook(
+  material: THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial,
+  sparkle: number,
+  showTemperatureMap: boolean,
+) {
+  material.color.copy(CAD_WIREFRAME_COLOR);
+  material.emissive.copy(CAD_WIREFRAME_EMISSIVE);
+  material.emissiveIntensity = showTemperatureMap ? 0.12 : 0.48 * sparkle;
+  material.metalness = 0.78;
+  material.roughness = 0.18;
+  material.transparent = true;
+  material.opacity = 0.96;
+  material.depthWrite = false;
+  material.wireframe = true;
+  material.side = THREE.DoubleSide;
+}
+
 type ThermalUniforms = {
   uThermal: { value: number };
   uTime: { value: number };
@@ -89,6 +190,8 @@ type MagnetMotionProps = {
   rotation: [number, number, number];
   position: [number, number, number];
   model: THREE.Object3D;
+  /** Uniform scale-up explode. Off when the mesh explodes named parts instead. */
+  scaleExplode: boolean;
 };
 
 function MagnetMotionGroup({
@@ -98,6 +201,7 @@ function MagnetMotionGroup({
   rotation,
   position,
   model,
+  scaleExplode,
 }: MagnetMotionProps) {
   const root = useRef<THREE.Group>(null);
   const prim = useRef<THREE.Group>(null);
@@ -112,7 +216,7 @@ function MagnetMotionGroup({
     if (!root.current) return;
     const wobble = 0.01 * (b0Ratio - 1);
     root.current.rotation.y = wobble;
-    const s = scale * (1 + exploded * 0.08);
+    const s = scale * (scaleExplode ? 1 + exploded * 0.08 : 1);
     root.current.scale.setScalar(s);
   });
 
@@ -130,6 +234,59 @@ function centerBufferGeometry(geometry: THREE.BufferGeometry) {
   const c = new THREE.Vector3();
   box.getCenter(c);
   geometry.translate(-c.x, -c.y, -c.z);
+}
+
+const CAD_HELPER_NAME = /^(X-axis|Y-axis|Z-axis|XY-plane|XZ-plane|YZ-plane)/i;
+
+type ExplodePart = {
+  object: THREE.Object3D;
+  rest: THREE.Vector3;
+  dir: THREE.Vector3;
+};
+
+function hideCadHelpers(root: THREE.Object3D) {
+  root.traverse((child) => {
+    if (CAD_HELPER_NAME.test(child.name)) child.visible = false;
+  });
+}
+
+/** Prefer the SolidWorks `assembly` node; drop Blender empties and duplicate copies. */
+function isolateCadRoot(scene: THREE.Object3D): THREE.Group {
+  const assembly = scene.getObjectByName("assembly");
+  const root = new THREE.Group();
+  root.name = "cad-root";
+  if (assembly) {
+    root.add(assembly);
+  } else {
+    root.add(scene);
+    hideCadHelpers(root);
+  }
+  const box = new THREE.Box3().setFromObject(root);
+  const c = new THREE.Vector3();
+  box.getCenter(c);
+  root.position.sub(c);
+  return root;
+}
+
+function collectExplodeParts(root: THREE.Object3D): { parts: ExplodePart[]; distance: number } {
+  const assembly = root.getObjectByName("assembly") ?? root;
+  assembly.updateWorldMatrix(true, true);
+  const assemblyBox = new THREE.Box3().setFromObject(assembly);
+  const ac = assemblyBox.getCenter(new THREE.Vector3());
+  const size = assemblyBox.getSize(new THREE.Vector3());
+  const distance = Math.max(size.x, size.y, size.z) * 0.55;
+  const parts: ExplodePart[] = [];
+  for (const child of assembly.children) {
+    if (!child.visible) continue;
+    const box = new THREE.Box3().setFromObject(child);
+    if (box.isEmpty()) continue;
+    const cc = box.getCenter(new THREE.Vector3());
+    const dir = cc.sub(ac);
+    if (dir.lengthSq() < 1e-12) dir.set(0, 1, 0);
+    else dir.normalize();
+    parts.push({ object: child, rest: child.position.clone(), dir });
+  }
+  return { parts, distance };
 }
 
 function addNeonEdgeOverlay(root: THREE.Object3D): THREE.LineSegments[] {
@@ -164,6 +321,7 @@ function MagnetFromSTL({
   wireframe,
   hybridRender,
   showTemperatureMap,
+  useModelColors,
 }: {
   url: string;
   exploded: number;
@@ -175,6 +333,7 @@ function MagnetFromSTL({
   wireframe: boolean;
   hybridRender: boolean;
   showTemperatureMap: boolean;
+  useModelColors: boolean;
 }) {
   const src = useLoader(STLLoader, url);
   const material = useMemo(
@@ -188,6 +347,7 @@ function MagnetFromSTL({
         side: THREE.DoubleSide,
       });
       ensureThermalShader(mat);
+      snapshotCadMaterial(mat);
       return mat;
     },
     [],
@@ -215,45 +375,20 @@ function MagnetFromSTL({
       : wireframe
         ? "wireframe"
         : "solid";
-    if (renderMode !== "solid") {
-      const sparkle = 0.92 + 0.08 * Math.sin(clock.elapsedTime * 2.6);
-      if (renderMode === "wireframe") {
-        material.color.copy(CAD_WIREFRAME_COLOR);
-        material.emissive.copy(CAD_WIREFRAME_EMISSIVE);
-        material.emissiveIntensity = showTemperatureMap ? 0.12 : 0.48 * sparkle;
-        material.metalness = 0.78;
-        material.roughness = 0.18;
-        material.transparent = true;
-        material.opacity = 0.96;
-        material.depthWrite = false;
-      } else {
-        material.color.copy(CAD_SOLID_COLOR);
-        material.emissive.copy(CAD_TECH_EMISSIVE);
-        material.emissiveIntensity = 0.06;
-        material.metalness = 0.62;
-        material.roughness = 0.24;
-        material.transparent = false;
-        material.opacity = 1;
-        material.depthWrite = true;
-      }
-      for (const edge of edgeOverlayRef.current) {
-        edge.visible = true;
+    const sparkle = 0.92 + 0.08 * Math.sin(clock.elapsedTime * 2.6);
+    if (renderMode === "wireframe") {
+      applyCadWireframeLook(material, sparkle, showTemperatureMap);
+    } else {
+      applyCadDisplayLook(material, useModelColors, renderMode === "hybrid");
+    }
+    for (const edge of edgeOverlayRef.current) {
+      edge.visible = renderMode !== "solid";
+      if (edge.visible) {
         const m = edge.material as THREE.LineBasicMaterial;
         m.opacity = 0.72 + 0.24 * sparkle;
         m.color.copy(CAD_EDGE_COLOR);
       }
-    } else {
-      material.color.copy(CAD_SOLID_COLOR);
-      material.emissive.copy(CAD_TECH_EMISSIVE);
-      material.emissiveIntensity = 0.04;
-      material.metalness = 0.58;
-      material.roughness = 0.3;
-      material.transparent = false;
-      material.opacity = 1;
-      material.depthWrite = true;
-      for (const edge of edgeOverlayRef.current) edge.visible = false;
     }
-    material.wireframe = renderMode === "wireframe";
     const uniforms = material.userData.thermalUniforms as ThermalUniforms | undefined;
     if (uniforms) {
       uniforms.uThermal.value = tempT;
@@ -270,6 +405,7 @@ function MagnetFromSTL({
       rotation={rotation}
       position={position}
       model={object}
+      scaleExplode
     />
   );
 }
@@ -285,6 +421,8 @@ function MagnetFromGLTF({
   wireframe,
   hybridRender,
   showTemperatureMap,
+  explodeParts,
+  useModelColors,
 }: {
   url: string;
   exploded: number;
@@ -296,37 +434,40 @@ function MagnetFromGLTF({
   wireframe: boolean;
   hybridRender: boolean;
   showTemperatureMap: boolean;
+  explodeParts: boolean;
+  useModelColors: boolean;
 }) {
   const gltf = useGLTF(url);
   const materialsRef = useRef<Array<THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial>>([]);
   const edgeOverlayRef = useRef<THREE.LineSegments[]>([]);
+  const explodeRef = useRef<{ parts: ExplodePart[]; distance: number }>({ parts: [], distance: 0 });
   const object = useMemo(() => {
-    const scene = gltf.scene.clone(true);
-    const box = new THREE.Box3().setFromObject(scene);
-    const c = new THREE.Vector3();
-    box.getCenter(c);
-    scene.position.sub(c);
+    const root = isolateCadRoot(gltf.scene.clone(true));
     const materials: Array<THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial> = [];
-    scene.traverse((child) => {
+    root.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return;
-      const m = child.material;
-      const mats = Array.isArray(m) ? m : [m];
-      for (const mat of mats) {
+      const source = child.material;
+      const cloned = (Array.isArray(source) ? source : [source]).map((mat) => mat.clone());
+      child.material = Array.isArray(source) ? cloned : cloned[0];
+      for (const mat of cloned) {
         if (mat instanceof THREE.MeshStandardMaterial || mat instanceof THREE.MeshPhysicalMaterial) {
           ensureThermalShader(mat);
-          mat.color.copy(CAD_SOLID_COLOR);
-          mat.emissive.copy(CAD_TECH_EMISSIVE);
-          mat.emissiveIntensity = 0.04;
-          mat.metalness = THREE.MathUtils.clamp(mat.metalness + 0.18, 0, 1);
-          mat.roughness = THREE.MathUtils.clamp(mat.roughness * 0.75, 0.08, 1);
+          mat.side = THREE.DoubleSide;
+          if (mat.metalness >= 1 && !mat.metalnessMap) {
+            mat.metalness = 0.08;
+            mat.roughness = Math.max(mat.roughness, 0.45);
+          }
+          snapshotCadMaterial(mat);
+          applyCadSolidLook(mat);
           materials.push(mat);
         }
       }
     });
-    edgeOverlayRef.current = addNeonEdgeOverlay(scene);
+    edgeOverlayRef.current = addNeonEdgeOverlay(root);
     materialsRef.current = materials;
-    return scene;
-  }, [gltf]);
+    explodeRef.current = explodeParts ? collectExplodeParts(root) : { parts: [], distance: 0 };
+    return root;
+  }, [gltf, explodeParts]);
 
   useFrame(({ clock }) => {
     const tempT = THREE.MathUtils.clamp((magnetTempC - 24) / 20, 0, 1);
@@ -336,40 +477,29 @@ function MagnetFromGLTF({
         ? "wireframe"
         : "solid";
     const sparkle = 0.92 + 0.08 * Math.sin(clock.elapsedTime * 2.6);
+
+    if (explodeParts) {
+      const { parts, distance } = explodeRef.current;
+      for (const part of parts) {
+        part.object.position.copy(part.rest).addScaledVector(part.dir, exploded * distance);
+      }
+    }
+
     for (const edge of edgeOverlayRef.current) {
       edge.visible = renderMode !== "solid";
-      const m = edge.material as THREE.LineBasicMaterial;
-      m.opacity = 0.72 + 0.24 * sparkle;
-      m.color.copy(CAD_EDGE_COLOR);
-    }
-    for (const mat of materialsRef.current) {
-      if (renderMode !== "solid") {
-        if (renderMode === "wireframe") {
-          mat.color.copy(CAD_WIREFRAME_COLOR);
-          mat.emissive.copy(CAD_WIREFRAME_EMISSIVE);
-          mat.emissiveIntensity = showTemperatureMap ? 0.12 : 0.48 * sparkle;
-          mat.metalness = THREE.MathUtils.clamp(mat.metalness + 0.04, 0, 1);
-          mat.roughness = THREE.MathUtils.clamp(mat.roughness * 0.86, 0.08, 1);
-          mat.transparent = true;
-          mat.opacity = 0.96;
-          mat.depthWrite = false;
-        } else {
-          mat.color.copy(CAD_SOLID_COLOR);
-          mat.emissive.copy(CAD_TECH_EMISSIVE);
-          mat.emissiveIntensity = 0.06;
-          mat.transparent = false;
-          mat.opacity = 1;
-          mat.depthWrite = true;
-        }
-      } else {
-        mat.color.copy(CAD_SOLID_COLOR);
-        mat.emissive.copy(CAD_TECH_EMISSIVE);
-        mat.emissiveIntensity = 0.04;
-        mat.transparent = false;
-        mat.opacity = 1;
-        mat.depthWrite = true;
+      if (edge.visible) {
+        const m = edge.material as THREE.LineBasicMaterial;
+        m.opacity = 0.72 + 0.24 * sparkle;
+        m.color.copy(CAD_EDGE_COLOR);
       }
-      mat.wireframe = renderMode === "wireframe";
+    }
+
+    for (const mat of materialsRef.current) {
+      if (renderMode === "wireframe") {
+        applyCadWireframeLook(mat, sparkle, showTemperatureMap);
+      } else {
+        applyCadDisplayLook(mat, useModelColors, renderMode === "hybrid");
+      }
       const uniforms = mat.userData.thermalUniforms as ThermalUniforms | undefined;
       if (uniforms) {
         uniforms.uThermal.value = tempT;
@@ -387,6 +517,7 @@ function MagnetFromGLTF({
       rotation={rotation}
       position={position}
       model={object}
+      scaleExplode={!explodeParts}
     />
   );
 }
@@ -408,27 +539,35 @@ export function MagnetFromCADFile(props: {
   wireframe: boolean;
   hybridRender: boolean;
   showTemperatureMap: boolean;
+  explodeParts: boolean;
+  useModelColors: boolean;
 }) {
-  return props.url && cadKindFromUrl(props.url) === "stl" ? (
-    <MagnetFromSTL {...props} />
+  const shared = {
+    url: props.url,
+    exploded: props.exploded,
+    b0Ratio: props.b0Ratio,
+    magnetTempC: props.magnetTempC,
+    scale: props.scale,
+    rotation: props.rotation,
+    position: props.position,
+    wireframe: props.wireframe,
+    hybridRender: props.hybridRender,
+    showTemperatureMap: props.showTemperatureMap,
+    useModelColors: props.useModelColors,
+  };
+  return cadKindFromUrl(props.url) === "stl" ? (
+    <MagnetFromSTL {...shared} />
   ) : (
-    <MagnetFromGLTF {...props} />
+    <MagnetFromGLTF {...shared} explodeParts={props.explodeParts} />
   );
 }
 
-export function readCadTransformFromEnv(): {
-  scale: number;
-  rotation: [number, number, number];
-} {
-  const scale = Number(import.meta.env.VITE_MAGNET_CAD_SCALE ?? "1");
-  // Default CAD orientation correction: many CAD exports are Z-up; this maps base to scene "down".
-  const rx = THREE.MathUtils.degToRad(Number(import.meta.env.VITE_MAGNET_CAD_RX_DEG ?? "-90"));
-  const ry = THREE.MathUtils.degToRad(Number(import.meta.env.VITE_MAGNET_CAD_RY_DEG ?? "0"));
-  const rz = THREE.MathUtils.degToRad(Number(import.meta.env.VITE_MAGNET_CAD_RZ_DEG ?? "0"));
-  return {
-    scale: Number.isFinite(scale) && scale > 0 ? scale : 1,
-    rotation: [rx, ry, rz],
-  };
+export function rotationFromDeg(rotationDeg: [number, number, number]): [number, number, number] {
+  return [
+    THREE.MathUtils.degToRad(rotationDeg[0]),
+    THREE.MathUtils.degToRad(rotationDeg[1]),
+    THREE.MathUtils.degToRad(rotationDeg[2]),
+  ];
 }
 
 export { readMagnetCadUrl } from "./magnetCadUrl";
@@ -438,17 +577,19 @@ export function MagnetCADSuspense(props: {
   exploded: number;
   b0Ratio: number;
   magnetTempC: number;
-  /** Final CAD scale value (from env default + persisted user override). */
+  /** Final CAD scale value (profile default + persisted user override). */
   userScale: number;
+  rotationDeg: [number, number, number];
+  explodeParts: boolean;
   offsetX: number;
   offsetY: number;
   offsetZ: number;
   wireframe: boolean;
   hybridRender: boolean;
   showTemperatureMap: boolean;
+  useModelColors: boolean;
   fallback: ReactNode;
 }) {
-  const { rotation } = readCadTransformFromEnv();
   const scale = Math.max(props.userScale, 1e-8);
   const position: [number, number, number] = [props.offsetX, 0.345 + props.offsetY, props.offsetZ];
   return (
@@ -459,11 +600,13 @@ export function MagnetCADSuspense(props: {
         b0Ratio={props.b0Ratio}
         magnetTempC={props.magnetTempC}
         scale={scale}
-        rotation={rotation}
+        rotation={rotationFromDeg(props.rotationDeg)}
         position={position}
         wireframe={props.wireframe}
         hybridRender={props.hybridRender}
         showTemperatureMap={props.showTemperatureMap}
+        explodeParts={props.explodeParts}
+        useModelColors={props.useModelColors}
       />
     </Suspense>
   );
