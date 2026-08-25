@@ -2177,23 +2177,6 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   }
 }
 
-.part-inspect-hint {
-  position: absolute;
-  left: 50%;
-  bottom: 18px;
-  z-index: 16;
-  transform: translateX(-50%);
-  padding: 7px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(16, 16, 20, 0.28);
-  color: rgba(238, 240, 243, 0.78);
-  font-size: 12px;
-  letter-spacing: 0.01em;
-  pointer-events: none;
-  backdrop-filter: blur(18px) saturate(160%);
-}
-
 .part-inspect-card {
   position: absolute;
   top: 12px;

@@ -6,7 +6,7 @@ import {
   resolvePartBinding,
   usePartInspectorStore,
 } from "./partInspectorStore";
-import { cadForScanner, getScannerProfile, useScannerModel } from "./scannerModel";
+import { getScannerProfile } from "./scannerModel";
 import { useTwinStore } from "./telemetryStore";
 import type { SensorMeasurement } from "./dtamTypes";
 
@@ -37,10 +37,6 @@ export function PartInspectorCard() {
   const systemState = useTwinStore((s) => s.systemState);
   const connection = useTwinStore((s) => s.connection);
   const sensorsBatch = useTwinStore((s) => s.sensorsBatch);
-  const inspectionMode = usePartInspectorStore((s) => s.inspectionMode);
-  const [scannerId] = useScannerModel();
-  const hasCad = Boolean(cadForScanner(scannerId));
-
   const binding = selected ? resolvePartBinding(selected, bindings) : null;
   const sensors = useMemo(
     () => uniqueSensors(sensorsBatch?.measurements),
@@ -57,13 +53,6 @@ export function PartInspectorCard() {
   const twinMode = systemState?.mode ?? "—";
   const connected = connection === "connected";
 
-  if (!selected && inspectionMode && hasCad) {
-    return (
-      <div className="part-inspect-hint">
-        Inspection mode · click a part to inspect
-      </div>
-    );
-  }
   if (!selected || !binding) return null;
 
   return (
