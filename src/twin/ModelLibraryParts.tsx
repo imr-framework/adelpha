@@ -215,7 +215,7 @@ function PartConfigFields({
       className="settings-part-editor"
       style={
         {
-          "--part-color": binding.colorHex ?? "rgba(130, 96, 251, 0.55)",
+          "--part-color": binding.colorHex ?? "rgba(255, 255, 255, 0.16)",
         } as CSSProperties
       }
     >
@@ -305,10 +305,11 @@ function PartConfigFields({
         <button
           type="button"
           className={`settings-part-sim${binding.inSimulation ? " is-on" : ""}`}
+          aria-pressed={binding.inSimulation}
           onClick={onToggleSimulation}
         >
           <FlaskConical size={14} strokeWidth={1.8} aria-hidden />
-          {binding.inSimulation ? "In simulation" : "Add to simulation"}
+          Add to simulation
         </button>
       </div>
     </div>

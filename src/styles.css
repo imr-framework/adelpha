@@ -2436,9 +2436,10 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .part-inspect-sim {
   padding: 2px 7px;
+  border: 0;
   border-radius: 999px;
-  background: rgba(130, 96, 251, 0.2);
-  color: #d7ccff;
+  background: var(--m4-accent);
+  color: #fff;
   font-size: 9.5px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -3636,9 +3637,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .settings-part-tile.is-selected {
-  border-color: rgba(130, 96, 251, 0.58);
+  border-color: var(--set-accent-border);
   box-shadow:
-    0 0 0 1px rgba(130, 96, 251, 0.22),
+    0 0 0 1px var(--set-accent-soft),
     0 12px 28px rgba(0, 0, 0, 0.28);
 }
 
@@ -3671,7 +3672,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-weight: 650;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #8b919c;
+  color: #71717a;
 }
 
 .settings-part-name {
@@ -3699,22 +3700,19 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   align-items: center;
   gap: 4px;
   padding: 3px 7px;
+  border: 0;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.05);
-  color: #8b919c;
+  color: #71717a;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 
+/* Active indicators take the Adelpha violet, same as the simulation button. */
 .settings-part-flags span.is-on {
-  background: rgba(130, 96, 251, 0.16);
-  color: #d7ccff;
-}
-
-.settings-part-flags span.is-on:last-child {
-  background: rgba(62, 228, 164, 0.12);
-  color: #b7f7dc;
+  background: var(--set-accent);
+  color: #fff;
 }
 
 .settings-part-editor {
@@ -3722,11 +3720,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   grid-template-columns: 1fr 1fr;
   gap: 14px 18px;
   padding: 16px;
-  border-radius: 16px;
+  border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background:
-    linear-gradient(180deg, rgba(130, 96, 251, 0.08), rgba(12, 12, 14, 0.55));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(8, 8, 10, 0.42));
 }
 
 .settings-part-editor-head {
@@ -3744,7 +3740,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-weight: 650;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #8b919c;
+  color: #71717a;
 }
 
 .settings-part-editor-title {
@@ -3777,10 +3773,10 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   display: grid;
   gap: 6px;
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-weight: 650;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #a1a1aa;
+  color: #71717a;
 }
 
 .settings-part-field .settings-input,
@@ -3812,21 +3808,36 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   height: 40px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 10px;
-  background: rgba(130, 96, 251, 0.16);
-  color: #e8e2ff;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e4e4e7;
   font: inherit;
   font-size: 13px;
   cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease,
+    color 0.15s ease;
 }
 
+/* Same hover as a part tile: brighter edge and a 1px lift, no color shift. */
 .settings-part-sim:hover {
-  background: rgba(130, 96, 251, 0.26);
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
 }
 
+/* Adelpha violet, borderless = this part is in the simulation. */
 .settings-part-sim.is-on {
-  background: rgba(62, 228, 164, 0.14);
-  border-color: rgba(62, 228, 164, 0.28);
-  color: #b7f7dc;
+  border-color: transparent;
+  background: var(--set-accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.settings-part-sim.is-on:hover {
+  border-color: transparent;
+  background: #7c4feb;
+  transform: translateY(-1px);
 }
 
 @media (max-width: 980px) {
@@ -6265,4 +6276,75 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .m4-viewin-menu button:hover {
   background: var(--m4-accent);
+}
+
+/*
+ * Platform-wide button hover.
+ *
+ * One signature for every action button: a brighter edge and a 1px lift, the
+ * same feel as a model part tile. Selectors are listed explicitly rather than
+ * matching `button`, because menu rows, tabs, and list chips are also buttons
+ * and must stay flat — a row that lifts out of its list reads as broken.
+ *
+ * `:not(:active)` keeps each button's own press feedback (scale or push-down)
+ * from fighting the lift, and `:not(:disabled)` leaves dead controls inert.
+ */
+.topbar-icon-btn,
+.system-context-btn,
+.workspace-switcher,
+.camera-mask-btn,
+.viewport-dashboard-btn,
+.settings-btn,
+.settings-card-close,
+.settings-part-editor-close,
+.chart-modal-close,
+.agent-tool-btn,
+.agent-icon-btn,
+.agent-model-pill,
+.panel-collapse-btn,
+.action-btn,
+.m4-btn,
+.m4-icon-btn,
+.view-tool-rail-btn,
+.view-tool-rail-close,
+.view-tool-rail-fab,
+.part-inspect-sim-btn,
+.part-hidden-all {
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease,
+    color 0.15s ease;
+}
+
+.topbar-icon-btn:hover:not(:disabled):not(:active),
+.system-context-btn:hover:not(:disabled):not(:active),
+.workspace-switcher:hover:not(:disabled):not(:active),
+.camera-mask-btn:hover:not(:disabled):not(:active),
+.viewport-dashboard-btn:hover:not(:disabled):not(:active),
+.settings-btn:hover:not(:disabled):not(:active),
+.settings-card-close:hover:not(:disabled):not(:active),
+.settings-part-editor-close:hover:not(:disabled):not(:active),
+.chart-modal-close:hover:not(:disabled):not(:active),
+.agent-tool-btn:hover:not(:disabled):not(:active),
+.agent-icon-btn:hover:not(:disabled):not(:active),
+.agent-model-pill:hover:not(:disabled):not(:active),
+.panel-collapse-btn:hover:not(:disabled):not(:active),
+.action-btn:hover:not(:disabled):not(:active),
+.m4-btn:hover:not(:disabled):not(:active),
+.m4-icon-btn:hover:not(:disabled):not(:active),
+.view-tool-rail-btn:hover:not(:disabled):not(:active),
+.view-tool-rail-close:hover:not(:disabled):not(:active),
+.view-tool-rail-fab:hover:not(:disabled):not(:active),
+.part-inspect-sim-btn:hover:not(:disabled):not(:active),
+.part-hidden-all:hover:not(:disabled):not(:active) {
+  transform: translateY(-1px);
+}
+
+/* Families that previously only shifted their fill now brighten their edge. */
+.viewport-dashboard-btn:hover:not(:disabled),
+.chart-modal-close:hover:not(:disabled),
+.agent-tool-btn:hover:not(:disabled),
+.part-inspect-sim-btn:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.28);
 }
