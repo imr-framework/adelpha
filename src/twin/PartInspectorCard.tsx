@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { X } from "lucide-react";
+import { EyeOff, Focus, X } from "lucide-react";
 import { formatTempC } from "./format";
 import {
   inferPartRole,
@@ -33,6 +33,8 @@ export function PartInspectorCard() {
   const selected = usePartInspectorStore((s) => s.selected);
   const bindings = usePartInspectorStore((s) => s.bindings);
   const clearSelection = usePartInspectorStore((s) => s.clearSelection);
+  const hidePart = usePartInspectorStore((s) => s.hidePart);
+  const isolatePart = usePartInspectorStore((s) => s.isolatePart);
   const telemetry = useTwinStore((s) => s.telemetry);
   const systemState = useTwinStore((s) => s.systemState);
   const connection = useTwinStore((s) => s.connection);
@@ -63,7 +65,26 @@ export function PartInspectorCard() {
           <button
             type="button"
             className="part-inspect-icon"
+            aria-label={`Isolate ${binding.displayName}`}
+            title="Isolate part (hide everything else)"
+            onClick={() => isolatePart(selected.scannerId, selected.partId)}
+          >
+            <Focus size={14} strokeWidth={1.8} />
+          </button>
+          <button
+            type="button"
+            className="part-inspect-icon"
+            aria-label={`Hide ${binding.displayName}`}
+            title="Hide part"
+            onClick={() => hidePart(selected.scannerId, selected.partId)}
+          >
+            <EyeOff size={14} strokeWidth={1.8} />
+          </button>
+          <button
+            type="button"
+            className="part-inspect-icon"
             aria-label="Deselect part"
+            title="Deselect"
             onClick={() => clearSelection()}
           >
             <X size={14} strokeWidth={1.8} />

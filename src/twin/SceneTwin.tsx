@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import CameraControlsImpl from "camera-controls";
 import * as THREE from "three";
 import { MagnetCADSuspense } from "./MagnetCAD";
-import { clearPartSelection } from "./partInspectorStore";
+import { clearPartSelection, resetPartView } from "./partInspectorStore";
 import { cadForScanner, useScannerModel } from "./scannerModel";
 import { useTwinStore } from "./telemetryStore";
 import { useViewportBg } from "./viewportBg";
@@ -152,7 +152,7 @@ export function SceneTwin() {
   }, [orbitMode]);
 
   useEffect(() => {
-    clearPartSelection();
+    resetPartView(scannerId);
   }, [cad?.url, scannerId]);
 
   useEffect(() => {

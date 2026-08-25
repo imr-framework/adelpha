@@ -40,6 +40,9 @@ export type CadPartRef = {
 
 type BindingsMap = Record<string, Record<string, PartBinding>>;
 type CatalogMap = Record<string, CadPartRef[]>;
+type HiddenMap = Record<string, string[]>;
+
+const NO_HIDDEN: string[] = [];
 
 function readBindings(): BindingsMap {
   if (typeof localStorage === "undefined") return {};
@@ -108,9 +111,19 @@ type PartInspectorStore = {
   catalog: CatalogMap;
   /** Parts are only clickable in the viewport while this is on. */
   inspectionMode: boolean;
+  /**
+   * Parts culled from the viewport so the user can see what sits behind them.
+   * Deliberately session-only: a part that stayed invisible across restarts
+   * would read as a broken model rather than a view choice.
+   */
+  hidden: HiddenMap;
   selectPart: (part: SelectedCadPart) => void;
   clearSelection: () => void;
   setInspectionMode: (on: boolean) => void;
+  hidePart: (scannerId: string, partId: string) => void;
+  showPart: (scannerId: string, partId: string) => void;
+  isolatePart: (scannerId: string, partId: string) => void;
+  showAllParts: (scannerId: string) => void;
   setPartCatalog: (scannerId: string, parts: CadPartRef[]) => void;
   patchBinding: (scannerId: string, partId: string, patch: Partial<PartBinding>) => void;
 };
@@ -120,12 +133,41 @@ export const usePartInspectorStore = create<PartInspectorStore>((set) => ({
   bindings: readBindings(),
   catalog: {},
   inspectionMode: readInspectionMode(),
+  hidden: {},
   selectPart: (part) => set({ selected: part }),
   clearSelection: () => set({ selected: null }),
   setInspectionMode: (on) => {
     writeInspectionMode(on);
-    set(on ? { inspectionMode: true } : { inspectionMode: false, selected: null });
+    set(on ? { inspectionMode: true } : { inspectionMode: false, selected: null, hidden: {} });
   },
+  hidePart: (scannerId, partId) =>
+    set((state) => {
+      const current = state.hidden[scannerId] ?? NO_HIDDEN;
+      if (current.includes(partId)) return state;
+      const dropSelection =
+        state.selected?.partId === partId && state.selected.scannerId === scannerId;
+      return {
+        hidden: { ...state.hidden, [scannerId]: [...current, partId] },
+        ...(dropSelection ? { selected: null } : null),
+      };
+    }),
+  showPart: (scannerId, partId) =>
+    set((state) => {
+      const current = state.hidden[scannerId] ?? NO_HIDDEN;
+      if (!current.includes(partId)) return state;
+      return {
+        hidden: { ...state.hidden, [scannerId]: current.filter((id) => id !== partId) },
+      };
+    }),
+  isolatePart: (scannerId, partId) =>
+    set((state) => {
+      const others = listPartsForScanner(scannerId, state.catalog, state.bindings)
+        .map((part) => part.partId)
+        .filter((id) => id !== partId);
+      return { hidden: { ...state.hidden, [scannerId]: others } };
+    }),
+  showAllParts: (scannerId) =>
+    set((state) => ({ hidden: { ...state.hidden, [scannerId]: NO_HIDDEN } })),
   setPartCatalog: (scannerId, parts) =>
     set((state) => ({
       catalog: { ...state.catalog, [scannerId]: parts },
@@ -179,6 +221,17 @@ export function listPartsForScanner(
   return [...fromCad, ...extras];
 }
 
+export function selectHiddenParts(state: { hidden: HiddenMap }, scannerId: string): string[] {
+  return state.hidden[scannerId] ?? NO_HIDDEN;
+}
+
 export function clearPartSelection() {
   usePartInspectorStore.getState().clearSelection();
+}
+
+/** Drop selection and restore every hidden part — used when the loaded CAD changes. */
+export function resetPartView(scannerId: string) {
+  const store = usePartInspectorStore.getState();
+  store.clearSelection();
+  store.showAllParts(scannerId);
 }

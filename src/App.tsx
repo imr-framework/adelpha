@@ -36,6 +36,7 @@ import { SystemConsole } from "./twin/SystemConsole";
 import { ViewportToolRail, type ViewportToolId } from "./twin/ViewportToolRail";
 import { ViewportContextMenu } from "./twin/ViewportContextMenu";
 import { PartInspectorCard } from "./twin/PartInspectorCard";
+import { PartVisibilityTray } from "./twin/PartVisibilityTray";
 import type { HeadPose } from "./twin/CameraFeed";
 import { useHeadMotionStore } from "./twin/headMotionStore";
 import {
@@ -744,7 +745,10 @@ export default function App() {
           {showLaunch || stageMode === "camera" ? null : (
             <>
               <ViewportContextMenu enabled />
-              <PartInspectorCard />
+              <div className="part-inspect-stack">
+                <PartInspectorCard />
+                <PartVisibilityTray />
+              </div>
             </>
           )}
           {showLaunch ? null : stageMode === "camera" ? (

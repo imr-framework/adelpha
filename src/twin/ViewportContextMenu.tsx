@@ -2,6 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   Box,
   Check,
+  Eye,
+  EyeOff,
+  Focus,
   Layers,
   LocateFixed,
   MousePointerClick,
@@ -15,7 +18,8 @@ import { useTwinStore } from "./telemetryStore";
 import { recenterViewport } from "./viewportRecenter";
 import { useOrbitMode } from "./orbitMode";
 import { useModelColors } from "./useModelColors";
-import { usePartInspectorStore } from "./partInspectorStore";
+import { selectHiddenParts, usePartInspectorStore } from "./partInspectorStore";
+import { useScannerModel } from "./scannerModel";
 import { requestOpenSettings } from "./settingsOpen";
 
 const DRAG_PX = 6;
@@ -34,6 +38,11 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
   const selectedPart = usePartInspectorStore((s) => s.selected);
   const inspectionMode = usePartInspectorStore((s) => s.inspectionMode);
   const setInspectionMode = usePartInspectorStore((s) => s.setInspectionMode);
+  const hidePart = usePartInspectorStore((s) => s.hidePart);
+  const isolatePart = usePartInspectorStore((s) => s.isolatePart);
+  const showAllParts = usePartInspectorStore((s) => s.showAllParts);
+  const [scannerId] = useScannerModel();
+  const hiddenCount = usePartInspectorStore((s) => selectHiddenParts(s, scannerId).length);
 
   useEffect(() => {
     if (!enabled) {
@@ -143,6 +152,39 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
                 <SlidersHorizontal size={15} strokeWidth={1.7} aria-hidden />
                 <span>Properties</span>
               </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="viewport-context-item"
+                onClick={() => run(() => hidePart(scannerId, selectedPart.partId))}
+              >
+                <EyeOff size={15} strokeWidth={1.7} aria-hidden />
+                <span>Hide part</span>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="viewport-context-item"
+                onClick={() => run(() => isolatePart(scannerId, selectedPart.partId))}
+              >
+                <Focus size={15} strokeWidth={1.7} aria-hidden />
+                <span>Isolate part</span>
+              </button>
+              <div className="viewport-context-rule" />
+            </>
+          ) : null}
+
+          {inspectionMode && hiddenCount > 0 ? (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                className={`viewport-context-item${selectedPart ? "" : " is-primary"}`}
+                onClick={() => run(() => showAllParts(scannerId))}
+              >
+                <Eye size={15} strokeWidth={1.7} aria-hidden />
+                <span>Show all parts ({hiddenCount} hidden)</span>
+              </button>
               <div className="viewport-context-rule" />
             </>
           ) : null}
@@ -150,7 +192,7 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
           <button
             type="button"
             role="menuitem"
-            className={`viewport-context-item${selectedPart ? "" : " is-primary"}`}
+            className={`viewport-context-item${selectedPart || hiddenCount > 0 ? "" : " is-primary"}`}
             onClick={() => run(() => recenterViewport())}
           >
             <LocateFixed size={15} strokeWidth={1.7} aria-hidden />

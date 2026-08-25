@@ -231,6 +231,28 @@ function tagSelectableParts(root: THREE.Object3D, fallbackName: string) {
   apply(root, fallbackName, fallbackName);
 }
 
+/**
+ * Topmost node per part, i.e. the object to toggle when hiding a part. Deeper
+ * tagged nodes are left alone so per-frame looks (edge overlays) keep control
+ * of their own `visible` flag.
+ */
+function collectPartRoots(root: THREE.Object3D): Map<string, THREE.Object3D> {
+  const roots = new Map<string, THREE.Object3D>();
+  root.traverse((child) => {
+    const partId = child.userData.partId as string | undefined;
+    if (!partId || roots.has(partId)) return;
+    if (child.parent?.userData.partId === partId) return;
+    roots.set(partId, child);
+  });
+  return roots;
+}
+
+function applyPartVisibility(roots: Map<string, THREE.Object3D>, hidden: Set<string>) {
+  for (const [partId, object] of roots) {
+    object.visible = !hidden.has(partId);
+  }
+}
+
 function collectTaggedParts(root: THREE.Object3D): CadPartRef[] {
   const seen = new Map<string, CadPartRef>();
   root.traverse((child) => {
@@ -288,6 +310,22 @@ function applyPartAppearance(
   });
 }
 
+/**
+ * Nearest hit that is still shown. Three.js raycasts invisible meshes too, so a
+ * hidden part would otherwise keep swallowing clicks meant for what it covers.
+ */
+function pickVisiblePart(
+  intersections: ReadonlyArray<{ object: THREE.Object3D }>,
+  hidden: Set<string>,
+): CadPartRef | null {
+  for (const hit of intersections) {
+    const partId = hit.object.userData.partId as string | undefined;
+    if (!partId || hidden.has(partId)) continue;
+    return { partId, cadName: (hit.object.userData.cadName as string | undefined) ?? partId };
+  }
+  return null;
+}
+
 function MagnetMotionGroup({
   exploded,
   b0Ratio,
@@ -304,6 +342,8 @@ function MagnetMotionGroup({
   const [scannerId] = useScannerModel();
   const selectPart = usePartInspectorStore((s) => s.selectPart);
   const inspectionMode = usePartInspectorStore((s) => s.inspectionMode);
+  const hiddenIds = usePartInspectorStore((s) => s.hidden[scannerId]);
+  const hidden = useMemo(() => new Set(hiddenIds ?? []), [hiddenIds]);
 
   useLayoutEffect(() => {
     if (!prim.current) return;
@@ -338,7 +378,7 @@ function MagnetMotionGroup({
       rotation={rotation}
       scale={scale}
       onPointerOver={(event) => {
-        if (!inspectionMode || !event.object.userData.partId) return;
+        if (!inspectionMode || !pickVisiblePart(event.intersections, hidden)) return;
         gl.domElement.style.cursor = "pointer";
       }}
       onPointerOut={() => {
@@ -346,10 +386,9 @@ function MagnetMotionGroup({
       }}
       onClick={(event) => {
         if (!inspectionMode || event.button !== 0) return;
-        const partId = event.object.userData.partId as string | undefined;
-        const cadName = (event.object.userData.cadName as string | undefined) ?? partId;
-        if (!partId || !cadName) return;
-        selectPart({ partId, cadName, scannerId });
+        const part = pickVisiblePart(event.intersections, hidden);
+        if (!part) return;
+        selectPart({ ...part, scannerId });
       }}
       onPointerDown={(event) => {
         if (!inspectionMode || event.button !== 2) return;
@@ -363,10 +402,9 @@ function MagnetMotionGroup({
         const dy = point.y - press.current.y;
         press.current = null;
         if (dx * dx + dy * dy > PART_CLICK_PX * PART_CLICK_PX) return;
-        const partId = event.object.userData.partId as string | undefined;
-        const cadName = (event.object.userData.cadName as string | undefined) ?? partId;
-        if (!partId || !cadName) return;
-        selectPart({ partId, cadName, scannerId });
+        const part = pickVisiblePart(event.intersections, hidden);
+        if (!part) return;
+        selectPart({ ...part, scannerId });
       }}
     >
       <group ref={prim} />
@@ -515,13 +553,17 @@ function MagnetFromSTL({
   const [scannerId] = useScannerModel();
   const scannerBindings = usePartInspectorStore((s) => s.bindings[scannerId]);
   const setPartCatalog = usePartInspectorStore((s) => s.setPartCatalog);
+  const hiddenIds = usePartInspectorStore((s) => s.hidden[scannerId]);
+  const hidden = useMemo(() => new Set(hiddenIds ?? []), [hiddenIds]);
   const edgeOverlayRef = useRef<THREE.LineSegments[]>([]);
+  const partRootsRef = useRef<Map<string, THREE.Object3D>>(new Map());
 
   useLayoutEffect(() => {
     edgeOverlayRef.current = addNeonEdgeOverlay(object);
   }, [object]);
 
   useLayoutEffect(() => {
+    partRootsRef.current = collectPartRoots(object);
     setPartCatalog(scannerId, collectTaggedParts(object));
   }, [object, scannerId, setPartCatalog]);
 
@@ -553,6 +595,7 @@ function MagnetFromSTL({
       uniforms.uHeatEnabled.value = showTemperatureMap ? (renderMode === "wireframe" ? 0.85 : 0.65) : 0;
     }
     applyPartAppearance(object, scannerBindings, selectedPartId, renderMode === "wireframe");
+    applyPartVisibility(partRootsRef.current, hidden);
   });
 
   return (
@@ -631,8 +674,12 @@ function MagnetFromGLTF({
   const [scannerId] = useScannerModel();
   const scannerBindings = usePartInspectorStore((s) => s.bindings[scannerId]);
   const setPartCatalog = usePartInspectorStore((s) => s.setPartCatalog);
+  const hiddenIds = usePartInspectorStore((s) => s.hidden[scannerId]);
+  const hidden = useMemo(() => new Set(hiddenIds ?? []), [hiddenIds]);
+  const partRootsRef = useRef<Map<string, THREE.Object3D>>(new Map());
 
   useLayoutEffect(() => {
+    partRootsRef.current = collectPartRoots(object);
     setPartCatalog(scannerId, collectTaggedParts(object));
   }, [object, scannerId, setPartCatalog]);
 
@@ -675,6 +722,7 @@ function MagnetFromGLTF({
       }
     }
     applyPartAppearance(object, scannerBindings, selectedPartId, renderMode === "wireframe");
+    applyPartVisibility(partRootsRef.current, hidden);
   });
 
   return (
