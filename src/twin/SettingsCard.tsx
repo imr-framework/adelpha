@@ -27,12 +27,13 @@ import { useConsoleTheme } from "./consoleTheme";
 import { SCANNER_MODELS, useScannerModel, type ScannerModelId } from "./scannerModel";
 import { VIEWPORT_BG_PRESETS, useViewportBg } from "./viewportBg";
 import { useModelColors } from "./useModelColors";
+import { useOrbitMode } from "./orbitMode";
 import { ADELPHA_VERSION } from "./adelphaVersion";
 import { useWorkspacePrefs } from "./workspacePrefs";
 import type { WorkspaceId } from "./TopbarControls";
 
 /** Most settings are a local draft only and must not persist or drive the twin.
- *  Console theme, scanner model, viewport background, model colors, and workspace prefs persist and apply immediately. */
+ *  Console theme, scanner model, viewport background, model colors, camera rotation, and workspace prefs persist and apply immediately. */
 export type SettingsSectionId =
   | "profile"
   | "appearance"
@@ -457,6 +458,7 @@ function ModelPanel({ draft, patch }: PanelProps) {
       <SettingsSection title="Viewport">
         <ViewportBgRow />
         <UseModelColorsRow />
+        <OrbitModeRow />
       </SettingsSection>
 
       <SettingsSection title="Model source">
@@ -756,6 +758,7 @@ function GenericPanel({
           <SettingsSection title="Viewport">
             <ViewportBgRow />
             <UseModelColorsRow />
+            <OrbitModeRow />
           </SettingsSection>
           <SettingsSection title="Observer">
             <SettingsRow title="Telemetry rate" description="Display refresh for live sensors.">
@@ -916,6 +919,25 @@ function WorkspacePanel() {
         </SettingsRow>
       </SettingsSection>
     </>
+  );
+}
+
+function OrbitModeRow() {
+  const [mode, setMode] = useOrbitMode();
+  return (
+    <SettingsRow
+      title="Camera rotation"
+      description="Free orbit in all directions, or side-to-side only. Pan and Recenter work in both."
+    >
+      <Segmented
+        value={mode}
+        onChange={setMode}
+        options={[
+          { value: "free", label: "Free" },
+          { value: "turntable", label: "Side to side" },
+        ]}
+      />
+    </SettingsRow>
   );
 }
 

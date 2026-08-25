@@ -47,6 +47,7 @@ import { LaunchScreen } from "./twin/launch/LaunchScreen";
 import { SettingsCard } from "./twin/SettingsCard";
 import { cadForScanner, useScannerModel } from "./twin/scannerModel";
 import { applyConsoleTheme, readConsoleTheme } from "./twin/consoleTheme";
+import { recenterViewport } from "./twin/viewportRecenter";
 import {
   readWorkspacePrefs,
   resolveLaunchWorkspace,
@@ -722,6 +723,16 @@ export default function App() {
           >
             {showDashboard ? "Hide live dashboard" : "Open live dashboard"}
           </button>
+          {showLaunch || stageMode === "camera" ? null : (
+            <button
+              type="button"
+              className="viewport-recenter-btn"
+              title="Reset pan, orbit, and zoom to the original center"
+              onClick={() => recenterViewport()}
+            >
+              Recenter
+            </button>
+          )}
           {showLaunch ? null : stageMode === "camera" ? (
             <Suspense fallback={null}>
               <CameraFeed
@@ -1473,6 +1484,13 @@ export default function App() {
                       onChange={(e) => setView({ magnet_cad_scale: Number(e.target.value) })}
                     />
                   </label>
+                  <button
+                    type="button"
+                    className="action-btn"
+                    onClick={() => recenterViewport()}
+                  >
+                    Recenter view
+                  </button>
                   <label className="toggle">
                     <input
                       type="checkbox"

@@ -2047,10 +2047,10 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   display: block;
 }
 
-.viewport-dashboard-btn {
+.viewport-dashboard-btn,
+.viewport-recenter-btn {
   position: absolute;
   top: 12px;
-  left: 64px;
   z-index: 6;
   padding: 8px 12px;
   border-radius: 999px;
@@ -2059,6 +2059,14 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   color: var(--text);
   cursor: pointer;
   backdrop-filter: blur(6px);
+}
+
+.viewport-dashboard-btn {
+  left: 64px;
+}
+
+.viewport-recenter-btn {
+  right: 12px;
 }
 
 .liquid-dashboard {
