@@ -1,9 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Box, Check, Layers, LocateFixed, Move3d, Palette, RotateCw, Thermometer } from "lucide-react";
+import { Box, Check, Layers, LocateFixed, Move3d, Palette, RotateCw, SlidersHorizontal, Thermometer } from "lucide-react";
 import { useTwinStore } from "./telemetryStore";
 import { recenterViewport } from "./viewportRecenter";
 import { useOrbitMode } from "./orbitMode";
 import { useModelColors } from "./useModelColors";
+import { usePartInspectorStore } from "./partInspectorStore";
+import { requestOpenSettings } from "./settingsOpen";
 
 const DRAG_PX = 6;
 
@@ -18,6 +20,7 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
   const setView = useTwinStore((s) => s.setView);
   const [orbitMode, setOrbitMode] = useOrbitMode();
   const [modelColors, setModelColors] = useModelColors();
+  const selectedPart = usePartInspectorStore((s) => s.selected);
 
   useEffect(() => {
     if (!enabled) {
@@ -46,7 +49,8 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
       const target = event.target as HTMLElement | null;
       if (!target?.closest("canvas")) return;
       const rect = stage.getBoundingClientRect();
-      setPos({ x: event.clientX - rect.left, y: event.clientY - rect.top });
+      const next = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+      requestAnimationFrame(() => setPos(next));
     };
 
     const onKey = (event: KeyboardEvent) => {
@@ -107,10 +111,33 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
           aria-label="Viewport controls"
           style={{ left: pos.x, top: pos.y }}
         >
+          {selectedPart ? (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                className="viewport-context-item is-primary"
+                onClick={() =>
+                  run(() =>
+                    requestOpenSettings({
+                      section: "3d-model",
+                      openModelLibrary: true,
+                      focusPartId: selectedPart.partId,
+                    }),
+                  )
+                }
+              >
+                <SlidersHorizontal size={15} strokeWidth={1.7} aria-hidden />
+                <span>Properties</span>
+              </button>
+              <div className="viewport-context-rule" />
+            </>
+          ) : null}
+
           <button
             type="button"
             role="menuitem"
-            className="viewport-context-item is-primary"
+            className={`viewport-context-item${selectedPart ? "" : " is-primary"}`}
             onClick={() => run(() => recenterViewport())}
           >
             <LocateFixed size={15} strokeWidth={1.7} aria-hidden />

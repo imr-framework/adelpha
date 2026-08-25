@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
-import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
-import { useFrame, useLoader } from "@react-three/fiber";
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useFrame, useLoader, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { isPartColorHex, usePartInspectorStore, type CadPartRef, type PartBinding } from "./partInspectorStore";
+import { useScannerModel } from "./scannerModel";
 
 const CAD_TECH_COLOR = new THREE.Color("#5f748a");
 const CAD_TECH_EMISSIVE = new THREE.Color("#113047");
@@ -12,6 +14,9 @@ const CAD_SOLID_COLOR = new THREE.Color("#f2f5f8");
 const CAD_WIREFRAME_COLOR = new THREE.Color("#cfefff");
 const CAD_WIREFRAME_EMISSIVE = new THREE.Color("#8dd8ff");
 const CAD_EDGE_COLOR = new THREE.Color("#e3f6ff");
+const CAD_SELECT_EMISSIVE = new THREE.Color("#8260fb");
+const PART_CLICK_PX = 6;
+const PART_COLOR_SCRATCH = new THREE.Color();
 
 function snapshotCadMaterial(material: THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial) {
   material.userData.cadRest = {
@@ -194,6 +199,95 @@ type MagnetMotionProps = {
   scaleExplode: boolean;
 };
 
+function tagSelectableParts(root: THREE.Object3D, fallbackName: string) {
+  const assembly = root.getObjectByName("assembly");
+  const used = new Set<string>();
+
+  const apply = (obj: THREE.Object3D, partId: string, cadName: string) => {
+    obj.traverse((child) => {
+      child.userData.partId = partId;
+      child.userData.cadName = cadName;
+    });
+  };
+
+  const uniqueId = (name: string, index: number) => {
+    const base = name.trim() || `part-${index + 1}`;
+    let id = base;
+    let n = 2;
+    while (used.has(id)) id = `${base}-${n++}`;
+    used.add(id);
+    return id;
+  };
+
+  if (assembly && assembly.children.length > 0) {
+    assembly.children.forEach((child, index) => {
+      if (!child.visible) return;
+      const cadName = child.name.trim() || `Part ${index + 1}`;
+      apply(child, uniqueId(child.name, index), cadName);
+    });
+    return;
+  }
+
+  apply(root, fallbackName, fallbackName);
+}
+
+function collectTaggedParts(root: THREE.Object3D): CadPartRef[] {
+  const seen = new Map<string, CadPartRef>();
+  root.traverse((child) => {
+    const partId = child.userData.partId as string | undefined;
+    const cadName = child.userData.cadName as string | undefined;
+    if (!partId || seen.has(partId)) return;
+    seen.set(partId, { partId, cadName: cadName || partId });
+  });
+  return [...seen.values()];
+}
+
+function applyPartAppearance(
+  root: THREE.Object3D,
+  scannerBindings: Record<string, PartBinding> | undefined,
+  selectedPartId: string | null,
+  wireframe: boolean,
+) {
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+    const partId = child.userData.partId as string | undefined;
+    if (!partId) return;
+    const hex = isPartColorHex(scannerBindings?.[partId]?.colorHex)
+      ? scannerBindings[partId].colorHex
+      : null;
+    const selected = partId === selectedPartId;
+    if (!hex && !selected) return;
+
+    const mats = Array.isArray(child.material) ? child.material : [child.material];
+    for (const mat of mats) {
+      if (!(mat instanceof THREE.MeshStandardMaterial || mat instanceof THREE.MeshPhysicalMaterial)) {
+        continue;
+      }
+      if (hex) {
+        PART_COLOR_SCRATCH.set(hex);
+        mat.color.copy(PART_COLOR_SCRATCH);
+      }
+      if (selected) {
+        mat.emissive.copy(CAD_SELECT_EMISSIVE);
+        mat.emissiveIntensity = wireframe ? 0.9 : 0.38;
+      } else if (hex) {
+        mat.emissive.copy(PART_COLOR_SCRATCH);
+        mat.emissiveIntensity = wireframe ? 0.62 : 0.18;
+      }
+    }
+
+    if (!hex) return;
+    for (const sub of child.children) {
+      if (!(sub instanceof THREE.LineSegments)) continue;
+      const lineMat = sub.material;
+      const edges = Array.isArray(lineMat) ? lineMat : [lineMat];
+      for (const edge of edges) {
+        if (edge instanceof THREE.LineBasicMaterial) edge.color.set(hex);
+      }
+    }
+  });
+}
+
 function MagnetMotionGroup({
   exploded,
   b0Ratio,
@@ -205,12 +299,23 @@ function MagnetMotionGroup({
 }: MagnetMotionProps) {
   const root = useRef<THREE.Group>(null);
   const prim = useRef<THREE.Group>(null);
+  const press = useRef<{ x: number; y: number; button: number } | null>(null);
+  const { gl } = useThree();
+  const [scannerId] = useScannerModel();
+  const selectPart = usePartInspectorStore((s) => s.selectPart);
 
   useLayoutEffect(() => {
     if (!prim.current) return;
     prim.current.clear();
     prim.current.add(model);
   }, [model]);
+
+  useEffect(() => {
+    const canvas = gl.domElement;
+    return () => {
+      canvas.style.cursor = "";
+    };
+  }, [gl]);
 
   useFrame(() => {
     if (!root.current) return;
@@ -220,8 +325,47 @@ function MagnetMotionGroup({
     root.current.scale.setScalar(s);
   });
 
+  function clientXY(event: ThreeEvent<PointerEvent>) {
+    return { x: event.nativeEvent.clientX, y: event.nativeEvent.clientY };
+  }
+
   return (
-    <group ref={root} position={position} rotation={rotation} scale={scale}>
+    <group
+      ref={root}
+      position={position}
+      rotation={rotation}
+      scale={scale}
+      onPointerOver={(event) => {
+        if (!event.object.userData.partId) return;
+        gl.domElement.style.cursor = "pointer";
+      }}
+      onPointerOut={() => {
+        gl.domElement.style.cursor = "";
+      }}
+      onClick={(event) => {
+        if (event.button !== 0) return;
+        const partId = event.object.userData.partId as string | undefined;
+        const cadName = (event.object.userData.cadName as string | undefined) ?? partId;
+        if (!partId || !cadName) return;
+        selectPart({ partId, cadName, scannerId });
+      }}
+      onPointerDown={(event) => {
+        if (event.button !== 2) return;
+        press.current = { ...clientXY(event), button: event.button };
+      }}
+      onPointerUp={(event) => {
+        if (event.button !== 2 || !press.current || press.current.button !== 2) return;
+        const point = clientXY(event);
+        const dx = point.x - press.current.x;
+        const dy = point.y - press.current.y;
+        press.current = null;
+        if (dx * dx + dy * dy > PART_CLICK_PX * PART_CLICK_PX) return;
+        const partId = event.object.userData.partId as string | undefined;
+        const cadName = (event.object.userData.cadName as string | undefined) ?? partId;
+        if (!partId || !cadName) return;
+        selectPart({ partId, cadName, scannerId });
+      }}
+    >
       <group ref={prim} />
     </group>
   );
@@ -304,6 +448,7 @@ function addNeonEdgeOverlay(root: THREE.Object3D): THREE.LineSegments[] {
     const lines = new THREE.LineSegments(edgeGeometry, edgeMaterial);
     lines.renderOrder = 4;
     lines.visible = false;
+    lines.raycast = () => {};
     child.add(lines);
     edges.push(lines);
   });
@@ -360,13 +505,22 @@ function MagnetFromSTL({
     const mesh = new THREE.Mesh(mergedGeometry, material);
     const root = new THREE.Group();
     root.add(mesh);
+    tagSelectableParts(root, "Magnet");
     return root;
   }, [src, material]);
+  const selectedPartId = usePartInspectorStore((s) => s.selected?.partId ?? null);
+  const [scannerId] = useScannerModel();
+  const scannerBindings = usePartInspectorStore((s) => s.bindings[scannerId]);
+  const setPartCatalog = usePartInspectorStore((s) => s.setPartCatalog);
   const edgeOverlayRef = useRef<THREE.LineSegments[]>([]);
 
   useLayoutEffect(() => {
     edgeOverlayRef.current = addNeonEdgeOverlay(object);
   }, [object]);
+
+  useLayoutEffect(() => {
+    setPartCatalog(scannerId, collectTaggedParts(object));
+  }, [object, scannerId, setPartCatalog]);
 
   useFrame(({ clock }) => {
     const tempT = THREE.MathUtils.clamp((magnetTempC - 24) / 20, 0, 1);
@@ -395,6 +549,7 @@ function MagnetFromSTL({
       uniforms.uTime.value = clock.elapsedTime;
       uniforms.uHeatEnabled.value = showTemperatureMap ? (renderMode === "wireframe" ? 0.85 : 0.65) : 0;
     }
+    applyPartAppearance(object, scannerBindings, selectedPartId, renderMode === "wireframe");
   });
 
   return (
@@ -466,8 +621,17 @@ function MagnetFromGLTF({
     edgeOverlayRef.current = addNeonEdgeOverlay(root);
     materialsRef.current = materials;
     explodeRef.current = explodeParts ? collectExplodeParts(root) : { parts: [], distance: 0 };
+    tagSelectableParts(root, "Magnet");
     return root;
   }, [gltf, explodeParts]);
+  const selectedPartId = usePartInspectorStore((s) => s.selected?.partId ?? null);
+  const [scannerId] = useScannerModel();
+  const scannerBindings = usePartInspectorStore((s) => s.bindings[scannerId]);
+  const setPartCatalog = usePartInspectorStore((s) => s.setPartCatalog);
+
+  useLayoutEffect(() => {
+    setPartCatalog(scannerId, collectTaggedParts(object));
+  }, [object, scannerId, setPartCatalog]);
 
   useFrame(({ clock }) => {
     const tempT = THREE.MathUtils.clamp((magnetTempC - 24) / 20, 0, 1);
@@ -507,6 +671,7 @@ function MagnetFromGLTF({
         uniforms.uHeatEnabled.value = showTemperatureMap ? (renderMode === "wireframe" ? 0.85 : 0.65) : 0;
       }
     }
+    applyPartAppearance(object, scannerBindings, selectedPartId, renderMode === "wireframe");
   });
 
   return (

@@ -31,6 +31,8 @@ import { useOrbitMode } from "./orbitMode";
 import { ADELPHA_VERSION } from "./adelphaVersion";
 import { useWorkspacePrefs } from "./workspacePrefs";
 import type { WorkspaceId } from "./TopbarControls";
+import { ModelLibraryParts } from "./ModelLibraryParts";
+import type { SettingsLaunch } from "./settingsOpen";
 
 /** Most settings are a local draft only and must not persist or drive the twin.
  *  Console theme, scanner model, viewport background, model colors, camera rotation, and workspace prefs persist and apply immediately. */
@@ -51,6 +53,7 @@ export type SettingsSectionId =
 
 type SettingsCardProps = {
   onClose: () => void;
+  launch?: SettingsLaunch | null;
 };
 
 type NavItem = {
@@ -233,9 +236,9 @@ const INITIAL_DRAFT: Draft = {
   autoUpdate: false,
 };
 
-export function SettingsCard({ onClose }: SettingsCardProps) {
+export function SettingsCard({ onClose, launch = null }: SettingsCardProps) {
   const searchRef = useRef<HTMLInputElement | null>(null);
-  const [section, setSection] = useState<SettingsSectionId>("3d-model");
+  const [section, setSection] = useState<SettingsSectionId>(launch?.section ?? "3d-model");
   const [query, setQuery] = useState("");
   const [draft, setDraft] = useState<Draft>(INITIAL_DRAFT);
 
@@ -264,6 +267,10 @@ export function SettingsCard({ onClose }: SettingsCardProps) {
   }, []);
 
   const copy = PANEL_COPY[section];
+
+  useEffect(() => {
+    if (launch?.section) setSection(launch.section);
+  }, [launch]);
 
   return (
     <div
@@ -356,7 +363,7 @@ export function SettingsCard({ onClose }: SettingsCardProps) {
 
           <div className="settings-panel-scroll">
             {section === "3d-model" ? (
-              <ModelPanel draft={draft} patch={patch} />
+              <ModelPanel draft={draft} patch={patch} launch={launch} />
             ) : section === "ai-agents" ? (
               <AgentsPanel draft={draft} patch={patch} />
             ) : (
@@ -379,10 +386,15 @@ type PanelProps = {
   patch: <K extends keyof Draft>(key: K, value: Draft[K]) => void;
 };
 
-function ModelPanel({ draft, patch }: PanelProps) {
+function ModelPanel({ draft, patch, launch }: PanelProps & { launch?: SettingsLaunch | null }) {
   const [currentModel, setCurrentModel] = useScannerModel();
   const selected = SCANNER_MODELS.find((model) => model.id === currentModel) ?? SCANNER_MODELS[0];
   const variantOptions = SCANNER_MODELS.filter((model) => model.family === selected.family);
+  const [libraryOpen, setLibraryOpen] = useState(() => Boolean(launch?.openModelLibrary));
+
+  useEffect(() => {
+    if (launch?.openModelLibrary) setLibraryOpen(true);
+  }, [launch]);
 
   const choose = (id: ScannerModelId) => {
     setCurrentModel(id);
@@ -470,14 +482,22 @@ function ModelPanel({ draft, patch }: PanelProps) {
           </span>
           <span className="settings-btn settings-btn-inline">Choose file</span>
         </button>
-        <button type="button" className="settings-link-row">
+        <button
+          type="button"
+          className={`settings-link-row${libraryOpen ? " is-open" : ""}`}
+          aria-expanded={libraryOpen}
+          onClick={() => setLibraryOpen((open) => !open)}
+        >
           <Library size={16} strokeWidth={1.8} aria-hidden />
           <span className="settings-row-copy">
             <span className="settings-row-title">Model library</span>
-            <span className="settings-row-desc">Manage installed scanner configurations</span>
+            <span className="settings-row-desc">Manage installed scanner configurations and part properties</span>
           </span>
-          <ChevronRight size={16} strokeWidth={1.8} aria-hidden />
+          <ChevronDown size={16} strokeWidth={1.8} aria-hidden />
         </button>
+        {libraryOpen ? (
+          <ModelLibraryParts scannerId={currentModel} focusPartId={launch?.focusPartId} />
+        ) : null}
       </SettingsSection>
 
       <SettingsSection title="Rendering">

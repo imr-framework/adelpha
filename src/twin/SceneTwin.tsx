@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import CameraControlsImpl from "camera-controls";
 import * as THREE from "three";
 import { MagnetCADSuspense } from "./MagnetCAD";
+import { clearPartSelection } from "./partInspectorStore";
 import { cadForScanner, useScannerModel } from "./scannerModel";
 import { useTwinStore } from "./telemetryStore";
 import { useViewportBg } from "./viewportBg";
@@ -49,6 +50,10 @@ function applyPanButtons(controls: CameraControlsImpl, panWithLeft: boolean) {
   controls.touches.three = ACTION.TOUCH_OFFSET;
 }
 
+function wantsLeftPan(event: { shiftKey: boolean }) {
+  return event.shiftKey;
+}
+
 function applyOrbitLimits(controls: CameraControlsImpl, mode: OrbitMode, animate: boolean) {
   if (mode === "turntable") {
     controls.minPolarAngle = TURNTABLE_POLAR;
@@ -92,7 +97,7 @@ export function SceneTwin() {
   const [preserveModelColors] = useModelColors();
   const [orbitMode] = useOrbitMode();
   const cad = cadForScanner(scannerId);
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const controlsRef = useRef<CameraControlsImpl | null>(null);
   const lastPose = useRef<string>("");
   const targetScratch = useRef(new THREE.Vector3());
@@ -112,24 +117,43 @@ export function SceneTwin() {
   }, [distance]);
 
   useEffect(() => {
-    const syncModifiers = (event: KeyboardEvent) => {
+    const canvas = gl.domElement;
+    const syncFromKeys = (event: KeyboardEvent) => {
       const controls = controlsRef.current;
       if (!controls) return;
-      applyPanButtons(controls, event.shiftKey || event.metaKey || event.ctrlKey);
+      applyPanButtons(controls, wantsLeftPan(event));
     };
-    window.addEventListener("keydown", syncModifiers);
-    window.addEventListener("keyup", syncModifiers);
+    const syncFromPointer = (event: PointerEvent) => {
+      const controls = controlsRef.current;
+      if (!controls) return;
+      applyPanButtons(controls, wantsLeftPan(event));
+    };
+    const resetLeftDrag = () => {
+      const controls = controlsRef.current;
+      if (!controls) return;
+      applyPanButtons(controls, false);
+    };
+    canvas.addEventListener("pointerdown", syncFromPointer);
+    window.addEventListener("keydown", syncFromKeys);
+    window.addEventListener("keyup", syncFromKeys);
+    window.addEventListener("blur", resetLeftDrag);
     return () => {
-      window.removeEventListener("keydown", syncModifiers);
-      window.removeEventListener("keyup", syncModifiers);
+      canvas.removeEventListener("pointerdown", syncFromPointer);
+      window.removeEventListener("keydown", syncFromKeys);
+      window.removeEventListener("keyup", syncFromKeys);
+      window.removeEventListener("blur", resetLeftDrag);
     };
-  }, []);
+  }, [gl]);
 
   useEffect(() => {
     const controls = controlsRef.current;
     if (!controls) return;
     applyOrbitLimits(controls, orbitMode, true);
   }, [orbitMode]);
+
+  useEffect(() => {
+    clearPartSelection();
+  }, [cad?.url, scannerId]);
 
   useEffect(() => {
     const controls = controlsRef.current;
@@ -139,6 +163,7 @@ export function SceneTwin() {
 
   useEffect(() => {
     return subscribeViewportRecenter(() => {
+      clearPartSelection();
       const controls = controlsRef.current;
       if (!controls) return;
       applyDefaultView(controls, true, readOrbitMode(), distance);

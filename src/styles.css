@@ -2177,6 +2177,342 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   }
 }
 
+.part-inspect-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 16;
+  transform: translateX(-50%);
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(16, 16, 20, 0.28);
+  color: rgba(238, 240, 243, 0.78);
+  font-size: 12px;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+  backdrop-filter: blur(18px) saturate(160%);
+}
+
+.part-inspect-card {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  left: auto;
+  bottom: auto;
+  z-index: 18;
+  width: min(292px, calc(100% - 32px));
+  max-height: calc(100% - 24px);
+  overflow: auto;
+  padding: 12px 12px 13px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(16, 16, 20, 0.28);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(28px) saturate(160%);
+  color: var(--m4-text);
+  animation: viewport-context-in 140ms ease-out;
+}
+
+.part-properties-panel {
+  position: absolute;
+  top: 12px;
+  right: 324px;
+  z-index: 22;
+  width: min(292px, calc(100% - 32px));
+  max-height: calc(100% - 24px);
+  overflow: auto;
+  display: grid;
+  gap: 10px;
+  padding: 12px 12px 13px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(16, 16, 20, 0.28);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(28px) saturate(160%);
+  color: var(--m4-text);
+  animation: viewport-context-in 140ms ease-out;
+}
+
+.part-properties-panel .part-inspect-color,
+.part-properties-panel .part-inspect-meta {
+  margin: 0;
+}
+
+.part-inspect-color-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.part-inspect-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.part-inspect-kicker {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(155, 160, 168, 0.78);
+}
+
+.part-inspect-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.part-inspect-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(238, 240, 243, 0.78);
+  cursor: pointer;
+}
+
+.part-inspect-icon:hover,
+.part-inspect-icon.is-active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.part-inspect-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 2px 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.part-inspect-chip {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
+.part-inspect-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin: 5px 2px 10px;
+  font-size: 12px;
+  color: var(--m4-muted);
+}
+
+.part-inspect-sim {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(130, 96, 251, 0.22);
+  color: #d7ccff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.part-inspect-dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.part-inspect-dl > div {
+  display: grid;
+  gap: 2px;
+  padding: 8px 9px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.part-inspect-dl dt {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(155, 160, 168, 0.78);
+}
+
+.part-inspect-dl dd {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--m4-text);
+  word-break: break-word;
+}
+
+.part-inspect-sensor-id {
+  font-variant-numeric: tabular-nums;
+}
+
+.part-inspect-readings {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  color: rgba(238, 240, 243, 0.82);
+}
+
+.part-inspect-muted {
+  color: var(--m4-muted);
+}
+
+.part-inspect-error {
+  color: var(--m4-bad);
+  font-size: 12px;
+}
+
+.part-inspect-edit {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.part-inspect-field {
+  display: grid;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(155, 160, 168, 0.78);
+}
+
+.part-inspect-color {
+  margin: 0 0 10px;
+}
+
+.part-inspect-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.part-inspect-swatch {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  cursor: pointer;
+}
+
+.part-inspect-swatch.is-clear {
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 1px), rgba(255, 255, 255, 0.55) calc(50% - 1px), rgba(255, 255, 255, 0.55) calc(50% + 1px), transparent calc(50% + 1px)),
+    rgba(12, 12, 14, 0.55);
+}
+
+.part-inspect-swatch.is-active,
+.part-inspect-custom-color:focus-within {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.88);
+}
+
+.part-inspect-custom-color {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px dashed rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+}
+
+.part-inspect-custom-color input {
+  width: 32px;
+  height: 32px;
+  margin: -6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.part-inspect-input,
+.part-inspect-select {
+  appearance: none;
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(12, 12, 14, 0.72);
+  color: var(--m4-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.part-inspect-select {
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+.part-inspect-input:focus,
+.part-inspect-select:focus {
+  outline: none;
+  border-color: rgba(130, 96, 251, 0.7);
+}
+
+.part-inspect-select-wrap {
+  position: relative;
+}
+
+.part-inspect-select-wrap svg {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--m4-muted);
+  pointer-events: none;
+}
+
+.part-inspect-sim-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(130, 96, 251, 0.18);
+  color: #e8e2ff;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.part-inspect-sim-btn:hover {
+  background: rgba(130, 96, 251, 0.28);
+}
+
+.part-inspect-sim-btn.is-on {
+  background: rgba(62, 228, 164, 0.14);
+  border-color: rgba(62, 228, 164, 0.28);
+  color: #b7f7dc;
+}
+
 .liquid-dashboard {
   position: absolute;
   inset: 52px 12px 12px;
@@ -3106,9 +3442,274 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   flex-shrink: 0;
 }
 
-.settings-link-row > svg:last-child {
-  color: #71717a;
+.settings-link-row.is-open > svg:last-child {
+  transform: rotate(180deg);
+  color: var(--set-accent);
+}
+
+.settings-part-library {
+  display: grid;
+  gap: 14px;
+  margin: 10px 0 4px;
+}
+
+.settings-part-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-part-intro,
+.settings-part-empty,
+.settings-part-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #a1a1aa;
+}
+
+.settings-part-empty {
+  margin: 8px 2px 0;
+}
+
+.settings-part-count {
   flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #71717a;
+}
+
+.settings-part-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 10px;
+}
+
+.settings-part-tile {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 128px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(8, 8, 10, 0.35));
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.settings-part-tile:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.settings-part-tile.is-selected {
+  border-color: rgba(130, 96, 251, 0.58);
+  box-shadow:
+    0 0 0 1px rgba(130, 96, 251, 0.22),
+    0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
+.settings-part-swatch {
+  display: block;
+  height: 8px;
+  background: var(--part-color, rgba(255, 255, 255, 0.16));
+}
+
+.settings-part-tile.is-coded .settings-part-swatch {
+  height: 32px;
+  background: linear-gradient(
+    180deg,
+    var(--part-color),
+    color-mix(in srgb, var(--part-color) 18%, transparent)
+  );
+}
+
+.settings-part-tile-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px 12px;
+}
+
+.settings-part-role {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8b919c;
+}
+
+.settings-part-name {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  min-height: 2.5em;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: #f4f4f5;
+}
+
+.settings-part-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.settings-part-flags span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #8b919c;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.settings-part-flags span.is-on {
+  background: rgba(130, 96, 251, 0.16);
+  color: #d7ccff;
+}
+
+.settings-part-flags span.is-on:last-child {
+  background: rgba(62, 228, 164, 0.12);
+  color: #b7f7dc;
+}
+
+.settings-part-editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(180deg, rgba(130, 96, 251, 0.08), rgba(12, 12, 14, 0.55));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.settings-part-editor-head {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.settings-part-editor-kicker {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8b919c;
+}
+
+.settings-part-editor-title {
+  margin: 4px 0 2px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #f4f4f5;
+}
+
+.settings-part-editor-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+}
+
+.settings-part-editor-close:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.settings-part-field {
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a1a1aa;
+}
+
+.settings-part-field .settings-input,
+.settings-part-field .settings-select-wrap {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+.settings-part-note {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #a1a1aa;
+}
+
+.settings-part-note.is-error {
+  color: var(--m4-bad);
+}
+
+.settings-part-sim {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(130, 96, 251, 0.16);
+  color: #e8e2ff;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.settings-part-sim:hover {
+  background: rgba(130, 96, 251, 0.26);
+}
+
+.settings-part-sim.is-on {
+  background: rgba(62, 228, 164, 0.14);
+  border-color: rgba(62, 228, 164, 0.28);
+  color: #b7f7dc;
+}
+
+@media (max-width: 980px) {
+  .settings-part-editor {
+    grid-template-columns: 1fr;
+  }
 }
 
 .settings-link-row .settings-row-copy {

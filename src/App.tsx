@@ -35,6 +35,7 @@ import {
 import { SystemConsole } from "./twin/SystemConsole";
 import { ViewportToolRail, type ViewportToolId } from "./twin/ViewportToolRail";
 import { ViewportContextMenu } from "./twin/ViewportContextMenu";
+import { PartInspectorCard } from "./twin/PartInspectorCard";
 import type { HeadPose } from "./twin/CameraFeed";
 import { useHeadMotionStore } from "./twin/headMotionStore";
 import {
@@ -46,6 +47,7 @@ import {
 import type { AssessMode } from "./twin/dtamTypes";
 import { LaunchScreen } from "./twin/launch/LaunchScreen";
 import { SettingsCard } from "./twin/SettingsCard";
+import { subscribeOpenSettings, type SettingsLaunch } from "./twin/settingsOpen";
 import { cadForScanner, useScannerModel } from "./twin/scannerModel";
 import { applyConsoleTheme, readConsoleTheme } from "./twin/consoleTheme";
 import {
@@ -338,6 +340,7 @@ export default function App() {
 
   const [showDashboard, setShowDashboard] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsLaunch, setSettingsLaunch] = useState<SettingsLaunch | null>(null);
   const [showLaunch, setShowLaunch] = useState(shouldPlayLaunchIntro);
   const [viewportTool, setViewportTool] = useState<ViewportToolId>("magnet");
   const [stageMode, setStageMode] = useState<"magnet" | "camera">("magnet");
@@ -393,11 +396,21 @@ export default function App() {
   useEffect(() => {
     if (!showSettings) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowSettings(false);
+      if (e.key === "Escape") {
+        setShowSettings(false);
+        setSettingsLaunch(null);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [showSettings]);
+
+  useEffect(() => {
+    return subscribeOpenSettings((launch) => {
+      setSettingsLaunch(launch);
+      setShowSettings(true);
+    });
+  }, []);
 
   useEffect(() => {
     void import("./twin/TwinCanvas");
@@ -671,7 +684,12 @@ export default function App() {
               title="Settings"
               aria-expanded={showSettings}
               aria-controls="settings-card"
-              onClick={() => setShowSettings((v) => !v)}
+              onClick={() => {
+                setShowSettings((open) => {
+                  if (open) setSettingsLaunch(null);
+                  return !open;
+                });
+              }}
             >
               <Settings size={18} strokeWidth={1.75} aria-hidden />
             </button>
@@ -724,7 +742,10 @@ export default function App() {
             {showDashboard ? "Hide live dashboard" : "Open live dashboard"}
           </button>
           {showLaunch || stageMode === "camera" ? null : (
-            <ViewportContextMenu enabled />
+            <>
+              <ViewportContextMenu enabled />
+              <PartInspectorCard />
+            </>
           )}
           {showLaunch ? null : stageMode === "camera" ? (
             <Suspense fallback={null}>
@@ -1462,6 +1483,13 @@ export default function App() {
                 />
               </label>
               {hasCadMagnet ? (
+                <p className="muted" style={{ margin: "0 0 10px", fontSize: 12, lineHeight: 1.4 }}>
+                  {cadForScanner(scannerId)?.explodeParts
+                    ? "Click a part in the viewport to inspect it. Right-click Properties to edit it in Settings → Model library."
+                    : "Click the magnet in the viewport to inspect it. Right-click Properties to edit it in Settings → Model library."}
+                </p>
+              ) : null}
+              {hasCadMagnet ? (
                 <>
                   <label className="control">
                     <span>
@@ -1511,9 +1539,18 @@ export default function App() {
         {showSettings ? (
           <div
             className="settings-overlay"
-            onClick={() => setShowSettings(false)}
+            onClick={() => {
+              setShowSettings(false);
+              setSettingsLaunch(null);
+            }}
           >
-            <SettingsCard onClose={() => setShowSettings(false)} />
+            <SettingsCard
+              launch={settingsLaunch}
+              onClose={() => {
+                setShowSettings(false);
+                setSettingsLaunch(null);
+              }}
+            />
           </div>
         ) : null}
       </main>
