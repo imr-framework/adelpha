@@ -149,7 +149,7 @@ const PANEL_COPY: Record<SettingsSectionId, { title: string; subtitle: string }>
   },
   about: {
     title: "About",
-    subtitle: "Adelpha Digital Twin — The Intelligent Magnetic Resonance Framework.",
+    subtitle: "Adelpha — The Intelligent Magnetic Resonance Framework.",
   },
 };
 
@@ -690,7 +690,7 @@ function GenericPanel({
         <SettingsSection title="Application">
           <SettingsRow
             title="Current version"
-            description={`Adelpha Digital Twin ${ADELPHA_VERSION}`}
+            description={`Adelpha ${ADELPHA_VERSION}`}
           >
             <button type="button" className="settings-btn">
               Check for updates

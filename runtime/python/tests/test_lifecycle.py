@@ -70,6 +70,17 @@ def test_child_process_cleanup():
     assert child.poll() is not None
 
 
+def test_adk_apps_dir_checkout_layout(isolated_data):
+    from adelpha_runtime.registry import _adk_apps_dir
+
+    paths = resolve_paths()
+    if paths.dtam_src is None:
+        return
+    cwd, apps = _adk_apps_dir(paths)
+    assert apps in {".", "src"}
+    assert (cwd / apps / "dtam" / "agents").is_dir()
+
+
 def test_missing_dtam_is_actionable(isolated_data, monkeypatch):
     monkeypatch.delenv("ADELPHA_DTAM_SRC", raising=False)
     from adelpha_runtime.paths import RuntimePaths

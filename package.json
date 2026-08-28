@@ -54,7 +54,7 @@
   },
   "build": {
     "appId": "org.adelpha.digital-twin-ui",
-    "productName": "Adelpha Digital Twin",
+    "productName": "Adelpha",
     "copyright": "Copyright © Adelpha / Geethanath lab",
     "directories": {
       "output": "release",
@@ -102,7 +102,7 @@
       }
     },
     "dmg": {
-      "title": "Adelpha Digital Twin"
+      "title": "Adelpha"
     },
     "win": {
       "icon": "electron/build/icon.png",
@@ -129,7 +129,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Adelpha Digital Twin"
+      "shortcutName": "Adelpha"
     },
     "portable": {
       "artifactName": "${productName}-${version}-win-${arch}-portable.${ext}"
@@ -142,7 +142,7 @@
       "synopsis": "Adelpha digital twin observer GUI for DTAM",
       "desktop": {
         "entry": {
-          "Name": "Adelpha Digital Twin",
+          "Name": "Adelpha",
           "Comment": "The Intelligent Magnetic Resonance Framework"
         }
       },

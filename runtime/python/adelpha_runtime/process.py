@@ -104,6 +104,10 @@ def current_python() -> str:
     return sys.executable
 
 
+def frozen() -> bool:
+    return bool(getattr(sys, "frozen", False))
+
+
 def wait_for_listen(port: int, child: subprocess.Popen, *, timeout: float = 30.0) -> None:
     deadline = time.time() + timeout
     while time.time() < deadline:

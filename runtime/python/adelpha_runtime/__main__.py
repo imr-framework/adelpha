@@ -52,11 +52,23 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def run_adk_child(argv: list[str]) -> int:
+    """Run `adk api_server …` inside this frozen executable (no `python -c`)."""
+    from google.adk.cli import main as adk_main
+
+    sys.argv = ["adk", *argv]
+    result = adk_main()
+    return int(result) if result is not None else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     import multiprocessing
 
     multiprocessing.freeze_support()
-    args = build_parser().parse_args(argv)
+    raw = list(sys.argv[1:] if argv is None else argv)
+    if raw and raw[0] == "adk-child":
+        return run_adk_child(raw[1:])
+    args = build_parser().parse_args(raw)
     if args.host not in {"127.0.0.1", "localhost", "::1"}:
         log.error("refusing to bind %s — loopback only", args.host)
         return 2

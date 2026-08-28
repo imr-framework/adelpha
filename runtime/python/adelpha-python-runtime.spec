@@ -37,8 +37,14 @@ hiddenimports = [
     "uvicorn.lifespan.on",
     "multiprocessing",
     "pydicom",
+    "google.adk",
+    "google.adk.cli",
 ]
 hiddenimports += collect_submodules("adelpha_runtime")
+try:
+    hiddenimports += collect_submodules("google.adk")
+except Exception:
+    pass
 
 datas = []
 pathex = [str(RUNTIME)]

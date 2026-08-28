@@ -13,6 +13,7 @@ from adelpha_runtime.process import (
     ServiceDef,
     ServiceState,
     current_python,
+    frozen,
     spawn_child,
     stop_child,
     wait_for_listen,
@@ -154,6 +155,53 @@ def _free_port() -> int:
         return int(sock.getsockname()[1])
 
 
+def _adk_apps_dir(paths: RuntimePaths) -> tuple[Path, str]:
+    """Return (cwd, agents_dir argument for `adk api_server`)."""
+    src = paths.dtam_src
+    if src is None:
+        raise RuntimeError("DTAM sources are not available for the agent service")
+    if src.name == "src" and (src / "dtam" / "agents").is_dir():
+        return src.parent, "src"
+    if (src / "dtam" / "agents").is_dir():
+        return src, "."
+    raise RuntimeError("DTAM agent sources are not available in this install")
+
+
+def _adk_argv(paths: RuntimePaths, port: int) -> tuple[list[str], str]:
+    cwd, apps = _adk_apps_dir(paths)
+    cli = [
+        "api_server",
+        apps,
+        "--host",
+        "127.0.0.1",
+        "--port",
+        str(port),
+    ]
+    seen_origins: set[str] = set()
+    for origin in [*cors_origins(), "http://127.0.0.1", "http://localhost"]:
+        if origin in seen_origins:
+            continue
+        seen_origins.add(origin)
+        cli.extend(["--allow_origins", origin])
+
+    if frozen():
+        # PyInstaller binaries are not a python interpreter: `-c` is rejected
+        # as an adelpha-python-runtime flag (exit code 2).
+        return [current_python(), "adk-child", *cli], str(cwd)
+
+    env_python = current_python()
+    venv_bin = Path(env_python).parent
+    adk_bin = venv_bin / ("adk.exe" if os.name == "nt" else "adk")
+    if adk_bin.is_file():
+        return [env_python, str(adk_bin), *cli], str(cwd)
+    return [
+        env_python,
+        "-c",
+        "import sys; from google.adk.cli import main; sys.argv = ['adk'] + sys.argv[1:]; raise SystemExit(main())",
+        *cli,
+    ], str(cwd)
+
+
 def _prepend_sys_path(path: str) -> None:
     if path not in sys.path:
         sys.path.insert(0, path)
@@ -199,47 +247,21 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
         return console_app
 
     def agents_child(port: int):
-        if paths.dtam_src is None:
-            raise RuntimeError("DTAM sources are not available for the agent service")
         apply_google_api_key(paths)
         if not os.environ.get("GOOGLE_API_KEY", "").strip():
             raise RuntimeError(
                 "Agent service needs GOOGLE_API_KEY. In development put it in dtam/.env; "
                 "in the packaged app write it to the google_api_key config file."
             )
+        args, cwd = _adk_argv(paths, port)
         env = os.environ.copy()
-        env["PYTHONPATH"] = str(paths.dtam_src) + os.pathsep + env.get("PYTHONPATH", "")
+        if paths.dtam_src is not None:
+            env["PYTHONPATH"] = str(paths.dtam_src) + os.pathsep + env.get("PYTHONPATH", "")
         # Do not Path.resolve() the interpreter: uv venvs symlink python out of `.venv/bin`.
-        venv_bin = Path(sys.executable).parent
+        venv_bin = Path(args[0]).parent
         env["PATH"] = str(venv_bin) + os.pathsep + env.get("PATH", "")
         env["VIRTUAL_ENV"] = str(venv_bin.parent)
-        dtam_root = paths.dtam_src.parent
-        adk_bin = venv_bin / ("adk.exe" if os.name == "nt" else "adk")
-        cli = [
-            "api_server",
-            "src",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            str(port),
-        ]
-        seen_origins: set[str] = set()
-        for origin in [*cors_origins(), "http://127.0.0.1", "http://localhost"]:
-            if origin in seen_origins:
-                continue
-            seen_origins.add(origin)
-            cli.extend(["--allow_origins", origin])
-        if adk_bin.is_file():
-            # Run the venv's adk script with this interpreter (shebang may point elsewhere).
-            args = [current_python(), str(adk_bin), *cli]
-        else:
-            args = [
-                current_python(),
-                "-c",
-                "import sys; from google.adk.cli import main; sys.argv = ['adk'] + sys.argv[1:]; raise SystemExit(main())",
-                *cli,
-            ]
-        return spawn_child(args, env, cwd=str(dtam_root))
+        return spawn_child(args, env, cwd=cwd)
 
     defs = [
         ServiceDef(

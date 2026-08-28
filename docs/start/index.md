@@ -192,8 +192,8 @@ See [Docs site](../project/docs-site.md).
 
 ```bash
 npm run dist:mac
-# → release/Adelpha Digital Twin-0.1.0-arm64.dmg  (Apple Silicon)
-# → release/Adelpha Digital Twin-0.1.0.dmg        (Intel)
+# → release/Adelpha-0.1.0-arm64.dmg  (Apple Silicon)
+# → release/Adelpha-0.1.0.dmg        (Intel)
 npm run dist:win
 npm run dist:linux
 ```

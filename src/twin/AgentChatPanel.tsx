@@ -141,7 +141,6 @@ const SUGGESTIONS = [
 export function AgentChatPanel({ systemState }: Props) {
   const userId = adkUserId();
   const models = useMemo(() => adkModelOptions(), []);
-  const [apps, setApps] = useState<string[]>([]);
   const [appName, setAppName] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [modelId, setModelId] = useState(() => {
@@ -214,7 +213,6 @@ export function AgentChatPanel({ systemState }: Props) {
       try {
         const listed = await listAdkApps();
         if (cancelled) return;
-        setApps(listed);
         const preferred = preferAppName(listed, adkAppName());
         setAppName(preferred);
         setOnline(true);
@@ -227,7 +225,6 @@ export function AgentChatPanel({ systemState }: Props) {
       } catch (err) {
         if (cancelled) return;
         setOnline(false);
-        setApps([]);
         setAppName(null);
         setStatus("ADK offline");
         pushConsole(
@@ -523,24 +520,6 @@ export function AgentChatPanel({ systemState }: Props) {
           <span className="agent-status-text">{status}</span>
         </div>
         <div className="agent-chat-toolbar-actions">
-          {apps.length > 1 ? (
-            <select
-              className="agent-app-select"
-              value={appName ?? ""}
-              onChange={(e) => {
-                setAppName(e.target.value);
-                newChat();
-              }}
-              disabled={busy}
-              aria-label="ADK app"
-            >
-              {apps.map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-            </select>
-          ) : null}
           <button type="button" className="agent-tool-btn" onClick={newChat} disabled={busy}>
             New chat
           </button>

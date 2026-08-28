@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Adelpha Digital Twin",
+  "productName": "Adelpha",
   "version": "0.1.0",
   "identifier": "org.adelpha.digital-twin-ui",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Adelpha Digital Twin",
+        "title": "Adelpha",
         "width": 1440,
         "height": 900,
         "minWidth": 1024,
@@ -64,7 +64,7 @@
     },
     "category": "Education",
     "shortDescription": "Adelpha digital twin observer",
-    "longDescription": "Adelpha Digital Twin — Intelligent Magnetic Resonance Framework desktop application."
+    "longDescription": "Adelpha — Intelligent Magnetic Resonance Framework desktop application."
   },
   "plugins": {}
 }

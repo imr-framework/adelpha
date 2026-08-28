@@ -4,8 +4,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-DEFAULT_APP="$ROOT/src-tauri/target/release/bundle/macos/Adelpha Digital Twin.app"
-CARGO_APP="${CARGO_TARGET_DIR:+$CARGO_TARGET_DIR/release/bundle/macos/Adelpha Digital Twin.app}"
+DEFAULT_APP="$ROOT/src-tauri/target/release/bundle/macos/Adelpha.app"
+CARGO_APP="${CARGO_TARGET_DIR:+$CARGO_TARGET_DIR/release/bundle/macos/Adelpha.app}"
 if [[ -n "${ADELPHA_APP:-}" ]]; then
   APP="$ADELPHA_APP"
 elif [[ -n "${CARGO_APP:-}" && -d "$CARGO_APP" ]]; then
@@ -19,7 +19,7 @@ ARCH="$(uname -m)"
 case "$ARCH" in
   arm64) ARCH=aarch64 ;;
 esac
-DMG="${ADELPHA_DMG:-$OUT_DIR/Adelpha Digital Twin_${VERSION}_${ARCH}.dmg}"
+DMG="${ADELPHA_DMG:-$OUT_DIR/Adelpha_${VERSION}_${ARCH}.dmg}"
 
 if [[ ! -d "$APP" ]]; then
   echo "error: .app not found at $APP" >&2
@@ -37,7 +37,7 @@ rm -f "$OUT_DIR"/rw.*.dmg "$DMG"
 
 echo "Creating $DMG from $APP"
 hdiutil create \
-  -volname "Adelpha Digital Twin" \
+  -volname "Adelpha" \
   -srcfolder "$APP" \
   -ov \
   -format UDZO \

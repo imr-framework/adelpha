@@ -327,6 +327,28 @@ fn bundled_supervisor_dirs(resource: &std::path::Path) -> [PathBuf; 2] {
 }
 
 fn resolve_supervisor(app: &AppHandle) -> Result<(PathBuf, Vec<String>, PathBuf), String> {
+    // `tauri dev` copies resources into target/debug, including a leftover
+    // frozen sidecar. Always prefer the repo venv there so ADK can spawn
+    // with a real interpreter (`python -c` / `adk`). Set ADELPHA_USE_FROZEN=1
+    // to exercise the bundled onedir from a debug build.
+    let use_frozen = std::env::var("ADELPHA_USE_FROZEN")
+        .map(|v| matches!(v.to_ascii_lowercase().as_str(), "1" | "true" | "yes"))
+        .unwrap_or(false);
+    if cfg!(debug_assertions) && !use_frozen {
+        let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let repo = manifest.parent().unwrap_or(&manifest).to_path_buf();
+        let python = resolve_dev_python(&repo)?;
+        return Ok((
+            python,
+            vec![
+                "-m".into(),
+                "adelpha_runtime".into(),
+                "--dev".into(),
+            ],
+            repo.join("runtime/python"),
+        ));
+    }
+
     let resource = app.path().resource_dir().ok();
     let mut tried = Vec::new();
     if let Some(resource) = &resource {
