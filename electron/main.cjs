@@ -354,7 +354,7 @@ async function createWindow() {
     height: 900,
     minWidth: 1024,
     minHeight: 700,
-    title: "Adelpha Digital Twin",
+    title: "Adelpha",
     icon: iconPath,
     backgroundColor: "#050505",
     show: false,

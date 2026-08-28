@@ -94,6 +94,6 @@ Alt workspaces add `main-alt-workspace` to hide the twin viewport, panel edge, a
 
 ## Desktop shell
 
-Electron (`electron/main.cjs`) serves the Vite `dist/` bundle, proxies Twin / Agents / MRI APIs, and exposes a real PTY to the Terminal tab via `electron/preload.cjs`. Camera access requires macOS camera permission (declared in `extendInfo`).
+Tauri v2 (`src-tauri/`) loads the Vite UI, spawns `adelpha-python-runtime`, and exposes a real PTY to the Terminal tab. Camera access uses `src-tauri/Info.plist` (`NSCameraUsageDescription`). See [Desktop packaging](../packaging/index.md).
 
-`npm run electron:dev` is `npm run build && electron .` — a production build, not Vite HMR.
+Electron (`electron/main.cjs`) remains as a comparison shell: loopback static server, `/api/*` proxies to fixed ports, `node-pty` via `electron/preload.cjs`. `npm run electron:dev` is `npm run build && electron .` — a production build, not Vite HMR.

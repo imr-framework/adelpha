@@ -8,10 +8,12 @@ icon: lucide/monitor
 
 # Adelpha
 
-**Adelpha** is the Intelligent Magnetic Resonance Framework: an Electron/React observer GUI for [DTAM](https://github.com/imr-framework/dtam) and an **Imaging Console** over a local MRI4ALL FastAPI façade. It polls the Twin HTTP API and (optionally) the Agents API, and it drives exams through `/api/mri` → port **8002**. Three workspaces: Digital Twin, Imaging Console, and Engineering Studio.
+**Adelpha** is the Intelligent Magnetic Resonance Framework: a Tauri/React observer GUI for [DTAM](https://github.com/imr-framework/dtam) and an **Imaging Console** over a local MRI4ALL FastAPI façade. Production builds talk to a bundled Python supervisor (`/api/dtam`, `/api/agents`, `/api/mri`). Developers can still run those APIs as separate processes for Vite/Electron. Three workspaces: Digital Twin, Imaging Console, and Engineering Studio.
 
-!!! tip "Companion backends"
-    Run these separately from the GUI:
+!!! tip "Production vs development backends"
+    Packaged Adelpha starts the Python supervisor itself — see [Desktop packaging](packaging/index.md).
+
+    For `npm run dev` / Electron, run these separately:
 
     - **Twin API** — `make twin-api` in DTAM → `http://127.0.0.1:8080` (**required** for live telemetry)
     - **Agents API** — `make agents-api` in DTAM → `http://127.0.0.1:8001` (optional, Agents tab)
@@ -45,19 +47,18 @@ cd console && python -m services.api
 
 # Terminal 4 — this UI
 npm install
-npm run electron:dev    # typical: production build + Electron
-# or: npm run dev       # Vite HMR at http://localhost:5173/
+make tauri-dev          # Vite HMR + Tauri + Python supervisor
+# or: npm run dev       # browser only; start APIs yourself
+# or: npm run electron:dev  # legacy Electron
 ```
 
-Dev and Electron proxies:
+Tauri injects one supervisor origin (no fixed ports). Vite/Electron still proxy:
 
 - `/api/dtam/*` → Twin API `:8080`
 - `/api/agents/*` → Agents API `:8001`
 - `/api/mri/*` → MRI console API `:8002`
 
 Use **⌘K** to open the workspace switcher. Press `?replayIntro=1` on the URL to replay the launch animation.
-
-`npm run electron:dev` rebuilds Vite then launches Electron — UI edits need a restart.
 
 Preview this documentation:
 
@@ -69,12 +70,13 @@ make docs-serve
 ## Stack
 
 - **Vite** + React 18 + TypeScript
-- **Electron** — desktop shell (`npm run electron:dev`, `npm run dist:mac`)
+- **Tauri v2** — production desktop shell (`make tauri-dev`, `make dist-current`)
+- **Electron** — legacy shell until installer parity is signed off
 - **React Three Fiber** / drei / three — magnet scene
 - **MediaPipe Tasks Vision** — camera head-pose tracking
-- **xterm.js** — terminal (browser builtins; real shell in Electron)
+- **xterm.js** — terminal (browser builtins; real shell in Tauri/Electron)
 - **Zustand** — twin state, head motion, console prefs
-- **FastAPI** — MRI4ALL façade in `console/services/api` on `:8002`
+- **Python supervisor** — FastAPI gateway + DTAM + MRI façade + optional ADK
 - **Zensical** — this docs site
 
 ## Where to go next
@@ -87,5 +89,5 @@ make docs-serve
 | [Architecture](guide/architecture.md) | Data flow GUI ↔ Twin / Agents / MRI APIs |
 | [Twin API](guide/twin-api.md) | Endpoints + Agents API contract |
 | [Dashboard](guide/dashboard.md) | Panels, viewport tools, Agents, terminal, camera |
-| [Configuration](guide/configuration.md) | Env vars, proxies, CAD mesh, persisted prefs |
+| [Desktop packaging](packaging/index.md) | Tauri v2, Python sidecar, installers, signing |
 | [Docs site](project/docs-site.md) | Building with Zensical |

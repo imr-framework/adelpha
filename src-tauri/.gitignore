@@ -1,0 +1,6 @@
+/target/
+/gen/
+WixTools/
+*.pdb
+/icons/android/
+/icons/ios/

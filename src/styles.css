@@ -4438,37 +4438,44 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   text-wrap: balance;
 }
 
-.launch-skip {
+.launch-status {
   position: absolute;
-  right: max(16px, env(safe-area-inset-right));
-  bottom: max(16px, env(safe-area-inset-bottom));
-  z-index: 3;
-  border: 1px solid rgba(146, 153, 164, 0.35);
-  background: rgba(5, 6, 7, 0.55);
-  color: #9299a4;
-  font-size: 12px;
+  top: calc(100% + 3.15rem);
+  left: 0;
+  right: 0;
+  margin: 0;
+  font-size: 0.72rem;
   font-weight: 500;
-  letter-spacing: 0.04em;
-  border-radius: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
-  pointer-events: auto;
-  transition:
-    color 0.15s ease,
-    border-color 0.15s ease,
-    background 0.15s ease;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(125, 220, 255, 0.78);
+  text-align: center;
+  animation: launch-status-in 0.45s ease-out;
 }
 
-.launch-skip:hover {
-  color: #f2f4f7;
-  border-color: rgba(125, 220, 255, 0.45);
-  background: rgba(12, 16, 20, 0.75);
+@keyframes launch-status-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.launch-skip:focus-visible {
-  outline: 2px solid #7ddcff;
-  outline-offset: 3px;
-  color: #f2f4f7;
+.launch-screen.is-holding .launch-wordmark {
+  animation: launch-hold-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes launch-hold-glow {
+  0%,
+  100% {
+    text-shadow: 0 0 12px rgba(125, 220, 255, 0.2);
+  }
+  50% {
+    text-shadow: 0 0 22px rgba(125, 220, 255, 0.45);
+  }
 }
 
 @media (max-width: 640px) {
@@ -4504,6 +4511,11 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   .launch-particle,
   .launch-wordmark-mask {
     will-change: auto;
+  }
+
+  .launch-screen.is-holding .launch-wordmark,
+  .launch-status {
+    animation: none;
   }
 }
 

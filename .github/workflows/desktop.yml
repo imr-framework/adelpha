@@ -1,0 +1,112 @@
+name: Desktop installers
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+    branches:
+      - tauri_packaging
+  pull_request:
+    paths:
+      - "src-tauri/**"
+      - "runtime/python/**"
+      - "src/**"
+      - "package.json"
+      - ".github/workflows/desktop.yml"
+
+concurrency:
+  group: desktop-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sidecar-and-installer:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            rust_target: aarch64-apple-darwin
+            artifact: macos-arm64
+          - os: macos-13
+            rust_target: x86_64-apple-darwin
+            artifact: macos-x64
+          - os: windows-latest
+            rust_target: x86_64-pc-windows-msvc
+            artifact: windows-x64
+          - os: ubuntu-22.04
+            rust_target: x86_64-unknown-linux-gnu
+            artifact: linux-x64
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch DTAM if gitlink is empty
+        run: |
+          if [ ! -f dtam/src/dtam/api/app.py ]; then
+            git clone --depth 1 https://github.com/imr-framework/dtam.git dtam
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Linux WebKit/GTK
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libgtk-3-dev
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Supervisor unit tests
+        run: |
+          python -m pip install -e "./runtime/python[dev]"
+          python -m pytest runtime/python/tests -q
+
+      - name: Build Python sidecar
+        run: python runtime/python/build_sidecar.py
+
+      - name: Smoke sidecar handshake
+        run: python runtime/python/smoke_sidecar.py
+
+      - name: Build Tauri installer (unsigned unless secrets exist)
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: npm run tauri:build
+
+      - name: Checksums
+        run: |
+          mkdir -p artifacts
+          if [ -d src-tauri/target ]; then
+            find src-tauri/target -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" \) -print0 \
+              | xargs -0 -I{} cp {} artifacts/ || true
+          fi
+          if ls artifacts/* >/dev/null 2>&1; then
+            (cd artifacts && shasum -a 256 * > SHA256SUMS)
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: adelpha-${{ matrix.artifact }}-${{ github.sha }}
+          path: artifacts/
+          if-no-files-found: warn

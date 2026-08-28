@@ -1,9 +1,11 @@
-/** Google ADK API server client (make agents-api → :8001 by default). */
+/** Google ADK API server client (supervisor `/api/agents`, or Vite proxy → :8001). */
+
+import { apiRoot, runtimeFetch } from "../desktop/runtime";
 
 export function adkBaseUrl(): string {
   const fromEnv = import.meta.env.VITE_ADK_API_URL?.trim();
   if (fromEnv) return fromEnv.replace(/\/$/, "");
-  return "/api/agents";
+  return `${apiRoot()}/api/agents`;
 }
 
 export function adkAppName(): string {
@@ -28,7 +30,7 @@ async function readError(res: Response): Promise<string> {
 }
 
 export async function listAdkApps(): Promise<string[]> {
-  const res = await fetch(`${adkBaseUrl()}/list-apps`, { cache: "no-store" });
+  const res = await runtimeFetch(`${adkBaseUrl()}/list-apps`, { cache: "no-store" });
   if (!res.ok) throw new Error(await readError(res));
   const data = (await res.json()) as unknown;
   if (!Array.isArray(data)) return [];
@@ -46,7 +48,7 @@ export async function createAdkSession(
   appName = adkAppName(),
   userId = adkUserId(),
 ): Promise<AdkSession> {
-  const res = await fetch(
+  const res = await runtimeFetch(
     `${adkBaseUrl()}/apps/${encodeURIComponent(appName)}/users/${encodeURIComponent(userId)}/sessions`,
     {
       method: "POST",
@@ -170,7 +172,7 @@ export type RunRequest = {
 };
 
 export async function runAdkSse(body: RunRequest, handlers: RunHandlers): Promise<void> {
-  const res = await fetch(`${adkBaseUrl()}/run_sse`, {
+  const res = await runtimeFetch(`${adkBaseUrl()}/run_sse`, {
     method: "POST",
     headers: { "content-type": "application/json", accept: "text/event-stream" },
     body: JSON.stringify(
@@ -218,7 +220,7 @@ export async function runAdkSse(body: RunRequest, handlers: RunHandlers): Promis
 
 /** Non-streaming run — returns event list. */
 export async function runAdk(body: RunRequest, signal?: AbortSignal): Promise<AdkEvent[]> {
-  const res = await fetch(`${adkBaseUrl()}/run`, {
+  const res = await runtimeFetch(`${adkBaseUrl()}/run`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(runBody({ ...body, streaming: false })),
@@ -371,7 +373,7 @@ export async function fetchAdkArtifact(params: {
     `/artifacts/${encodeURIComponent(params.artifactName)}` +
     `/versions/${encodeURIComponent(String(params.versionId))}`;
 
-  const res = await fetch(url, { cache: "no-store", signal: params.signal });
+  const res = await runtimeFetch(url, { cache: "no-store", signal: params.signal });
   if (!res.ok) return null;
 
   const contentType = res.headers.get("content-type") || "";

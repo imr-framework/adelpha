@@ -8,10 +8,11 @@ icon: lucide/rocket
 
 | Tool | Purpose |
 | --- | --- |
-| Node.js 18+ (npm) | This Vite + Electron app |
-| Python 3.10+ | MRI console API (`console/`) |
-| [uv](https://docs.astral.sh/uv/) | DTAM Python env + optional docs toolchain |
-| [DTAM](https://github.com/imr-framework/dtam) clone | Twin HTTP API + Agents API |
+| Node.js 18+ (npm) | Vite frontend + Tauri CLI |
+| Rust (stable) | Tauri desktop shell |
+| Python 3.10–3.12 | Supervisor (`adelpha_runtime`) and sidecar freeze |
+| [uv](https://docs.astral.sh/uv/) | Optional docs toolchain |
+| [DTAM](https://github.com/imr-framework/dtam) at `adelpha/dtam` | Twin + Agents (bundled in production) |
 
 Typical layout:
 
@@ -134,23 +135,29 @@ uv sync --group docs
 
 ## Run the GUI
 
-With the APIs you need already up:
-
-=== "Electron (typical)"
+=== "Tauri (production shell)"
 
     ```bash
-    npm run electron:dev
+    make tauri-dev
     ```
 
-    This runs a **production Vite build** then opens Electron. CSS/TS changes are not hot-reloaded — restart after edits.
+    Vite HMR plus the Rust shell. The Python supervisor starts as `python3 -m adelpha_runtime` in development when the sidecar binary is not present.
 
-=== "Browser (HMR)"
+=== "Browser (HMR only)"
 
     ```bash
     npm run dev
     ```
 
-    Vite listens on **5173** by default (`strictPort: false` — next free port if busy). Avoid assuming port **3000** when Grafana already binds `*:3000`.
+    Vite listens on **5173** (`strictPort: true` for Tauri). Start Twin / Agents / MRI APIs yourself; the in-app terminal has no real shell.
+
+=== "Electron (legacy)"
+
+    ```bash
+    npm run electron:dev
+    ```
+
+    Production Vite build then Electron. Kept until Tauri installer parity is signed off.
 
 | Check | Expect |
 | --- | --- |
@@ -185,8 +192,8 @@ See [Docs site](../project/docs-site.md).
 
 ```bash
 npm run dist:mac
-# → release/Adelpha Digital Twin-0.1.0-arm64.dmg  (Apple Silicon)
-# → release/Adelpha Digital Twin-0.1.0.dmg        (Intel)
+# → release/Adelpha-0.1.0-arm64.dmg  (Apple Silicon)
+# → release/Adelpha-0.1.0.dmg        (Intel)
 npm run dist:win
 npm run dist:linux
 ```
@@ -205,12 +212,12 @@ First open on macOS may require **Right-click → Open** because the build is un
 
 | Symptom | Fix |
 | --- | --- |
-| Red / disconnected indicator | Start `make twin-api` in DTAM; `curl http://127.0.0.1:8080/health` |
-| Agents offline | Start `make agents-api`; set `GOOGLE_API_KEY` for that process |
-| Imaging Console errors / empty queue | Start `python -m services.api` from `console/`; `curl http://127.0.0.1:8002/health` |
+| Red / disconnected (Tauri) | Export diagnostics; check `<app-log>/supervisor.log` |
+| Red / disconnected (Vite/Electron) | Start `make twin-api` in DTAM; `curl http://127.0.0.1:8080/health` |
+| Agents offline | User config `google_api_key`, or `make agents-api` in Vite mode |
+| Imaging Console errors / empty queue | Supervisor must mount console; Vite mode: `python -m services.api` from `console/` |
 | Exam disappeared | API restart clears in-memory exam — register again |
 | Electron UI looks stale | Restart `npm run electron:dev` after code changes |
 | Empty twin panels but health OK | Check Network tab for `/api/dtam/twin/state` |
-| Wrong port in browser | Use the URL Vite prints (may not be 5173) |
-| Terminal has no shell | `npx electron-rebuild -f -w node-pty` |
-| Gatekeeper blocks the `.app` | Right-click → Open (unsigned local build) |
+| Terminal has no shell | Use `make tauri-dev` (or legacy Electron), not the browser |
+| Gatekeeper blocks the `.app` | Unsigned local build — see [signing](../packaging/signing.md) |

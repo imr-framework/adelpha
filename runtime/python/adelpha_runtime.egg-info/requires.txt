@@ -1,0 +1,13 @@
+fastapi>=0.115.0
+httpx>=0.28.1
+pydantic>=2.2
+pydicom>=1.2.2
+uvicorn[standard]>=0.32.0
+websockets>=12.0
+
+[build]
+pyinstaller>=6.11
+
+[dev]
+pytest>=8.0
+pytest-asyncio>=0.24
