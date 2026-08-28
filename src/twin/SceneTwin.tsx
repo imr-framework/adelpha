@@ -203,7 +203,8 @@ export function SceneTwin() {
         near={0.0001}
         far={100000}
       />
-      <CameraControls ref={bindControls} />
+      {/* makeDefault lets MagnetCAD reach these controls to frame a part. */}
+      <CameraControls makeDefault ref={bindControls} />
 
       <color key={viewportBg} attach="background" args={[viewportBg]} />
       <ambientLight intensity={0.35} />

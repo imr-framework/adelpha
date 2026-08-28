@@ -1,12 +1,14 @@
-import type { ReactNode } from "react";
+import type { MutableRefObject, ReactNode } from "react";
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame, useLoader, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
+import type CameraControlsImpl from "camera-controls";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { isPartColorHex, usePartInspectorStore, type CadPartRef, type PartBinding } from "./partInspectorStore";
-import { useScannerModel } from "./scannerModel";
+import { useScannerModel, type ScannerModelId } from "./scannerModel";
+import { subscribePartFocus } from "./viewportFocus";
 
 const CAD_TECH_COLOR = new THREE.Color("#5f748a");
 const CAD_TECH_EMISSIVE = new THREE.Color("#113047");
@@ -251,6 +253,77 @@ function applyPartVisibility(roots: Map<string, THREE.Object3D>, hidden: Set<str
   for (const [partId, object] of roots) {
     object.visible = !hidden.has(partId);
   }
+}
+
+const FOCUS_POSITION = new THREE.Vector3();
+const FOCUS_TARGET = new THREE.Vector3();
+
+/** Outermost transform group for the loaded assembly (scale, rotation, explode). */
+function assemblyRoot(object: THREE.Object3D): THREE.Object3D {
+  let node = object;
+  while (node.parent && node.parent.type !== "Scene") node = node.parent;
+  return node;
+}
+
+/**
+ * Frame a single part when settings asks for it. Needs `makeDefault` on the
+ * scene's `CameraControls` so `state.controls` resolves here.
+ */
+function usePartFocus(
+  scannerId: ScannerModelId,
+  partRootsRef: MutableRefObject<Map<string, THREE.Object3D>>,
+) {
+  const controls = useThree((state) => state.controls) as CameraControlsImpl | null;
+  const showPart = usePartInspectorStore((s) => s.showPart);
+  const selectPart = usePartInspectorStore((s) => s.selectPart);
+
+  useEffect(() => {
+    return subscribePartFocus((request) => {
+      if (request.scannerId !== scannerId || !controls) return;
+      const object = partRootsRef.current.get(request.partId);
+      if (!object) return;
+      // A part the user culled earlier cannot be framed while it stays hidden.
+      showPart(scannerId, request.partId);
+      selectPart({
+        partId: request.partId,
+        cadName: (object.userData.cadName as string | undefined) ?? request.partId,
+        scannerId,
+      });
+      object.updateWorldMatrix(true, true);
+      const partBox = new THREE.Box3().setFromObject(object);
+      if (partBox.isEmpty()) return;
+      const center = partBox.getCenter(new THREE.Vector3());
+      const partSpan = Math.max(...partBox.getSize(new THREE.Vector3()).toArray());
+
+      // A single CAD part is often millimetres across inside a metre-scale
+      // assembly. Fitting the camera to its box alone parks the near plane
+      // inside the surrounding hardware and renders black, so re-centre on the
+      // part but keep the camera outside the assembly's bounding sphere.
+      const root = assemblyRoot(object);
+      root.updateWorldMatrix(true, true);
+      const radius = new THREE.Box3()
+        .setFromObject(root)
+        .getBoundingSphere(new THREE.Sphere()).radius;
+      const safe = radius * 1.05;
+      const distance = Math.min(Math.max(partSpan * 2.2, safe), radius * 2.5);
+
+      const offset = controls
+        .getPosition(FOCUS_POSITION, false)
+        .sub(controls.getTarget(FOCUS_TARGET, false));
+      if (offset.lengthSq() < 1e-12) offset.set(0, 0, 1);
+      // Keeping the current direction respects the active orbit limits.
+      offset.normalize().multiplyScalar(distance).add(center);
+      void controls.setLookAt(
+        offset.x,
+        offset.y,
+        offset.z,
+        center.x,
+        center.y,
+        center.z,
+        true,
+      );
+    });
+  }, [controls, partRootsRef, scannerId, selectPart, showPart]);
 }
 
 function collectTaggedParts(root: THREE.Object3D): CadPartRef[] {
@@ -557,6 +630,7 @@ function MagnetFromSTL({
   const hidden = useMemo(() => new Set(hiddenIds ?? []), [hiddenIds]);
   const edgeOverlayRef = useRef<THREE.LineSegments[]>([]);
   const partRootsRef = useRef<Map<string, THREE.Object3D>>(new Map());
+  usePartFocus(scannerId, partRootsRef);
 
   useLayoutEffect(() => {
     edgeOverlayRef.current = addNeonEdgeOverlay(object);
@@ -677,6 +751,7 @@ function MagnetFromGLTF({
   const hiddenIds = usePartInspectorStore((s) => s.hidden[scannerId]);
   const hidden = useMemo(() => new Set(hiddenIds ?? []), [hiddenIds]);
   const partRootsRef = useRef<Map<string, THREE.Object3D>>(new Map());
+  usePartFocus(scannerId, partRootsRef);
 
   useLayoutEffect(() => {
     partRootsRef.current = collectPartRoots(object);

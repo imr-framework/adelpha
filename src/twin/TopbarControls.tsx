@@ -9,6 +9,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { IMAGING_MENU } from "./ImagingConsole";
+import { useTwinStore } from "./telemetryStore";
 
 export type WorkspaceId = "digital-twin" | "imaging-console" | "engineering-studio";
 
@@ -97,6 +98,7 @@ export function TopbarControls({
   return (
     <>
       <div className="topbar-meta">
+        <SystemStatusPill />
         <div className="system-context" ref={contextRef}>
           <button
             type="button"
@@ -184,6 +186,33 @@ export function TopbarControls({
         ) : null}
       </div>
     </>
+  );
+}
+
+/**
+ * Global system status. Lives in the app shell, so no individual panel has to
+ * claim to know the health of the whole system.
+ */
+function SystemStatusPill() {
+  const connection = useTwinStore((s) => s.connection);
+  const health = useTwinStore((s) => s.health);
+  const notes = useTwinStore((s) => s.systemState?.notes);
+
+  const connected = connection === "connected" && (health?.connected ?? false);
+  const tone = connected ? (notes?.length ? "warn" : "ok") : connection === "connecting" ? "warn" : "bad";
+  const label = connected
+    ? notes?.length
+      ? `${notes.length} twin ${notes.length === 1 ? "note" : "notes"}`
+      : "All systems operational"
+    : connection === "connecting"
+      ? "Connecting to twin"
+      : "Twin disconnected";
+
+  return (
+    <span className={`system-status is-${tone}`} role="status" title={label}>
+      <span className="system-status-dot" aria-hidden />
+      <span className="system-status-label">{label}</span>
+    </span>
   );
 }
 

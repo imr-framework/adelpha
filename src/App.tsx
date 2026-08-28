@@ -58,6 +58,7 @@ import {
 } from "./twin/workspacePrefs";
 import { shouldPlayLaunchIntro } from "./twin/launch/launchConfig";
 import "./styles.css";
+import "./settings.css";
 
 const TwinCanvas = lazy(() =>
   import("./twin/TwinCanvas").then((m) => ({ default: m.TwinCanvas })),
@@ -404,6 +405,21 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, [showSettings]);
+
+  // The settings workspace is opaque, so the twin behind it must also leave the
+  // tab order — aria-modal alone does not stop keyboard focus reaching it.
+  useEffect(() => {
+    const root = mainRef.current;
+    if (!root || !showSettings) return;
+    const behind = [...root.children].filter(
+      (el): el is HTMLElement =>
+        el instanceof HTMLElement && !el.classList.contains("settings-overlay"),
+    );
+    for (const el of behind) el.inert = true;
+    return () => {
+      for (const el of behind) el.inert = false;
+    };
   }, [showSettings]);
 
   useEffect(() => {
@@ -1540,14 +1556,10 @@ export default function App() {
             )}
         </aside>
         )}
+        {/* Opaque, full-height settings workspace. The twin stays mounted behind
+            it so switching back does not reload the CAD assembly. */}
         {showSettings ? (
-          <div
-            className="settings-overlay"
-            onClick={() => {
-              setShowSettings(false);
-              setSettingsLaunch(null);
-            }}
-          >
+          <div className="settings-overlay">
             <SettingsCard
               launch={settingsLaunch}
               onClose={() => {

@@ -84,12 +84,17 @@ function writeInspectionMode(on: boolean) {
 }
 
 export function humanizePartName(name: string): string {
-  const cleaned = name
+  const spaced = name
     .replace(/[_-]+/g, " ")
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/\s+/g, " ")
     .trim();
-  return cleaned || "Unnamed part";
+  const withoutInstance = spaced.replace(/\s*\d+$/, "").trim();
+  const cleaned = withoutInstance || spaced || "Unnamed part";
+  if (cleaned === cleaned.toLowerCase()) {
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  }
+  return cleaned;
 }
 
 export function inferPartRole(name: string): string {
