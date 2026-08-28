@@ -90,4 +90,6 @@ def test_missing_dtam_is_actionable(isolated_data, monkeypatch):
     registry = build_registry(broken)
     registry.start("twin")
     assert registry.states["twin"].status == "error"
-    assert "not available" in registry.states["twin"].detail
+    detail = (registry.states["twin"].detail or "").lower()
+    assert "dtam" in detail
+    assert "make install" in detail or "not available" in detail
