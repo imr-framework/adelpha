@@ -28,7 +28,13 @@ sidecar:
 	python3 runtime/python/build_sidecar.py
 
 dist-current: sidecar
-	CI=true npm run tauri:build || $(MAKE) dmg
+	@if [ -n "$$TAURI_SIGNING_PRIVATE_KEY$$TAURI_SIGNING_PRIVATE_KEY_PATH" ] || [ -f src-tauri/updater.key ]; then \
+	  TAURI_SIGNING_PRIVATE_KEY_PATH=$${TAURI_SIGNING_PRIVATE_KEY_PATH:-$(CURDIR)/src-tauri/updater.key} \
+	    CI=true npm run tauri:build || $(MAKE) dmg; \
+	else \
+	  echo "No updater signing key; building without updater artifacts."; \
+	  CI=true npx tauri build --config '{"bundle":{"createUpdaterArtifacts":false}}' || $(MAKE) dmg; \
+	fi
 
 # Plain hdiutil wrapper for when create-dmg's Finder AppleScript fails.
 # Requires a previously bundled .app (tauri build still produces it before DMG).

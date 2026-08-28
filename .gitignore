@@ -16,7 +16,8 @@ site/
 .zensical/
 .mri4all/
 
-# Tauri / Python sidecar build output
+src-tauri/updater.key
+src-tauri/updater.key.pub
 src-tauri/target/
 src-tauri/gen/
 packaging/sidecar/

@@ -117,7 +117,7 @@ Do not cross-compile the Python sidecar.
 
 - [Excluded assets](exclusions.md)
 - [Electron migration](electron-migration.md)
-- [Signing and notarization](signing.md)
+- [Signing, notarization, and in-app updates](signing.md)
 - [Adding a Python service](adding-a-service.md)
 - [Known limitations](limitations.md)
 

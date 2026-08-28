@@ -55,6 +55,7 @@ import {
   resolveLaunchWorkspace,
   useWorkspacePrefs,
 } from "./twin/workspacePrefs";
+import { scheduleAutoUpdateCheck } from "./desktop/updater";
 import "./styles.css";
 import "./settings.css";
 
@@ -337,6 +338,8 @@ export default function App() {
   const setView = useTwinStore((s) => s.setView);
   const [scannerId] = useScannerModel();
   const hasCadMagnet = Boolean(cadForScanner(scannerId));
+
+  useEffect(() => scheduleAutoUpdateCheck(), []);
 
   const [showDashboard, setShowDashboard] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
