@@ -10,7 +10,7 @@ export const LAUNCH_REPLAY_PARAM = "replayIntro";
  */
 export const LAUNCH_FORCE_REPLAY = false;
 
-/** Total cinematic duration (seconds). Overlay fade occupies the final 0.35s. */
+/** Total cinematic duration (seconds). Fade-out waits for the Python runtime when needed. */
 export const LAUNCH_DURATION_S = 3.4;
 
 /** Reduced-motion brand hold before fade (seconds). */
@@ -30,7 +30,8 @@ export const LAUNCH_COPY = {
 } as const;
 
 function launchStore(): Storage {
-  // Packaged Electron starts a new session every launch; persist so the 7s intro is not replayed.
+  // Packaged desktop starts a new session every launch; persist so a browser
+  // replay of the intro is not forced on every refresh.
   return window.adelphaTerminal ? localStorage : sessionStorage;
 }
 

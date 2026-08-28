@@ -11,6 +11,9 @@ import {
 
 type LaunchScreenProps = {
   onComplete: () => void;
+  /** When true, stay on the wordmark after the cinematic until this becomes false. */
+  hold?: boolean;
+  status?: string;
 };
 
 const PARTICLE_COUNT = 10;
@@ -121,16 +124,19 @@ function addFlight(
 }
 
 /**
- * Full-screen cinematic brand intro. Dashboard stays mounted underneath.
- * Pointer events block the UI until the overlay finishes or is skipped.
+ * Full-screen cinematic brand intro. Held on the wordmark while the Python
+ * sidecar starts so packaged launches are not a blank window.
  */
-export function LaunchScreen({ onComplete }: LaunchScreenProps) {
+export function LaunchScreen({ onComplete, hold = false, status }: LaunchScreenProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
   const finishedRef = useRef(false);
+  const holdRef = useRef(hold);
   const onCompleteRef = useRef(onComplete);
   const [active, setActive] = useState(true);
+  const [cinematicDone, setCinematicDone] = useState(false);
 
+  holdRef.current = hold;
   onCompleteRef.current = onComplete;
 
   function finish() {
@@ -143,7 +149,8 @@ export function LaunchScreen({ onComplete }: LaunchScreenProps) {
     onCompleteRef.current();
   }
 
-  function skip() {
+  function fadeOut() {
+    if (finishedRef.current) return;
     const root = rootRef.current;
     timelineRef.current?.kill();
     timelineRef.current = null;
@@ -153,10 +160,16 @@ export function LaunchScreen({ onComplete }: LaunchScreenProps) {
     }
     gsap.to(root, {
       opacity: 0,
-      duration: 0.28,
-      ease: "power2.out",
+      duration: 0.35,
+      ease: "power2.inOut",
       onComplete: finish,
     });
+  }
+
+  function tryDismiss() {
+    setCinematicDone(true);
+    if (holdRef.current) return;
+    fadeOut();
   }
 
   useLayoutEffect(() => {
@@ -176,7 +189,6 @@ export function LaunchScreen({ onComplete }: LaunchScreenProps) {
     const wordWrap = root.querySelector<HTMLElement>(".launch-wordmark-wrap");
     const wordmask = root.querySelector<HTMLElement>(".launch-wordmark-mask");
     const subtitle = root.querySelector<HTMLElement>(".launch-subtitle");
-    const skipBtn = root.querySelector<HTMLElement>(".launch-skip");
 
     gsap.set(root, { opacity: 1 });
     gsap.set(glow, { opacity: 0, scale: 0.6 });
@@ -200,24 +212,18 @@ export function LaunchScreen({ onComplete }: LaunchScreenProps) {
     });
     gsap.set(wordmask, { scaleX: 0.12, scaleY: 0.35, transformOrigin: "50% 50%" });
     gsap.set(subtitle, { opacity: 0, y: 10 });
-    gsap.set(skipBtn, { opacity: 0 });
 
     if (reduced) {
       const tl = gsap.timeline({
         defaults: { ease: "power2.out" },
-        onComplete: finish,
+        onComplete: tryDismiss,
       });
       timelineRef.current = tl;
       tl.to(glow, { opacity: 0.35, scale: 1, duration: 0.25 }, 0);
       tl.to(wordWrap, { opacity: 1, scale: 1, duration: 0.35 }, 0.08);
       tl.to(wordmask, { scaleX: 1, scaleY: 1, duration: 0.35 }, 0.08);
       tl.to(subtitle, { opacity: 1, y: 0, duration: 0.3 }, 0.22);
-      tl.to(skipBtn, { opacity: 1, duration: 0.2 }, 0.15);
-      tl.to(
-        root,
-        { opacity: 0, duration: 0.35, ease: "power2.inOut" },
-        LAUNCH_REDUCED_DURATION_S - 0.35,
-      );
+      tl.to(root, { duration: 0.01 }, LAUNCH_REDUCED_DURATION_S - 0.35);
       return () => {
         tl.kill();
         if (timelineRef.current === tl) timelineRef.current = null;
@@ -226,13 +232,12 @@ export function LaunchScreen({ onComplete }: LaunchScreenProps) {
 
     const tl = gsap.timeline({
       defaults: { ease: "power2.inOut" },
-      onComplete: finish,
+      onComplete: tryDismiss,
     });
     timelineRef.current = tl;
 
     // 0.0–0.5: black + ambient
     tl.to(glow, { opacity: 0.22, scale: 1, duration: 0.5, ease: "power1.out" }, 0);
-    tl.to(skipBtn, { opacity: 1, duration: 0.35 }, 0.3);
 
     const vw = Math.min(window.innerWidth, 1600);
     const enterX = Math.max(vw * 0.42, 220);
@@ -357,14 +362,20 @@ export function LaunchScreen({ onComplete }: LaunchScreenProps) {
       HOLD_PULSE_AT,
     );
 
-    // Fade overlay
-    tl.to(root, { opacity: 0, duration: 0.35, ease: "power2.inOut" }, LAUNCH_DURATION_S - 0.35);
+    // Hold the wordmark; fade is owned by tryDismiss so Python boot can fill this beat.
+    tl.to(root, { duration: 0.01 }, LAUNCH_DURATION_S - 0.35);
 
     return () => {
       tl.kill();
       if (timelineRef.current === tl) timelineRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!hold && cinematicDone && !finishedRef.current) {
+      fadeOut();
+    }
+  }, [hold, cinematicDone]);
 
   useEffect(() => {
     return () => {
@@ -378,10 +389,11 @@ export function LaunchScreen({ onComplete }: LaunchScreenProps) {
   return (
     <div
       ref={rootRef}
-      className="launch-screen"
+      className={`launch-screen${hold ? " is-holding" : ""}`}
       role="dialog"
       aria-modal="true"
       aria-label="Adelpha introduction"
+      aria-busy={hold}
     >
       <div className="launch-ambient" aria-hidden />
       <div className="launch-stage" aria-hidden>
@@ -411,11 +423,12 @@ export function LaunchScreen({ onComplete }: LaunchScreenProps) {
           </div>
         </div>
         <p className="launch-subtitle">{LAUNCH_COPY.subtitle}</p>
+        {status && cinematicDone ? (
+          <p className="launch-status" role="status">
+            {status}
+          </p>
+        ) : null}
       </div>
-
-      <button type="button" className="launch-skip" onClick={skip}>
-        Skip intro
-      </button>
     </div>
   );
 }

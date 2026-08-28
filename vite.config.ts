@@ -3,6 +3,8 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  clearScreen: false,
+  envPrefix: ["VITE_", "TAURI_ENV_"],
   build: {
     target: "chrome132",
     cssTarget: "chrome132",
@@ -26,7 +28,10 @@ export default defineConfig({
     // Prefer 5173; if busy (e.g. leftover Vite), try next ports.
     // Avoid 3000 — Grafana often owns *:3000 on this machine.
     port: 5173,
-    strictPort: false,
+    strictPort: true,
+    watch: {
+      ignored: ["**/src-tauri/**", "**/packaging/**"],
+    },
     proxy: {
       // Twin HTTP API (make twin-api → :8080)
       "/api/dtam": {

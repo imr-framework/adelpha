@@ -1,7 +1,7 @@
 [project]
 name = "adelpha"
 version = "0.1.0"
-description = "Adelpha — Intelligent Magnetic Resonance Framework (Electron/React GUI + MRI console API)."
+description = "Adelpha — Intelligent Magnetic Resonance Framework (Tauri/React GUI + Python supervisor)."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []

@@ -62,7 +62,7 @@ async function runBuiltinCommand(term: Terminal, raw: string) {
       );
       emit(
         "INFO",
-        "For a real shell (bash/zsh), run the desktop app: npm run electron:dev",
+        "For a real shell (bash/zsh), run the desktop app: npm run tauri:dev",
       );
       break;
     case "clear":

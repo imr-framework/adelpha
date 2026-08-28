@@ -18,7 +18,7 @@ interface ImportMetaEnv {
   readonly VITE_ADK_USER_ID?: string;
   /** Comma-separated model options `id:Label,...` for the Agents picker. */
   readonly VITE_ADK_MODELS?: string;
-  /** MRI4ALL console API (`/api/mri` via Vite/Electron proxy → :8002). */
+  /** MRI4ALL console API (`/api/mri` via Vite proxy or the Tauri supervisor). */
   readonly VITE_MRI_API_URL?: string;
 }
 
@@ -26,7 +26,7 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
-/** Electron preload bridge for a real shell PTY (absent in browser Vite). */
+/** Electron preload or Tauri PTY bridge for a real shell (absent in browser Vite). */
 interface AdelphaTerminalBridge {
   available: true;
   start: (

@@ -46,7 +46,6 @@ import {
   type WorkspaceId,
 } from "./twin/TopbarControls";
 import type { AssessMode } from "./twin/dtamTypes";
-import { LaunchScreen } from "./twin/launch/LaunchScreen";
 import { SettingsCard } from "./twin/SettingsCard";
 import { subscribeOpenSettings, type SettingsLaunch } from "./twin/settingsOpen";
 import { cadForScanner, useScannerModel } from "./twin/scannerModel";
@@ -56,7 +55,6 @@ import {
   resolveLaunchWorkspace,
   useWorkspacePrefs,
 } from "./twin/workspacePrefs";
-import { shouldPlayLaunchIntro } from "./twin/launch/launchConfig";
 import "./styles.css";
 import "./settings.css";
 
@@ -343,7 +341,6 @@ export default function App() {
   const [showDashboard, setShowDashboard] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [settingsLaunch, setSettingsLaunch] = useState<SettingsLaunch | null>(null);
-  const [showLaunch, setShowLaunch] = useState(shouldPlayLaunchIntro);
   const [viewportTool, setViewportTool] = useState<ViewportToolId>("magnet");
   const [stageMode, setStageMode] = useState<"magnet" | "camera">("magnet");
   const [cameraPreviewStream, setCameraPreviewStream] = useState<MediaStream | null>(null);
@@ -669,7 +666,6 @@ export default function App() {
 
   return (
     <div className="shell">
-      {showLaunch ? <LaunchScreen onComplete={() => setShowLaunch(false)} /> : null}
       <header className="topbar">
         <div className="brand">
           <img
@@ -758,7 +754,7 @@ export default function App() {
           >
             {showDashboard ? "Hide live dashboard" : "Open live dashboard"}
           </button>
-          {showLaunch || stageMode === "camera" ? null : (
+          {stageMode === "camera" ? null : (
             <>
               <ViewportContextMenu enabled />
               <div className="part-inspect-stack">
@@ -767,7 +763,7 @@ export default function App() {
               </div>
             </>
           )}
-          {showLaunch ? null : stageMode === "camera" ? (
+          {stageMode === "camera" ? (
             <Suspense fallback={null}>
               <CameraFeed
                 sharePreview={showDashboard}

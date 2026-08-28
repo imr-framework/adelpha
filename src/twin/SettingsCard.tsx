@@ -38,6 +38,7 @@ import {
   UseModelColorsRow,
   ViewportBgRow,
 } from "./settings/controls";
+import { GoogleApiKeySection } from "./settings/GoogleApiKeySection";
 import { INITIAL_DRAFT, type Draft, type PatchDraft } from "./settings/draft";
 
 export type SettingsSectionId =
@@ -128,7 +129,7 @@ const PANEL_COPY: Record<SettingsSectionId, { title: string; subtitle: string }>
   },
   "ai-agents": {
     title: "AI & Agents",
-    subtitle: "Configure models, tools, and intelligent behavior across Adelpha.",
+    subtitle: "Add an API key, then configure models and agent behavior.",
   },
   devices: {
     title: "Devices",
@@ -296,6 +297,8 @@ type PanelProps = {
 function AgentsPanel({ draft, patch }: PanelProps) {
   return (
     <>
+      <GoogleApiKeySection />
+
       <SettingsSection title="Default model">
         <SettingsRow
           title="Primary model"
@@ -631,7 +634,10 @@ function GenericPanel({
     case "integrations":
       return (
         <SettingsSection title="Services">
-          <SettingsRow title="Google ADK" description="Agent runtime at localhost:8001.">
+          <SettingsRow
+            title="Google ADK"
+            description="Agent chat uses the Google API key in AI & Agents."
+          >
             <Switch
               label="Google ADK"
               checked={draft.adkEnabled}

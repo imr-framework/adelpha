@@ -96,9 +96,9 @@ Bottom console tabs:
 
 `help` · `clear` · `status` · `sensors` · `hide` · `forecast-hint`
 
-### Electron terminal (real shell)
+### Desktop terminal (real shell)
 
-Run `npm run electron:dev` or the packaged Mac app. Terminal attaches to `$SHELL` via `node-pty` + preload IPC — full bash/zsh session on loopback.
+Run `make tauri-dev` or a packaged installer. Terminal attaches to `$SHELL` via a Rust PTY (same shape as the old Electron `node-pty` bridge).
 
 Console open state and active tab persist in `localStorage`.
 

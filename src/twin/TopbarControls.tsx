@@ -196,14 +196,11 @@ export function TopbarControls({
 function SystemStatusPill() {
   const connection = useTwinStore((s) => s.connection);
   const health = useTwinStore((s) => s.health);
-  const notes = useTwinStore((s) => s.systemState?.notes);
 
   const connected = connection === "connected" && (health?.connected ?? false);
-  const tone = connected ? (notes?.length ? "warn" : "ok") : connection === "connecting" ? "warn" : "bad";
+  const tone = connected ? "ok" : connection === "connecting" ? "warn" : "bad";
   const label = connected
-    ? notes?.length
-      ? `${notes.length} twin ${notes.length === 1 ? "note" : "notes"}`
-      : "All systems operational"
+    ? "All systems operational"
     : connection === "connecting"
       ? "Connecting to twin"
       : "Twin disconnected";

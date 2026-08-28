@@ -1,3 +1,4 @@
+import { apiRoot, runtimeFetch } from "../desktop/runtime";
 import type {
   AssessFromTwinRequest,
   AssessFromTwinResponse,
@@ -7,11 +8,11 @@ import type {
   SystemState,
 } from "./dtamTypes";
 
-/** Prefer same-origin proxy (`/api/dtam`); fall back to direct Twin API. */
+/** Prefer same-origin proxy (`/api/dtam`); Tauri prefixes the supervisor base URL. */
 export function dtamBaseUrl(): string {
   const fromEnv = import.meta.env.VITE_DTAM_API_URL?.trim();
   if (fromEnv) return fromEnv.replace(/\/$/, "");
-  return "/api/dtam";
+  return `${apiRoot()}/api/dtam`;
 }
 
 async function readError(res: Response): Promise<string> {
@@ -27,7 +28,7 @@ async function readError(res: Response): Promise<string> {
 }
 
 export async function fetchHealth(): Promise<HealthResponse> {
-  const res = await fetch(`${dtamBaseUrl()}/health`, { cache: "no-store" });
+  const res = await runtimeFetch(`${dtamBaseUrl()}/health`, { cache: "no-store" });
   if (!res.ok) throw new Error(await readError(res));
   return res.json() as Promise<HealthResponse>;
 }
@@ -49,7 +50,7 @@ export async function fetchTwinState(
     }
   }
   const qs = params.toString();
-  const res = await fetch(`${dtamBaseUrl()}/twin/state${qs ? `?${qs}` : ""}`, {
+  const res = await runtimeFetch(`${dtamBaseUrl()}/twin/state${qs ? `?${qs}` : ""}`, {
     cache: "no-store",
   });
   if (!res.ok) throw new Error(await readError(res));
@@ -57,7 +58,7 @@ export async function fetchTwinState(
 }
 
 export async function runForecast(body: ForecastRequest): Promise<SystemState> {
-  const res = await fetch(`${dtamBaseUrl()}/twin/forecast`, {
+  const res = await runtimeFetch(`${dtamBaseUrl()}/twin/forecast`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
@@ -70,7 +71,7 @@ export async function runForecast(body: ForecastRequest): Promise<SystemState> {
 export async function assessFromTwin(
   body: AssessFromTwinRequest = { mode: "observe" },
 ): Promise<AssessFromTwinResponse> {
-  const res = await fetch(`${dtamBaseUrl()}/assess/from-twin`, {
+  const res = await runtimeFetch(`${dtamBaseUrl()}/assess/from-twin`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
@@ -81,7 +82,7 @@ export async function assessFromTwin(
 }
 
 export async function fetchSensorsBatch(): Promise<MeasurementBatch> {
-  const res = await fetch(`${dtamBaseUrl()}/sensors/batch`, { cache: "no-store" });
+  const res = await runtimeFetch(`${dtamBaseUrl()}/sensors/batch`, { cache: "no-store" });
   if (!res.ok) throw new Error(await readError(res));
   return res.json() as Promise<MeasurementBatch>;
 }

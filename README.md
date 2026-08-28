@@ -7,7 +7,7 @@
 ![React](https://img.shields.io/badge/React-18-61DAFB.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg)
 ![Vite](https://img.shields.io/badge/Vite-5.x-646CFF.svg)
-![Electron](https://img.shields.io/badge/Electron-Desktop-47848F.svg)
+![Tauri](https://img.shields.io/badge/Tauri-v2-24C8DB.svg)
 ![Python](https://img.shields.io/badge/python-v3.10+-blue.svg)
 ![Google ADK](https://img.shields.io/badge/Google%20ADK-Latest-green.svg)
 ![MCP](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-blue.svg)
@@ -18,84 +18,53 @@
 
 </div>
 
-**Adelpha** is the Intelligent Magnetic Resonance Framework: a dark-mode Electron/React observer for [DTAM](https://github.com/imr-framework/dtam) and an **Imaging Console** that talks to a local MRI4ALL FastAPI façade (not the Qt UI).
+**Adelpha** is the Intelligent Magnetic Resonance Framework: a dark-mode Tauri/React observer for [DTAM](https://github.com/imr-framework/dtam) and an **Imaging Console** that talks to the bundled MRI4ALL FastAPI façade (not the Qt UI).
+
+Production installs ship one installer and a self-contained **Python supervisor sidecar**. Users do not install Python, Node.js, Rust, or pip packages.
 
 > [!NOTE]
-> Live twin telemetry requires **[DTAM](https://github.com/imr-framework/dtam)** (`make twin-api` on port **8080**). The Imaging Console requires the MRI API on port **8002**. Without those backends the app still opens, but those surfaces stay disconnected.
+> Packaging, exclusions, signing, and the Electron comparison live in [`docs/packaging/index.md`](docs/packaging/index.md). DTAM license terms are not finalized — do not ship a public installer that includes DTAM until that is settled.
 
 Version **0.1.0**.
 
-## Install
+## Install (developers)
 
 **Requirements:**
 - [Node.js 18+](https://nodejs.org/)
-- A **DTAM** clone next to this repo (for the Digital Twin)
-- Python 3.10+ (for the Imaging Console API)
-- [uv](https://docs.astral.sh/uv/) (DTAM Python deps and optional docs)
-
-```text
-~/dtam              ← twin + agents backends
-~/adelpha           ← this repo
-```
-
-### 1. Twin backend (Digital Twin workspace)
-
-From your **DTAM** clone:
+- [Rust](https://rustup.rs/) (stable)
+- Python 3.10–3.12 (to run or freeze the supervisor)
+- [uv](https://docs.astral.sh/uv/) (optional docs group)
+- A **DTAM** checkout at `adelpha/dtam` (gitlink or clone)
 
 ```bash
-cd dtam
-uv sync --all-groups
-make twin-api          # :8080 — required for telemetry
-make agents-api        # :8001 — optional, Agents chat (needs GOOGLE_API_KEY)
+make install
+make tauri-dev          # Vite + Tauri; supervisor via python3 -m adelpha_runtime
 ```
 
-### 2. MRI console API (Imaging Console workspace)
+The in-app terminal and window chrome require Tauri. `npm run dev` still opens the UI in a browser with `/api/*` proxies to ports 8080 / 8001 / 8002 if you start those APIs yourself.
 
-From this repo, in a Python environment that has `console/requirements.txt` installed:
+### Packaged sidecar + installer (current OS)
 
 ```bash
-cd adelpha/console
-python -m services.api    # :8002
+make sidecar            # PyInstaller onedir → src-tauri/resources/python-runtime
+make dist-current       # Tauri DMG / NSIS / deb+AppImage for this machine
+make test-runtime
 ```
 
-If `/opt/mri4all` is not writable, data lives under `adelpha/.mri4all/`. Restarting this API **clears the in-memory exam** — register the patient again.
+Windows and Linux installers are built on native CI runners. This macOS checkout can only smoke-test macOS.
 
-TypeScript never opens the Red Pitaya socket. Sequence execution stays in the Python console (FLOCRA / pypulseq / MaRCoS).
+Legacy Electron commands (`npm run electron:dev`, `dist:mac`, …) remain until Tauri parity is signed off. They are not the production shell.
 
-### 3. Start the GUI
+## User data
 
-```bash
-cd adelpha
-npm install
-npm run electron:dev    # production Vite build + Electron (typical)
-# or
-npm run dev             # Vite on :5173 (browser; HMR)
-```
-
-`electron:dev` does **not** hot-reload UI changes — rebuild/restart after CSS or TypeScript edits.
-
-Packaged apps:
-
-```bash
-npm run dist:mac      # → release/
-npm run dist:win
-npm run dist:linux
-```
-
-## Verify
-
-```bash
-curl -s http://127.0.0.1:8080/health    # Twin API
-curl -s http://127.0.0.1:8002/health    # MRI console API
-```
-
-In the GUI, the console **Logging** tab should show a green live indicator when DTAM is up. Switch the workspace to **Imaging Console** (⌘K) for registration, sequences, Study Viewer, Status, logs, and configuration.
+Installed Adelpha writes to the OS application data / config / log directories, never into the `.app` bundle. Imaging data defaults to `<app-data>/mri4all`. Logs: `<app-log>/supervisor.log`. Optional Agents key: `<app-config>/google_api_key` (never commit this file).
 
 ## Documentation
 
 | Topic | Link |
 | --- | --- |
 | Getting started | [`docs/start/index.md`](docs/start/index.md) |
+| Desktop packaging (Tauri) | [`docs/packaging/index.md`](docs/packaging/index.md) |
 | Workspaces | [`docs/guide/workspaces.md`](docs/guide/workspaces.md) |
 | Imaging Console | [`docs/guide/imaging-console.md`](docs/guide/imaging-console.md) |
 | Configuration & proxies | [`docs/guide/configuration.md`](docs/guide/configuration.md) |
@@ -110,10 +79,9 @@ Published docs: [imr-framework.github.io/adelpha](https://imr-framework.github.i
 
 | Symptom | Fix |
 | --- | --- |
-| Disconnected / no live twin data | Start `make twin-api` in DTAM |
-| Agents tab offline | `make agents-api` in DTAM; `GOOGLE_API_KEY` in DTAM `.env` |
-| Imaging Console empty / API errors | Start `python -m services.api` from `console/` |
-| Exam vanished after API restart | Expected — in-memory session; register again |
-| UI change not visible in Electron | Restart `npm run electron:dev` |
-| Terminal has no shell in Electron | `npx electron-rebuild -f -w node-pty` |
-| Port already in use | Use the URL Vite prints |
+| Recovery screen / Twin service failed | Check `<app-log>/supervisor.log`; DTAM sources and configs must be in the sidecar |
+| Agents tab offline | Put `GOOGLE_API_KEY` in `dtam/.env` (dev) or the app config file `google_api_key`, then restart |
+| Imaging Console empty | Console API is required at launch; see supervisor health in diagnostics export |
+| Exam vanished after restart | Expected — in-memory session; register again |
+| UI change not visible in `tauri dev` | Vite HMR should reload; restart Tauri if Rust/sidecar code changed |
+| Terminal has no shell | Desktop (Tauri) only — not the browser `npm run dev` window |

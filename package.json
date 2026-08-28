@@ -15,9 +15,15 @@
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:mac:dir": "npm run build && electron-builder --mac --dir",
     "dist:win": "npm run build && electron-builder --win --x64 --arm64 --config.npmRebuild=false",
-    "dist:linux": "npm run build && bash electron/build-linux.sh"
+    "dist:linux": "npm run build && bash electron/build-linux.sh",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "sidecar:build": "python3 runtime/python/build_sidecar.py",
+    "test:runtime": "runtime/python/.venv/bin/pytest runtime/python/tests -q"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2.8.0",
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@mediapipe/tasks-vision": "^1.0.1",
@@ -35,6 +41,7 @@
     "zustand": "^5.0.3"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.8.0",
     "@types/node": "^26.2.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",

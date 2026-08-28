@@ -660,6 +660,58 @@
   background: var(--sw-raised-hover);
 }
 
+.settings-secret {
+  position: relative;
+  width: 100%;
+}
+
+.settings-secret .settings-input {
+  padding-right: 40px;
+}
+
+.settings-secret-toggle {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--sw-text-3);
+  cursor: pointer;
+}
+
+.settings-secret-toggle:hover:not(:disabled) {
+  color: var(--sw-text);
+  background: var(--sw-raised-hover);
+}
+
+.settings-secret-toggle:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.settings-key-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 420px;
+  padding: 8px 0 4px;
+}
+
+.settings-key-feedback {
+  margin: 4px 0 0;
+  max-width: 520px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--sw-text-2);
+}
+
 .settings-segment {
   display: inline-flex;
   padding: 3px;

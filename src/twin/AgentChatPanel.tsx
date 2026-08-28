@@ -19,6 +19,8 @@ import {
 } from "./adkApi";
 import type { SystemState } from "./dtamTypes";
 import { pushConsole } from "./consoleLog";
+import { isTauri, AGENTS_CONFIG_EVENT } from "../desktop/runtime";
+import { requestOpenSettings } from "./settingsOpen";
 import { useHeadMotionStore } from "./headMotionStore";
 
 export type ChatRole = "user" | "assistant" | "system";
@@ -208,7 +210,7 @@ export function AgentChatPanel({ systemState }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    async function refresh() {
       try {
         const listed = await listAdkApps();
         if (cancelled) return;
@@ -221,21 +223,24 @@ export function AgentChatPanel({ systemState }: Props) {
             ? `Connected · app ${preferred}`
             : "ADK online · no apps discovered",
         );
-        pushConsole("SUCCESS", `ADK reachable on :8001 (${listed.join(", ") || "no apps"})`);
+        pushConsole("SUCCESS", `ADK reachable (${listed.join(", ") || "no apps"})`);
       } catch (err) {
         if (cancelled) return;
         setOnline(false);
         setApps([]);
         setAppName(null);
-        setStatus("ADK offline (:8001)");
+        setStatus("ADK offline");
         pushConsole(
           "WARN",
-          `Agent API offline on :8001 — ${err instanceof Error ? err.message : String(err)}`,
+          `Agent API offline — ${err instanceof Error ? err.message : String(err)}`,
         );
       }
-    })();
+    }
+    void refresh();
+    window.addEventListener(AGENTS_CONFIG_EVENT, refresh);
     return () => {
       cancelled = true;
+      window.removeEventListener(AGENTS_CONFIG_EVENT, refresh);
     };
   }, []);
 
@@ -322,7 +327,9 @@ export function AgentChatPanel({ systemState }: Props) {
         {
           id: uid(),
           role: "system",
-          text: "Agent API offline on :8001. In the DTAM repo run `make agents-api`, then retry.",
+          text: isTauri()
+            ? "Agent API is not running. Add a Google API key in Settings → AI & Agents, then retry."
+            : "Agent API is not running. Start it with `make agents-api` in the DTAM repo, then retry.",
         },
       ]);
       return;
@@ -459,12 +466,12 @@ export function AgentChatPanel({ systemState }: Props) {
                   ...msg,
                   pending: false,
                   role: "system",
-                  text: `Agent error (:8001): ${detail}`,
+                  text: `Agent error: ${detail}`,
                 }
               : msg,
           ),
         );
-        pushConsole("ERROR", `Agent chat failed (:8001): ${detail}`);
+        pushConsole("ERROR", `Agent chat failed: ${detail}`);
       }
     } finally {
       abortRef.current = null;
@@ -542,12 +549,33 @@ export function AgentChatPanel({ systemState }: Props) {
 
       {online === false ? (
         <div className="agent-offline">
-          <p>Agent API not reachable on :8001. In the DTAM repo run:</p>
-          <pre>make agents-api</pre>
-          <p className="muted">
-            Proxied here as <code>/api/agents</code>. Twin telemetry keeps using{" "}
-            <code>make twin-api</code> on :8080.
-          </p>
+          {isTauri() ? (
+            <>
+              <p>Agent runtime is not reachable. Add a Google API key in Settings to enable chat.</p>
+              <p>
+                <button
+                  type="button"
+                  className="agent-tool-btn"
+                  onClick={() => requestOpenSettings({ section: "ai-agents" })}
+                >
+                  Open AI & Agents settings
+                </button>
+              </p>
+              <p className="muted">
+                Chat is proxied as <code>/api/agents</code>. Twin telemetry does not need the agent
+                runtime.
+              </p>
+            </>
+          ) : (
+            <>
+              <p>Agent API not reachable. In the DTAM repo run:</p>
+              <pre>make agents-api</pre>
+              <p className="muted">
+                Proxied here as <code>/api/agents</code>. Twin telemetry keeps using{" "}
+                <code>make twin-api</code> on :8080.
+              </p>
+            </>
+          )}
         </div>
       ) : null}
 

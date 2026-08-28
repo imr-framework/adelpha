@@ -30,6 +30,7 @@ nav = [
       { "Twin API" = "guide/twin-api.md" },
       { Dashboard = "guide/dashboard.md" },
       { Configuration = "guide/configuration.md" },
+      { "Desktop packaging" = "packaging/index.md" },
     ]
   },
 
@@ -124,5 +125,6 @@ custom_checkbox = true
 targets.include = [
   "start/*",
   "guide/*",
+  "packaging/*",
   "project/*",
 ]

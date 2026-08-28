@@ -16,6 +16,13 @@ site/
 .zensical/
 .mri4all/
 
+# Tauri / Python sidecar build output
+src-tauri/target/
+src-tauri/gen/
+packaging/sidecar/
+src-tauri/resources/python-runtime/**
+!src-tauri/resources/python-runtime/README.md
+
 # IDE / OS
 .vscode/
 .idea/

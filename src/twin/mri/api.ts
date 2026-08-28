@@ -1,3 +1,4 @@
+import { apiRoot, runtimeFetch, withToken } from "../../desktop/runtime";
 import type {
   ExamResponse,
   HealthResponse,
@@ -13,7 +14,7 @@ import type {
 export function mriBaseUrl(): string {
   const fromEnv = import.meta.env.VITE_MRI_API_URL?.trim();
   if (fromEnv) return fromEnv.replace(/\/$/, "");
-  return "/api/mri";
+  return `${apiRoot()}/api/mri`;
 }
 
 async function readError(res: Response): Promise<string> {
@@ -29,7 +30,7 @@ async function readError(res: Response): Promise<string> {
 }
 
 async function mriFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${mriBaseUrl()}${path}`, { cache: "no-store", ...init });
+  const res = await runtimeFetch(`${mriBaseUrl()}${path}`, { cache: "no-store", ...init });
   if (!res.ok) throw new Error(await readError(res));
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
@@ -40,7 +41,7 @@ export async function fetchMriHealth(): Promise<HealthResponse> {
 }
 
 export async function fetchCurrentExam(): Promise<ExamResponse | null> {
-  const res = await fetch(`${mriBaseUrl()}/exams/current`, { cache: "no-store" });
+  const res = await runtimeFetch(`${mriBaseUrl()}/exams/current`, { cache: "no-store" });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(await readError(res));
   const body = await res.json();
@@ -292,7 +293,7 @@ export function connectMriEvents(onEvent: (event: MriEvent) => void): () => void
   const url = base.startsWith("http")
     ? base.replace(/^http/, "ws") + "/events"
     : `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}${base}/events`;
-  const ws = new WebSocket(url);
+  const ws = new WebSocket(withToken(url));
   ws.onmessage = (ev) => {
     try {
       onEvent(JSON.parse(String(ev.data)) as MriEvent);

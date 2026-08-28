@@ -21,7 +21,15 @@ Optional Vite env (create `.env.local` if you need to override defaults). Defaul
 | `VITE_MAGNET_CAD_SCALE` | inferred | Uniform scale after centering |
 | `VITE_MAGNET_CAD_RX_DEG` / `RY` / `RZ` | `0` | Orientation offsets |
 
-Electron can also override backend hosts:
+Tauri production does **not** use those fixed ports. The supervisor binds
+`127.0.0.1` on an ephemeral port and injects `base_url` + session token into
+the webview. Optional Vite `VITE_*` overrides still work for browser-only
+`npm run dev`.
+
+Put a Google API key in the OS app-config file `google_api_key` (not in
+`.env`) if you want Agents to start with the app.
+
+Electron can also override backend hosts (legacy shell only):
 
 | Variable | Default |
 | --- | --- |
