@@ -1,4 +1,9 @@
-"""FastAPI façade: exam/scan/sequence HTTP + WebSocket events. No MaRCoS socket."""
+"""FastAPI façade: exam/scan/sequence HTTP + WebSocket events.
+
+Acquisition sequences talk to MaRCoS when hardware simulation is off.
+This layer probes the Red Pitaya on /device/ping; it does not send
+sequence payloads itself.
+"""
 
 from __future__ import annotations
 
@@ -32,7 +37,7 @@ from services.api.sequences_api import get_sequence_info, list_sequences, valida
 from services.api.session import session
 from services.ui.control import (
     control_service,
-    ping,
+    probe_scanner,
     restart_device,
     run_device_test,
 )
@@ -61,11 +66,12 @@ async def on_startup() -> None:
     events.attach_loop(asyncio.get_running_loop())
     events.start_listeners()
     cfg = config.get_config()
-    if not Path("/opt/mri4all/console").is_dir() and cfg.hardware_simulation != "True":
-        cfg.hardware_simulation = "True"
-        cfg.save_to_file()
-        log.info("Enabled hardware_simulation for local MRI4ALL_BASE")
-    log.info("MRI4ALL API ready (base=%s)", rt.get_base_path())
+    log.info(
+        "MRI4ALL API ready (base=%s simulation=%s scanner=%s)",
+        rt.get_base_path(),
+        cfg.is_hardware_simulation(),
+        cfg.scanner_ip,
+    )
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -230,9 +236,15 @@ def put_config(body: dict):
 def device_ping() -> DevicePingResponse:
     config.load_config()
     cfg = config.get_config()
-    if cfg.is_hardware_simulation():
-        return DevicePingResponse(ip=cfg.scanner_ip, ok=True, simulation=True)
-    return DevicePingResponse(ip=cfg.scanner_ip, ok=bool(ping(cfg.scanner_ip)), simulation=False)
+    probe = probe_scanner(cfg.scanner_ip)
+    return DevicePingResponse(
+        ip=cfg.scanner_ip,
+        ok=bool(probe["reachable"]),
+        simulation=cfg.is_hardware_simulation(),
+        reachable=bool(probe["reachable"]),
+        method=str(probe["method"]),
+        detail=str(probe["detail"]),
+    )
 
 
 @app.get("/device/services", response_model=ServiceStatusResponse)

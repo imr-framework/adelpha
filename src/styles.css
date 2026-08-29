@@ -1076,6 +1076,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   margin-top: 16px;
 }
 
+.ic-register-card header,
 .ic-protocols-card header {
   display: flex;
   align-items: center;
@@ -1083,6 +1084,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   margin-bottom: 10px;
 }
 
+.ic-register-card header button,
 .ic-protocols-card header button {
   appearance: none;
   width: 28px;

@@ -31,6 +31,7 @@ import {
   fetchServices,
   fetchStudies,
   fetchStudyPreview,
+  formatDevicePingStatus,
   pingDevice,
   resetDevice,
   saveConfig,
@@ -58,7 +59,7 @@ export type ViewerTarget = {
 };
 
 const GENERAL_SETTINGS: { key: keyof MriConfig; label: string }[] = [
-  { key: "scanner_ip", label: "Scanner IP (internal)" },
+  { key: "scanner_ip", label: "Scanner IP (Red Pitaya)" },
   { key: "debug_mode", label: "Debug Mode" },
   { key: "hardware_simulation", label: "Hardware Simulation" },
 ];
@@ -290,34 +291,40 @@ export function ConfigDialog({ onClose }: { onClose: () => void }) {
       {!cfg ? (
         <p className="m4-muted">Loading…</p>
       ) : tab === "general" ? (
-        <table className="m4-table">
-          <thead>
-            <tr>
-              <th>Setting</th>
-              <th>Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {GENERAL_SETTINGS.map((row) => (
-              <tr key={row.key}>
-                <td>{row.label}</td>
-                <td>
-                  {row.key === "scanner_ip" ? (
-                    <input value={String(cfg[row.key] ?? "")} onChange={(e) => setCfg({ ...cfg, scanner_ip: e.target.value })} />
-                  ) : (
-                    <select
-                      value={String(cfg[row.key] ?? "False")}
-                      onChange={(e) => setCfg({ ...cfg, [row.key]: e.target.value } as MriConfig)}
-                    >
-                      <option value="False">False</option>
-                      <option value="True">True</option>
-                    </select>
-                  )}
-                </td>
+        <>
+          <table className="m4-table">
+            <thead>
+              <tr>
+                <th>Setting</th>
+                <th>Value</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {GENERAL_SETTINGS.map((row) => (
+                <tr key={row.key}>
+                  <td>{row.label}</td>
+                  <td>
+                    {row.key === "scanner_ip" ? (
+                      <input value={String(cfg[row.key] ?? "")} onChange={(e) => setCfg({ ...cfg, scanner_ip: e.target.value })} />
+                    ) : (
+                      <select
+                        value={String(cfg[row.key] ?? "False")}
+                        onChange={(e) => setCfg({ ...cfg, [row.key]: e.target.value } as MriConfig)}
+                      >
+                        <option value="False">False</option>
+                        <option value="True">True</option>
+                      </select>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="m4-muted">
+            Set Hardware Simulation to False to use a connected Red Pitaya. Ping checks MaRCoS on
+            port 11111. After changing the IP, restart the Python runtime before running sequences.
+          </p>
+        </>
       ) : tab === "dicom" ? (
         <div className="m4-dicom">
           <h3>DICOM Targets</h3>
@@ -390,6 +397,7 @@ export function StatusDialog({ onClose }: { onClose: () => void }) {
   });
   const [svc, setSvc] = useState<{ acq: boolean | null; recon: boolean | null; mode: string } | null>(null);
   const [ping, setPing] = useState<"idle" | "ok" | "bad">("idle");
+  const [pingDetail, setPingDetail] = useState("");
   const [test, setTest] = useState<"idle" | "ok" | "bad">("idle");
   const [reset, setReset] = useState("");
   const [disk, setDisk] = useState<{ percent: number; freeGb: number } | null>(null);
@@ -398,6 +406,19 @@ export function StatusDialog({ onClose }: { onClose: () => void }) {
     void fetchDisk()
       .then((d) => setDisk({ percent: d.percent, freeGb: Math.round(d.free / 1024 / 1024 / 1024) }))
       .catch(() => setDisk(null));
+  };
+  const runPing = () => {
+    setPing("idle");
+    setPingDetail("Checking MaRCoS…");
+    void pingDevice()
+      .then((p) => {
+        setPing((p.reachable ?? p.ok) ? "ok" : "bad");
+        setPingDetail(formatDevicePingStatus(p));
+      })
+      .catch((e) => {
+        setPing("bad");
+        setPingDetail(e instanceof Error ? e.message : "Ping failed");
+      });
   };
   useEffect(() => {
     setAbout({ model: profile.displayName, serial: profile.serial });
@@ -416,7 +437,7 @@ export function StatusDialog({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     refresh();
     const t = window.setInterval(refresh, 500);
-    void pingDevice().then((p) => setPing(p.ok || p.simulation ? "ok" : "bad"));
+    runPing();
     return () => window.clearInterval(t);
   }, []);
   const acqOn = Boolean(svc?.acq);
@@ -461,8 +482,11 @@ export function StatusDialog({ onClose }: { onClose: () => void }) {
         </div>
         <div className="m4-status-row">
           <span>Scanner Hardware</span>
-          <Mark state={ping} ok="Responding" bad="Not responding" idle="Not tested" />
-          <button type="button" className="m4-btn m4-btn-wide" onClick={() => void pingDevice().then((p) => setPing(p.ok || p.simulation ? "ok" : "bad"))}>
+          <div>
+            <Mark state={ping} ok="Responding" bad="Not responding" idle="Checking" />
+            {pingDetail ? <p className="m4-muted">{pingDetail}</p> : null}
+          </div>
+          <button type="button" className="m4-btn m4-btn-wide" onClick={runPing}>
             <SatelliteDish size={14} /> Ping
           </button>
         </div>

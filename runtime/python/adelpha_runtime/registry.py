@@ -211,8 +211,10 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
     def twin_factory():
         if paths.dtam_src is not None:
             _prepend_sys_path(str(paths.dtam_src))
-        if paths.dtam_configs is not None:
-            os.environ.setdefault("DTAM_CONFIG_DIR", str(paths.dtam_configs))
+        user_configs = paths.config_dir / "dtam"
+        config_root = user_configs if user_configs.is_dir() else paths.dtam_configs
+        if config_root is not None:
+            os.environ.setdefault("DTAM_CONFIG_DIR", str(config_root))
         try:
             from dtam.api.app import create_app
         except ImportError as exc:
@@ -222,8 +224,8 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
             ) from exc
         return create_app(
             scanner_id=os.environ.get("DTAM_SCANNER_ID", "simulated_scanner"),
-            environment=os.environ.get("DTAM_ENVIRONMENT", "production"),
-            config_root=paths.dtam_configs,
+            environment=os.environ.get("DTAM_ENVIRONMENT", "development"),
+            config_root=config_root,
         )
 
     def console_factory():

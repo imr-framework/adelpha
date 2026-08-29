@@ -226,6 +226,8 @@ async fn spawn_supervisor(app: &AppHandle, manager: &Arc<RuntimeManager>) -> Res
         cmd.env("ADELPHA_START_AGENTS", "1");
     }
 
+    apply_dtam_runtime_env(&mut cmd, &config);
+
     #[cfg(windows)]
     {
         const CREATE_NO_WINDOW: u32 = 0x08000000;
@@ -554,6 +556,123 @@ async fn request_shutdown(port: u16, token: &str) -> Result<(), String> {
     let mut buf = vec![0u8; 256];
     let _ = stream.read(&mut buf).await;
     Ok(())
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DtamRuntimePrefs {
+    pub scanner_id: String,
+    pub environment: String,
+    pub agent_model: String,
+    pub agent_mode: String,
+}
+
+impl Default for DtamRuntimePrefs {
+    fn default() -> Self {
+        Self {
+            scanner_id: "simulated_scanner".into(),
+            environment: "development".into(),
+            agent_model: "gemini-2.5-flash".into(),
+            agent_mode: "observe".into(),
+        }
+    }
+}
+
+fn dtam_runtime_path(config: &std::path::Path) -> PathBuf {
+    config.join("dtam_runtime.json")
+}
+
+fn read_dtam_runtime_prefs(config: &std::path::Path) -> DtamRuntimePrefs {
+    let path = dtam_runtime_path(config);
+    let Ok(raw) = std::fs::read_to_string(&path) else {
+        return DtamRuntimePrefs::default();
+    };
+    serde_json::from_str::<DtamRuntimePrefs>(&raw).unwrap_or_default()
+}
+
+fn write_dtam_runtime_prefs(config: &std::path::Path, prefs: &DtamRuntimePrefs) -> Result<(), String> {
+    std::fs::create_dir_all(config).map_err(|e| e.to_string())?;
+    let body = serde_json::to_string_pretty(prefs).map_err(|e| e.to_string())?;
+    std::fs::write(dtam_runtime_path(config), format!("{body}\n")).map_err(|e| e.to_string())
+}
+
+fn apply_dtam_runtime_env(cmd: &mut Command, config: &std::path::Path) {
+    let prefs = read_dtam_runtime_prefs(config);
+    cmd.env("DTAM_SCANNER_ID", &prefs.scanner_id);
+    cmd.env("DTAM_ENVIRONMENT", &prefs.environment);
+    cmd.env("DT_MODEL", &prefs.agent_model);
+    cmd.env("DT_DEFAULT_MODE", &prefs.agent_mode);
+    let user_configs = config.join("dtam");
+    if user_configs.is_dir() {
+        cmd.env("ADELPHA_DTAM_CONFIGS", &user_configs);
+    }
+}
+
+fn reveal_path(path: &std::path::Path) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(path)
+            .status()
+            .map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(path)
+            .status()
+            .map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(path)
+            .status()
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+}
+
+#[tauri::command]
+pub async fn dtam_runtime_prefs(app: AppHandle) -> Result<DtamRuntimePrefs, String> {
+    let config = app.path().app_config_dir().map_err(|e| e.to_string())?;
+    Ok(read_dtam_runtime_prefs(&config))
+}
+
+#[tauri::command]
+pub async fn set_dtam_runtime_prefs(
+    app: AppHandle,
+    manager: State<'_, Arc<RuntimeManager>>,
+    prefs: DtamRuntimePrefs,
+) -> Result<DtamRuntimePrefs, String> {
+    let scanner = prefs.scanner_id.trim();
+    let environment = prefs.environment.trim();
+    let model = prefs.agent_model.trim();
+    let mode = prefs.agent_mode.trim();
+    if scanner.is_empty() || environment.is_empty() || model.is_empty() || mode.is_empty() {
+        return Err("DTAM settings are incomplete.".into());
+    }
+    let next = DtamRuntimePrefs {
+        scanner_id: scanner.to_string(),
+        environment: environment.to_string(),
+        agent_model: model.to_string(),
+        agent_mode: mode.to_string(),
+    };
+    let config = app.path().app_config_dir().map_err(|e| e.to_string())?;
+    write_dtam_runtime_prefs(&config, &next)?;
+    manager.shutdown().await;
+    manager.start(&app).await?;
+    Ok(next)
+}
+
+#[tauri::command]
+pub async fn reveal_dtam_config_dir(app: AppHandle) -> Result<String, String> {
+    let config = app.path().app_config_dir().map_err(|e| e.to_string())?;
+    let dest = config.join("dtam");
+    std::fs::create_dir_all(&dest).map_err(|e| e.to_string())?;
+    reveal_path(&dest)?;
+    Ok(dest.display().to_string())
 }
 
 #[tauri::command]

@@ -60,6 +60,9 @@ class DevicePingResponse(BaseModel):
     ip: str
     ok: bool
     simulation: bool = False
+    reachable: bool = False
+    method: str = ""
+    detail: str = ""
 
 
 class ServiceStatusResponse(BaseModel):

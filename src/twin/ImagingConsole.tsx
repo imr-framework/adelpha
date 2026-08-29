@@ -14,6 +14,7 @@ import {
   fetchScans,
   fetchSequences,
   patchScan,
+  formatDevicePingStatus,
   pingDevice,
   prepareScan,
   respondEvent,
@@ -286,16 +287,18 @@ export function ImagingConsole() {
       setExam(current);
       const seqs = await fetchSequences(true);
       setSequences(seqs);
+      const ping = await pingDevice().catch(() => null);
+      const probe = ping ? formatDevicePingStatus(ping) : null;
       if (current) {
         await refreshQueue();
         setPatient(current.patient);
         setAcc(current.exam.acc);
         setPosition(current.exam.patient_position || "HFS");
-        setStatus(health.hardware_simulation ? "Scanner ready (simulation)" : "Scanner ready");
+        setStatus(probe ?? (health.hardware_simulation ? "Scanner ready (simulation)" : "Scanner ready"));
         setRegisterOpen(false);
       } else {
         setQueue([]);
-        setStatus("Register a patient to start an exam");
+        setStatus(probe ? `${probe} · Register a patient to start an exam` : "Register a patient to start an exam");
         setRegisterOpen(true);
       }
     } catch (err) {
@@ -505,7 +508,8 @@ export function ImagingConsole() {
       setViewerSlots({ 1: "", 2: "", 3: "", flex: "" });
       setFlexOpen(false);
       setFlexTarget(null);
-      setStatus("Scanner ready");
+      const ping = await pingDevice().catch(() => null);
+      setStatus(ping ? formatDevicePingStatus(ping) : "Scanner ready");
     } catch (err) {
       setProblems([err instanceof Error ? err.message : "Failed to start exam"]);
     } finally {
@@ -675,7 +679,12 @@ export function ImagingConsole() {
       {registerOpen ? (
         <div className="ic-register" role="dialog" aria-labelledby="ic-register-title">
           <div className="ic-register-card">
-            <h2 id="ic-register-title">Patient Registration</h2>
+            <header>
+              <h2 id="ic-register-title">Patient Registration</h2>
+              <button type="button" aria-label="Close" onClick={() => setRegisterOpen(false)}>
+                <X size={16} />
+              </button>
+            </header>
             <RegistrationForm
               apiOk={apiOk}
               busy={busy}
@@ -688,7 +697,7 @@ export function ImagingConsole() {
               onPosition={setPosition}
               onPhantom={fillPhantom}
               onSubmit={() => void onRegister()}
-              onCancel={exam ? () => setRegisterOpen(false) : undefined}
+              onCancel={() => setRegisterOpen(false)}
             />
           </div>
         </div>
@@ -1061,7 +1070,7 @@ export function ImagingConsole() {
         </div>
 
         <aside className="ic-rail" aria-label="Console tools">
-          <button type="button" title="Scanner" aria-label="Scanner" onClick={() => void pingDevice().then((p) => setStatus(p.simulation ? "Hardware simulation" : p.ok ? "Scanner reachable" : "Scanner unreachable"))}>
+          <button type="button" title="Scanner" aria-label="Scanner" onClick={() => void pingDevice().then((p) => setStatus(formatDevicePingStatus(p)))}>
             <Atom size={22} strokeWidth={1.5} />
           </button>
           <button type="button" title="Halt" aria-label="Halt" onClick={() => void onHalt()}>

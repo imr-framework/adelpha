@@ -39,6 +39,12 @@ import {
   ViewportBgRow,
 } from "./settings/controls";
 import { GoogleApiKeySection } from "./settings/GoogleApiKeySection";
+import {
+  DtamAgentSetupSection,
+  DtamIntegrationsSection,
+  DtamRuntimeStatus,
+  DtamTwinSetupSection,
+} from "./settings/DtamSetupSection";
 import { UpdatesSection } from "./settings/UpdatesSection";
 import { INITIAL_DRAFT, type Draft, type PatchDraft } from "./settings/draft";
 
@@ -122,7 +128,7 @@ const PANEL_COPY: Record<SettingsSectionId, { title: string; subtitle: string }>
   },
   "digital-twin": {
     title: "Digital Twin",
-    subtitle: "Viewport, telemetry, and observer defaults for the twin.",
+    subtitle: "Set up DTAM, then adjust the viewport and observer defaults.",
   },
   "3d-model": {
     title: "3D Model",
@@ -295,113 +301,11 @@ type PanelProps = {
   patch: PatchDraft;
 };
 
-function AgentsPanel({ draft, patch }: PanelProps) {
+function AgentsPanel(_props: PanelProps) {
   return (
     <>
       <GoogleApiKeySection />
-
-      <SettingsSection title="Default model">
-        <SettingsRow
-          title="Primary model"
-          description="Used for reasoning, planning, and technical assistance."
-          layout="stack"
-        >
-          <Select
-            label="Primary model"
-            value={draft.primaryModel}
-            onChange={(v) => patch("primaryModel", v)}
-            options={[
-              { value: "adelpha-auto", label: "Adelpha Intelligence — Auto" },
-              { value: "gemini-pro", label: "Gemini 2.5 Pro" },
-              { value: "claude-sonnet", label: "Claude Sonnet" },
-            ]}
-          />
-        </SettingsRow>
-        <SettingsRow
-          title="Fast model"
-          description="Used for lightweight and real-time tasks."
-          layout="stack"
-        >
-          <Select
-            label="Fast model"
-            value={draft.fastModel}
-            onChange={(v) => patch("fastModel", v)}
-            options={[
-              { value: "qwen-local", label: "Qwen 3.8 — Local" },
-              { value: "gemini-flash", label: "Gemini Flash" },
-              { value: "adelpha-fast", label: "Adelpha Fast" },
-            ]}
-          />
-        </SettingsRow>
-      </SettingsSection>
-
-      <SettingsSection title="Agent behavior">
-        <SettingsRow title="Autonomy level">
-          <Segmented
-            label="Autonomy level"
-            value={draft.autonomy}
-            onChange={(v) => patch("autonomy", v)}
-            options={[
-              { value: "ask", label: "Ask" },
-              { value: "balanced", label: "Balanced" },
-              { value: "act", label: "Act" },
-            ]}
-          />
-        </SettingsRow>
-        <SettingsRow
-          title="Explain decisions"
-          description="Show concise reasoning and provenance for engineering actions."
-        >
-          <Switch
-            label="Explain decisions"
-            checked={draft.explainDecisions}
-            onChange={(v) => patch("explainDecisions", v)}
-          />
-        </SettingsRow>
-        <SettingsRow
-          title="Confirm critical actions"
-          description="Always ask before scanner, device, or destructive operations."
-        >
-          <Switch
-            label="Confirm critical actions"
-            checked={draft.confirmCritical}
-            onChange={(v) => patch("confirmCritical", v)}
-          />
-        </SettingsRow>
-      </SettingsSection>
-
-      <SettingsSection title="Tools & context">
-        <SettingsRow title="Web search">
-          <Switch
-            label="Web search"
-            checked={draft.webSearch}
-            onChange={(v) => patch("webSearch", v)}
-          />
-        </SettingsRow>
-        <button type="button" className="settings-link-row">
-          <Server size={16} strokeWidth={1.8} aria-hidden />
-          <span className="settings-row-copy">
-            <span className="settings-row-title">Local model server</span>
-          </span>
-          <span className="settings-link-status">Connected · localhost:8000</span>
-          <ChevronRight size={16} strokeWidth={1.8} aria-hidden />
-        </button>
-        <SettingsRow title="Project memory">
-          <Switch
-            label="Project memory"
-            checked={draft.projectMemory}
-            onChange={(v) => patch("projectMemory", v)}
-          />
-        </SettingsRow>
-      </SettingsSection>
-
-      <div className="settings-action-bar">
-        <Sparkles size={16} strokeWidth={1.8} aria-hidden />
-        <span>Test your configuration</span>
-        <button type="button" className="settings-btn settings-btn-accent">
-          Run test
-        </button>
-      </div>
+      <DtamAgentSetupSection />
     </>
   );
 }
@@ -568,6 +472,8 @@ function GenericPanel({
     case "digital-twin":
       return (
         <>
+          <DtamRuntimeStatus />
+          <DtamTwinSetupSection />
           <SettingsSection title="Viewport">
             <ViewportBgRow />
             <UseModelColorsRow />
@@ -634,30 +540,7 @@ function GenericPanel({
         </SettingsSection>
       );
     case "integrations":
-      return (
-        <SettingsSection title="Services">
-          <SettingsRow
-            title="Google ADK"
-            description="Agent chat uses the Google API key in AI & Agents."
-          >
-            <Switch
-              label="Google ADK"
-              checked={draft.adkEnabled}
-              onChange={(v) => patch("adkEnabled", v)}
-            />
-          </SettingsRow>
-          <SettingsRow
-            title="DTAM Twin API"
-            description="Telemetry and assessment at localhost:8080."
-          >
-            <Switch
-              label="DTAM Twin API"
-              checked={draft.dtamEnabled}
-              onChange={(v) => patch("dtamEnabled", v)}
-            />
-          </SettingsRow>
-        </SettingsSection>
-      );
+      return <DtamIntegrationsSection />;
     case "privacy":
       return (
         <SettingsSection title="Data">

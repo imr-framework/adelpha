@@ -119,7 +119,30 @@ export async function stopScan(id: string): Promise<void> {
   await mriFetch(`/scans/${encodeURIComponent(id)}/stop`, { method: "POST" });
 }
 
-export async function pingDevice(): Promise<{ ip: string; ok: boolean; simulation: boolean }> {
+export type DevicePing = {
+  ip: string;
+  ok: boolean;
+  simulation: boolean;
+  reachable?: boolean;
+  method?: string;
+  detail?: string;
+};
+
+export function formatDevicePingStatus(ping: DevicePing): string {
+  const reachable = ping.reachable ?? ping.ok;
+  if (ping.simulation && reachable) {
+    return ping.detail ? `Simulation · ${ping.detail}` : `Simulation · Red Pitaya at ${ping.ip}`;
+  }
+  if (ping.simulation) {
+    return `Simulation · no Red Pitaya at ${ping.ip}`;
+  }
+  if (reachable) {
+    return ping.detail || `Scanner reachable at ${ping.ip}`;
+  }
+  return ping.detail || `Scanner unreachable (${ping.ip})`;
+}
+
+export async function pingDevice(): Promise<DevicePing> {
   return mriFetch("/device/ping", { method: "POST" });
 }
 

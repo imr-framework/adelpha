@@ -1,10 +1,15 @@
+import socket
 import subprocess
+import sys
 
 import common.logger as logger
 
 log = logger.get_logger()
 
 from common.constants import Service, ServiceAction
+
+MARCOS_PORT = 11111
+PROBE_TIMEOUT_S = 1.5
 
 
 def get_services() -> list[Service]:
@@ -38,16 +43,56 @@ def control_services(action: ServiceAction) -> None:
         control_service(action, service)
 
 
-def ping(ip: str):
-    """Returns True if host responds to a ping request on Ubuntu."""
-    command = ["ping", "-w", "1", "-c", "1", ip]
-    log.info(f"Trying to ping device: {' '.join(command)}")
+def ping(ip: str) -> bool:
+    """True if the scanner answers on the MaRCoS port or ICMP."""
+    return bool(probe_scanner(ip)["reachable"])
+
+
+def probe_scanner(
+    ip: str, port: int = MARCOS_PORT, timeout: float = PROBE_TIMEOUT_S
+) -> dict:
+    """Check whether a Red Pitaya / MaRCoS server is on the network.
+
+    Prefers TCP to the MaRCoS control port. Falls back to ICMP so a
+    powered-on board without MaRCoS still shows as reachable.
+    """
+    host = (ip or "").strip()
+    if not host or host in {"0.0.0.0", "::"}:
+        return {
+            "reachable": False,
+            "method": "none",
+            "detail": "No scanner IP configured",
+        }
+
     try:
-        subprocess.check_output(
-            command, stderr=subprocess.STDOUT, universal_newlines=True
-        )
+        with socket.create_connection((host, port), timeout=timeout):
+            detail = f"MaRCoS at {host}:{port}"
+            log.info("Scanner reachable: %s", detail)
+            return {"reachable": True, "method": "tcp", "detail": detail}
+    except OSError as exc:
+        tcp_err = exc
+
+    if _icmp_ping(host):
+        detail = f"{host} answers ping; MaRCoS port {port} is closed ({tcp_err})"
+        log.info("Scanner ICMP only: %s", detail)
+        return {"reachable": True, "method": "icmp", "detail": detail}
+
+    detail = f"No response from {host}:{port} ({tcp_err})"
+    log.info("Scanner unreachable: %s", detail)
+    return {"reachable": False, "method": "none", "detail": detail}
+
+
+def _icmp_ping(ip: str) -> bool:
+    if sys.platform == "darwin":
+        command = ["ping", "-c", "1", "-W", "1000", ip]
+    elif sys.platform == "win32":
+        command = ["ping", "-n", "1", "-w", "1000", ip]
+    else:
+        command = ["ping", "-c", "1", "-W", "1", ip]
+    try:
+        subprocess.check_output(command, stderr=subprocess.STDOUT, timeout=3)
         return True
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
         return False
 
 
@@ -63,5 +108,11 @@ def run_device_bootsequence() -> bool:
 
 
 def run_device_test() -> bool:
-    # TODO
-    return True
+    return ping(config_scanner_ip())
+
+
+def config_scanner_ip() -> str:
+    import common.config as config
+
+    config.load_config()
+    return config.get_config().scanner_ip
