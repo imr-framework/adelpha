@@ -54,9 +54,9 @@ export type Draft = {
 export type PatchDraft = <K extends keyof Draft>(key: K, value: Draft[K]) => void;
 
 export const INITIAL_DRAFT: Draft = {
-  displayName: "MRI Uganda Operator",
-  role: "Imaging physicist",
-  lab: "Geethanath Lab",
+  displayName: "Name",
+  role: "Role",
+  lab: "Lab name",
   theme: "dark",
   density: "comfortable",
   reduceMotion: false,

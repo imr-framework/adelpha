@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
 
-export type ScannerModelId = "halbach-48" | "halbach-47" | "halbach-64" | "delta-v2" | "mri4all-z1";
+import { readDevicePreview } from "./devicePreviews";
+import {
+  CATALOG_EVENT,
+  hydrateImportedModels,
+  importedObjectUrl,
+  isImportedModelId,
+  readImportedMeta,
+  type ImportedModelMeta,
+} from "./importedModels";
+
+export type ScannerModelId = string;
 
 export type ScannerCadSpec = {
   url: string;
@@ -9,11 +19,13 @@ export type ScannerCadSpec = {
   rotationDeg: [number, number, number];
   /** Translate named assembly children apart instead of uniformly scaling the mesh. */
   explodeParts: boolean;
+  format?: "glb" | "stl" | "step";
+  fileName?: string;
 };
 
 export type ScannerModelProfile = {
   id: ScannerModelId;
-  family: "halbach" | "delta" | "mri4all";
+  family: string;
   label: string;
   displayName: string;
   serial: string;
@@ -21,6 +33,7 @@ export type ScannerModelProfile = {
   field: string;
   preview: string;
   alt: string;
+  imported?: boolean;
   cad?: ScannerCadSpec;
 };
 
@@ -29,6 +42,7 @@ const HALBACH_CAD: ScannerCadSpec = {
   scale: 0.0012,
   rotationDeg: [-90, 0, 0],
   explodeParts: false,
+  format: "stl",
 };
 
 const DELTA_CAD: ScannerCadSpec = {
@@ -36,6 +50,7 @@ const DELTA_CAD: ScannerCadSpec = {
   scale: 0.22,
   rotationDeg: [0, 0, 0],
   explodeParts: true,
+  format: "glb",
 };
 
 export const SCANNER_MODELS: ScannerModelProfile[] = [
@@ -103,14 +118,82 @@ export const SCANNER_MODELS: ScannerModelProfile[] = [
 const KEY = "adelpha.scannerModel";
 const EVENT = "adelpha:scanner-model";
 
-function isScannerModelId(value: string | null): value is ScannerModelId {
-  return SCANNER_MODELS.some((model) => model.id === value);
+export const MAGNET_CAD_SCALE_MIN = 0.0001;
+export const MAGNET_CAD_SCALE_MAX = 10;
+
+const previewCache = new Map<string, string>();
+
+function glbPreview(id: string, label: string, badge = "GLB"): string {
+  const cached = previewCache.get(id);
+  if (cached) return cached;
+  if (typeof document === "undefined") return "";
+  const canvas = document.createElement("canvas");
+  canvas.width = 320;
+  canvas.height = 200;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return "";
+  ctx.fillStyle = "#0a0a0a";
+  ctx.fillRect(0, 0, 320, 200);
+  ctx.fillStyle = "#8b7cf7";
+  ctx.font = "600 28px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(badge, 160, 96);
+  ctx.fillStyle = "#c8c8c8";
+  ctx.font = "14px system-ui, sans-serif";
+  const name = label.length > 22 ? `${label.slice(0, 21)}…` : label;
+  ctx.fillText(name, 160, 130);
+  const data = canvas.toDataURL("image/png");
+  previewCache.set(id, data);
+  return data;
+}
+
+function profileFromImport(row: ImportedModelMeta): ScannerModelProfile | null {
+  const url = importedObjectUrl(row.id);
+  if (!url) return null;
+  return {
+    id: row.id,
+    family: row.id,
+    label: row.displayName,
+    displayName: row.displayName,
+    serial: "—",
+    type: row.displayName,
+    field: "—",
+    preview: glbPreview(row.id, row.displayName, row.format === "step" ? "STEP" : "GLB"),
+    alt: `Imported ${row.format === "step" ? "STEP" : "GLB"} ${row.displayName}`,
+    imported: true,
+    cad: {
+      url,
+      scale: row.scale,
+      rotationDeg: [0, 0, 0],
+      explodeParts: true,
+      format: row.format === "step" ? "step" : "glb",
+      fileName: row.fileName,
+    },
+  };
+}
+
+function withCustomPreview(profile: ScannerModelProfile): ScannerModelProfile {
+  const custom = readDevicePreview(profile.family) ?? readDevicePreview(profile.id);
+  return custom ? { ...profile, preview: custom } : profile;
+}
+
+export function listScannerProfiles(): ScannerModelProfile[] {
+  const imported = readImportedMeta()
+    .map(profileFromImport)
+    .filter((row): row is ScannerModelProfile => row !== null);
+  return [...SCANNER_MODELS, ...imported].map(withCustomPreview);
+}
+
+function isKnownModelId(value: string | null): value is ScannerModelId {
+  if (!value) return false;
+  if (SCANNER_MODELS.some((model) => model.id === value)) return true;
+  return isImportedModelId(value);
 }
 
 export function readScannerModel(): ScannerModelId {
   try {
     const value = localStorage.getItem(KEY);
-    if (isScannerModelId(value)) return value;
+    if (isKnownModelId(value)) return value;
   } catch {
     /* ignore */
   }
@@ -118,7 +201,7 @@ export function readScannerModel(): ScannerModelId {
 }
 
 export function getScannerProfile(id: ScannerModelId = readScannerModel()): ScannerModelProfile {
-  return SCANNER_MODELS.find((model) => model.id === id) ?? SCANNER_MODELS[0];
+  return listScannerProfiles().find((model) => model.id === id) ?? SCANNER_MODELS[0];
 }
 
 export function cadForScanner(id: ScannerModelId = readScannerModel()): ScannerCadSpec | undefined {
@@ -142,4 +225,16 @@ export function useScannerModel(): [ScannerModelId, (id: ScannerModelId) => void
     return () => window.removeEventListener(EVENT, onChange);
   }, []);
   return [id, setScannerModel];
+}
+
+/** Subscribe to bundled + imported profiles (re-renders after hydrate/import/remove). */
+export function useScannerCatalog(): ScannerModelProfile[] {
+  const [profiles, setProfiles] = useState(listScannerProfiles);
+  useEffect(() => {
+    const refresh = () => setProfiles(listScannerProfiles());
+    window.addEventListener(CATALOG_EVENT, refresh);
+    void hydrateImportedModels().catch(() => undefined);
+    return () => window.removeEventListener(CATALOG_EVENT, refresh);
+  }, []);
+  return profiles;
 }

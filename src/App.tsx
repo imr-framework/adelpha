@@ -48,7 +48,13 @@ import {
 import type { AssessMode } from "./twin/dtamTypes";
 import { SettingsCard } from "./twin/SettingsCard";
 import { subscribeOpenSettings, type SettingsLaunch } from "./twin/settingsOpen";
-import { cadForScanner, useScannerModel } from "./twin/scannerModel";
+import {
+  cadForScanner,
+  MAGNET_CAD_SCALE_MAX,
+  MAGNET_CAD_SCALE_MIN,
+  useScannerCatalog,
+  useScannerModel,
+} from "./twin/scannerModel";
 import { applyConsoleTheme, readConsoleTheme } from "./twin/consoleTheme";
 import {
   readWorkspacePrefs,
@@ -337,6 +343,7 @@ export default function App() {
   const view = useTwinStore((s) => s.view);
   const setView = useTwinStore((s) => s.setView);
   const [scannerId] = useScannerModel();
+  const catalog = useScannerCatalog();
   const hasCadMagnet = Boolean(cadForScanner(scannerId));
 
   useEffect(() => scheduleAutoUpdateCheck(), []);
@@ -393,7 +400,7 @@ export default function App() {
 
   useEffect(() => {
     setView({ magnet_cad_scale: scaleForScannerModel(scannerId) });
-  }, [scannerId, setView]);
+  }, [scannerId, catalog, setView]);
 
   useEffect(() => {
     if (!showSettings) return;
@@ -1517,10 +1524,13 @@ export default function App() {
                     </span>
                     <input
                       type="range"
-                      min={0.0001}
-                      max={1}
+                      min={MAGNET_CAD_SCALE_MIN}
+                      max={MAGNET_CAD_SCALE_MAX}
                       step={0.0001}
-                      value={Math.min(Math.max(view.magnet_cad_scale, 0.0001), 1)}
+                      value={Math.min(
+                        Math.max(view.magnet_cad_scale, MAGNET_CAD_SCALE_MIN),
+                        MAGNET_CAD_SCALE_MAX,
+                      )}
                       onChange={(e) => setView({ magnet_cad_scale: Number(e.target.value) })}
                     />
                   </label>

@@ -5,7 +5,7 @@ import CameraControlsImpl from "camera-controls";
 import * as THREE from "three";
 import { MagnetCADSuspense } from "./MagnetCAD";
 import { clearPartSelection, resetPartView } from "./partInspectorStore";
-import { cadForScanner, useScannerModel } from "./scannerModel";
+import { cadForScanner, useScannerCatalog, useScannerModel } from "./scannerModel";
 import { useTwinStore } from "./telemetryStore";
 import { useViewportBg } from "./viewportBg";
 import { useModelColors } from "./useModelColors";
@@ -93,6 +93,7 @@ export function SceneTwin() {
   const view = useTwinStore((s) => s.view);
   const setCameraPose = useTwinStore((s) => s.setCameraPose);
   const [scannerId] = useScannerModel();
+  useScannerCatalog();
   const [viewportBg] = useViewportBg();
   const [preserveModelColors] = useModelColors();
   const [orbitMode] = useOrbitMode();
@@ -102,7 +103,8 @@ export function SceneTwin() {
   const lastPose = useRef<string>("");
   const targetScratch = useRef(new THREE.Vector3());
   const positionScratch = useRef(new THREE.Vector3());
-  const distance = framingDistance(cad?.scale ?? view.magnet_cad_scale, cad?.explodeParts ?? false);
+  const explodeParts = cad?.explodeParts ?? false;
+  const distance = framingDistance(cad?.scale ?? view.magnet_cad_scale, explodeParts);
   const homePosition = cameraPositionAt(TURNTABLE_POLAR, TURNTABLE_AZIMUTH, distance);
 
   const bindControls = useCallback((controls: CameraControlsImpl | null) => {

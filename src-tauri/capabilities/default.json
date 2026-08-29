@@ -13,6 +13,18 @@
     "core:app:default",
     "core:path:default",
     "updater:default",
-    "process:allow-restart"
+    "process:allow-restart",
+    "dialog:allow-open",
+    "fs:allow-read-file",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        { "path": "$HOME/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$DOCUMENT/**" },
+        { "path": "$DESKTOP/**" },
+        { "path": "/Volumes/**" }
+      ]
+    }
   ]
 }

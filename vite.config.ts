@@ -3,6 +3,10 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  assetsInclude: ["**/*.wasm"],
+  optimizeDeps: {
+    exclude: ["occt-import-js"],
+  },
   clearScreen: false,
   envPrefix: ["VITE_", "TAURI_ENV_"],
   build: {

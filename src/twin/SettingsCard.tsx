@@ -432,6 +432,7 @@ function GenericPanel({
               value={draft.role}
               onChange={(v) => patch("role", v)}
               options={[
+                { value: "Role", label: "Role" },
                 { value: "Imaging physicist", label: "Imaging physicist" },
                 { value: "Engineer", label: "Engineer" },
                 { value: "Clinician", label: "Clinician" },

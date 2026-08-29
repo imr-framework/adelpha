@@ -2,9 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   Eye,
+  ImagePlus,
   Info,
   MousePointerClick,
   RefreshCw,
+  Trash2,
   Upload,
   WifiOff,
   X,
@@ -16,9 +18,21 @@ import {
   usePartInspectorStore,
   type PartBinding,
 } from "../partInspectorStore";
+import { useGLTF } from "@react-three/drei";
+
+import { pickCadFile } from "../../desktop/pickCadFile";
+import { pickImageFile } from "../../desktop/pickImageFile";
+import { isTauri } from "../../desktop/runtime";
 import {
-  SCANNER_MODELS,
+  clearDevicePreview,
+  hasDevicePreview,
+  imageFileToPreview,
+  setDevicePreview,
+} from "../devicePreviews";
+import { importCadFile, importedObjectUrl, removeImportedModel } from "../importedModels";
+import {
   getScannerProfile,
+  useScannerCatalog,
   useScannerModel,
   type ScannerModelId,
   type ScannerModelProfile,
@@ -66,13 +80,18 @@ type PanelProps = {
 
 function cadFormat(profile: ScannerModelProfile): string {
   if (!profile.cad) return "No CAD assembly";
-  const ext = (profile.cad.url.split("?")[0] ?? "").split(".").pop()?.toUpperCase();
+  if (profile.cad.format === "glb") return "glTF binary (GLB)";
+  if (profile.cad.format === "step") return "STEP (tessellated)";
+  if (profile.cad.format === "stl") return "STL mesh";
+  const name = (profile.cad.fileName ?? profile.cad.url).split("?")[0] ?? "";
+  const ext = name.split(".").pop()?.toUpperCase();
   return ext === "STL" ? "STL mesh" : ext === "GLB" ? "glTF binary (GLB)" : (ext ?? "Unknown");
 }
 
 export function ModelSettingsPanel({ draft, patch, launch, onClose }: PanelProps) {
   const [tab, setTab] = useState<ModelTabId>(readModelTab);
   const [scannerId, setScannerId] = useScannerModel();
+  const catalog = useScannerCatalog();
   const profile = getScannerProfile(scannerId);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -144,6 +163,7 @@ export function ModelSettingsPanel({ draft, patch, launch, onClose }: PanelProps
             draft={draft}
             patch={patch}
             profile={profile}
+            catalog={catalog}
             scannerId={scannerId}
             onChoose={(id) => {
               setScannerId(id);
@@ -166,6 +186,7 @@ export function ModelSettingsPanel({ draft, patch, launch, onClose }: PanelProps
         ) : (
           <FilesTab
             profile={profile}
+            catalog={catalog}
             scannerId={scannerId}
             onChoose={(id) => {
               setScannerId(id);
@@ -178,29 +199,130 @@ export function ModelSettingsPanel({ draft, patch, launch, onClose }: PanelProps
   );
 }
 
-/* —— General —— */
+async function chooseDevicePicture(): Promise<File | null> {
+  if (isTauri()) return pickImageFile();
+  return new Promise((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp";
+    input.onchange = () => resolve(input.files?.[0] ?? null);
+    input.oncancel = () => resolve(null);
+    input.click();
+  });
+}
+
+function DevicePictureMenu({
+  x,
+  y,
+  previewKey,
+  onClose,
+  onError,
+}: {
+  x: number;
+  y: number;
+  previewKey: string;
+  onClose: () => void;
+  onError: (message: string) => void;
+}) {
+  const hasCustom = hasDevicePreview(previewKey);
+
+  useEffect(() => {
+    const dismiss = (event: MouseEvent) => {
+      if (!(event.target instanceof Node)) return;
+      onClose();
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("mousedown", dismiss);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("mousedown", dismiss);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  const left = Math.min(x, window.innerWidth - 220);
+  const top = Math.min(y, window.innerHeight - 120);
+
+  return (
+    <div
+      className="sw-device-menu"
+      role="menu"
+      style={{ left, top }}
+      onMouseDown={(event) => event.stopPropagation()}
+    >
+      <button
+        type="button"
+        role="menuitem"
+        className="sw-menu-item"
+        onClick={() => {
+          void (async () => {
+            try {
+              const file = await chooseDevicePicture();
+              if (!file) return;
+              setDevicePreview(previewKey, await imageFileToPreview(file));
+            } catch (err) {
+              onError(err instanceof Error ? err.message : String(err));
+            } finally {
+              onClose();
+            }
+          })();
+        }}
+      >
+        <ImagePlus size={14} strokeWidth={1.8} aria-hidden />
+        Set picture…
+      </button>
+      <button
+        type="button"
+        role="menuitem"
+        className="sw-menu-item"
+        disabled={!hasCustom}
+        onClick={() => {
+          clearDevicePreview(previewKey);
+          onClose();
+        }}
+      >
+        <Trash2 size={14} strokeWidth={1.8} aria-hidden />
+        Remove picture
+      </button>
+    </div>
+  );
+}
 
 function GeneralTab({
   draft,
   patch,
   profile,
+  catalog,
   scannerId,
   onChoose,
 }: {
   draft: Draft;
   patch: PatchDraft;
   profile: ScannerModelProfile;
+  catalog: ScannerModelProfile[];
   scannerId: ScannerModelId;
   onChoose: (id: ScannerModelId) => void;
 }) {
-  const variants = SCANNER_MODELS.filter((model) => model.family === profile.family);
+  const variants = catalog.filter((model) => model.family === profile.family);
   const families = useMemo(() => {
     const seen = new Map<string, ScannerModelProfile>();
-    for (const model of SCANNER_MODELS) {
+    for (const model of catalog) {
       if (!seen.has(model.family)) seen.set(model.family, model);
     }
     return [...seen.values()];
-  }, []);
+  }, [catalog]);
+  const [pictureMenu, setPictureMenu] = useState<{ x: number; y: number; key: string } | null>(
+    null,
+  );
+  const [pictureError, setPictureError] = useState<string | null>(null);
+
+  function openPictureMenu(event: React.MouseEvent, key: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    setPictureMenu({ x: event.clientX, y: event.clientY, key });
+  }
 
   return (
     <>
@@ -209,7 +331,11 @@ function GeneralTab({
         description="Applied to the Digital Twin viewport and the Imaging Console."
       >
         <div className="sw-model-layout">
-          <figure className="sw-model-preview">
+          <figure
+            className="sw-model-preview"
+            title="Right-click to set a picture"
+            onContextMenu={(event) => openPictureMenu(event, profile.family)}
+          >
             <img src={profile.preview} alt="" />
             <figcaption>
               <span className="sw-model-preview-name">{profile.displayName}</span>
@@ -238,8 +364,8 @@ function GeneralTab({
             />
           </div>
           <div className="sw-model-family">
-            <Eyebrow>Families</Eyebrow>
-            <div className="sw-family-cards" role="group" aria-label="Scanner families">
+            <Eyebrow>Devices</Eyebrow>
+            <div className="sw-family-cards" role="group" aria-label="Scanner devices">
               {families.map((family) => {
                 const active = family.family === profile.family;
                 return (
@@ -248,9 +374,11 @@ function GeneralTab({
                     type="button"
                     className={`sw-family-card${active ? " is-active" : ""}`}
                     aria-pressed={active}
+                    title="Right-click to set a picture"
                     onClick={() => {
                       if (!active) onChoose(family.id);
                     }}
+                    onContextMenu={(event) => openPictureMenu(event, family.family)}
                   >
                     <img src={family.preview} alt="" />
                     <span className="sw-family-name">{family.type}</span>
@@ -262,6 +390,16 @@ function GeneralTab({
           </div>
         </div>
       </SettingsSection>
+      {pictureMenu ? (
+        <DevicePictureMenu
+          x={pictureMenu.x}
+          y={pictureMenu.y}
+          previewKey={pictureMenu.key}
+          onClose={() => setPictureMenu(null)}
+          onError={setPictureError}
+        />
+      ) : null}
+      {pictureError ? <p className="sw-empty">{pictureError}</p> : null}
 
       <SettingsSection title="Viewport" description="How the twin stage renders behind the CAD.">
         <ViewportBgRow />
@@ -824,14 +962,54 @@ function PerformanceTab({ draft, patch }: { draft: Draft; patch: PatchDraft }) {
 
 function FilesTab({
   profile,
+  catalog,
   scannerId,
   onChoose,
 }: {
   profile: ScannerModelProfile;
+  catalog: ScannerModelProfile[];
   scannerId: ScannerModelId;
   onChoose: (id: ScannerModelId) => void;
 }) {
   const cad = profile.cad;
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onPick(file: File | undefined) {
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const imported = await importCadFile(file);
+      const url = importedObjectUrl(imported.id);
+      if (url) useGLTF.preload(url);
+      onChoose(imported.id);
+      setMessage(`${imported.fileName} is now the active scanner model.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  async function onRemove(id: ScannerModelId) {
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await removeImportedModel(id);
+      if (id === scannerId) onChoose("halbach-48");
+      setMessage("Removed the imported model from this computer.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <>
@@ -842,7 +1020,7 @@ function FilesTab({
         {cad ? (
           <SpecList
             items={[
-              { label: "File", value: cad.url, mono: true },
+              { label: "File", value: cad.fileName ?? cad.url, mono: true },
               { label: "Format", value: cadFormat(profile) },
               { label: "Uniform scale", value: cad.scale.toPrecision(4), mono: true },
               { label: "Rotation (deg)", value: cad.rotationDeg.join(", "), mono: true },
@@ -862,24 +1040,54 @@ function FilesTab({
 
       <SettingsSection title="Import">
         <SettingsRow
-          title="Import custom model"
-          description="GLB, glTF, FBX, OBJ, or STEP"
-          disabled
-          hint="Not available in this build: Adelpha loads CAD from bundled scanner profiles only."
+          title="Import CAD"
+          description="glTF binary (.glb) or STEP (.step / .stp). STEP is tessellated at high quality on this computer, then stored like a GLB."
         >
-          <button type="button" className="settings-btn" disabled title="Not available yet">
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".glb,.step,.stp,model/gltf-binary,application/step"
+            hidden
+            onChange={(event) => void onPick(event.target.files?.[0])}
+          />
+          <button
+            type="button"
+            className="settings-btn"
+            disabled={busy}
+            onClick={() => {
+              if (!isTauri()) {
+                inputRef.current?.click();
+                return;
+              }
+              void (async () => {
+                try {
+                  const file = await pickCadFile();
+                  if (file) await onPick(file);
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : String(err));
+                }
+              })();
+            }}
+          >
             <Upload size={14} strokeWidth={1.8} aria-hidden />
-            Choose file
+            {busy ? "Importing…" : "Choose file"}
           </button>
         </SettingsRow>
+        {message ? (
+          <p className="sw-note">
+            <Info size={14} strokeWidth={1.8} aria-hidden />
+            {message}
+          </p>
+        ) : null}
+        {error ? <p className="sw-empty">{error}</p> : null}
       </SettingsSection>
 
       <SettingsSection
         title="Installed scanner models"
-        description="Every profile bundled with this build."
+        description="Bundled profiles and GLB files imported on this computer."
       >
         <ul className="sw-library">
-          {SCANNER_MODELS.map((model) => {
+          {catalog.map((model) => {
             const active = model.id === scannerId;
             return (
               <li key={model.id} className={active ? "is-active" : undefined}>
@@ -888,20 +1096,36 @@ function FilesTab({
                   <span className="sw-library-name">{model.displayName}</span>
                   <span className="sw-library-meta">
                     {model.type} · {model.field} · {cadFormat(model)}
+                    {model.imported ? " · Imported" : ""}
                   </span>
-                  <Mono>{model.id}</Mono>
+                  <Mono>{model.imported ? model.cad?.fileName ?? model.id : model.id}</Mono>
                 </span>
-                {active ? (
-                  <StatusBadge tone="live">Active</StatusBadge>
-                ) : (
-                  <button
-                    type="button"
-                    className="settings-btn"
-                    onClick={() => onChoose(model.id)}
-                  >
-                    Set active
-                  </button>
-                )}
+                <span className="sw-library-actions">
+                  {active ? (
+                    <StatusBadge tone="live">Active</StatusBadge>
+                  ) : (
+                    <button
+                      type="button"
+                      className="settings-btn"
+                      disabled={busy}
+                      onClick={() => onChoose(model.id)}
+                    >
+                      Set active
+                    </button>
+                  )}
+                  {model.imported ? (
+                    <button
+                      type="button"
+                      className="settings-btn"
+                      disabled={busy}
+                      aria-label={`Remove ${model.displayName}`}
+                      onClick={() => void onRemove(model.id)}
+                    >
+                      <Trash2 size={14} strokeWidth={1.8} aria-hidden />
+                      Remove
+                    </button>
+                  ) : null}
+                </span>
               </li>
             );
           })}

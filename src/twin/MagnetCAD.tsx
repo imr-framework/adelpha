@@ -84,6 +84,7 @@ function applyCadSolidLook(
   material.opacity = 1;
   material.depthWrite = true;
   material.wireframe = false;
+  material.flatShading = false;
   material.side = THREE.DoubleSide;
   material.needsUpdate = true;
 }
@@ -728,6 +729,7 @@ function MagnetFromGLTF({
         if (mat instanceof THREE.MeshStandardMaterial || mat instanceof THREE.MeshPhysicalMaterial) {
           ensureThermalShader(mat);
           mat.side = THREE.DoubleSide;
+          mat.flatShading = false;
           if (mat.metalness >= 1 && !mat.metalnessMap) {
             mat.metalness = 0.08;
             mat.roughness = Math.max(mat.roughness, 0.45);
