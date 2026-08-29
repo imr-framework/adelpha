@@ -1,0 +1,6 @@
+environment: production
+mode: advisory
+default_scanner_id: halbach_48mt
+logging:
+  level: INFO
+  json_logs: true

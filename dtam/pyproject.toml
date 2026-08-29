@@ -1,0 +1,111 @@
+[project]
+name = "dtam"
+version = "0.1.0"
+description = "Digital Twin Architecture for MRI — reusable, physics-informed, agentic."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "LeoMcBills", email = "2021BME060@std.must.ac.ug" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115.0",
+    "google-adk>=2.4.0",
+    "google-genai>=2.11.0",
+    "httpx>=0.28.1",
+    "matplotlib>=3.9.0",
+    "numpy>=2.2.6",
+    "pandas>=2.3.3",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.2",
+    "pyyaml>=6.0.3",
+    "scipy>=1.15.3",
+    "structlog>=26.1.0",
+    "tenacity>=9.1.4",
+    "uvicorn[standard]>=0.32.0",
+]
+
+[project.scripts]
+dtam = "dtam:main"
+dtam-twin-api = "dtam.api.__main__:main"
+
+[project.optional-dependencies]
+pinn = [
+    "torch>=2.2",
+    "onnx>=1.16",
+    "onnxruntime>=1.17,<1.21",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.3,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.0",
+    "pre-commit>=4.6.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.15.21",
+    "types-PyYAML>=6.0.12",
+    "zensical>=0.0.50",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+filterwarnings = [
+    # Third-party noise from google-adk / opentelemetry until upstream catches up.
+    "ignore:SelectableGroups dict interface is deprecated:DeprecationWarning",
+    "ignore:BaseAgentConfig is deprecated:DeprecationWarning",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# Imported assessment prototype: prefer readable long strings over churny wraps.
+"src/dtam/agents/**/*.py" = ["E501"]
+"tests/unit/agents/assessment/**/*.py" = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+packages = ["dtam"]
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = ["google.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["uvicorn", "uvicorn.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "torch",
+    "torch.*",
+    "onnx",
+    "onnx.*",
+    "onnxruntime",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "dtam.digital_twin.models.thermal.pinn.network",
+    "dtam.digital_twin.models.thermal.pinn.physics",
+    "dtam.digital_twin.models.thermal.pinn.train",
+    "dtam.digital_twin.models.thermal.pinn.export",
+]
+ignore_errors = true

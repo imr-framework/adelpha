@@ -34,7 +34,8 @@ Version **0.1.0**.
 - [Rust](https://rustup.rs/) (stable)
 - Python 3.10–3.12 (to run or freeze the supervisor)
 - [uv](https://docs.astral.sh/uv/) (optional docs group)
-- A **DTAM** checkout at `adelpha/dtam` (gitlink or clone)
+
+DTAM is included in this repo at `dtam/`.
 
 ```bash
 make install

@@ -1,0 +1,73 @@
+{
+  "timestamp": "2026-08-06T12:00:00+00:00",
+  "operating_mode": "recommend",
+  "scanner_state": "scanning",
+  "synthetic": true,
+  "thermal": {
+    "ambient_c": 24.0,
+    "magnet_temperature_c": 27.0,
+    "history_c": [
+      23.0,
+      24.0,
+      25.0,
+      26.0,
+      27.2
+    ],
+    "history_timestamps_s": [
+      0,
+      60,
+      120,
+      180,
+      240
+    ],
+    "sensors": [
+      {
+        "channel": "t1",
+        "value": 27.0,
+        "unit": "\u00b0C"
+      },
+      {
+        "channel": "t2",
+        "value": 40.0,
+        "unit": "\u00b0C"
+      }
+    ]
+  },
+  "magnet": {
+    "center_frequency_hz": 127774100.0,
+    "nominal_field_t": 3.0,
+    "frequency_history_hz": [
+      127774000.0,
+      127774030.0,
+      127774060.0,
+      127774100.0
+    ],
+    "frequency_timestamps_s": [
+      0,
+      60,
+      120,
+      180
+    ]
+  },
+  "emi": {
+    "rms": 0.12,
+    "peak_to_peak": 0.4,
+    "dominant_frequencies_hz": [
+      60.0
+    ]
+  },
+  "rf": {
+    "forward_power_w": 120.0,
+    "reflected_power_w": 30.0,
+    "coil_state": "ok"
+  },
+  "motion": {
+    "translation_mm": [
+      3.5,
+      1.0,
+      0.5
+    ],
+    "tracking_quality": 0.5,
+    "subject_type": "phantom"
+  }
+}

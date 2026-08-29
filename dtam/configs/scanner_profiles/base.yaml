@@ -1,0 +1,15 @@
+# Shared defaults merged into scanner-specific profiles.
+capabilities:
+  temperature_monitoring: false
+  b0_monitoring: false
+  emi_monitoring: false
+  gradient_monitoring: false
+  rf_tuning_control: false
+  active_shimming: false
+  frequency_compensation: false
+  sequence_adaptation: false
+  automatic_control: false
+
+supported_actions: []
+sensors: []
+actuators: []

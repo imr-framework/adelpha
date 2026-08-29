@@ -1,0 +1,54 @@
+scanner:
+  id: halbach_48mt
+  field_strength_t: 0.048
+  architecture: permanent_magnet_halbach
+  display_name: 48 mT Halbach MRI
+
+capabilities:
+  temperature_monitoring: true
+  b0_monitoring: true
+  emi_monitoring: true
+  gradient_monitoring: true
+  rf_tuning_control: true
+  active_shimming: false
+  frequency_compensation: true
+  sequence_adaptation: true
+  automatic_control: false
+
+supported_actions:
+  - set_center_frequency
+  - switch_rf_tuning_relay
+
+sensors:
+  - sensor_id: temp_magnet_01
+    kind: temperature
+    unit: degC
+    description: Magnet PT100 channel 1
+    sampling_rate_hz: 1.0
+    location: magnet
+  - sensor_id: temp_magnet_02
+    kind: temperature
+    unit: degC
+    description: Magnet PT100 channel 2
+    sampling_rate_hz: 1.0
+    location: magnet
+  - sensor_id: temp_room_01
+    kind: temperature
+    unit: degC
+    description: Room temperature
+    sampling_rate_hz: 0.5
+    location: room
+
+actuators:
+  - actuator_id: freq_comp_01
+    kind: frequency_compensation
+    description: Center-frequency compensation
+    reversible: true
+  - actuator_id: rf_tune_relay_01
+    kind: rf_tuning
+    description: RF coil tuning relay bank
+    reversible: true
+
+metadata:
+  deployment: physical
+  notes: Hardware adapter profile; physical I/O is not enabled in Phase 1.

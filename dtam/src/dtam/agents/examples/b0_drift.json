@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-08-06T12:00:00+00:00",
+  "operating_mode": "recommend",
+  "synthetic": true,
+  "magnet": {
+    "center_frequency_hz": 127774080.0,
+    "nominal_field_t": 3.0,
+    "estimated_b0_drift_hz": 80.0,
+    "frequency_history_hz": [
+      127774000.0,
+      127774020.0,
+      127774045.0,
+      127774080.0
+    ],
+    "frequency_timestamps_s": [
+      0,
+      60,
+      120,
+      180
+    ]
+  }
+}

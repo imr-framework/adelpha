@@ -1,0 +1,31 @@
+{
+  "name": "dtam-thermal-pinn",
+  "framework": "pytorch",
+  "version": "thermal-pinn-v1",
+  "preferred_file": "model.pt",
+  "physics": {
+    "ode": "dT/dt = (T_star - T) / tau",
+    "units": {"temperature": "degC", "time": "s"}
+  },
+  "inputs": [
+    {
+      "name": "features",
+      "dtype": "float32",
+      "shape": ["batch", 4],
+      "columns": ["t_s", "T0_c", "T_star_c", "tau_s"],
+      "description": "Time horizon and lumped thermal parameters"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "T_hat_c",
+      "dtype": "float32",
+      "shape": ["batch"],
+      "description": "Predicted magnet mean temperature in degC"
+    }
+  ],
+  "notes": [
+    "Train with: uv run --extra pinn python -m dtam.digital_twin.models.thermal.pinn.train",
+    "B0 coupling remains ThermalToB0 (alpha_T), not learned here."
+  ]
+}

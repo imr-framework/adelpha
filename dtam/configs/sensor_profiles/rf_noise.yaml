@@ -1,0 +1,5 @@
+sampling_rate_hz: 1.0
+unit: dBm/Hz
+channels:
+  - rf_noise_01
+bandwidth_hz_default: 100000.0

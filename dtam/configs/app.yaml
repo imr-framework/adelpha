@@ -1,0 +1,4 @@
+name: dtam
+environment: development
+default_scanner_id: simulated_scanner
+default_mode: simulation

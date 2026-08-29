@@ -1,0 +1,17 @@
+thermal_to_b0:
+  alpha_t_tesla_per_c: -5.0e-5
+  reference_temperature_c: 23.0
+  validity_min_c: 5.0
+  validity_max_c: 40.0
+  process_noise_std_t: 1.0e-6
+  model_version: thermal_to_b0-v1
+
+resonant_frequency:
+  model_version: resonant_frequency-v1
+
+twin:
+  twin_version: phase2-thermal-b0-v1
+  require_channels:
+    - temp_magnet_01
+    - temp_magnet_02
+    - temp_room_01

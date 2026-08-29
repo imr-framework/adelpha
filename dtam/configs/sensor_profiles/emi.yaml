@@ -1,0 +1,5 @@
+sampling_rate_hz: 10.0
+unit: V
+channels:
+  - emi_probe_01
+peak_frequency_hz_default: 50000.0

@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-08-06T12:00:00+00:00",
+  "operating_mode": "observe",
+  "scanner_state": "idle",
+  "synthetic": true,
+  "thermal": {
+    "ambient_c": 21.0,
+    "magnet_temperature_c": 22.5,
+    "sensors": [
+      {
+        "channel": "t1",
+        "value": 22.4,
+        "unit": "\u00b0C"
+      },
+      {
+        "channel": "t2",
+        "value": 22.6,
+        "unit": "\u00b0C"
+      }
+    ],
+    "history_c": [
+      22.4,
+      22.45,
+      22.5,
+      22.5,
+      22.5
+    ],
+    "history_timestamps_s": [
+      0,
+      60,
+      120,
+      180,
+      240
+    ]
+  },
+  "magnet": {
+    "center_frequency_hz": 127774000.0,
+    "nominal_field_t": 3.0,
+    "frequency_history_hz": [
+      127774000.0,
+      127774001.0,
+      127774000.5,
+      127774000.0
+    ],
+    "frequency_timestamps_s": [
+      0,
+      60,
+      120,
+      180
+    ]
+  },
+  "emi": {
+    "rms": 0.01,
+    "peak_to_peak": 0.04,
+    "dominant_frequencies_hz": []
+  },
+  "rf": {
+    "forward_power_w": 100.0,
+    "reflected_power_w": 1.0,
+    "coil_state": "ok"
+  },
+  "motion": {
+    "translation_mm": [
+      0.2,
+      0.1,
+      0.0
+    ],
+    "tracking_quality": 0.95,
+    "subject_type": "phantom"
+  },
+  "sequence": {
+    "name": "gre_scout",
+    "tr_s": 0.01,
+    "te_s": 0.004
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-08-06T12:00:00+00:00",
+  "operating_mode": "recommend",
+  "synthetic": true,
+  "thermal": {
+    "magnet_temperature_c": 22.0,
+    "history_c": [
+      22.0,
+      22.0,
+      22.0,
+      22.0
+    ],
+    "history_timestamps_s": [
+      0,
+      60,
+      120,
+      180
+    ],
+    "sensors": [
+      {
+        "channel": "t1",
+        "value": 22.0,
+        "unit": "\u00b0C"
+      }
+    ]
+  },
+  "magnet": {
+    "center_frequency_hz": 127774200.0,
+    "nominal_field_t": 3.0,
+    "frequency_history_hz": [
+      127774000.0,
+      127774050.0,
+      127774120.0,
+      127774200.0
+    ],
+    "frequency_timestamps_s": [
+      0,
+      60,
+      120,
+      180
+    ]
+  }
+}

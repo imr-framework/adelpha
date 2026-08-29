@@ -1,0 +1,6 @@
+environment: testing
+mode: simulation
+default_scanner_id: simulated_scanner
+logging:
+  level: WARNING
+  json_logs: false

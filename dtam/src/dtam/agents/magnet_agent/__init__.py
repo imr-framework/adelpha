@@ -1,0 +1,1 @@
+"""Magnet specialist package."""

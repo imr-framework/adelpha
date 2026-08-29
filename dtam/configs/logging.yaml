@@ -1,0 +1,3 @@
+level: INFO
+json_logs: false
+correlation_header: x-correlation-id

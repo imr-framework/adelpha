@@ -1,0 +1,56 @@
+# Environment
+.env
+.env.*
+!.env.example
+.venv/
+
+# ADK local sessions
+.adk/
+**/.adk/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Testing and quality
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Documentation (Zensical)
+site/
+.zensical/
+
+# Third-party clones (HalbachMRIDesigner is GPL-3; clone via make vendor-halbach)
+third_party/
+
+# Uploaded model weights (keep README / examples tracked)
+data/models/pinn/model.onnx
+data/models/pinn/model.pt
+data/models/pinn/model.pth
+data/models/pinn/manifest.json
+
+# IDE and operating system
+.vscode/
+.idea/
+.DS_Store
+
+# Runtime data
+logs/
+artifacts/
+checkpoints/
+
+# Local datasets
+data/raw/*
+data/interim/*
+data/processed/*
+data/simulated/*
+data/calibration/*
+
+# Preserve directories
+!data/**/.gitkeep

@@ -1,0 +1,43 @@
+{
+  "timestamp": "2026-08-06T12:00:00+00:00",
+  "operating_mode": "recommend",
+  "scanner_state": "scanning",
+  "synthetic": true,
+  "thermal": {
+    "ambient_c": 22.0,
+    "magnet_temperature_c": 26.0,
+    "sensors": [
+      {
+        "channel": "t1",
+        "value": 25.8,
+        "unit": "\u00b0C"
+      },
+      {
+        "channel": "t2",
+        "value": 26.1,
+        "unit": "\u00b0C"
+      },
+      {
+        "channel": "t3",
+        "value": 32.0,
+        "unit": "\u00b0C"
+      }
+    ],
+    "history_c": [
+      22.5,
+      23.2,
+      24.0,
+      24.9,
+      25.8,
+      26.5
+    ],
+    "history_timestamps_s": [
+      0,
+      60,
+      120,
+      180,
+      240,
+      300
+    ]
+  }
+}

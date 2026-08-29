@@ -1,0 +1,6 @@
+environment: development
+mode: simulation
+default_scanner_id: simulated_scanner
+logging:
+  level: DEBUG
+  json_logs: false

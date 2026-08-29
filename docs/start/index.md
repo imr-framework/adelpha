@@ -12,13 +12,13 @@ icon: lucide/rocket
 | Rust (stable) | Tauri desktop shell |
 | Python 3.10–3.12 | Supervisor (`adelpha_runtime`) and sidecar freeze |
 | [uv](https://docs.astral.sh/uv/) | Optional docs toolchain |
-| [DTAM](https://github.com/imr-framework/dtam) at `adelpha/dtam` | Twin + Agents (bundled in production) |
+| DTAM (this repo, `dtam/`) | Twin + Agents (bundled in production) |
 
 Typical layout:
 
 ``` text
-~/dtam                 # Python twin + Twin API + ADK agents
-~/adelpha              # this GUI + MRI console façade
+~/adelpha              # GUI + MRI console façade
+~/adelpha/dtam         # Python twin + Twin API + ADK agents
 ```
 
 ## Backends

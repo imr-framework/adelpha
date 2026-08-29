@@ -44,12 +44,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch DTAM if gitlink is empty
-        run: |
-          if [ ! -f dtam/src/dtam/api/app.py ]; then
-            git clone --depth 1 https://github.com/imr-framework/dtam.git dtam
-          fi
-
       - uses: actions/setup-node@v4
         with:
           node-version: "22"

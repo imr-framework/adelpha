@@ -1,0 +1,6 @@
+sampling_rate_hz: 1.0
+unit: degC
+channels:
+  - temp_magnet_01
+  - temp_magnet_02
+  - temp_room_01

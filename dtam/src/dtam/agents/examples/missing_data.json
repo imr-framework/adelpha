@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-08-06T12:00:00+00:00",
+  "operating_mode": "observe",
+  "synthetic": true,
+  "thermal": {
+    "ambient_c": 21.5,
+    "sensors": []
+  },
+  "magnet": {
+    "nucleus": "1H"
+  },
+  "metadata": {
+    "note": "intentionally sparse synthetic observation"
+  }
+}

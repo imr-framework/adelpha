@@ -63,7 +63,7 @@ signed off.
 | `marcos_server` C++ | Scanner/server runtime | Excluded |
 | `marcos_client` | Used by acq workers | Available to lazy acq; not a public HTTP service |
 | HalbachMRIDesigner | GPL-3 vendor clone | Not bundled |
-| DTAM | Gitlink in this repo, not a regular tree | Sidecar build reads `dtam/src` when present; CI clones DTAM |
+| DTAM | Regular tree at `dtam/` | Sidecar build reads `dtam/src` |
 | Secrets | Local `dtam/.env` must never ship | User pastes `GOOGLE_API_KEY` in app config (`<config>/google_api_key`) |
 | Sidecar packager | PyInstaller vs Nuitka | **PyInstaller onedir** — scipy/numpy/ADK native libs are safer this way |
 

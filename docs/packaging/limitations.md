@@ -4,9 +4,7 @@
   imaging console is still a GPL-3 distribution of that runtime.
 - **GPL-3 console** in the sidecar: corresponding source must ship with any
   distributed runtime.
-- **DTAM gitlink**: this repo records `dtam` as commit `160000`, not a normal
-  tree. CI clones DTAM when `dtam/src` is missing. Confirm the remote
-  (`https://github.com/imr-framework/dtam`) matches the lab’s canonical repo.
+- **DTAM** lives in this repo at `dtam/` as a regular tree (not a submodule).
 - **Numpy**: sidecar is numpy 2. Sequence registry code that needs numba 1.x
   will use the HTTP FALLBACK catalog.
 - **Agents** require a user-provided `GOOGLE_API_KEY` in the app config

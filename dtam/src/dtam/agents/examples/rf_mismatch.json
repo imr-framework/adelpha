@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-08-06T12:00:00+00:00",
+  "operating_mode": "recommend",
+  "synthetic": true,
+  "rf": {
+    "forward_power_w": 100.0,
+    "reflected_power_w": 25.0,
+    "coil_state": "ok"
+  },
+  "sequence": {
+    "name": "spin_echo",
+    "tr_s": 0.5,
+    "te_s": 0.02
+  }
+}

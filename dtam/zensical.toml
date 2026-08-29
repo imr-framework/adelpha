@@ -1,0 +1,178 @@
+[project]
+site_name = "DTAM"
+site_description = "Digital Twin Architecture for MRI — scanner-independent, physics-informed, agentic."
+site_author = "LeoMcBills"
+# Required for instant navigation / sitemap generation during local previews.
+site_url = "http://127.0.0.1:8000/"
+repo_url = "https://github.com/LeoMcBills/dtam"
+repo_name = "LeoMcBills/dtam"
+edit_uri = "edit/main/docs/"
+copyright = """
+Copyright &copy; 2026 DTAM contributors
+"""
+extra_javascript = [
+  "javascripts/mathjax.js",
+  "https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js",
+]
+
+# Top-level entries become header tabs (navigation.tabs).
+# Nested entries become the left sidebar for that tab.
+nav = [
+  { Home = "index.md" },
+
+  { "Getting started" = [
+      "start/index.md",
+      { Status = "start/status.md" },
+    ]
+  },
+
+  { Architecture = [
+      "architecture/index.md",
+      { "Why a state system?" = "architecture/why-state-system.md" },
+      { "System map" = "architecture/system-map.md" },
+      { "Dependency rules" = "architecture/dependency-rules.md" },
+      { "Operational modes" = "architecture/operational-modes.md" },
+      { "Tools and skills" = "architecture/tools-and-skills.md" },
+    ]
+  },
+
+  { Domain = [
+      "domain_model/index.md",
+      { Measurements = "domain_model/measurements.md" },
+      { "Value objects" = "domain_model/value-objects.md" },
+    ]
+  },
+
+  { "Digital twin" = [
+      "digital_twin/index.md",
+      { "Mathematical models" = "digital_twin/mathematical-models.md" },
+      { "Thermal PINN" = "digital_twin/thermal-pinn.md" },
+    ]
+  },
+
+  { Adapters = [
+      "scanner_adapters/index.md",
+      { "Simulated scanner" = "scanner_adapters/simulated-scanner.md" },
+      { "Halbach 48 mT" = "scanner_adapters/halbach-48mt.md" },
+    ]
+  },
+
+  { Platform = [
+      { Configuration = "configuration/index.md" },
+      { "Twin HTTP API" = "platform/twin-api.md" },
+      { Observability = "observability/index.md" },
+      { Safety = "safety/index.md" },
+    ]
+  },
+
+  { Project = [
+      "project/index.md",
+      { Roadmap = "project/roadmap.md" },
+      { "Docs site" = "project/docs-site.md" },
+      { "Third-party" = "project/third-party.md" },
+    ]
+  },
+]
+
+[project.theme]
+language = "en"
+features = [
+  "announce.dismiss",
+  "content.action.edit",
+  "content.action.view",
+  "content.code.annotate",
+  "content.code.copy",
+  "content.code.select",
+  "content.footnote.tooltips",
+  "content.tabs.link",
+  "content.tooltips",
+  "navigation.expand",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "navigation.instant.progress",
+  "navigation.path",
+  "navigation.sections",
+  "navigation.tabs",
+  "navigation.tabs.sticky",
+  "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
+  "toc.follow",
+]
+
+[project.theme.icon]
+logo = "lucide/activity"
+repo = "fontawesome/brands/github"
+edit = "material/pencil"
+view = "material/eye"
+
+[[project.theme.palette]]
+scheme = "default"
+primary = "indigo"
+accent = "indigo"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+primary = "indigo"
+accent = "indigo"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[project.markdown_extensions.abbr]
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.attr_list]
+[project.markdown_extensions.def_list]
+[project.markdown_extensions.footnotes]
+[project.markdown_extensions.md_in_html]
+[project.markdown_extensions.toc]
+permalink = true
+[project.markdown_extensions.pymdownx.arithmatex]
+generic = true
+[project.markdown_extensions.pymdownx.betterem]
+[project.markdown_extensions.pymdownx.caret]
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.emoji]
+emoji_generator = "zensical.extensions.emoji.to_svg"
+emoji_index = "zensical.extensions.emoji.twemoji"
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums = true
+line_spans = "__span"
+pygments_lang_class = true
+[project.markdown_extensions.pymdownx.inlinehilite]
+[project.markdown_extensions.pymdownx.keys]
+[project.markdown_extensions.pymdownx.magiclink]
+[project.markdown_extensions.pymdownx.mark]
+[project.markdown_extensions.pymdownx.smartsymbols]
+[project.markdown_extensions.pymdownx.superfences]
+custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" }
+]
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
+combine_header_slug = true
+[project.markdown_extensions.pymdownx.tasklist]
+custom_checkbox = true
+[project.markdown_extensions.pymdownx.tilde]
+
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/LeoMcBills/dtam/tree/main"
+name = "GitHub"
+
+# Instant link previews for closely related concept pages.
+[[project.markdown_extensions.zensical.extensions.preview.configurations]]
+targets.include = [
+  "architecture/*",
+  "domain_model/*",
+  "digital_twin/*",
+  "scanner_adapters/*",
+  "start/*",
+  "configuration/*",
+  "observability/*",
+  "safety/*",
+  "project/*",
+]

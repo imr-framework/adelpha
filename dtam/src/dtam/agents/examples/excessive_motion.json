@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-08-06T12:00:00+00:00",
+  "operating_mode": "recommend",
+  "synthetic": true,
+  "motion": {
+    "translation_mm": [
+      4.5,
+      2.0,
+      1.0
+    ],
+    "rotation_deg": [
+      2.5,
+      0.5,
+      0.2
+    ],
+    "tracking_quality": 0.35,
+    "tracking_lost": false,
+    "subject_type": "phantom",
+    "displacement_history_mm": [
+      0.5,
+      1.2,
+      2.8,
+      4.0,
+      5.2
+    ]
+  }
+}

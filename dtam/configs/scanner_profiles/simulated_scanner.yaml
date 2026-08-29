@@ -1,0 +1,80 @@
+id: simulated_scanner
+field_strength_t: 0.048
+architecture: virtual_halbach
+display_name: Simulated 48 mT Halbach MRI
+
+capabilities:
+  temperature_monitoring: true
+  b0_monitoring: true
+  emi_monitoring: true
+  gradient_monitoring: false
+  rf_tuning_control: false
+  active_shimming: false
+  frequency_compensation: true
+  sequence_adaptation: false
+  automatic_control: false
+
+supported_actions:
+  - set_center_frequency
+
+sensors:
+  - sensor_id: temp_magnet_01
+    kind: temperature
+    unit: degC
+    description: Magnet structure temperature channel 1
+    sampling_rate_hz: 1.0
+    location: magnet_bore
+    noise_std: 0.05
+    nominal_value: 23.0
+  - sensor_id: temp_magnet_02
+    kind: temperature
+    unit: degC
+    description: Magnet structure temperature channel 2
+    sampling_rate_hz: 1.0
+    location: magnet_yoke
+    noise_std: 0.05
+    nominal_value: 22.8
+  - sensor_id: temp_room_01
+    kind: temperature
+    unit: degC
+    description: Room ambient temperature
+    sampling_rate_hz: 0.5
+    location: room
+    noise_std: 0.1
+    nominal_value: 22.0
+  - sensor_id: emi_probe_01
+    kind: emi
+    unit: V
+    description: Broadband EMI probe near magnet
+    sampling_rate_hz: 10.0
+    location: magnet_enclosure
+    noise_std: 0.001
+    nominal_value: 0.01
+  - sensor_id: rf_noise_01
+    kind: rf
+    unit: dBm/Hz
+    description: Receive-chain noise floor monitor
+    sampling_rate_hz: 1.0
+    location: rx_chain
+    noise_std: 0.5
+    nominal_value: -140.0
+
+actuators:
+  - actuator_id: freq_comp_01
+    kind: frequency_compensation
+    description: Virtual center-frequency compensation
+    reversible: true
+
+simulation:
+  ambient_temperature_c: 22.0
+  temperature_noise_std_c: 0.05
+  temperatures_c:
+    temp_magnet_01: 23.0
+    temp_magnet_02: 22.8
+    temp_room_01: 22.0
+
+metadata:
+  role: development_virtual_scanner
+  twin_of: halbach_48mt
+  emi_peak_frequency_hz: "50000.0"
+  rf_noise_bandwidth_hz: "100000.0"
