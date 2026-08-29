@@ -117,7 +117,7 @@ Do not cross-compile the Python sidecar.
 
 - [Excluded assets](exclusions.md)
 - [Electron migration](electron-migration.md)
-- [Signing and notarization](signing.md)
+- [Signing, notarization, and in-app updates](signing.md)
 - [Adding a Python service](adding-a-service.md)
 - [Known limitations](limitations.md)
 
@@ -126,7 +126,6 @@ Do not cross-compile the Python sidecar.
 - Adelpha GUI: MIT (`LICENSE`)
 - Imaging console (`console/`): GPL-3. Bundling it in the sidecar makes the
   **distributed Python runtime** a GPL-3 work. Ship corresponding source.
-- DTAM (`dtam/LICENSE`): terms are **not finalized**. Do not redistribute a
-  public installer that includes DTAM until that license is settled.
+- DTAM (`dtam/LICENSE`): MIT
 - FLOCRA interpreter: MIT
 - HalbachMRIDesigner: GPL-3; not bundled

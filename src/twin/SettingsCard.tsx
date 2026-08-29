@@ -39,6 +39,7 @@ import {
   ViewportBgRow,
 } from "./settings/controls";
 import { GoogleApiKeySection } from "./settings/GoogleApiKeySection";
+import { UpdatesSection } from "./settings/UpdatesSection";
 import { INITIAL_DRAFT, type Draft, type PatchDraft } from "./settings/draft";
 
 export type SettingsSectionId =
@@ -686,25 +687,7 @@ function GenericPanel({
         </SettingsSection>
       );
     case "updates":
-      return (
-        <SettingsSection title="Application">
-          <SettingsRow
-            title="Current version"
-            description={`Adelpha ${ADELPHA_VERSION}`}
-          >
-            <button type="button" className="settings-btn">
-              Check for updates
-            </button>
-          </SettingsRow>
-          <SettingsRow title="Automatic updates">
-            <Switch
-              label="Automatic updates"
-              checked={draft.autoUpdate}
-              onChange={(v) => patch("autoUpdate", v)}
-            />
-          </SettingsRow>
-        </SettingsSection>
-      );
+      return <UpdatesSection />;
     case "about":
       return (
         <SettingsSection title="Adelpha">

@@ -92,17 +92,52 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-        run: npm run tauri:build
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if [ -n "${TAURI_SIGNING_PRIVATE_KEY}" ]; then
+            CI=true npm run tauri:build
+          else
+            echo "No TAURI_SIGNING_PRIVATE_KEY; skipping updater signatures."
+            CI=true npx tauri build --config '{"bundle":{"createUpdaterArtifacts":false}}'
+          fi
 
-      - name: Checksums
+      - name: Collect artifacts
         run: |
           mkdir -p artifacts
           if [ -d src-tauri/target ]; then
             find src-tauri/target -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" \) -print0 \
               | xargs -0 -I{} cp {} artifacts/ || true
           fi
+          copy_updater() {
+            local dest="$1"
+            local pattern="$2"
+            local found
+            found="$(find src-tauri/target -type f -name "$pattern" 2>/dev/null | head -n 1)"
+            if [ -n "$found" ]; then
+              cp "$found" "artifacts/$dest"
+            fi
+          }
+          case "${{ matrix.artifact }}" in
+            macos-arm64)
+              copy_updater "Adelpha-darwin-aarch64.app.tar.gz" "*.app.tar.gz"
+              copy_updater "Adelpha-darwin-aarch64.app.tar.gz.sig" "*.app.tar.gz.sig"
+              ;;
+            macos-x64)
+              copy_updater "Adelpha-darwin-x86_64.app.tar.gz" "*.app.tar.gz"
+              copy_updater "Adelpha-darwin-x86_64.app.tar.gz.sig" "*.app.tar.gz.sig"
+              ;;
+            windows-x64)
+              copy_updater "Adelpha-windows-x86_64-setup.exe" "*setup.exe"
+              copy_updater "Adelpha-windows-x86_64-setup.exe.sig" "*setup.exe.sig"
+              ;;
+            linux-x64)
+              copy_updater "Adelpha-linux-x86_64.AppImage" "*.AppImage"
+              copy_updater "Adelpha-linux-x86_64.AppImage.sig" "*.AppImage.sig"
+              ;;
+          esac
           if ls artifacts/* >/dev/null 2>&1; then
-            (cd artifacts && shasum -a 256 * > SHA256SUMS)
+            (cd artifacts && shasum -a 256 * > "SHA256SUMS-${{ matrix.artifact }}")
           fi
 
       - uses: actions/upload-artifact@v4
@@ -110,3 +145,35 @@ jobs:
           name: adelpha-${{ matrix.artifact }}-${{ github.sha }}
           path: artifacts/
           if-no-files-found: warn
+
+  publish-updater:
+    if: always() && startsWith(github.ref, 'refs/tags/v') && needs.sidecar-and-installer.result != 'cancelled'
+    needs: sidecar-and-installer
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist-artifacts
+          merge-multiple: true
+
+      - name: Assemble latest.json
+        run: |
+          python3 packaging/updater/assemble_latest_json.py \
+            --dir dist-artifacts \
+            --tag "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}" \
+            --version "${{ github.ref_name }}" \
+            --notes "Adelpha ${{ github.ref_name }}" \
+            --out dist-artifacts/latest.json
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "${{ github.ref_name }}" >/dev/null 2>&1 \
+            || gh release create "${{ github.ref_name }}" --title "Adelpha ${{ github.ref_name }}" --generate-notes
+          gh release upload "${{ github.ref_name }}" dist-artifacts/* --clobber

@@ -14,6 +14,8 @@ pub fn run() {
     tauri::Builder::default()
         .manage(manager.clone())
         .manage(pty::PtyState::new())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .setup(move |app| {
             let handle = app.handle().clone();
             let mgr = manager.clone();

@@ -1,8 +1,7 @@
 # Known limitations
 
-- **DTAM license** is not finalized. Local/dev unsigned builds that include
-  DTAM are for lab use. Do not ship a public installer until DTAM terms allow
-  redistribution.
+- **DTAM** is MIT (`dtam/LICENSE`). A public installer that also bundles the
+  imaging console is still a GPL-3 distribution of that runtime.
 - **GPL-3 console** in the sidecar: corresponding source must ship with any
   distributed runtime.
 - **DTAM gitlink**: this repo records `dtam` as commit `160000`, not a normal
@@ -28,6 +27,10 @@
   Tauri installer.
 - **Signing**: public Gatekeeper/SmartScreen trust needs certificates listed
   in [`signing.md`](signing.md). CI defaults to unsigned artifacts.
+- **In-app updates**: Settings → Updates only installs a newer build after a
+  **tagged** CI release (`v*`) that uploaded signed updater artifacts and
+  `latest.json`. Dev / unsigned local builds will report an error or “up to
+  date” rather than installing from GitHub.
 - **In-app terminal** is a real user shell (PTY), matching Electron. It is
   implemented in Rust only — the frontend cannot pass arbitrary OS commands
   through a generic shell API.
