@@ -1,8 +1,7 @@
 # Known limitations
 
-- **DTAM license** is not finalized. Local/dev unsigned builds that include
-  DTAM are for lab use. Do not ship a public installer until DTAM terms allow
-  redistribution.
+- **DTAM** is MIT (`dtam/LICENSE`). A public installer that also bundles the
+  imaging console is still a GPL-3 distribution of that runtime.
 - **GPL-3 console** in the sidecar: corresponding source must ship with any
   distributed runtime.
 - **DTAM gitlink**: this repo records `dtam` as commit `160000`, not a normal

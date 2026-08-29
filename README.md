@@ -23,7 +23,7 @@
 Production installs ship one installer and a self-contained **Python supervisor sidecar**. Users do not install Python, Node.js, Rust, or pip packages.
 
 > [!NOTE]
-> Packaging, exclusions, signing, and the Electron comparison live in [`docs/packaging/index.md`](docs/packaging/index.md). DTAM license terms are not finalized — do not ship a public installer that includes DTAM until that is settled.
+> Packaging, exclusions, signing, and the Electron comparison live in [`docs/packaging/index.md`](docs/packaging/index.md). DTAM is MIT; the imaging console in the sidecar is GPL-3.
 
 Version **0.1.0**.
 
