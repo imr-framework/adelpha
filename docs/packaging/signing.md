@@ -56,7 +56,7 @@ that programs FPGAs.
 
 Packaged Adelpha checks GitHub Releases for a newer signed build:
 
-`https://github.com/imr-framework/digital_twin_ui/releases/latest/download/latest.json`
+`https://github.com/imr-framework/adelpha/releases/latest/download/latest.json`
 
 Settings → **Check for updates** uses that feed. **Automatic updates**
 (off by default) checks about 12 seconds after launch, then downloads,
