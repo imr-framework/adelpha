@@ -7,7 +7,7 @@ hide:
 <div class="adelpha-dl">
   <header class="adelpha-dl__hero">
     <h1 id="download-adelpha">Download Adelpha</h1>
-    <p class="adelpha-dl__lede">The intelligent digital-twin platform for low-field MRI.<br>For macOS, Windows, and Linux.</p>
+    <p class="adelpha-dl__lede">The intelligent digital-twin platform for low-field MRI. For macOS, Windows, and Linux.</p>
     <p class="adelpha-dl__meta">
       <span>Version <span data-adelpha-version>0.5.0</span></span>
       <span data-adelpha-released>Released August 29, 2026</span>
