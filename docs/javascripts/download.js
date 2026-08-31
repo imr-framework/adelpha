@@ -36,7 +36,7 @@ const ADELPHA_PLATFORMS = {
     miniAction: "Download DMG",
     altKind: "macos-arm64",
     altText: "Using Apple Silicon? Download that version",
-    soon: "Planned",
+    soon: null,
   },
   "linux-deb": {
     family: "linux",
@@ -76,26 +76,44 @@ const ADELPHA_PLATFORMS = {
 const ADELPHA_KNOWN_SUMS = {
   "Adelpha_0.5.0_amd64.deb":
     "e17f61ed4abfa15e5d247183e62bc3b475d7022cc4f0c525232d0c0b59163170",
+  "Adelpha_0.5.2_aarch64.dmg":
+    "b225a72238dff6b643c50c63b7bf3f9866f2753a254fdcd32de30a6c13af1434",
+  "Adelpha_0.5.2_x86_64.dmg":
+    "5fca9d41f6344b7ca22de1a1cc23194388c59bdc0b85d45d88ed74b94291b4b8",
+  "Adelpha_0.5.2_x64-setup.exe":
+    "46ac933141bd9858321f30ecaad9e4a8e15e2f00c9134718606d51011a1ff709",
+  "Adelpha-windows-x86_64-setup.exe":
+    "46ac933141bd9858321f30ecaad9e4a8e15e2f00c9134718606d51011a1ff709",
+  "Adelpha_0.5.2_amd64.deb":
+    "03f1c35dc6b428320e7e4ee5aeae8086d5076c7b6812a230bb174a99be88a9c7",
 };
 
 const ADELPHA_DL = "https://github.com/imr-framework/adelpha/releases/download";
 
 /** Public catalog until GitHub latest is this version or newer. */
 const ADELPHA_BUNDLED_RELEASE = {
-  version: "0.5.1",
-  published_at: "2026-08-31T19:18:30Z",
+  version: "0.5.2",
+  published_at: "2026-08-31T20:53:09Z",
   assets: [
     {
-      name: "Adelpha_0.5.1_aarch64.dmg",
-      browser_download_url: `${ADELPHA_DL}/v0.5.1/Adelpha_0.5.1_aarch64.dmg`,
+      name: "Adelpha_0.5.2_aarch64.dmg",
+      browser_download_url: `${ADELPHA_DL}/v0.5.2/Adelpha_0.5.2_aarch64.dmg`,
+      size: 121644243,
     },
     {
-      name: "Adelpha_0.5.1_x64-setup.exe",
-      browser_download_url: `${ADELPHA_DL}/v0.5.1/Adelpha_0.5.1_x64-setup.exe`,
+      name: "Adelpha_0.5.2_x86_64.dmg",
+      browser_download_url: `${ADELPHA_DL}/v0.5.2/Adelpha_0.5.2_x86_64.dmg`,
+      size: 126734170,
     },
     {
-      name: "Adelpha_0.5.1_amd64.deb",
-      browser_download_url: `${ADELPHA_DL}/v0.5.1/Adelpha_0.5.1_amd64.deb`,
+      name: "Adelpha_0.5.2_x64-setup.exe",
+      browser_download_url: `${ADELPHA_DL}/v0.5.2/Adelpha_0.5.2_x64-setup.exe`,
+      size: 87223626,
+    },
+    {
+      name: "Adelpha_0.5.2_amd64.deb",
+      browser_download_url: `${ADELPHA_DL}/v0.5.2/Adelpha_0.5.2_amd64.deb`,
+      size: 174831936,
     },
   ],
 };
@@ -118,11 +136,19 @@ function adelphaCmpVersion(a, b) {
   return 0;
 }
 
+function adelphaAssetRank(name) {
+  return /^Adelpha_\d/.test(name || "") ? 2 : 1;
+}
+
 function adelphaAssetsByKind(assets) {
   const byKind = {};
   for (const asset of assets || []) {
     const kind = adelphaClassifyAsset(asset.name);
-    if (kind && !byKind[kind]) byKind[kind] = asset;
+    if (!kind) continue;
+    const current = byKind[kind];
+    if (!current || adelphaAssetRank(asset.name) > adelphaAssetRank(current.name)) {
+      byKind[kind] = asset;
+    }
   }
   return byKind;
 }
