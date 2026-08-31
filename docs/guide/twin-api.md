@@ -4,23 +4,22 @@ icon: lucide/globe
 
 # Twin API, Agents API, and MRI API (GUI contract)
 
-Authoritative DTAM docs: Twin HTTP API in the DTAM repo (`docs/platform/twin-api.md`). Interactive OpenAPI: `http://127.0.0.1:8080/docs` when the Twin API is running. Imaging Console routes: `http://127.0.0.1:8002/docs` when the MRI API is running.
+Authoritative DTAM HTTP docs: `dtam/docs/platform/twin-api.md` in this repo. OpenAPI: `/docs` on the Twin service. Imaging Console routes: `/docs` on the MRI façade.
+
+The **desktop app** mounts all three under one supervisor (`/api/dtam`, `/api/agents`, `/api/mri`). The table below is for **browser / extra terminals**.
 
 ## Backends this GUI expects
 
-| Backend | Command | Default URL | Vite / Electron proxy | Required? |
+| Backend | Command | Default URL | Vite proxy | Required? |
 | --- | --- | --- | --- | --- |
-| Twin HTTP API | DTAM `make twin-api` | `http://127.0.0.1:8080` | `/api/dtam` → `:8080` | **Yes** (Digital Twin) |
-| Agents API (ADK) | DTAM `make agents-api` | `http://127.0.0.1:8001` | `/api/agents` → `:8001` | No (Agents tab only) |
-| MRI console API | `python -m services.api` from `console/` | `http://127.0.0.1:8002` | `/api/mri` → `:8002` | **Yes** (Imaging Console) |
+| Twin HTTP API | from `dtam/`: `make twin-api` | `http://127.0.0.1:8080` | `/api/dtam` → `:8080` | **Yes** (Digital Twin in the browser) |
+| Agents API (ADK) | from `dtam/`: `make agents-api` | `http://127.0.0.1:8001` | `/api/agents` → `:8001` | No (Agents tab only) |
+| MRI console API | from `console/`: `python -m services.api` | `http://127.0.0.1:8002` | `/api/mri` → `:8002` | **Yes** (Imaging Console in the browser) |
 
 ```bash
-# From the DTAM repository — leave each process running in its own terminal
-make twin-api      # Twin REST for telemetry / forecast / assess
-make agents-api    # ADK api_server for Agents chat (needs GOOGLE_API_KEY)
-
-# From adelpha/console
-python -m services.api
+cd dtam && make twin-api
+cd dtam && make agents-api    # needs GOOGLE_API_KEY
+cd console && python -m services.api
 ```
 
 GUI base URLs (env):
@@ -50,7 +49,7 @@ GUI base URLs (env):
 | EMI | RMS (V), peak Hz, classification |
 | RF | Noise floor (dBm/Hz), bandwidth |
 
-Gradient / image-quality / actuators are **not** ready in DTAM — do not invent control buttons.
+Gradient, image-quality, and actuators are **not** ready in DTAM. Do not invent control buttons.
 
 ### Verify Twin API
 

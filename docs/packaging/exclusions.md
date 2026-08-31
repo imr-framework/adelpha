@@ -12,7 +12,7 @@ Do not package the repository wholesale. The following stay out of
 | `dist/` | Frontend build input, not a Python resource |
 | `__pycache__/`, `*.pyc` | Generated |
 | `.venv/`, `dtam/.venv/` | Developer environments |
-| `.env`, `.env.local`, `dtam/.env` | Secrets — never bundle |
+| `.env`, `.env.local`, `dtam/.env` | Secrets. Never bundle. |
 | `site/`, `.zensical/` | Docs build output |
 | Test fixtures not required at runtime | `dtam/tests`, `console` test trees |
 | Development scripts | FPGA programming, Red Pitaya setup |
@@ -48,5 +48,5 @@ explicitly; Adelpha never auto-runs FPGA programming.
 - DTAM Python package (`dtam/src`) and `dtam/configs/` when present
 - Console HTTP façade (`console/services/api`, `console/common`, sequence
   Python with FALLBACK catalog)
-- FLOCRA interpreter Python (`console/external/flocra_pulseq`) — MIT
+- FLOCRA interpreter Python (`console/external/flocra_pulseq`), MIT
 - Static GUI assets from Vite `dist/` and `public/`

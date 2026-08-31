@@ -29,6 +29,11 @@
   **tagged** CI release (`v*`) that uploaded signed updater artifacts and
   `latest.json`. Dev / unsigned local builds will report an error or “up to
   date” rather than installing from GitHub.
-- **In-app terminal** is a real user shell (PTY), matching Electron. It is
-  implemented in Rust only — the frontend cannot pass arbitrary OS commands
-  through a generic shell API.
+- **In-app terminal** is a real user shell (PTY). It is implemented in Rust
+  only. The frontend cannot pass arbitrary OS commands through a generic
+  shell API.
+- **Camera** in a packaged Mac build needs the camera entitlement and a
+  Privacy prompt. Reset with `tccutil reset Camera org.adelpha.digital-twin-ui`
+  if an older unsigned build already denied access.
+- **CAD import** in a packaged build needs the current CSP (`blob:`,
+  `wasm-unsafe-eval`). Rebuild after those packaging changes.

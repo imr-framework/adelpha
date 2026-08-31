@@ -4,111 +4,91 @@ icon: lucide/layout-dashboard
 
 # Dashboard
 
-## Header
+This page is the Digital Twin workspace: the 3D view, side panel, Agents, and console.
 
-Shows **Adelpha** branding plus application-level controls on the right:
+## Header
 
 | Control | Description |
 | --- | --- |
-| **System Context** | Pill showing `scanner_id / mode`. Dropdown lists scanner, mode, and `twin_version` (configuration). |
-| **Workspace switcher** | Labeled pill (e.g. **Digital Twin ▾**) with workspace icon. **⌘K** / **Ctrl+K** opens the menu. |
-| **Settings** | Settings shell — Workspace, console theme, and 3D model persist; most other rows are a draft |
-| **Menu** | Hamburger — in **Imaging Console** shows Exam · Control · Help · Debug |
+| **Health** | Twin / Console / Agents |
+| **System Context** | `scanner_id / mode` |
+| **Workspace** | Switch rooms with **⌘K** / **Ctrl+K** |
+| **Settings** | Models, runtime, key, updates. [Settings](settings.md). |
+| **Menu** | Workspace-specific |
 
-Connection health is reflected in the console live indicator and telemetry freshness, not as a separate clock pill.
+## Side panel
 
-See [Workspaces](workspaces.md) and [Imaging Console](imaging-console.md).
+| Tab | Contents |
+| --- | --- |
+| **Telemetry** | Thermal, magnetic / \(B_0\), EMI, RF |
+| **Agents** | Chat with the twin (needs a Google API key) |
+| **Forecast** | Horizon, setpoint, heating rate, PINN |
+| **Notes** | Messages from the twin |
+| **Raw sensors** | On-demand sensor batch |
+| **View / CAD** | Explode, wireframe, temperature map |
 
-## Side panels (Digital Twin)
-
-1. **Telemetry** — Thermal, Magnetic / \(B_0\), EMI, RF summaries.
-2. **Agents** — Chat against DTAM ADK (`make agents-api` on `:8001`). Offline until that API is up.
-3. **Forecast** — Horizon (s), optional magnet setpoint (°C), heating rate, PINN toggle → **Run forecast**.
-4. **Notes** — `notes[]` from the twin (ops / debug).
-5. **Raw sensors** — on-demand `GET /sensors/batch`.
-6. **View / CAD** — exploded slider, wireframe, temperature map (when an STL is configured).
-
-Panel width, collapse state, and Telemetry vs Agents tab persist in `localStorage` according to **Settings → Workspace** (remember panel width / restore layout).
+Width, collapse, and Telemetry vs Agents persist when **Settings → Workspace** says so.
 
 ## Provenance
 
-Every `TimestampedQuantity` carries `source`. Badges:
-
 | Source | Meaning |
 | --- | --- |
-| `measured` | Sensor channel |
-| `estimated` | Derived twin estimate |
-| `predicted` | Forecast horizon only |
-| `nominal` | Design / profile constant |
+| `measured` | Sensor |
+| `estimated` | Twin estimate |
+| `predicted` | Forecast only |
+| `nominal` | Design value |
 
-Confidence is shown when present. Units stay visible (never strip °C, T, MHz, …).
+Confidence is shown when the twin sends it. Units stay on the number.
 
-## 3D viewport & tool rail
+## Viewport and tool rail
 
-The magnet scene loads an optional CAD mesh (`VITE_MAGNET_CAD_URL`). A **draggable tool rail** selects the active viewport mode:
+The scene uses the **active scanner model** from Settings (bundled or imported). The rail picks a mode:
 
 | Tool | Purpose |
 | --- | --- |
-| Magnet | Default CAD / thermal view |
-| EMI | EMI visualization mode |
+| Magnet | CAD / thermal |
+| EMI | EMI context |
 | RF | RF noise context |
-| Camera | Webcam feed + head-pose tracking |
-| Gradient | Gradient coil emphasis |
+| Camera | Webcam and head pose |
+| Gradient | Gradient emphasis |
 
-Rail position persists (`twin_view_tool_rail_pos_v2`).
+Rail position is remembered.
 
-### Camera & head motion
+### Camera
 
-When **Camera** is active, MediaPipe Face Landmarker tracks head pose from the webcam:
+Select **Camera** on the rail. Allow the camera when macOS or Windows asks.
 
-- Nose tracker overlay on the video feed
-- **Motion** menu: set reference pose, download JSON/CSV log, **Share with agent**
-- Motion context is appended to Agents chat sends; Share opens Agents and posts a summary
+The live picture should appear first. Face tracking loads next (bundled WASM in the app; models download once from Google). You can set a reference pose, export a JSON/CSV motion log, and **Share with agent**.
 
-Mask style and background mode persist in `localStorage`.
+See [Settings](settings.md#camera) if permission is denied.
 
-## Overlay charts
+## Live dashboard
 
-“Open live dashboard” overlays history charts for magnet temperature and RF noise floor, plus illustrative spectra. EMI peak frequency biases the MRI spectrum highlight; these plots are operator aids, not calibrated spectrum analyzers.
+**Open live dashboard** overlays temperature and RF-noise history. These are operator aids, not calibrated spectrum analyzers.
 
-## Agents tab
-
-Beyond plain text chat:
+## Agents
 
 | Feature | Detail |
 | --- | --- |
-| **Markdown** | Assistant replies render with `react-markdown` |
-| **Model picker** | Gemini models via `VITE_ADK_MODELS`; selection persisted |
-| **Attachments** | Image upload inline in the composer |
-| **Forecast plots** | Tool results with `plot_png_base64` or artifact refs render inline |
-| **Head motion share** | Camera motion log can be sent to the agent in one click |
-
-Streaming uses SSE with deduplication on repeated chunks.
+| **Markdown** | Assistant replies |
+| **Model** | Gemini models you configured in Settings |
+| **Attachments** | Images in the composer |
+| **Forecast plots** | Inline when a tool returns a plot |
+| **Head motion** | One-click share from the camera HUD |
 
 ## Console
 
-Bottom console tabs:
-
-- **Logging** — read-only system events (timestamped, level-colored)
-- **Terminal** — xterm.js REPL
-
-### Browser terminal (built-ins)
-
-`help` · `clear` · `status` · `sensors` · `hide` · `forecast-hint`
-
-### Desktop terminal (real shell)
-
-Run `make tauri-dev` or a packaged installer. Terminal attaches to `$SHELL` via a Rust PTY (same shape as the old Electron `node-pty` bridge).
-
-Console open state and active tab persist in `localStorage`.
+| Tab | Contents |
+| --- | --- |
+| **Logging** | Timestamped system events |
+| **Terminal** | Real `$SHELL` on desktop. In the browser: `help`, `clear`, `status`. |
 
 ## Launch intro
 
-On first load per browser **session**, a cinematic Adelpha intro plays (~7 s). Subsequent navigations skip it. Force replay with `?replayIntro=1`. Respects `prefers-reduced-motion`.
+Plays once per install (desktop) or once per browser tab. Replay with `?replayIntro=1`. Honors reduced motion.
 
 ## Out of scope
 
-- Shim / gradient / safety override **commands** on the Twin API (no such actuators)
+- Shim / gradient / safety **commands** on the Twin API
 - Treating predicted values as live measurements
-- Embedding Python / Gemini SDKs in the browser (use DTAM `make agents-api` instead)
-- Opening the Red Pitaya socket from TypeScript (Imaging Console uses the Python façade on `:8002`)
+- Opening the Red Pitaya socket from the UI (use Imaging Console + Python)

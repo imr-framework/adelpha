@@ -4,157 +4,86 @@ icon: lucide/settings-2
 
 # Configuration
 
-## Environment
+Day-to-day controls live in **[Settings](settings.md)**. This page is the developer reference: environment variables and what is stored on disk.
 
-Optional Vite env (create `.env.local` if you need to override defaults). Defaults already match the recommended proxy setup.
+## Desktop vs browser
+
+The packaged app (and `make tauri-dev`) starts a Python supervisor on `127.0.0.1` with an **ephemeral port**. The window receives a base URL and a session token. You do not set Twin/MRI ports by hand.
+
+`npm run dev` still uses Vite proxies to `:8080`, `:8001`, and `:8002`.
+
+The Google API key belongs in **Settings → AI & Agents**, which writes `<app-config>/google_api_key`. Do not put keys in the installer.
+
+## Optional Vite env
+
+Create `.env.local` only if you must override defaults.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `VITE_DTAM_API_URL` | `/api/dtam` | Twin API base (proxy path or absolute URL) |
-| `VITE_ADK_API_URL` | `/api/agents` | Agents (ADK) API base |
-| `VITE_MRI_API_URL` | `/api/mri` | MRI console API base |
-| `VITE_ADK_APP_NAME` | `dtam` | ADK app from `GET /list-apps` |
-| `VITE_ADK_USER_ID` | `gui-user` | Local demo user id for ADK sessions |
-| `VITE_ADK_MODELS` | built-in list | Optional `id:Label,...` model picker |
-| `VITE_ADK_MODEL` | first model | Default selected model id |
-| `VITE_MAGNET_CAD_URL` | unset | Public URL for magnet mesh (e.g. `/MRI_base.stl`) |
-| `VITE_MAGNET_CAD_SCALE` | inferred | Uniform scale after centering |
-| `VITE_MAGNET_CAD_RX_DEG` / `RY` / `RZ` | `0` | Orientation offsets |
+| `VITE_DTAM_API_URL` | `/api/dtam` | Twin API |
+| `VITE_ADK_API_URL` | `/api/agents` | Agents API |
+| `VITE_MRI_API_URL` | `/api/mri` | MRI console API |
+| `VITE_ADK_APP_NAME` | `dtam` | ADK app name |
+| `VITE_ADK_USER_ID` | `gui-user` | Demo user for ADK sessions |
+| `VITE_ADK_MODELS` | built-in list | Optional `id:Label,...` |
+| `VITE_ADK_MODEL` | first model | Default model id |
+| `VITE_MAGNET_CAD_URL` | unset | Legacy public URL for a single mesh |
 
-Tauri production does **not** use those fixed ports. The supervisor binds
-`127.0.0.1` on an ephemeral port and injects `base_url` + session token into
-the webview. Optional Vite `VITE_*` overrides still work for browser-only
-`npm run dev`.
+Imported CAD no longer needs `VITE_MAGNET_CAD_URL`. Use **Settings → 3D Model → Files**.
 
-Put a Google API key in the OS app-config file `google_api_key` (not in
-`.env`) if you want Agents to start with the app.
+### Proxies (`npm run dev`)
 
-Electron can also override backend hosts (legacy shell only):
+`/api/dtam` → `:8080`, `/api/agents` → `:8001`, `/api/mri` → `:8002` (WebSocket included). Vite is pinned to **5173** so Tauri can find it. Avoid port 3000 on lab machines that already run Grafana.
 
-| Variable | Default |
+If you set an absolute `VITE_DTAM_API_URL` (no proxy), add the Vite origin to DTAM `DTAM_CORS_ORIGINS`.
+
+## DTAM runtime (desktop)
+
+Saved as `dtam_runtime.json` in the app config directory:
+
+| Field | Role |
 | --- | --- |
-| `DTAM_TWIN_URL` | `http://127.0.0.1:8080` |
-| `DTAM_AGENTS_URL` | `http://127.0.0.1:8001` |
-| `MRI4ALL_API_URL` | `http://127.0.0.1:8002` |
-| `MRI4ALL_API_PORT` | `8002` (Python process) |
-| `MRI4ALL_BASE` | `/opt/mri4all` or `adelpha/.mri4all/` |
+| `scanner_id` | e.g. `simulated_scanner` |
+| `environment` | e.g. `development` |
+| `agent_model` / `agent_mode` | Gemini model and mode |
 
-### Twin API base URL
+Saving these restarts the Python runtime. User YAML under the config `dtam/` folder wins over the bundled copies.
 
-=== "Proxy (recommended)"
+## MRI console (`mri4all.json`)
 
-    ``` env
-    VITE_DTAM_API_URL=/api/dtam
-    ```
+Under the MRI data directory (`<app-data>/mri4all/config/` in the desktop app):
 
-    `vite.config.ts` rewrites `/api/dtam/:path*` → `http://127.0.0.1:8080/:path*`.
+| Field | Role |
+| --- | --- |
+| `scanner_ip` | Red Pitaya / MaRCoS host |
+| `hardware_simulation` | `"True"` / `"False"` |
+| `debug_mode` | `"True"` / `"False"` |
+| `dicom_targets` | Export destinations |
 
-=== "Direct"
+Ping always probes the network. Sequences talk to hardware only when simulation is **False**. See [Imaging Console](imaging-console.md#red-pitaya).
 
-    ``` env
-    VITE_DTAM_API_URL=http://127.0.0.1:8080
-    ```
-
-    Requires the Vite origin in DTAM `DTAM_CORS_ORIGINS`.
-
-### Agents API base URL
-
-=== "Proxy (recommended)"
-
-    ``` env
-    VITE_ADK_API_URL=/api/agents
-    ```
-
-    Rewrites `/api/agents/:path*` → `http://127.0.0.1:8001/:path*`.
-
-=== "Direct"
-
-    ``` env
-    VITE_ADK_API_URL=http://127.0.0.1:8001
-    ```
-
-### MRI console API base URL
-
-=== "Proxy (recommended)"
-
-    ``` env
-    VITE_MRI_API_URL=/api/mri
-    ```
-
-    Rewrites `/api/mri/:path*` → `http://127.0.0.1:8002/:path*` (WebSocket `/events` included).
-
-## Dev server proxies
-
-```ts title="vite.config.ts"
-server: {
-  port: 5173,
-  strictPort: false,
-  proxy: {
-    "/api/dtam": {
-      target: "http://127.0.0.1:8080",
-      changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/api\/dtam/, ""),
-    },
-    "/api/agents": {
-      target: "http://127.0.0.1:8001",
-      changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/api\/agents/, ""),
-    },
-    "/api/mri": {
-      target: "http://127.0.0.1:8002",
-      changeOrigin: true,
-      ws: true,
-      rewrite: (path) => path.replace(/^\/api\/mri/, ""),
-    },
-  },
-}
-```
-
-!!! warning "Port 3000"
-    On many lab machines Grafana already listens on `*:3000`. Prefer Vite’s 5173 (or the next free port) rather than fighting for 3000.
-
-## CAD mesh
-
-Place STL/GLB files under `public/` and set `VITE_MAGNET_CAD_URL` to a site-root path (not a filesystem absolute path). Millimeter meshes often need `VITE_MAGNET_CAD_SCALE≈0.001`. Scale and offsets are also adjustable in the side panel and persisted in `localStorage`.
-
-## Persisted client preferences
-
-Several UI choices survive reloads via `localStorage` (launch intro uses `sessionStorage`). Settings that **actually apply** are listed first; most other Settings controls are a local draft only.
+## Persisted UI preferences
 
 | Key | Purpose |
 | --- | --- |
-| `adelpha.workspacePrefs` | Startup workspace, restore layout, remember panel width |
-| `adelpha_workspace_id` | Last selected workspace |
-| `adelpha.consoleTheme` | `adelpha` or `mri4all` Imaging Console colors |
-| `adelpha.scannerModel` | `halbach-48` / `halbach-47` / `halbach-64` / `mri4all-z1` |
-| `adelpha-launch-seen` | **sessionStorage** — skip cinematic intro after first view in tab |
-| `twin_side_panel_width_px` | Side panel width (px), if Remember side panel width is on |
-| `twin_side_panel_collapsed` | Panel collapsed (`1` / absent), restored when Restore layout is on |
-| `twin_side_panel_mode` | `telemetry` or `agents` tab |
-| `twin_view_tool_rail_pos_v2` | Viewport tool rail `{x,y}` |
-| `twin_magnet_cad_view_v2` | CAD exploded / wireframe / temp map |
-| `twin_adk_model_id` | Selected Agents model |
-| `twin_system_console_open` / `twin_system_console_tab` | Console visibility and Logging vs Terminal |
-| `twin_face_mask_style` / `twin_camera_bg_mode` | Camera overlay preferences |
+| `adelpha.workspacePrefs` | Startup workspace, restore layout, panel width |
+| `adelpha_workspace_id` | Last workspace |
+| `adelpha.consoleTheme` | `adelpha` or `mri4all` |
+| `adelpha.scannerModel` | Active model id (bundled or `imported-…`) |
+| `adelpha.importedModels` | Catalog of imported CAD (blobs are in IndexedDB `adelpha-cad`) |
+| `adelpha.devicePreviews` | Optional device pictures |
+| `adelpha-launch-seen` | Skip intro (desktop: localStorage; browser: sessionStorage) |
+| `twin_magnet_cad_view_v2` | Explode / wireframe / temp map / scale |
+| `twin_view_tool_rail_pos_v2` | Tool rail position |
+| `twin_adk_model_id` | Agents model (legacy picker) |
+| `twin_face_mask_style` / `twin_camera_bg_mode` | Camera overlay |
 
-Replay the launch intro any time: append `?replayIntro=1` to the URL.
+Software version in About and Status comes from `src/twin/adelphaVersion.ts`. The installer version is `src-tauri/tauri.conf.json`.
 
-Software version in Status, About, and Settings is Adelpha **0.1.0** (`src/twin/adelphaVersion.ts`), not the MRI4ALL `VERSION` file.
-
-## DTAM-side env (reference)
-
-### Twin API (`make twin-api` → :8080)
+## DTAM process env (browser / extra terminals)
 
 | Variable | Typical |
 | --- | --- |
 | `DTAM_API_HOST` / `DTAM_API_PORT` | `127.0.0.1` / `8080` |
-| `DTAM_CORS_ORIGINS` | Comma-separated browser origins |
 | `DTAM_SCANNER_ID` | `simulated_scanner` |
-
-### Agents API (`make agents-api` → :8001)
-
-| Variable | Typical |
-| --- | --- |
-| `GOOGLE_API_KEY` | Gemini / Google AI key for ADK (repo-root `.env` or shell) |
-
-The GUI never needs the Gemini key in its own `.env` — only the Agents API process does.
+| `GOOGLE_API_KEY` | Agents API only |

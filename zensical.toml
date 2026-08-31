@@ -1,6 +1,6 @@
 [project]
 site_name = "Adelpha"
-site_description = "Intelligent Magnetic Resonance Framework — Digital Twin, Imaging Console, Twin API (:8080), MRI API (:8002)."
+site_description = "Intelligent Magnetic Resonance Framework. Digital Twin, Imaging Console, Twin API (:8080), MRI API (:8002)."
 site_author = "LeoMcBills"
 site_url = "https://imr-framework.github.io/adelpha/"
 repo_url = "https://github.com/imr-framework/adelpha"
@@ -16,19 +16,19 @@ extra_css = [
 ]
 
 nav = [
-  { Home = "index.md" },
-
-  { "Getting started" = [
-      "start/index.md",
+  { "Get started" = [
+      { "What is Adelpha?" = "index.md" },
+      { "Getting started" = "start/index.md" },
     ]
   },
 
   { Guide = [
       { Architecture = "guide/architecture.md" },
       { Workspaces = "guide/workspaces.md" },
+      { Settings = "guide/settings.md" },
+      { Dashboard = "guide/dashboard.md" },
       { "Imaging Console" = "guide/imaging-console.md" },
       { "Twin API" = "guide/twin-api.md" },
-      { Dashboard = "guide/dashboard.md" },
       { Configuration = "guide/configuration.md" },
       { "Desktop packaging" = "packaging/index.md" },
     ]
@@ -54,14 +54,11 @@ features = [
   "content.tooltips",
   "navigation.expand",
   "navigation.footer",
-  "navigation.indexes",
   "navigation.instant",
   "navigation.instant.prefetch",
   "navigation.instant.progress",
   "navigation.path",
   "navigation.sections",
-  "navigation.tabs",
-  "navigation.tabs.sticky",
   "navigation.top",
   "navigation.tracking",
   "search.highlight",

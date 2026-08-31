@@ -18,7 +18,7 @@ make docs-serve  # live preview (default http://127.0.0.1:8000)
 | --- | --- |
 | `zensical.toml` | Site config and navigation |
 | `docs/` | Markdown sources |
-| `docs/assets/adelpha-logo.svg` | Header / home-page logo (wide butterfly mark) |
+| `docs/assets/adelpha-logo.svg` | Header logo (wide butterfly mark) |
 | `docs/assets/adelpha-icon.svg` | Browser tab icon (circular Adelpha mark) |
 | `docs/assets/favicon.png` | PNG fallback of the same circular mark |
 | `site/` | Build output (gitignored) |
@@ -27,9 +27,10 @@ make docs-serve  # live preview (default http://127.0.0.1:8000)
 ## Authoring
 
 - Keep runbooks accurate: if Grafana owns port 3000, say so.
-- Prefer admonitions for operator pitfalls (CORS, predicted vs measured).
+- Write for operators first, then developers. Prefer short steps and tables.
+- Prefer admonitions for operator pitfalls (CORS, predicted vs measured, camera permissions).
 - Mermaid is enabled via `pymdownx.superfences`.
-- Navigation tabs are explicit in `zensical.toml` (`nav`).
+- Left-sidebar sections are explicit in `zensical.toml` (`nav`). There is no top tab bar.
 - Math uses Arithmatex + MathJax (`docs/javascripts/mathjax.js`).
 
 ## GitHub Pages

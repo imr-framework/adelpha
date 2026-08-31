@@ -2,92 +2,125 @@
 icon: lucide/monitor
 ---
 
-<p align="center">
-  <img class="adelpha-hero-logo" src="assets/adelpha-logo.svg" alt="Adelpha" width="220" />
-</p>
+# What is Adelpha?
 
-# Adelpha
+**Adelpha** is the Intelligent Magnetic Resonance Framework: a desktop app for a scanner digital twin and an imaging console.
 
-**Adelpha** is the Intelligent Magnetic Resonance Framework: a Tauri/React observer GUI for [DTAM](https://github.com/imr-framework/dtam) and an **Imaging Console** over a local MRI4ALL FastAPI façade. Production builds talk to a bundled Python supervisor (`/api/dtam`, `/api/agents`, `/api/mri`). Developers can still run those APIs as separate processes for Vite/Electron. Three workspaces: Digital Twin, Imaging Console, and Engineering Studio.
+You get one window, three workspaces, and a bundled Python runtime. You do not install Python, Node, or Rust to *use* a release build.
 
-!!! tip "Production vs development backends"
-    Packaged Adelpha starts the Python supervisor itself — see [Desktop packaging](packaging/index.md).
+<figure class="adelpha-preview">
+  <img src="assets/adelpha-preview.png" alt="Adelpha Digital Twin workspace showing the 3D scanner, the Digital Twin workspace control in the top bar, live telemetry, and the terminal." width="1440" />
+  <figcaption>Digital Twin workspace. The workspace control in the top bar switches to Imaging Console or Engineering Studio.</figcaption>
+</figure>
 
-    For `npm run dev` / Electron, run these separately:
+## What you can do
 
-    - **Twin API** — `make twin-api` in DTAM → `http://127.0.0.1:8080` (**required** for live telemetry)
-    - **Agents API** — `make agents-api` in DTAM → `http://127.0.0.1:8001` (optional, Agents tab)
-    - **MRI console API** — `python -m services.api` from `console/` → `http://127.0.0.1:8002` (**required** for Imaging Console)
+<div class="adelpha-cards">
+  <a class="adelpha-card" href="guide/workspaces.md">
+    <span class="adelpha-card__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg>
+    </span>
+    <strong>Digital Twin</strong>
+    <span>3D magnet, live thermal / B₀ / EMI / RF, Agents, logging, and a real terminal.</span>
+  </a>
+  <a class="adelpha-card" href="guide/imaging-console.md">
+    <span class="adelpha-card__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/><path d="m16 16-1.1-1.1"/></svg>
+    </span>
+    <strong>Imaging Console</strong>
+    <span>Register a patient, queue sequences, view studies, and ping a Red Pitaya.</span>
+  </a>
+  <a class="adelpha-card" href="guide/workspaces.md">
+    <span class="adelpha-card__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    </span>
+    <strong>Engineering Studio</strong>
+    <span>Reserved for later coil and gradient tools. The shell is ready.</span>
+  </a>
+  <a class="adelpha-card" href="guide/settings.md">
+    <span class="adelpha-card__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+    </span>
+    <strong>Settings</strong>
+    <span>Import GLB or STEP, choose a twin profile, add a Gemini key, check for updates.</span>
+  </a>
+</div>
 
-## What you get
+Every live number is labeled **measured**, **estimated**, **predicted**, or **nominal**, so a forecast is never mistaken for a sensor.
 
-| Surface | Role |
-| --- | --- |
-| **Top bar** | Adelpha brand · **System Context** (`scanner / mode`) · **workspace switcher** · Settings · Menu |
-| **Digital Twin** | 3D magnet viewport, tool rail, telemetry side panel, live dashboard, logging + terminal |
-| **Imaging Console** | Operator console: registration, sequence queue, Study Viewer, Status, logs, configuration |
-| **Engineering Studio** | Placeholder for future engineering tools |
-| **Agents** | Markdown chat, model picker, image attachments, forecast plots from tool artifacts |
-| **Camera / head motion** | MediaPipe face mesh, nose tracker, motion log export + share-to-agent |
-| **Launch intro** | Cinematic Adelpha intro once per browser session |
+!!! tip "One installer"
+    A packaged Adelpha starts its own Twin, Imaging Console, and (after you add a key) Agents services. See [Desktop packaging](packaging/index.md).
 
-Provenance is first-class: every quantity shows `measured` / `estimated` / `predicted` / `nominal`. Predicted fields appear only after a forecast request. Software version shown in the console is Adelpha **0.1.0**.
+    Developers who open the UI in a browser still start those APIs themselves. See [Getting started](start/index.md).
 
-## Quick start
+## Open the app
 
-```bash
-# Terminal 1 — Twin API (required for Digital Twin)
-cd ../dtam && make twin-api
+=== "I have a DMG or installer"
 
-# Terminal 2 — Agents API (optional)
-cd ../dtam && make agents-api
+    Install Adelpha, then open it.
 
-# Terminal 3 — MRI console API (required for Imaging Console)
-cd console && python -m services.api
+    On an unsigned Mac build, use **Right-click → Open** the first time. The window is dark on purpose; the interface appears after a short intro.
 
-# Terminal 4 — this UI
-npm install
-make tauri-dev          # Vite HMR + Tauri + Python supervisor
-# or: npm run dev       # browser only; start APIs yourself
-# or: npm run electron:dev  # legacy Electron
-```
+    Next: [Settings](guide/settings.md) for a scanner model and, if you want Agents, a Google API key.
 
-Tauri injects one supervisor origin (no fixed ports). Vite/Electron still proxy:
+=== "I am developing"
 
-- `/api/dtam/*` → Twin API `:8080`
-- `/api/agents/*` → Agents API `:8001`
-- `/api/mri/*` → MRI console API `:8002`
+    ```bash
+    make install
+    make tauri-dev
+    ```
 
-Use **⌘K** to open the workspace switcher. Press `?replayIntro=1` on the URL to replay the launch animation.
+    DTAM lives in this repo at `dtam/`. The supervisor starts with the window. Details: [Getting started](start/index.md).
 
-Preview this documentation:
-
-```bash
-uv sync --group docs
-make docs-serve
-```
+Use **⌘K** (Ctrl+K on Windows/Linux) to switch workspaces. Add `?replayIntro=1` to the URL if you want the launch animation again.
 
 ## Stack
 
-- **Vite** + React 18 + TypeScript
-- **Tauri v2** — production desktop shell (`make tauri-dev`, `make dist-current`)
-- **Electron** — legacy shell until installer parity is signed off
-- **React Three Fiber** / drei / three — magnet scene
-- **MediaPipe Tasks Vision** — camera head-pose tracking
-- **xterm.js** — terminal (browser builtins; real shell in Tauri/Electron)
-- **Zustand** — twin state, head motion, console prefs
-- **Python supervisor** — FastAPI gateway + DTAM + MRI façade + optional ADK
-- **Zensical** — this docs site
+Tauri v2, React, Three.js, MediaPipe (camera), and a Python supervisor that mounts DTAM, the MRI façade, and optional Google ADK.
 
 ## Where to go next
 
-| Page | Contents |
-| --- | --- |
-| [Getting started](start/index.md) | Prerequisites, API startup, verify health |
-| [Workspaces](guide/workspaces.md) | Digital Twin · Imaging Console · Engineering Studio |
-| [Imaging Console](guide/imaging-console.md) | Operator windows, MRI API, themes, models |
-| [Architecture](guide/architecture.md) | Data flow GUI ↔ Twin / Agents / MRI APIs |
-| [Twin API](guide/twin-api.md) | Endpoints + Agents API contract |
-| [Dashboard](guide/dashboard.md) | Panels, viewport tools, Agents, terminal, camera |
-| [Desktop packaging](packaging/index.md) | Tauri v2, Python sidecar, installers, signing |
-| [Docs site](project/docs-site.md) | Building with Zensical |
+<div class="adelpha-cards">
+  <a class="adelpha-card" href="start/index.md">
+    <span class="adelpha-card__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+    </span>
+    <strong>Getting started</strong>
+    <span>Install Adelpha, first launch, and the developer setup.</span>
+  </a>
+  <a class="adelpha-card" href="guide/workspaces.md">
+    <span class="adelpha-card__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+    </span>
+    <strong>Workspaces</strong>
+    <span>Digital Twin, Imaging Console, and Engineering Studio.</span>
+  </a>
+  <a class="adelpha-card" href="guide/settings.md">
+    <span class="adelpha-card__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+    </span>
+    <strong>Settings</strong>
+    <span>CAD import, twin profile, Agents key, camera, and updates.</span>
+  </a>
+  <a class="adelpha-card" href="guide/imaging-console.md">
+    <span class="adelpha-card__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="10" height="8" x="7" y="8" rx="1"/></svg>
+    </span>
+    <strong>Imaging Console</strong>
+    <span>Exams, sequences, studies, and the Red Pitaya.</span>
+  </a>
+  <a class="adelpha-card" href="guide/dashboard.md">
+    <span class="adelpha-card__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+    </span>
+    <strong>Dashboard</strong>
+    <span>Viewport, telemetry, Agents, and the terminal.</span>
+  </a>
+  <a class="adelpha-card" href="packaging/index.md">
+    <span class="adelpha-card__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="m16.5 9.4-9-5.19"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.29 7 12 12l8.71-5"/><path d="M12 22V12"/></svg>
+    </span>
+    <strong>Desktop packaging</strong>
+    <span>Sidecar, installers, signing, and in-app updates.</span>
+  </a>
+</div>

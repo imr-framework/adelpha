@@ -36,13 +36,19 @@ base URL and an ephemeral session token at launch.
 | Clean docs/Vite output | `make clean` |
 | Clean packaging artifacts only | `make clean-packaging` |
 
-Development mode (`tauri dev`) runs `runtime/python/.venv/bin/python -m adelpha_runtime`
-when the bundled sidecar is absent (`make install` creates that venv). Production
+Development mode (`tauri dev`) prefers `dtam/.venv` when present, otherwise
+`runtime/python/.venv`, and runs `python -m adelpha_runtime`. Production
 installs use only the PyInstaller onedir copied to `src-tauri/resources/python-runtime/`
-and remapped in the app bundle to `$RESOURCE/python-runtime/` (not nested under
-an extra `resources/` folder). If the DMG step fails on macOS (`bundle_dmg.sh` /
-Finder AppleScript), the `.app` is still valid; run `make dmg` to wrap it with
-`hdiutil`.
+and remapped in the app bundle to `$RESOURCE/python-runtime/`. If the DMG step
+fails on macOS (`bundle_dmg.sh` / Finder AppleScript), the `.app` is still
+valid; run `make dmg` to wrap it with `hdiutil` (version comes from
+`tauri.conf.json`).
+
+The packaged WebView CSP allows `blob:` (imported CAD), `wasm-unsafe-eval`
+(STEP tessellation and MediaPipe), and `mediastream:` (camera). MediaPipe WASM
+is copied from `node_modules` into `public/mediapipe/wasm` at Vite start (gitignored)
+and shipped in `dist/`. macOS hardened runtime includes the **camera** and
+**network.client** entitlements. See [Signing](signing.md).
 
 Vite-only `npm run dev` still proxies `/api/*` to the classic fixed ports
 for browser work. Electron scripts remain for comparison until parity is
@@ -65,7 +71,7 @@ signed off.
 | HalbachMRIDesigner | GPL-3 vendor clone | Not bundled |
 | DTAM | Regular tree at `dtam/` | Sidecar build reads `dtam/src` |
 | Secrets | Local `dtam/.env` must never ship | User pastes `GOOGLE_API_KEY` in app config (`<config>/google_api_key`) |
-| Sidecar packager | PyInstaller vs Nuitka | **PyInstaller onedir** — scipy/numpy/ADK native libs are safer this way |
+| Sidecar packager | PyInstaller vs Nuitka | **PyInstaller onedir**. Safer for scipy, numpy, and ADK native libs. |
 
 ## Service registry
 

@@ -12,10 +12,16 @@ Required for a Gatekeeper-trusted DMG:
 
 1. Developer ID Application certificate (`.p12`) and password.
 2. Apple ID (or App Store Connect API) for notarization.
-3. Hardened runtime is enabled in `tauri.conf.json`.
+3. Hardened runtime is enabled in `tauri.conf.json`. `Entitlements.plist` must
+   include `com.apple.security.device.camera` (head tracking) and
+   `com.apple.security.network.client` (Twin/MRI/Agents and vision models).
 4. Sign the **sidecar onedir** (`adelpha-python-runtime` and native `.so/.dylib`
    under `_internal/`) with the same Developer ID before bundling, or Tauri
    will ship an unsigned helper and Gatekeeper will fail.
+
+A **Developer ID** is a paid [Apple Developer Program](https://developer.apple.com/programs/)
+membership (~US$99/year). The in-app updater key is free (see below). Local
+unsigned DMGs still run with **Right-click → Open**.
 
 GitHub Actions secrets (names only):
 
@@ -49,7 +55,7 @@ runtime is missing.
 
 `.deb` and AppImage are not code-signed in this repo. Distribute checksums
 (`SHA256SUMS`) from CI. Hardware access for a future MaRCoS USB/network
-device may need udev rules installed by the user — not by a silent postinst
+device may need udev rules installed by the user, not by a silent postinst
 that programs FPGAs.
 
 ## In-app updates (Settings → Updates)
@@ -107,7 +113,8 @@ Platforms without a matching `.sig` are omitted. The updater plugin
 rejects a feed that lists a platform with an empty URL.
 
 Local `make dist-current` signs updater artifacts when
-`src-tauri/updater.key` or `TAURI_SIGNING_PRIVATE_KEY` is present;
-otherwise it builds without them. Apple Developer ID / Authenticode
-(the tables above) are separate from this minisign key: Gatekeeper
-trusts the OS signature; Settings trusts the updater signature.
+`TAURI_SIGNING_PRIVATE_KEY` is set, or when `src-tauri/updater.key` exists
+(the Makefile passes the **file contents**, which is what Tauri reads).
+Otherwise it builds without updater signatures. Apple Developer ID /
+Authenticode (the tables above) are separate: Gatekeeper trusts the OS
+signature; Settings trusts the updater signature.
