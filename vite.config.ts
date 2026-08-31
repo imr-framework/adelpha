@@ -1,8 +1,25 @@
-import { defineConfig } from "vite";
+import { cpSync, existsSync, mkdirSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 
+const root = dirname(fileURLToPath(import.meta.url));
+
+/** Ship MediaPipe WASM next to the UI so the packaged WebView does not load jsDelivr. */
+function mediapipeWasm(): Plugin {
+  const src = resolve(root, "node_modules/@mediapipe/tasks-vision/wasm");
+  const dest = resolve(root, "public/mediapipe/wasm");
+  const copy = () => {
+    if (!existsSync(src)) return;
+    mkdirSync(dest, { recursive: true });
+    cpSync(src, dest, { recursive: true });
+  };
+  return { name: "mediapipe-wasm", buildStart: copy };
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), mediapipeWasm()],
   assetsInclude: ["**/*.wasm"],
   optimizeDeps: {
     exclude: ["occt-import-js"],

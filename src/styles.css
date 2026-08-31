@@ -2123,6 +2123,16 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   display: block;
 }
 
+.viewport-cad-error {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: rgba(232, 232, 232, 0.7);
+  text-align: center;
+}
+
 .viewport-dashboard-btn {
   position: absolute;
   top: 12px;

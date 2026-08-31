@@ -135,22 +135,30 @@ export async function hydrateImportedModels(): Promise<void> {
       hydrated = true;
       return;
     }
-    const db = await openDb();
     try {
-      const kept: ImportedModelMeta[] = [];
-      for (const row of meta) {
-        const blob = await idbRequest(
-          db.transaction(STORE, "readonly").objectStore(STORE).get(row.id),
-        );
-        if (!(blob instanceof Blob) || blob.size === 0) continue;
-        const prev = urls.get(row.id);
-        if (prev) URL.revokeObjectURL(prev);
-        urls.set(row.id, URL.createObjectURL(blob));
-        kept.push(row);
+      const db = await openDb();
+      try {
+        const kept: ImportedModelMeta[] = [];
+        for (const row of meta) {
+          try {
+            const blob = await idbRequest(
+              db.transaction(STORE, "readonly").objectStore(STORE).get(row.id),
+            );
+            if (!(blob instanceof Blob) || blob.size === 0) continue;
+            const prev = urls.get(row.id);
+            if (prev) URL.revokeObjectURL(prev);
+            urls.set(row.id, URL.createObjectURL(blob));
+            kept.push(row);
+          } catch {
+            /* skip a corrupt row */
+          }
+        }
+        if (kept.length !== meta.length) writeImportedMeta(kept);
+      } finally {
+        db.close();
       }
-      if (kept.length !== meta.length) writeImportedMeta(kept);
-    } finally {
-      db.close();
+    } catch {
+      writeImportedMeta([]);
     }
     hydrated = true;
     announceCatalog();
@@ -158,6 +166,40 @@ export async function hydrateImportedModels(): Promise<void> {
     hydratePromise = null;
   });
   return hydratePromise;
+}
+
+/** Drop every imported CAD blob so a bad file cannot take the UI down again. */
+export async function clearAllImportedModels(): Promise<void> {
+  const rows = readImportedMeta();
+  for (const row of rows) {
+    try {
+      await removeImportedModel(row.id);
+    } catch {
+      /* continue */
+    }
+  }
+  for (const url of urls.values()) URL.revokeObjectURL(url);
+  urls.clear();
+  writeImportedMeta([]);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.deleteDatabase(DB_NAME);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error ?? new Error("Could not clear CAD storage."));
+      req.onblocked = () => resolve();
+    });
+  } catch {
+    /* already empty */
+  }
+  hydrated = false;
+  hydratePromise = null;
+  try {
+    const { setScannerModel, readScannerModel } = await import("./scannerModel");
+    if (isImportedModelId(readScannerModel())) setScannerModel("halbach-48");
+  } catch {
+    /* catalog not ready */
+  }
+  announceCatalog();
 }
 
 export async function importCadFile(file: File): Promise<ImportedModelMeta> {

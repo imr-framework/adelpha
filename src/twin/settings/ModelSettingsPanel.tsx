@@ -29,7 +29,7 @@ import {
   imageFileToPreview,
   setDevicePreview,
 } from "../devicePreviews";
-import { importCadFile, importedObjectUrl, removeImportedModel } from "../importedModels";
+import { clearAllImportedModels, importCadFile, importedObjectUrl, removeImportedModel } from "../importedModels";
 import {
   getScannerProfile,
   useScannerCatalog,
@@ -985,7 +985,11 @@ function FilesTab({
     try {
       const imported = await importCadFile(file);
       const url = importedObjectUrl(imported.id);
-      if (url) useGLTF.preload(url);
+      try {
+        if (url) useGLTF.preload(url);
+      } catch {
+        /* viewport will load it; preload must not take down Settings */
+      }
       onChoose(imported.id);
       setMessage(`${imported.fileName} is now the active scanner model.`);
     } catch (err) {
@@ -1130,6 +1134,32 @@ function FilesTab({
             );
           })}
         </ul>
+        {catalog.some((model) => model.imported) ? (
+          <SettingsRow
+            title="Clear imported models"
+            description="Removes every imported CAD file from this computer if one of them is crashing the viewport."
+          >
+            <button
+              type="button"
+              className="settings-btn"
+              disabled={busy}
+              onClick={() => {
+                setBusy(true);
+                setError(null);
+                setMessage(null);
+                void clearAllImportedModels()
+                  .then(() => {
+                    onChoose("halbach-48");
+                    setMessage("Cleared imported models.");
+                  })
+                  .catch((err) => setError(err instanceof Error ? err.message : String(err)))
+                  .finally(() => setBusy(false));
+              }}
+            >
+              Clear all imports
+            </button>
+          </SettingsRow>
+        ) : null}
       </SettingsSection>
     </>
   );

@@ -52,9 +52,12 @@ import {
   cadForScanner,
   MAGNET_CAD_SCALE_MAX,
   MAGNET_CAD_SCALE_MIN,
+  setScannerModel,
   useScannerCatalog,
   useScannerModel,
 } from "./twin/scannerModel";
+import { ErrorBoundary } from "./twin/ErrorBoundary";
+import { isImportedModelId } from "./twin/importedModels";
 import { applyConsoleTheme, readConsoleTheme } from "./twin/consoleTheme";
 import {
   readWorkspacePrefs,
@@ -782,9 +785,21 @@ export default function App() {
               />
             </Suspense>
           ) : (
-            <Suspense fallback={null}>
-              <TwinCanvas />
-            </Suspense>
+            <ErrorBoundary
+              resetKey={scannerId}
+              onError={() => {
+                if (isImportedModelId(scannerId)) setScannerModel("halbach-48");
+              }}
+              fallback={
+                <div className="viewport-cad-error">
+                  <p>Could not load that CAD model. Switching back to a bundled scanner.</p>
+                </div>
+              }
+            >
+              <Suspense fallback={null}>
+                <TwinCanvas />
+              </Suspense>
+            </ErrorBoundary>
           )}
           {showDashboard ? (
             <div className="liquid-dashboard">

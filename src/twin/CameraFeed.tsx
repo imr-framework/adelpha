@@ -56,6 +56,19 @@ const MODEL_URL =
 const SEGMENTER_MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter_landscape/float16/latest/selfie_segmenter_landscape.tflite";
 
+function visionWasmBase(): string {
+  return new URL("mediapipe/wasm", document.baseURI).href.replace(/\/+$/, "");
+}
+
+async function loadVisionFileset() {
+  try {
+    return await FilesetResolver.forVisionTasks(visionWasmBase());
+  } catch (err) {
+    if (!import.meta.env.DEV) throw err;
+    return FilesetResolver.forVisionTasks(WASM_CDN);
+  }
+}
+
 const UI_HZ = 12;
 const UI_INTERVAL_MS = 1000 / UI_HZ;
 const INFER_HZ = 15;
@@ -826,23 +839,6 @@ export function CameraFeed({
       }
 
       try {
-        setStatus("Loading vision models…");
-        const vision = await FilesetResolver.forVisionTasks(WASM_CDN);
-        if (cancelled) return;
-        visionRef.current = vision;
-
-        landmarkerRef.current = await FaceLandmarker.createFromOptions(vision, {
-          baseOptions: {
-            modelAssetPath: MODEL_URL,
-            delegate: "GPU",
-          },
-          runningMode: "VIDEO",
-          numFaces: 1,
-          outputFaceBlendshapes: false,
-          outputFacialTransformationMatrixes: true,
-        });
-        if (cancelled) return;
-
         setStatus("Requesting camera…");
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
@@ -866,15 +862,47 @@ export function CameraFeed({
 
         syncCanvasSize();
         setReady(true);
-        setStatus("Looking for face…");
+        setStatus("Loading vision models…");
         track();
+
+        const vision = await loadVisionFileset();
+        if (cancelled) return;
+        visionRef.current = vision;
+
+        const landmarkerOpts = {
+          runningMode: "VIDEO" as const,
+          numFaces: 1,
+          outputFaceBlendshapes: false,
+          outputFacialTransformationMatrixes: true,
+        };
+        try {
+          landmarkerRef.current = await FaceLandmarker.createFromOptions(vision, {
+            ...landmarkerOpts,
+            baseOptions: { modelAssetPath: MODEL_URL, delegate: "GPU" },
+          });
+        } catch {
+          landmarkerRef.current = await FaceLandmarker.createFromOptions(vision, {
+            ...landmarkerOpts,
+            baseOptions: { modelAssetPath: MODEL_URL, delegate: "CPU" },
+          });
+        }
+        if (cancelled) return;
+
+        setStatus("Looking for face…");
       } catch (err) {
         if (cancelled) return;
         const name = err instanceof DOMException ? err.name : "";
         if (name === "NotAllowedError" || name === "PermissionDeniedError") {
-          setError("Camera permission denied. Allow access and try again.");
+          setError("Camera permission denied. Allow access in System Settings → Privacy & Security → Camera.");
         } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
           setError("No camera was found on this device.");
+        } else if (stream && videoRef.current?.srcObject) {
+          setStatus("");
+          setError(
+            err instanceof Error
+              ? `Camera is open, but head tracking failed: ${err.message}`
+              : "Camera is open, but head tracking failed to load.",
+          );
         } else {
           setError(err instanceof Error ? err.message : "Could not start camera tracking.");
         }
@@ -1098,17 +1126,17 @@ export function CameraFeed({
           ref={personCanvasRef}
           className="camera-feed-person"
           aria-hidden
-          style={{ opacity: ready && !error ? 1 : 0 }}
+          style={{ opacity: ready ? 1 : 0 }}
         />
         <canvas
           ref={canvasRef}
           className="camera-feed-mask"
           aria-hidden
-          style={{ opacity: ready && !error ? 1 : 0 }}
+          style={{ opacity: ready ? 1 : 0 }}
         />
       </div>
 
-      {ready && !error ? (
+      {ready ? (
         <div className="camera-head-hud-stack">
           <div className="camera-head-hud" aria-live="polite">
             <div className="camera-head-hud-title">

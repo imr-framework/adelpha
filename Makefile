@@ -28,8 +28,12 @@ sidecar:
 	python3 runtime/python/build_sidecar.py
 
 dist-current: sidecar
-	@if [ -n "$$TAURI_SIGNING_PRIVATE_KEY$$TAURI_SIGNING_PRIVATE_KEY_PATH" ] || [ -f src-tauri/updater.key ]; then \
-	  TAURI_SIGNING_PRIVATE_KEY_PATH=$${TAURI_SIGNING_PRIVATE_KEY_PATH:-$(CURDIR)/src-tauri/updater.key} \
+	@if [ -n "$$TAURI_SIGNING_PRIVATE_KEY" ]; then \
+	  CI=true npm run tauri:build || $(MAKE) dmg; \
+	elif [ -f src-tauri/updater.key ]; then \
+	  echo "Signing updater artifacts from src-tauri/updater.key"; \
+	  TAURI_SIGNING_PRIVATE_KEY="$$(cat src-tauri/updater.key)" \
+	  TAURI_SIGNING_PRIVATE_KEY_PASSWORD="$${TAURI_SIGNING_PRIVATE_KEY_PASSWORD-}" \
 	    CI=true npm run tauri:build || $(MAKE) dmg; \
 	else \
 	  echo "No updater signing key; building without updater artifacts."; \

@@ -27,6 +27,9 @@ packaging/sidecar/
 src-tauri/resources/python-runtime/**
 !src-tauri/resources/python-runtime/README.md
 
+# Copied from node_modules on Vite start (camera tracking in the DMG)
+public/mediapipe/
+
 # IDE / OS
 .vscode/
 .idea/

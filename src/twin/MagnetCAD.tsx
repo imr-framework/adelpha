@@ -1,5 +1,7 @@
 import type { MutableRefObject, ReactNode } from "react";
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { ErrorBoundary } from "./ErrorBoundary";
+import { isImportedModelId } from "./importedModels";
 import { useFrame, useLoader, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import type CameraControlsImpl from "camera-controls";
@@ -7,7 +9,12 @@ import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { isPartColorHex, usePartInspectorStore, type CadPartRef, type PartBinding } from "./partInspectorStore";
-import { useScannerModel, type ScannerModelId } from "./scannerModel";
+import {
+  readScannerModel,
+  setScannerModel,
+  useScannerModel,
+  type ScannerModelId,
+} from "./scannerModel";
 import { subscribePartFocus } from "./viewportFocus";
 
 const CAD_TECH_COLOR = new THREE.Color("#5f748a");
@@ -548,7 +555,22 @@ function collectExplodeParts(root: THREE.Object3D): { parts: ExplodePart[]; dist
   return { parts, distance };
 }
 
+function meshStats(root: THREE.Object3D): { meshes: number; triangles: number } {
+  let meshes = 0;
+  let triangles = 0;
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+    meshes += 1;
+    const index = child.geometry.getIndex();
+    const positions = child.geometry.getAttribute("position");
+    triangles += index ? index.count / 3 : (positions?.count ?? 0) / 3;
+  });
+  return { meshes, triangles };
+}
+
 function addNeonEdgeOverlay(root: THREE.Object3D): THREE.LineSegments[] {
+  const { meshes, triangles } = meshStats(root);
+  if (meshes > 120 || triangles > 400_000) return [];
   const edges: THREE.LineSegments[] = [];
   root.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
@@ -886,21 +908,29 @@ export function MagnetCADSuspense(props: {
   const scale = Math.max(props.userScale, 1e-8);
   const position: [number, number, number] = [props.offsetX, 0.345 + props.offsetY, props.offsetZ];
   return (
-    <Suspense fallback={props.fallback}>
-      <MagnetFromCADFile
-        url={props.url}
-        exploded={props.exploded}
-        b0Ratio={props.b0Ratio}
-        magnetTempC={props.magnetTempC}
-        scale={scale}
-        rotation={rotationFromDeg(props.rotationDeg)}
-        position={position}
-        wireframe={props.wireframe}
-        hybridRender={props.hybridRender}
-        showTemperatureMap={props.showTemperatureMap}
-        explodeParts={props.explodeParts}
-        useModelColors={props.useModelColors}
-      />
-    </Suspense>
+    <ErrorBoundary
+      resetKey={props.url}
+      fallback={props.fallback}
+      onError={() => {
+        if (isImportedModelId(readScannerModel())) setScannerModel("halbach-48");
+      }}
+    >
+      <Suspense fallback={props.fallback}>
+        <MagnetFromCADFile
+          url={props.url}
+          exploded={props.exploded}
+          b0Ratio={props.b0Ratio}
+          magnetTempC={props.magnetTempC}
+          scale={scale}
+          rotation={rotationFromDeg(props.rotationDeg)}
+          position={position}
+          wireframe={props.wireframe}
+          hybridRender={props.hybridRender}
+          showTemperatureMap={props.showTemperatureMap}
+          explodeParts={props.explodeParts}
+          useModelColors={props.useModelColors}
+        />
+      </Suspense>
+    </ErrorBoundary>
   );
 }

@@ -233,7 +233,12 @@ export function useScannerCatalog(): ScannerModelProfile[] {
   useEffect(() => {
     const refresh = () => setProfiles(listScannerProfiles());
     window.addEventListener(CATALOG_EVENT, refresh);
-    void hydrateImportedModels().catch(() => undefined);
+    void hydrateImportedModels()
+      .catch(() => undefined)
+      .then(() => {
+        const id = readScannerModel();
+        if (isImportedModelId(id) && !importedObjectUrl(id)) setScannerModel("halbach-48");
+      });
     return () => window.removeEventListener(CATALOG_EVENT, refresh);
   }, []);
   return profiles;

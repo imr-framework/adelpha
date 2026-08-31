@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import App from "../App";
 import { LaunchScreen } from "../twin/launch/LaunchScreen";
 import { shouldPlayLaunchIntro } from "../twin/launch/launchConfig";
+import { CrashScreen } from "./CrashScreen";
 import { RecoveryScreen } from "./RecoveryScreen";
+import { ErrorBoundary } from "../twin/ErrorBoundary";
 import {
   initDesktopRuntime,
   installDesktopBridges,
@@ -66,5 +68,9 @@ export function Boot() {
     );
   }
 
-  return <App />;
+  return (
+    <ErrorBoundary fallbackRender={(error) => <CrashScreen error={error} />}>
+      <App />
+    </ErrorBoundary>
+  );
 }

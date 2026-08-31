@@ -14,7 +14,11 @@ else
   APP="$DEFAULT_APP"
 fi
 OUT_DIR="${ADELPHA_DMG_DIR:-$ROOT/src-tauri/target/release/bundle/dmg}"
-VERSION="${ADELPHA_VERSION:-0.1.0}"
+if [[ -z "${ADELPHA_VERSION:-}" ]]; then
+  VERSION="$(python3 -c "import json; print(json.load(open(r'$ROOT/src-tauri/tauri.conf.json'))['version'])")"
+else
+  VERSION="$ADELPHA_VERSION"
+fi
 ARCH="$(uname -m)"
 case "$ARCH" in
   arm64) ARCH=aarch64 ;;
