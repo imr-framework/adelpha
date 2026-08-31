@@ -114,8 +114,13 @@ def wait_for_listen(port: int, child: subprocess.Popen, *, timeout: float = 30.0
         if child.poll() is not None:
             raise RuntimeError(f"process exited before it listened (code {child.returncode})")
         try:
-            with socket.create_connection(("127.0.0.1", port), timeout=0.25):
-                return
+            probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            probe.settimeout(0.25)
+            try:
+                probe.connect(("127.0.0.1", port))
+            finally:
+                probe.close()
+            return
         except OSError:
             time.sleep(0.1)
     raise RuntimeError(f"process did not listen on 127.0.0.1:{port} within {timeout:.0f}s")

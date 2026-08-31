@@ -161,7 +161,7 @@ def main() -> int:
     if TAURI_RESOURCES.exists():
         shutil.rmtree(TAURI_RESOURCES)
     shutil.copytree(bundle, TAURI_RESOURCES)
-    print(f"sidecar onedir → {TAURI_RESOURCES}")
+    print(f"sidecar onedir -> {TAURI_RESOURCES}")
     print(f"target triple (for naming/docs): {target_triple()}")
     print("Tauri copies this onedir to $RESOURCE/python-runtime/adelpha-python-runtime")
     return 0
