@@ -35,8 +35,9 @@ GitHub Actions secrets (names only):
 Tauri env: `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`,
 `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`.
 
-Intel DMG is built on `macos-13` (x86_64). A universal DMG is **not** produced:
-the Python sidecar cannot be assumed universal.
+Intel DMG is built on `macos-15-intel` (x86_64). Apple Silicon DMG is built on
+`macos-15`. A universal DMG is **not** produced: the Python sidecar cannot be
+assumed universal.
 
 ## Windows (x64 NSIS)
 
@@ -96,8 +97,8 @@ have the secrets configured.
    a later version is on GitHub Latest.
 2. Push a tag `vX.Y.Z` (example: `v0.2.0`).
 3. The `desktop.yml` workflow builds each platform, then the
-   `publish-updater` job writes `latest.json` and uploads artifacts to
-   that GitHub Release.
+   `publish-release` job writes `latest.json` (when signatures exist) and
+   uploads artifacts to that GitHub Release.
 
 `latest.json` is assembled by `packaging/updater/assemble_latest_json.py`
 from:

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/logos/adelpha-gradient-logo.svg" alt="Adelpha" width="180" />
+<!-- <img src="public/logos/adelpha-gradient-logo.svg" alt="Adelpha" width="180" /> -->
 
 # Adelpha
 

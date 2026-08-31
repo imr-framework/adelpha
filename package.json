@@ -1,7 +1,7 @@
 {
   "name": "adelpha-digital-twin",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.5.1",
   "description": "Adelpha digital twin observer GUI for DTAM",
   "author": "Adelpha / Geethanath lab",
   "main": "electron/main.cjs",

@@ -58,6 +58,12 @@ def main() -> int:
             "signature": sig.read_text(encoding="utf-8").strip(),
         }
 
+    if not platforms:
+        print("no signed updater artifacts; skipping latest.json")
+        if args.out.exists():
+            args.out.unlink()
+        return 0
+
     payload = {
         "version": args.version.lstrip("v"),
         "notes": args.notes,
@@ -66,8 +72,6 @@ def main() -> int:
     }
     args.out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {args.out} with {len(platforms)} platform(s)")
-    if not platforms:
-        return 1
     return 0
 
 

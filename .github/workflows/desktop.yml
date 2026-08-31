@@ -13,6 +13,7 @@ on:
       - "runtime/python/**"
       - "src/**"
       - "package.json"
+      - "packaging/**"
       - ".github/workflows/desktop.yml"
 
 concurrency:
@@ -25,10 +26,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14
+          - os: macos-15
             rust_target: aarch64-apple-darwin
             artifact: macos-arm64
-          - os: macos-13
+          - os: macos-15-intel
             rust_target: x86_64-apple-darwin
             artifact: macos-x64
           - os: windows-latest
@@ -89,25 +90,55 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
+          set +e
           if [ -n "${TAURI_SIGNING_PRIVATE_KEY}" ]; then
-            CI=true npm run tauri:build
+            CI=true npx tauri build --target "${{ matrix.rust_target }}"
           else
             echo "No TAURI_SIGNING_PRIVATE_KEY; skipping updater signatures."
-            CI=true npx tauri build --config '{"bundle":{"createUpdaterArtifacts":false}}'
+            CI=true npx tauri build --target "${{ matrix.rust_target }}" \
+              --config '{"bundle":{"createUpdaterArtifacts":false}}'
           fi
+          status=$?
+          set -e
+
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            dmg="$(find src-tauri/target -path "*/bundle/dmg/*.dmg" -type f 2>/dev/null | head -n 1 || true)"
+            if [ -z "$dmg" ]; then
+              echo "Tauri DMG missing (status=$status); wrapping .app with hdiutil."
+              bash packaging/macos/make_dmg.sh
+            fi
+          fi
+
+          installer="$(find src-tauri/target -type f \( \
+            -path "*/bundle/dmg/*.dmg" -o \
+            -path "*/bundle/nsis/*.exe" -o \
+            -path "*/bundle/msi/*.msi" -o \
+            -path "*/bundle/deb/*.deb" -o \
+            -path "*/bundle/appimage/*.AppImage" \
+          \) 2>/dev/null | head -n 1 || true)"
+          if [ -z "$installer" ]; then
+            echo "No installer in src-tauri/target/**/bundle (tauri status=$status)."
+            find src-tauri/target -path "*/bundle/*" -print | head -n 80 || true
+            exit 1
+          fi
+          echo "Installer present: $installer"
 
       - name: Collect artifacts
         run: |
           mkdir -p artifacts
-          if [ -d src-tauri/target ]; then
-            find src-tauri/target -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" \) -print0 \
-              | xargs -0 -I{} cp {} artifacts/ || true
-          fi
+          find src-tauri/target -type f \( \
+            -path "*/bundle/dmg/*.dmg" -o \
+            -path "*/bundle/nsis/*.exe" -o \
+            -path "*/bundle/msi/*.msi" -o \
+            -path "*/bundle/deb/*.deb" -o \
+            -path "*/bundle/appimage/*.AppImage" \
+          \) -exec cp {} artifacts/ \;
+
           copy_updater() {
             local dest="$1"
             local pattern="$2"
             local found
-            found="$(find src-tauri/target -type f -name "$pattern" 2>/dev/null | head -n 1)"
+            found="$(find src-tauri/target -type f -name "$pattern" 2>/dev/null | head -n 1 || true)"
             if [ -n "$found" ]; then
               cp "$found" "artifacts/$dest"
             fi
@@ -130,17 +161,29 @@ jobs:
               copy_updater "Adelpha-linux-x86_64.AppImage.sig" "*.AppImage.sig"
               ;;
           esac
-          if ls artifacts/* >/dev/null 2>&1; then
-            (cd artifacts && shasum -a 256 * > "SHA256SUMS-${{ matrix.artifact }}")
-          fi
+
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          root = Path("artifacts")
+          files = sorted(p for p in root.iterdir() if p.is_file() and not p.name.startswith("SHA256SUMS"))
+          if not files:
+              raise SystemExit("artifacts/ is empty")
+          lines = []
+          for path in files:
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              lines.append(f"{digest}  {path.name}")
+              print(f"{digest}  {path.name}")
+          (root / "SHA256SUMS-${{ matrix.artifact }}").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
 
       - uses: actions/upload-artifact@v4
         with:
           name: adelpha-${{ matrix.artifact }}-${{ github.sha }}
           path: artifacts/
-          if-no-files-found: warn
+          if-no-files-found: error
 
-  publish-updater:
+  publish-release:
     if: always() && startsWith(github.ref, 'refs/tags/v') && needs.sidecar-and-installer.result != 'cancelled'
     needs: sidecar-and-installer
     runs-on: ubuntu-22.04
@@ -153,6 +196,27 @@ jobs:
         with:
           path: dist-artifacts
           merge-multiple: true
+          pattern: adelpha-*
+
+      - name: Require at least one installer
+        run: |
+          count="$(find dist-artifacts -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" \) | wc -l | tr -d ' ')"
+          echo "Installer files: $count"
+          find dist-artifacts -type f -print | sort
+          test "$count" -gt 0
+
+      - name: Combine checksums
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path("dist-artifacts")
+          lines = []
+          for path in sorted(root.glob("SHA256SUMS-*")):
+              lines.extend(path.read_text(encoding="utf-8").splitlines())
+          if lines:
+              (root / "SHA256SUMS").write_text("\n".join(lines) + "\n", encoding="utf-8")
+              print(f"wrote SHA256SUMS with {len(lines)} entries")
+          PY
 
       - name: Assemble latest.json
         run: |
