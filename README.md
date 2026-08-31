@@ -20,10 +20,33 @@
 
 **Adelpha** is an open-source, intelligent digital-twin platform for developing, monitoring, and operating low-field MRI systems. It integrates scanner visualization, real-time system data, imaging workflows, engineering tools, and AI-assisted capabilities within a unified environment. Its modular architecture can also be adapted to other MRI systems and research applications.
 
-A release build is one installer plus a Python sidecar. Users do not install Python, Node, Rust, or pip packages. You can import your own **GLB / STEP** magnets, ping a **Red Pitaya**, and use the **camera** for head-pose tracking.
-
 > [!NOTE]
 > Packaging and signing: [`docs/packaging/index.md`](docs/packaging/index.md). DTAM is MIT; the imaging console in the sidecar is GPL-3.
+
+## Clone
+
+```bash
+git clone https://github.com/imr-framework/adelpha.git
+```
+
+Clone a specific branch with `-b`.
+
+```bash
+git clone -b [branch_name] https://github.com/imr-framework/adelpha.git
+```
+Example:
+
+```bash
+git clone -b workshop/delta-2026 https://github.com/imr-framework/adelpha.git
+```
+
+To fetch only that branch:
+
+```bash
+git clone -b [branch_name] --single-branch https://github.com/imr-framework/adelpha.git
+```
+
+If you already have a clone, switch with `git checkout [branch_name]`.
 
 ## Install (developers)
 
