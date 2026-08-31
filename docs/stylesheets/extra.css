@@ -50,6 +50,27 @@
   box-shadow: none;
 }
 
+.md-main__inner {
+  margin-top: 0.35rem;
+}
+
+.md-content__inner {
+  padding-top: 0.15rem;
+}
+
+.md-content__inner:before {
+  height: 0;
+}
+
+.md-sidebar {
+  padding-top: 0.15rem;
+  top: 3.6rem;
+}
+
+.md-header--lifted ~ .md-container .md-sidebar {
+  top: 3.6rem;
+}
+
 @media screen and (min-width: 76.25em) {
   .md-grid {
     max-width: none;
@@ -66,8 +87,12 @@
 
   .md-sidebar--primary {
     width: 12.4rem;
-    padding: 0.5rem 0.35rem 1.25rem 0.55rem;
+    padding: 0.15rem 0.35rem 1.25rem 0.55rem;
     border-right: none;
+  }
+
+  .md-header--lifted ~ .md-container .md-sidebar {
+    top: 3.6rem;
   }
 
   [dir="ltr"] .md-sidebar--primary:not([hidden]) ~ .md-content > .md-content__inner {
