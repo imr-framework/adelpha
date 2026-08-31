@@ -54,7 +54,7 @@ If you already have a clone, switch with `git checkout [branch_name]`.
 
 ```bash
 make install
-make tauri-dev          # Vite + Tauri + Python supervisor
+make tauri-dev
 ```
 
 The terminal and native file dialogs need Tauri. `npm run dev` is browser-only; start Twin / Agents / MRI APIs yourself (see [Getting started](docs/start/index.md)).
