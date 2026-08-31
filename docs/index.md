@@ -90,7 +90,7 @@ Tauri v2, React, Three.js, MediaPipe (camera), and a Python supervisor that moun
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
     </span>
     <strong>Download</strong>
-    <span>macOS DMG and Linux .deb from GitHub Releases.</span>
+    <span>Get the desktop installer for your computer.</span>
   </a>
   <a class="adelpha-card" href="start/index.md">
     <span class="adelpha-card__icon" aria-hidden="true">
