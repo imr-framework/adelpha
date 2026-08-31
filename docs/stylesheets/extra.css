@@ -75,6 +75,13 @@
   --adelpha-card-bg: color-mix(in srgb, var(--md-default-fg-color) 4.5%, var(--md-default-bg-color));
   --adelpha-card-border: color-mix(in srgb, var(--md-default-fg-color) 8%, transparent);
   --adelpha-card-border-hover: color-mix(in srgb, var(--md-default-fg-color) 38%, transparent);
+  --adelpha-accent: #6d28d9;
+  --adelpha-purple: #7c3aed;
+}
+
+[data-md-color-scheme="slate"] .md-typeset {
+  --adelpha-accent: #e9d5ff;
+  --adelpha-purple: #8b5cf6;
 }
 
 .md-sidebar {
@@ -287,10 +294,8 @@
   --download-surface: var(--adelpha-card-bg);
   --download-border: var(--adelpha-card-border);
   --download-border-active: var(--adelpha-card-border-hover);
-  --download-text: #f5f5f7;
-  --download-muted: #a1a1aa;
-  --adelpha-purple: #8b5cf6;
-  --adelpha-pink: #e879f9;
+  --download-text: var(--md-default-fg-color);
+  --download-muted: var(--md-default-fg-color--light);
   --dl-text: 0.9rem;
   margin: 0 0 1.75rem;
 }
@@ -376,7 +381,7 @@
   width: 1.25rem;
   height: 1.25rem;
   margin-top: 0.12rem;
-  color: #e9d5ff;
+  color: var(--adelpha-accent);
 }
 
 .adelpha-dl-card__icon svg,
@@ -459,7 +464,7 @@
   border-radius: 0;
   background: none;
   box-shadow: none;
-  color: #e9d5ff !important;
+  color: var(--adelpha-accent) !important;
   font-weight: 650;
   font-size: var(--dl-text);
   letter-spacing: normal;
@@ -483,7 +488,7 @@
 }
 
 .md-typeset a.adelpha-dl-card__cta:visited {
-  color: #e9d5ff !important;
+  color: var(--adelpha-accent) !important;
 }
 
 .md-typeset a.adelpha-download-cta {
@@ -498,7 +503,7 @@
   border: 1px solid var(--download-border);
   background: var(--download-surface);
   box-shadow: none;
-  color: #e9d5ff !important;
+  color: var(--adelpha-accent) !important;
   font-weight: 650;
   font-size: 0.92rem;
   letter-spacing: -0.02em;
@@ -532,12 +537,12 @@
 
 .md-typeset .adelpha-dl-card__wait {
   margin-top: 0.7rem;
-  color: #e9d5ff;
+  color: var(--adelpha-accent);
   font-weight: 650;
 }
 
 .md-typeset .adelpha-dl-card__alt a {
-  color: #e9d5ff !important;
+  color: var(--adelpha-accent) !important;
   text-decoration: none !important;
   font-size: inherit;
 }
@@ -611,7 +616,7 @@
   grid-row: 1 / span 2;
   width: 1.25rem;
   height: 1.25rem;
-  color: #e9d5ff;
+  color: var(--adelpha-accent);
 }
 
 .adelpha-dl-mini__text {
@@ -635,7 +640,7 @@
 .md-typeset a.adelpha-dl-mini em {
   grid-column: 2;
   margin: 0.15rem 0 0;
-  color: #e9d5ff;
+  color: var(--adelpha-accent);
   font-style: normal;
   font-size: var(--dl-text);
   font-weight: 650;
@@ -727,7 +732,7 @@
   border: none;
   background: none;
   box-shadow: none;
-  color: #e9d5ff !important;
+  color: var(--adelpha-accent) !important;
   font-family: inherit;
   font-weight: 650;
   font-size: var(--dl-text);
@@ -753,7 +758,7 @@
 }
 
 .md-typeset .adelpha-dl-releases a {
-  color: #e9d5ff !important;
+  color: var(--adelpha-accent) !important;
   text-decoration: none !important;
 }
 
