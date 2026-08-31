@@ -90,21 +90,31 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
+          tauri_build() {
+            if [ -n "${TAURI_SIGNING_PRIVATE_KEY}" ]; then
+              CI=true npx tauri build --target "${{ matrix.rust_target }}" "$@"
+            else
+              echo "No TAURI_SIGNING_PRIVATE_KEY; skipping updater signatures."
+              CI=true npx tauri build --target "${{ matrix.rust_target }}" \
+                --config '{"bundle":{"createUpdaterArtifacts":false}}' "$@"
+            fi
+          }
+
           set +e
-          if [ -n "${TAURI_SIGNING_PRIVATE_KEY}" ]; then
-            CI=true npx tauri build --target "${{ matrix.rust_target }}"
-          else
-            echo "No TAURI_SIGNING_PRIVATE_KEY; skipping updater signatures."
-            CI=true npx tauri build --target "${{ matrix.rust_target }}" \
-              --config '{"bundle":{"createUpdaterArtifacts":false}}'
-          fi
+          tauri_build
           status=$?
           set -e
 
           if [ "${{ runner.os }}" = "macOS" ]; then
             dmg="$(find src-tauri/target -path "*/bundle/dmg/*.dmg" -type f 2>/dev/null | head -n 1 || true)"
+            app="$(find src-tauri/target -path "*/bundle/macos/Adelpha.app" -type d 2>/dev/null | head -n 1 || true)"
             if [ -z "$dmg" ]; then
-              echo "Tauri DMG missing (status=$status); wrapping .app with hdiutil."
+              if [ -z "$app" ]; then
+                echo "Codesign/bundle failed with no .app (status=$status); retrying unsigned."
+                unset APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID APPLE_SIGNING_IDENTITY
+                tauri_build --bundles app
+              fi
+              echo "Wrapping .app with hdiutil."
               bash packaging/macos/make_dmg.sh
             fi
           fi

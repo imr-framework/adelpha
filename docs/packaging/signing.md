@@ -35,6 +35,12 @@ GitHub Actions secrets (names only):
 Tauri env: `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`,
 `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`.
 
+If `security import` fails (`SecKeychainItemImport: One or more parameters
+passed to a function were not valid`), the certificate secret is not a valid
+base64 `.p12` or the password does not match. CI then retries an **unsigned**
+`.app` and wraps it with `hdiutil`. Gatekeeper will still require
+**Right-click → Open**.
+
 Intel DMG is built on `macos-15-intel` (x86_64). Apple Silicon DMG is built on
 `macos-15`. A universal DMG is **not** produced: the Python sidecar cannot be
 assumed universal.
