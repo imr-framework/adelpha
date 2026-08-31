@@ -18,7 +18,7 @@
 
 </div>
 
-**Adelpha** is the Intelligent Magnetic Resonance Framework: a desktop observer for the [DTAM](https://github.com/imr-framework/dtam) twin (vendored here as `dtam/`) and an **Imaging Console** over the bundled MRI4ALL FastAPI façade.
+**Adelpha** is an open-source, intelligent digital-twin platform for developing, monitoring, and operating low-field MRI systems. It integrates scanner visualization, real-time system data, imaging workflows, engineering tools, and AI-assisted capabilities within a unified environment. Its modular architecture can also be adapted to other MRI systems and research applications.
 
 A release build is one installer plus a Python sidecar. Users do not install Python, Node, Rust, or pip packages. You can import your own **GLB / STEP** magnets, ping a **Red Pitaya**, and use the **camera** for head-pose tracking.
 
