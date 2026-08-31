@@ -9,6 +9,7 @@ Copyright &copy; 2026 Adelpha contributors
 """
 extra_javascript = [
   "javascripts/mathjax.js",
+  "javascripts/download.js",
   "https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js",
 ]
 extra_css = [
@@ -18,6 +19,7 @@ extra_css = [
 nav = [
   { "Get started" = [
       { "What is Adelpha?" = "index.md" },
+      { Download = "start/download.md" },
       { "Getting started" = "start/index.md" },
     ]
   },

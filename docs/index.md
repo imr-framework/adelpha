@@ -8,6 +8,10 @@ icon: lucide/monitor
 
 You get one window, three workspaces, and a bundled Python runtime. You do not install Python, Node, or Rust to *use* a release build.
 
+<!-- <p>
+  <a class="adelpha-download-cta" href="start/download.md">Download for macOS</a>
+</p> -->
+
 <figure class="adelpha-preview">
   <img src="assets/adelpha-preview.png" alt="Adelpha Digital Twin workspace showing the 3D scanner, the Digital Twin workspace control in the top bar, live telemetry, and the terminal." width="1440" />
   <figcaption>Digital Twin workspace. The workspace control in the top bar switches to Imaging Console or Engineering Studio.</figcaption>
@@ -81,6 +85,13 @@ Tauri v2, React, Three.js, MediaPipe (camera), and a Python supervisor that moun
 ## Where to go next
 
 <div class="adelpha-cards">
+  <a class="adelpha-card" href="start/download.md">
+    <span class="adelpha-card__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+    </span>
+    <strong>Download</strong>
+    <span>macOS DMG and Linux .deb from GitHub Releases.</span>
+  </a>
   <a class="adelpha-card" href="start/index.md">
     <span class="adelpha-card__icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>

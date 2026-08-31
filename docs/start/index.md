@@ -8,7 +8,7 @@ Adelpha is a desktop app. Most people only need the installer. Developers use th
 
 ## If you have the app
 
-1. Install Adelpha (DMG, NSIS, or Linux package).
+1. [Download](download.md) the `.dmg` or `.deb` for this computer, then install it.
 2. Open it. On an unsigned Mac build, use **Right-click → Open** the first time.
 3. Wait for the intro and the Python runtime. The top bar should read **All systems operational**.
 4. Open **Settings** and set these:
