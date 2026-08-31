@@ -8,38 +8,9 @@ The GUI is an **observer + operator client** organized into **workspaces**. Twin
 
 In the **desktop app** those three APIs are one supervisor process (dynamic port, session token). Browser-only Vite still uses fixed ports. See [Getting started](../start/index.md).
 
-``` mermaid
-flowchart TB
-  subgraph SUP["Python supervisor (desktop)"]
-    T["Twin /api/dtam"]
-    A["Agents /api/agents"]
-    M["MRI /api/mri"]
-  end
-
-  subgraph MRIQ["console/"]
-    Q["scan.json + PREPARED"]
-  end
-
-  subgraph UI["Adelpha"]
-    HDR["Top bar · Settings"]
-    DT["Digital Twin"]
-    IC["Imaging Console"]
-    ES["Engineering Studio"]
-    D["Telemetry poll"]
-    Z["Zustand"]
-  end
-
-  HDR --> DT
-  HDR --> IC
-  HDR --> ES
-  D --> T
-  D --> Z
-  DT --> Z
-  DT -->|forecast / assess| T
-  DT -->|Agents| A
-  IC --> M
-  M --> Q
-```
+<figure class="adelpha-preview">
+  <img src="../assets/adelpha_architecture.svg" alt="Adelpha architecture: Tauri shell with workspaces, Python runtime, dtam, and MRI services." width="1470" />
+</figure>
 
 ## Workspace routing
 
