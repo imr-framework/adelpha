@@ -117,6 +117,16 @@ jobs:
               echo "Wrapping .app with hdiutil."
               bash packaging/macos/make_dmg.sh
             fi
+            bash packaging/updater/make_macos_updater_artifact.sh
+            if [ -n "${TAURI_SIGNING_PRIVATE_KEY}" ]; then
+              sig="$(find src-tauri/target -type f -name "*.app.tar.gz.sig" 2>/dev/null | head -n 1 || true)"
+              if [ -z "$sig" ]; then
+                echo "error: macOS updater .app.tar.gz.sig was not created."
+                find src-tauri/target -path "*/bundle/macos/*" -print | head -n 40 || true
+                exit 1
+              fi
+              echo "Updater signature: $sig"
+            fi
           fi
 
           installer="$(find src-tauri/target -type f \( \

@@ -111,13 +111,16 @@ from:
 
 | Platform key | Artifact |
 | --- | --- |
-| `darwin-aarch64` | `Adelpha-darwin-aarch64.app.tar.gz` + `.sig` |
-| `darwin-x86_64` | `Adelpha-darwin-x86_64.app.tar.gz` + `.sig` |
+| `darwin-aarch64` / `darwin-aarch64-app` | `Adelpha-darwin-aarch64.app.tar.gz` + `.sig` |
+| `darwin-x86_64` / `darwin-x86_64-app` | `Adelpha-darwin-x86_64.app.tar.gz` + `.sig` |
 | `windows-x86_64` | NSIS `*setup.exe` + `.sig` |
 | `linux-x86_64` | AppImage + `.sig` |
 
 Platforms without a matching `.sig` are omitted. The updater plugin
-rejects a feed that lists a platform with an empty URL.
+rejects a feed that lists a platform with an empty URL. macOS updater
+tarballs are produced even when Apple codesign fails (`packaging/updater/make_macos_updater_artifact.sh`).
+The DMG is still unsigned in that case; Settings trusts the updater
+signature, Gatekeeper does not.
 
 Local `make dist-current` signs updater artifacts when
 `TAURI_SIGNING_PRIVATE_KEY` is set, or when `src-tauri/updater.key` exists

@@ -4,31 +4,18 @@ mod runtime;
 use std::sync::Arc;
 
 use runtime::RuntimeManager;
-use tauri::{Manager, Theme};
+use tauri::Manager;
 
 fn apply_window_chrome(window: &tauri::WebviewWindow) {
-    let (os, chrome) = if cfg!(target_os = "macos") {
-        ("macos", "native")
-    } else if cfg!(target_os = "windows") {
-        ("windows", "custom")
-    } else {
-        ("linux", "custom")
-    };
-
+    let _ = window.set_decorations(true);
+    // Follow the OS appearance for the native title bar (Windows personalization,
+    // macOS appearance, desktop theme on Linux). The Adelpha UI stays dark via CSS.
+    let _ = window.set_theme(None);
     #[cfg(target_os = "macos")]
     {
-        let _ = window.set_decorations(true);
+        let _ = window.set_title_bar_style(tauri::TitleBarStyle::Visible);
+        let _ = window.set_title("Adelpha");
     }
-    #[cfg(not(target_os = "macos"))]
-    {
-        let _ = window.set_decorations(false);
-    }
-    let _ = window.set_theme(Some(Theme::Dark));
-    let script = format!(
-        r#"document.documentElement.dataset.tauriOs={os:?};document.documentElement.dataset.desktopChrome={chrome:?};window.dispatchEvent(new Event("adelpha:chrome"));"#
-    );
-    let _ = window.eval(&script);
-    let _ = window.show();
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

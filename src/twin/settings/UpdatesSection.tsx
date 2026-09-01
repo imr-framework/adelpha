@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ADELPHA_VERSION } from "../adelphaVersion";
 import {
   checkForAppUpdate,
+  explainUpdateError,
   installPendingUpdate,
   readAutoUpdate,
   writeAutoUpdate,
@@ -25,10 +26,19 @@ export function UpdatesSection() {
   const [message, setMessage] = useState<string | null>(null);
   const [nextVersion, setNextVersion] = useState<string | null>(null);
   const [progress, setProgress] = useState("");
+  const [installedVersion, setInstalledVersion] = useState(ADELPHA_VERSION);
 
   useEffect(() => {
     writeAutoUpdate(auto);
   }, [auto]);
+
+  useEffect(() => {
+    if (!desktop) return;
+    void import("@tauri-apps/api/app")
+      .then(({ getVersion }) => getVersion())
+      .then(setInstalledVersion)
+      .catch(() => undefined);
+  }, [desktop]);
 
   async function check(thenInstall: boolean) {
     if (!desktop) {
@@ -45,7 +55,7 @@ export function UpdatesSection() {
       if (!result.available) {
         setPhase("up-to-date");
         setNextVersion(null);
-        setMessage(`Adelpha ${ADELPHA_VERSION} is the latest published release.`);
+        setMessage(`Adelpha ${installedVersion} is the latest published release.`);
         return;
       }
       setNextVersion(result.version ?? null);
@@ -60,7 +70,7 @@ export function UpdatesSection() {
       }
     } catch (err) {
       setPhase("error");
-      setMessage(err instanceof Error ? err.message : String(err));
+      setMessage(explainUpdateError(err));
     } finally {
       setBusy(false);
     }
@@ -82,7 +92,7 @@ export function UpdatesSection() {
       setMessage("Installing. Adelpha will restart.");
     } catch (err) {
       setPhase("error");
-      setMessage(err instanceof Error ? err.message : String(err));
+      setMessage(explainUpdateError(err));
     } finally {
       setBusy(false);
     }
@@ -112,7 +122,7 @@ export function UpdatesSection() {
       >
         <SettingsRow
           title="Current version"
-          description={`Adelpha ${ADELPHA_VERSION}`}
+          description={`Adelpha ${installedVersion}`}
         >
           <button
             type="button"

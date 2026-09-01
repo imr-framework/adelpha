@@ -19,10 +19,10 @@
         "minWidth": 1024,
         "minHeight": 700,
         "backgroundColor": "#050505",
-        "theme": "Dark",
-        "decorations": false,
+        "decorations": true,
+        "titleBarStyle": "Visible",
         "shadow": true,
-        "visible": false
+        "visible": true
       }
     ],
     "security": {

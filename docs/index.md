@@ -6,8 +6,6 @@ icon: lucide/monitor
 
 **Adelpha** is an open-source, intelligent digital-twin platform for developing, monitoring, and operating low-field MRI systems. It integrates scanner visualization, real-time system data, imaging workflows, engineering tools, and AI-assisted capabilities within a unified environment. Its modular architecture can also be adapted to other MRI systems and research applications.
 
-You get one window, three workspaces, and a bundled Python runtime. You do not install Python, Node, or Rust to *use* a release build.
-
 <!-- <p>
   <a class="adelpha-download-cta" href="start/download.md">Download for macOS</a>
 </p> -->

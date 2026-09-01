@@ -75,7 +75,7 @@ body,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 10px 20px;
   border-bottom: 1px solid var(--border);
   gap: 16px;
   background: linear-gradient(180deg, rgba(10, 10, 11, 0.9) 0%, rgba(10, 10, 11, 0.65) 100%);
@@ -83,89 +83,10 @@ body,
   overflow: visible;
 }
 
-.topbar-drag {
-  flex: 1 1 20px;
-  align-self: stretch;
-  min-width: 12px;
-  min-height: 28px;
-  cursor: default;
-}
-
-html[data-desktop-chrome="custom"] .topbar {
-  padding: 10px 0 10px 16px;
-}
-
-html[data-desktop-chrome="custom"] .brand,
-html[data-desktop-chrome="native"] .brand {
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.window-controls {
-  display: flex;
-  align-self: stretch;
-  flex-shrink: 0;
-  margin: -10px 0;
-}
-
-.window-ctrl {
-  appearance: none;
-  width: 46px;
-  min-height: 40px;
-  border: 0;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  background: transparent;
-  color: #d4d4d4;
-  cursor: pointer;
-}
-
-.window-ctrl:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-}
-
-.window-ctrl:active {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.window-ctrl-close:hover,
-.window-ctrl-close:active {
-  background: #e81123;
-  color: #fff;
-}
-
-.desktop-chrome-overlay {
-  position: fixed;
-  inset: 0 0 auto;
-  z-index: 10050;
-  height: 36px;
-  display: flex;
-  align-items: stretch;
-  pointer-events: none;
-}
-
-.desktop-chrome-overlay > * {
-  pointer-events: auto;
-}
-
-.desktop-chrome-drag {
-  flex: 1;
-}
-
-.desktop-chrome-overlay .window-controls {
-  margin: 0;
-}
-
-.desktop-chrome-overlay .window-ctrl {
-  min-height: 36px;
-}
-
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -173,7 +94,7 @@ html[data-desktop-chrome="native"] .brand {
   flex-shrink: 0;
   display: block;
   width: auto;
-  height: 32px;
+  height: 28px;
   object-fit: contain;
 }
 
@@ -184,12 +105,14 @@ html[data-desktop-chrome="native"] .brand {
 .title {
   font-weight: 650;
   letter-spacing: 0.01em;
-  font-size: clamp(16px, 2.2vw, 22px);
+  font-size: clamp(15px, 1.8vw, 18px);
+  line-height: 1.15;
 }
 
 .subtitle {
-  margin-top: 4px;
-  font-size: 13px;
+  margin-top: 1px;
+  font-size: 12px;
+  line-height: 1.25;
   color: var(--muted);
 }
 
@@ -206,12 +129,8 @@ html[data-desktop-chrome="native"] .brand {
   justify-content: flex-end;
   gap: 10px;
   min-width: 0;
-  flex: 0 1 auto;
+  flex: 1;
   flex-wrap: wrap;
-}
-
-html[data-desktop-chrome="custom"] .topbar-right {
-  padding-right: 8px;
 }
 
 .topbar-meta {
@@ -236,7 +155,7 @@ html[data-desktop-chrome="custom"] .topbar-right {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  height: 30px;
+  height: 28px;
   padding: 0 11px;
   border-radius: 999px;
   border: 1px solid #2c2c2e;
@@ -298,11 +217,11 @@ html[data-desktop-chrome="custom"] .topbar-right {
 
 .topbar-icon-btn {
   appearance: none;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: inline-grid;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 9px;
   border: 1px solid #343434;
   background: #161616;
   color: #f2f2f2;
@@ -336,7 +255,7 @@ html[data-desktop-chrome="custom"] .topbar-right {
 .system-context-btn,
 .workspace-switcher {
   appearance: none;
-  height: 36px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -4196,11 +4115,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
-    padding: 14px 14px 12px;
-  }
-
-  html[data-desktop-chrome="custom"] .topbar {
-    padding: 10px 0 12px 14px;
+    padding: 10px 14px;
   }
 
   .topbar-right {

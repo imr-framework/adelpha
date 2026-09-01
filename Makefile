@@ -44,6 +44,7 @@ dist-current: sidecar
 # Requires a previously bundled .app (tauri build still produces it before DMG).
 dmg:
 	bash packaging/macos/make_dmg.sh
+	bash packaging/updater/make_macos_updater_artifact.sh
 
 test-runtime:
 	@if [ ! -x runtime/python/.venv/bin/pytest ]; then python3 -m venv runtime/python/.venv && runtime/python/.venv/bin/pip install -e "./runtime/python[dev]"; fi

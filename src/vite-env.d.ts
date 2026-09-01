@@ -1,5 +1,8 @@
 /// <reference types="vite/client" />
 
+/** Application version from package.json (`vite.config.ts` define). */
+declare const __ADELPHA_VERSION__: string;
+
 interface ImportMetaEnv {
   /** Public URL for exported magnet mesh (e.g. `/magnet.glb` or `/magnet.stl`). */
   readonly VITE_MAGNET_CAD_URL?: string;

@@ -6,7 +6,7 @@ import {
   restartRuntime,
   type RuntimeStatus,
 } from "./runtime";
-import { OverlayChrome } from "./WindowControls";
+import { ADELPHA_VERSION } from "../twin/adelphaVersion";
 
 export function RecoveryScreen({ runtime }: { runtime: RuntimeStatus }) {
   const [diag, setDiag] = useState<string | null>(null);
@@ -40,14 +40,13 @@ export function RecoveryScreen({ runtime }: { runtime: RuntimeStatus }) {
         fontFamily: "Geist Variable, system-ui, sans-serif",
       }}
     >
-      <OverlayChrome />
       <div style={{ maxWidth: 560 }}>
         <h1 id="runtime-recovery-title" style={{ fontSize: 22, marginBottom: 12 }}>
           Adelpha could not start its Python runtime
         </h1>
         <p style={{ opacity: 0.85, lineHeight: 1.5 }}>{message}</p>
         <p style={{ opacity: 0.6, fontSize: 13 }}>
-          Adelpha {runtime.adelphaVersion || "0.1.0"} · Tauri {runtime.tauriVersion || "—"} ·
+          Adelpha {runtime.adelphaVersion || ADELPHA_VERSION} · Tauri {runtime.tauriVersion || "—"} ·
           Python runtime {runtime.pythonRuntimeVersion || "—"}
         </p>
         <div style={{ display: "flex", gap: 12, marginTop: 24, flexWrap: "wrap" }}>
