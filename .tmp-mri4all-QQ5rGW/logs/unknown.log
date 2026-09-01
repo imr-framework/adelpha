@@ -1,0 +1,38 @@
+2026-09-01 12:21:21,298 | unknown | WRN |  | Could not load sequence module adj_rf_duration: No module named 'numpy'
+2026-09-01 12:21:21,306 | unknown | WRN |  | Could not load sequence module adj_grad_amplitude: No module named 'numpy'
+2026-09-01 12:21:21,342 | unknown | WRN |  | Could not load sequence module adj_frequency: No module named 'pydantic'
+2026-09-01 12:21:21,360 | unknown | WRN |  | Could not load sequence module adj_shim_amplitude_manual: No module named 'pydantic'
+2026-09-01 12:21:21,538 | unknown | WRN |  | Could not load sequence module flash_demo: No module named 'typing_extensions'
+2026-09-01 12:21:21,541 | unknown | WRN |  | Could not load sequence module tse_3D: No module named 'matplotlib'
+2026-09-01 12:21:21,544 | unknown | WRN |  | Could not load sequence module tse_2D: No module named 'numpy'
+2026-09-01 12:21:21,547 | unknown | WRN |  | Could not load sequence module rf_se: No module named 'numpy'
+2026-09-01 12:21:21,549 | unknown | WRN |  | Could not load sequence module adj_frequency_snr: No module named 'pydantic'
+2026-09-01 12:21:21,552 | unknown | WRN |  | Could not load sequence module adj_rf_amplitude: No module named 'pydantic'
+2026-09-01 12:21:21,554 | unknown | WRN |  | Could not load sequence module noisescan: No module named 'numpy'
+2026-09-01 12:21:21,556 | unknown | WRN |  | Could not load sequence module bssfp_3D: No module named 'numpy'
+2026-09-01 12:21:21,561 | unknown | WRN |  | Could not load sequence module gre_1D: No module named 'numpy'
+2026-09-01 12:21:21,564 | unknown | WRN |  | Could not load sequence module gre_3D: No module named 'numpy'
+2026-09-01 12:21:21,570 | unknown | WRN |  | Could not load sequence module rf_tse: No module named 'numpy'
+2026-09-01 12:21:21,574 | unknown | WRN |  | Could not load sequence module se_3D: No module named 'numpy'
+2026-09-01 12:21:21,578 | unknown | WRN |  | Could not load sequence module se_2D: No module named 'numpy'
+2026-09-01 12:21:21,582 | unknown | WRN |  | Could not load sequence module adj_shim_amplitude: No module named 'numpy'
+2026-09-01 12:21:21,585 | unknown | WRN |  | Could not load sequence module se_1D: No module named 'numpy'
+2026-09-01 12:21:21,590 | unknown | WRN |  | Could not load sequence module FID: No module named 'numpy'
+2026-09-01 12:21:21,595 | unknown | WRN |  | Could not load sequence module prescan_frequency: No module named 'pydantic'
+2026-09-01 12:22:02,865 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
+2026-09-01 12:22:02,866 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
+2026-09-01 12:22:02,867 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
+2026-09-01 12:22:02,868 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
+2026-09-01 12:22:02,869 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
+2026-09-01 12:22:02,870 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
+2026-09-01 12:22:02,870 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
+2026-09-01 13:11:05,606 | unknown | INF |  | Timing check passed successfully
+2026-09-01 13:11:05,606 | unknown | DBG |  | /var/folders/x1/m2rsp0nn2pv6w462vkfy3vwc0000gq/T/tmpmcgh8occ/acq0.seq
+2026-09-01 13:11:05,607 | unknown | DBG |  | Seq file stored
+2026-09-01 13:11:05,607 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
+2026-09-01 13:11:05,608 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
+2026-09-01 13:11:05,608 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
+2026-09-01 13:11:05,609 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
+2026-09-01 13:11:05,609 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
+2026-09-01 13:11:05,609 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
+2026-09-01 13:11:05,610 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about

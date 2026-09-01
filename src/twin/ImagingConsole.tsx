@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Atom, Check, Image as ImageIcon, LayoutGrid, List, Loader, LogOut, Maximize2, Square, Wrench, X, Zap } from "lucide-react";
 import {
   connectMriEvents,
@@ -13,6 +13,7 @@ import {
   fetchScan,
   fetchScans,
   fetchSequences,
+  fetchServices,
   patchScan,
   formatDevicePingStatus,
   pingDevice,
@@ -41,6 +42,7 @@ import {
   Overlay,
   QueryDialog,
   RegistrationForm,
+  ResultStage,
   ShimDialog,
   StatusDialog,
   StudyDialog,
@@ -138,10 +140,25 @@ function patientLine(exam: ExamResponse | null): string {
   return `${name}  ·  MRN: ${p.mrn || "—"}`;
 }
 
-function viewerTargetFromTask(task: ScanTask | null, folder: string, label: string): ViewerTarget | null {
-  if (!task || !folder) return null;
-  const result = task.results.find((item) => item.primary) ?? task.results[0];
-  if (!result) return null;
+type ViewerSlot = 1 | 2 | 3;
+type ViewerSlotContent = ViewerTarget | string | null;
+
+function isViewerTarget(value: ViewerSlotContent): value is ViewerTarget {
+  return Boolean(value && typeof value === "object");
+}
+
+function autoloadSlot(viewer: number | undefined): ViewerSlot | "flex" | null {
+  if (viewer === 1 || viewer === 2 || viewer === 3) return viewer;
+  if (viewer === 4) return "flex";
+  return null;
+}
+
+function viewerTargetFromResult(
+  task: ScanTask,
+  folder: string,
+  label: string,
+  result: ScanTask["results"][number],
+): ViewerTarget {
   return {
     label,
     folder,
@@ -152,6 +169,25 @@ function viewerTargetFromTask(task: ScanTask | null, folder: string, label: stri
     protocolName: task.protocol_name,
     scanNumber: task.scan_number,
   };
+}
+
+function viewerTargetFromTask(task: ScanTask | null, folder: string, label: string): ViewerTarget | null {
+  if (!task || !folder) return null;
+  const result = task.results.find((item) => item.primary) ?? task.results[0];
+  if (!result) return null;
+  return viewerTargetFromResult(task, folder, label, result);
+}
+
+function ConsoleViewer({
+  value,
+  fallback,
+}: {
+  value: ViewerSlotContent;
+  fallback?: ReactNode;
+}) {
+  if (isViewerTarget(value)) return <ResultStage target={value} />;
+  if (typeof value === "string" && value) return <p className="ic-muted">{value}</p>;
+  return fallback ? <>{fallback}</> : null;
 }
 
 function ParamField({
@@ -223,6 +259,7 @@ export function ImagingConsole() {
   const [apiOk, setApiOk] = useState<boolean | null>(null);
   const [simulation, setSimulation] = useState(false);
   const [exam, setExam] = useState<ExamResponse | null>(null);
+  const examId = exam?.exam.id;
   const [registerOpen, setRegisterOpen] = useState(false);
   const [protocolsOpen, setProtocolsOpen] = useState(false);
   const [dialog, setDialog] = useState<
@@ -244,12 +281,12 @@ export function ImagingConsole() {
   >(null);
   const [flexOpen, setFlexOpen] = useState(false);
   const [flexTarget, setFlexTarget] = useState<ViewerTarget | null>(null);
-  const [viewerSlots, setViewerSlots] = useState<{ 1: string; 2: string; 3: string; flex: string }>({
-    1: "",
-    2: "",
-    3: "",
-    flex: "",
+  const [viewerSlots, setViewerSlots] = useState<{ 1: ViewerSlotContent; 2: ViewerSlotContent; 3: ViewerSlotContent }>({
+    1: null,
+    2: null,
+    3: null,
   });
+  const autoloadedScans = useRef(new Set<string>());
   const [acqClock, setAcqClock] = useState<{ start: number; expected: number; disable: boolean } | null>(null);
   const shimValues = useRef({ x: 0, y: 0, z: 0 });
   const [patient, setPatient] = useState<PatientInformation>(emptyPatient());
@@ -257,6 +294,9 @@ export function ImagingConsole() {
   const [sequences, setSequences] = useState<SequenceInfo[]>([]);
   const [queue, setQueue] = useState<ScanQueueEntry[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedIdRef = useRef<string | null>(null);
+  selectedIdRef.current = selectedId;
+  const prevScanStates = useRef<Record<string, ScanQueueEntry["state"]>>({});
   const [draft, setDraft] = useState<Record<string, unknown>>({});
   const [tab, setTab] = useState<SeqTab>("sequence");
   const [status, setStatus] = useState("Connecting to MRI4ALL API…");
@@ -269,14 +309,68 @@ export function ImagingConsole() {
   const seqInfo = sequences.find((s) => s.id === selected?.sequence);
   const experimentActive = queue.some((s) => s.state === "acq" || s.state === "recon" || s.state === "scheduled_recon");
 
+  const loadIntoViewer = useCallback((slot: ViewerSlot | "flex", payload: string | ViewerTarget) => {
+    if (slot === "flex") {
+      setFlexTarget(typeof payload === "string" ? null : payload);
+      setFlexOpen(true);
+    } else {
+      setViewerSlots((prev) => ({ ...prev, [slot]: payload }));
+    }
+    setStatus(slot === "flex" ? "Loaded into Flex Viewer" : `Loaded into Viewer ${slot}`);
+  }, []);
+
+  const autoloadEntry = useCallback(
+    async (entry: ScanQueueEntry) => {
+      try {
+        const detail = await fetchScan(entry.id);
+        const task = detail.task;
+        if (!task?.results.length || !detail.folder) return;
+        const label = `${entry.scan_counter}:  ${entry.protocol_name}`;
+        let loaded = false;
+        for (const result of task.results) {
+          const slot = autoloadSlot(result.autoload_viewer);
+          if (!slot) continue;
+          loadIntoViewer(slot, viewerTargetFromResult(task, detail.folder, label, result));
+          loaded = true;
+        }
+        if (!loaded) {
+          const target = viewerTargetFromTask(task, detail.folder, label);
+          if (target) loadIntoViewer(1, target);
+        }
+      } catch {
+        /* keep the last successful view */
+      }
+    },
+    [loadIntoViewer],
+  );
+
   const refreshQueue = useCallback(async () => {
     try {
       const next = await fetchScans();
       setQueue(next);
+      const sid = selectedIdRef.current;
+      const selectedScan = sid ? next.find((s) => s.id === sid) : undefined;
+      if (selectedScan?.state === "failure" && prevScanStates.current[selectedScan.id] !== "failure") {
+        setAcqClock(null);
+        const svc = await fetchServices().catch(() => null);
+        setStatus(svc?.last_error || "Acquisition failed");
+      }
+      const prev = prevScanStates.current;
+      for (const entry of next) {
+        if (entry.state !== "complete" || !entry.has_results) continue;
+        if (autoloadedScans.current.has(entry.id)) continue;
+        if (prev[entry.id] && prev[entry.id] !== "complete") {
+          autoloadedScans.current.add(entry.id);
+          void autoloadEntry(entry);
+        }
+      }
+      const map: Record<string, ScanQueueEntry["state"]> = {};
+      for (const entry of next) map[entry.id] = entry.state;
+      prevScanStates.current = map;
     } catch {
       /* idle */
     }
-  }, []);
+  }, [autoloadEntry]);
 
   const loadExam = useCallback(async () => {
     try {
@@ -287,18 +381,26 @@ export function ImagingConsole() {
       setExam(current);
       const seqs = await fetchSequences(true);
       setSequences(seqs);
-      const ping = await pingDevice().catch(() => null);
-      const probe = ping ? formatDevicePingStatus(ping) : null;
+      const extras: string[] = [];
+      if (health.sequence_registry === false) extras.push("using fallback sequence catalog");
+      if (health.pipeline === false) extras.push("acquisition pipeline is not running");
+      const suffix = extras.length ? ` · ${extras.join("; ")}` : "";
       if (current) {
         await refreshQueue();
         setPatient(current.patient);
         setAcc(current.exam.acc);
         setPosition(current.exam.patient_position || "HFS");
-        setStatus(probe ?? (health.hardware_simulation ? "Scanner ready (simulation)" : "Scanner ready"));
+        setStatus(
+          (health.hardware_simulation ? "Scanner ready (simulation)" : "Scanner ready") + suffix,
+        );
         setRegisterOpen(false);
       } else {
         setQueue([]);
-        setStatus(probe ? `${probe} · Register a patient to start an exam` : "Register a patient to start an exam");
+        setStatus(
+          extras.length
+            ? `Register a patient to start an exam · ${extras.join("; ")}`
+            : "Register a patient to start an exam",
+        );
         setRegisterOpen(true);
       }
     } catch (err) {
@@ -316,6 +418,25 @@ export function ImagingConsole() {
     const t = window.setInterval(() => void refreshQueue(), 1500);
     return () => window.clearInterval(t);
   }, [exam, refreshQueue]);
+
+  useEffect(() => {
+    if (!examId) {
+      setViewerSlots({ 1: null, 2: null, 3: null });
+      setFlexTarget(null);
+      autoloadedScans.current.clear();
+      return;
+    }
+    let cancelled = false;
+    void fetchScans().then((scans) => {
+      const latest = scans.filter((s) => s.state === "complete" && s.has_results).at(-1);
+      if (!latest || cancelled) return;
+      autoloadedScans.current.add(latest.id);
+      void autoloadEntry(latest);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [examId, autoloadEntry]);
 
   useEffect(() => {
     return connectMriEvents((ev: MriEvent) => {
@@ -371,7 +492,6 @@ export function ImagingConsole() {
       if (kind === "show_dicom" && ev.value?.dicom_files?.length) {
         const files = ev.value.dicom_files;
         setImageHint(`${files.length} DICOM series ready`);
-        setViewerSlots((prev) => ({ ...prev, 1: files.join("\n") }));
         setIpc({ kind: "dicom", id: eventId, source, files });
       }
       if (kind === "acq_data") {
@@ -414,7 +534,7 @@ export function ImagingConsole() {
       setExam(null);
       setQueue([]);
       setSelectedId(null);
-      setViewerSlots({ 1: "", 2: "", 3: "", flex: "" });
+      setViewerSlots({ 1: null, 2: null, 3: null });
       setFlexOpen(false);
       setFlexTarget(null);
       setRegisterOpen(true);
@@ -505,11 +625,10 @@ export function ImagingConsole() {
       setRegisterOpen(false);
       setQueue([]);
       setSelectedId(null);
-      setViewerSlots({ 1: "", 2: "", 3: "", flex: "" });
+      setViewerSlots({ 1: null, 2: null, 3: null });
       setFlexOpen(false);
       setFlexTarget(null);
-      const ping = await pingDevice().catch(() => null);
-      setStatus(ping ? formatDevicePingStatus(ping) : "Scanner ready");
+      setStatus("Scanner ready");
     } catch (err) {
       setProblems([err instanceof Error ? err.message : "Failed to start exam"]);
     } finally {
@@ -539,7 +658,7 @@ export function ImagingConsole() {
       await patchScan(selectedId, { parameters: draft });
       await prepareScan(selectedId);
       await refreshQueue();
-      setStatus("Sequence prepared — waiting for acquisition");
+      setStatus("Sequence prepared — acquisition will start automatically");
     } catch (err) {
       setProblems([err instanceof Error ? err.message : "Invalid parameters"]);
     } finally {
@@ -593,17 +712,7 @@ export function ImagingConsole() {
     setIpc(null);
   };
 
-  const loadIntoViewer = (slot: 1 | 2 | 3 | "flex", payload: string | ViewerTarget) => {
-    const label = typeof payload === "string" ? payload : payload.label;
-    setViewerSlots((prev) => ({ ...prev, [slot]: label }));
-    if (slot === "flex") {
-      setFlexTarget(typeof payload === "string" ? null : payload);
-      setFlexOpen(true);
-    }
-    setStatus(slot === "flex" ? "Loaded into Flex Viewer" : `Loaded into Viewer ${slot}`);
-  };
-
-  const showQueueInViewer = (slot: 1 | 2 | 3 | "flex", id: string) => {
+  const showQueueInViewer = (slot: ViewerSlot | "flex", id: string) => {
     setCtxMenu(null);
     const entry = queue.find((q) => q.id === id);
     if (!entry) return;
@@ -930,17 +1039,23 @@ export function ImagingConsole() {
       <div className={`ic-screens is-${viewerCount}`}>
         <article className="ic-screen">
           <div className="ic-viewer-stage" aria-label="Viewer 1">
-            {viewerSlots[1] ? <p className="ic-muted">{viewerSlots[1]}</p> : imageHint ? <p className="ic-muted">{imageHint}</p> : null}
+            <ConsoleViewer
+              value={viewerSlots[1]}
+              fallback={imageHint ? <p className="ic-muted">{imageHint}</p> : null}
+            />
           </div>
         </article>
         <article className="ic-screen">
           <div className="ic-viewer-stage" aria-label="Viewer 2">
-            {viewerSlots[2] ? <p className="ic-muted">{viewerSlots[2]}</p> : plotSeries ? <Sparkline data={plotSeries} /> : null}
+            <ConsoleViewer
+              value={viewerSlots[2]}
+              fallback={plotSeries ? <Sparkline data={plotSeries} /> : null}
+            />
           </div>
         </article>
         <article className="ic-screen">
           <div className="ic-viewer-stage" aria-label="Viewer 3">
-            {viewerSlots[3] ? <p className="ic-muted">{viewerSlots[3]}</p> : null}
+            <ConsoleViewer value={viewerSlots[3]} />
           </div>
         </article>
       </div>

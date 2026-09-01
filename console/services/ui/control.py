@@ -44,18 +44,47 @@ def control_services(action: ServiceAction) -> None:
 
 
 def ping(ip: str) -> bool:
-    """True if the scanner answers on the MaRCoS port or ICMP."""
+    """True if the scanner answers ICMP, matching MRI4ALL's original probe."""
     return bool(probe_scanner(ip)["reachable"])
 
 
+def _marcos_handshake(host: str, port: int, timeout: float) -> None:
+    """Complete MaRCoS request/reply, then close. Never open-and-drop TCP.
+
+    marcos_server is single-client: an empty connect() is accept()'d and the
+    server sits in mpack_tree_parse until the socket dies. That races a scan.
+    """
+    import msgpack
+    from external.marcos_client.server_comms import construct_packet
+
+    sock = socket.create_connection((host, port), timeout=timeout)
+    try:
+        sock.sendall(msgpack.packb(construct_packet({"regstatus": 1})))
+        unpacker = msgpack.Unpacker()
+        while True:
+            buf = sock.recv(4096)
+            if not buf:
+                raise OSError("MaRCoS closed during handshake")
+            unpacker.feed(buf)
+            for _ in unpacker:
+                return
+    finally:
+        try:
+            sock.close()
+        except OSError:
+            pass
+
+
 def probe_scanner(
-    ip: str, port: int = MARCOS_PORT, timeout: float = PROBE_TIMEOUT_S
+    ip: str, port: int | None = None, timeout: float = PROBE_TIMEOUT_S
 ) -> dict:
     """Check whether a Red Pitaya / MaRCoS server is on the network.
 
-    Prefers TCP to the MaRCoS control port. Falls back to ICMP so a
-    powered-on board without MaRCoS still shows as reachable.
+    MRI4ALL only ICMP-pinged the board. A MaRCoS handshake is optional and
+    uses a real protocol packet so the server is not left in parse-wait.
     """
+    if port is None:
+        port = marcos_port()
     host = (ip or "").strip()
     if not host or host in {"0.0.0.0", "::"}:
         return {
@@ -64,15 +93,16 @@ def probe_scanner(
             "detail": "No scanner IP configured",
         }
 
+    icmp_ok = _icmp_ping(host)
     try:
-        with socket.create_connection((host, port), timeout=timeout):
-            detail = f"MaRCoS at {host}:{port}"
-            log.info("Scanner reachable: %s", detail)
-            return {"reachable": True, "method": "tcp", "detail": detail}
+        _marcos_handshake(host, port, timeout)
+        detail = f"MaRCoS at {host}:{port}"
+        log.info("Scanner reachable: %s", detail)
+        return {"reachable": True, "method": "tcp", "detail": detail}
     except OSError as exc:
         tcp_err = exc
 
-    if _icmp_ping(host):
+    if icmp_ok:
         detail = f"{host} answers ping; MaRCoS port {port} is closed ({tcp_err})"
         log.info("Scanner ICMP only: %s", detail)
         return {"reachable": True, "method": "icmp", "detail": detail}
@@ -109,6 +139,15 @@ def run_device_bootsequence() -> bool:
 
 def run_device_test() -> bool:
     return ping(config_scanner_ip())
+
+
+def marcos_port() -> int:
+    try:
+        from sequences.common.util import reading_json_parameter
+
+        return int(reading_json_parameter().marcos_parameters.port)
+    except Exception:
+        return MARCOS_PORT
 
 
 def config_scanner_ip() -> str:

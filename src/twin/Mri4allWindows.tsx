@@ -40,6 +40,7 @@ import {
   testDevice,
   type DicomTarget,
   type MriConfig,
+  type ServiceStatus,
   type StudyExam,
   type StudyPreview,
 } from "./mri/api";
@@ -395,7 +396,7 @@ export function StatusDialog({ onClose }: { onClose: () => void }) {
     model: profile.displayName,
     serial: profile.serial,
   });
-  const [svc, setSvc] = useState<{ acq: boolean | null; recon: boolean | null; mode: string } | null>(null);
+  const [svc, setSvc] = useState<ServiceStatus | null>(null);
   const [ping, setPing] = useState<"idle" | "ok" | "bad">("idle");
   const [pingDetail, setPingDetail] = useState("");
   const [test, setTest] = useState<"idle" | "ok" | "bad">("idle");
@@ -457,7 +458,7 @@ export function StatusDialog({ onClose }: { onClose: () => void }) {
       <div className="m4-divider" />
       <div className="m4-status-rows">
         <div className="m4-status-row">
-          <span>Acquisition Service</span>
+          <span>{svc?.mode === "adelpha" ? "Acquisition pipeline" : "Acquisition Service"}</span>
           <Mark state={svc?.acq == null ? "idle" : acqOn ? "ok" : "bad"} ok="Running" bad="Not running" idle="Unknown" />
           <div className="m4-inline">
             <button type="button" className="m4-btn" onClick={() => void controlOneService("acq", acqOn ? "stop" : "start").then(setSvc)}>
@@ -469,7 +470,7 @@ export function StatusDialog({ onClose }: { onClose: () => void }) {
           </div>
         </div>
         <div className="m4-status-row">
-          <span>Reconstruction Service</span>
+          <span>{svc?.mode === "adelpha" ? "Reconstruction pipeline" : "Reconstruction Service"}</span>
           <Mark state={svc?.recon == null ? "idle" : reconOn ? "ok" : "bad"} ok="Running" bad="Not running" idle="Unknown" />
           <div className="m4-inline">
             <button type="button" className="m4-btn" onClick={() => void controlOneService("recon", reconOn ? "stop" : "start").then(setSvc)}>
@@ -511,6 +512,12 @@ export function StatusDialog({ onClose }: { onClose: () => void }) {
             <em>{disk ? `${disk.freeGb} GB available` : "—"}</em>
           </div>
         </div>
+        {svc?.mode === "adelpha" ? (
+          <p className="m4-muted">
+            Acquisition and reconstruction run inside Adelpha. Start/Stop pauses those workers.
+            {svc.last_error ? ` Last error: ${svc.last_error}` : ""}
+          </p>
+        ) : null}
       </div>
     </Overlay>
   );

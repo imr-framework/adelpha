@@ -1,11 +1,16 @@
 import atexit
 import json
 import os
+from enum import Enum
 from pathlib import Path
 from time import sleep
 from typing import Any, Dict, Literal, Optional, Union
 from uuid import uuid5
 import uuid
+
+from common.qtcompat import ensure_pyqt5
+
+ensure_pyqt5()
 
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QObject
 from PyQt5.QtWidgets import *
@@ -130,9 +135,13 @@ class Communicator(QObject, Helper):
     def _send(self, obj: FifoMessageType, error=False):
         if not os.path.exists(self.out_file):
             return False
-        with open(self.out_file, "w") as f:
-            f.write(CommunicatorEnvelope(value=obj, error=error).model_dump_json())
-            f.write("\n")
+        try:
+            with open(self.out_file, "w") as f:
+                f.write(CommunicatorEnvelope(value=obj, error=error).model_dump_json())
+                f.write("\n")
+        except (BrokenPipeError, OSError) as exc:
+            log.warning("IPC write failed: %s", exc)
+            return False
         return True
 
     def _query(self, obj):
@@ -153,11 +162,15 @@ class Communicator(QObject, Helper):
         return CommunicatorEnvelope(**result)
 
     def mkfifo(self, FIFO):
+        if os.path.exists(FIFO):
+            return
+        if not hasattr(os, "mkfifo"):
+            Path(FIFO).touch(exist_ok=True)
+            return
         try:
             os.mkfifo(FIFO)
         except FileExistsError:
-            os.unlink(FIFO)
-            os.mkfifo(FIFO)
+            pass
 
     def _listen(self):
         while True:

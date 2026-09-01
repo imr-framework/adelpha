@@ -33,17 +33,17 @@ ipc_comm = Communicator(Communicator.ACQ)
 # TODO: Remove references to cfg class from here
 def run_pulseq(
     seq_file,
-    rf_center=cfg.LARMOR_FREQ,
-    rf_max=cfg.RF_MAX,
-    gx_max=cfg.GX_MAX,
-    gy_max=cfg.GY_MAX,
-    gz_max=cfg.GZ_MAX,
+    rf_center=None,
+    rf_max=None,
+    gx_max=None,
+    gy_max=None,
+    gz_max=None,
     tx_t=1,
     grad_t=10,
     tx_warmup=100,
-    shim_x=cfg.SHIM_X,
-    shim_y=cfg.SHIM_Y,
-    shim_z=cfg.SHIM_Z,
+    shim_x=None,
+    shim_y=None,
+    shim_z=None,
     grad_cal=False,
     save_np=False,
     save_mat=False,
@@ -54,7 +54,7 @@ def run_pulseq(
     case_path="/tmp",
     raw_filename="",
     expected_duration_sec=-1,
-    hardware_simulation=False,
+    hardware_simulation=None,
 ):
     """
     Interpret pulseq .seq file through flocra_pulseq
@@ -80,7 +80,36 @@ def run_pulseq(
         numpy.ndarray: Rx data array
         float: (us) Rx period
     """
+    try:
+        cfg.update()
+    except Exception:
+        pass
+
+    rf_center = cfg.LARMOR_FREQ if rf_center is None else rf_center
+    rf_max = cfg.RF_MAX if rf_max is None else rf_max
+    gx_max = cfg.GX_MAX if gx_max is None else gx_max
+    gy_max = cfg.GY_MAX if gy_max is None else gy_max
+    gz_max = cfg.GZ_MAX if gz_max is None else gz_max
+    shim_x = cfg.SHIM_X if shim_x is None else shim_x
+    shim_y = cfg.SHIM_Y if shim_y is None else shim_y
+    shim_z = cfg.SHIM_Z if shim_z is None else shim_z
+
     log.info(f"Pulseq scan with Larmor {rf_center}")
+    log.info(
+        "Full-scale calibrations (DAC ±1): RF max %s Hz; Gx %s Gy %s Gz %s Hz/m",
+        rf_max,
+        gx_max,
+        gy_max,
+        gz_max,
+    )
+
+    if hardware_simulation is None:
+        try:
+            import common.config as config
+
+            hardware_simulation = config.get_config().is_hardware_simulation()
+        except Exception:
+            hardware_simulation = False
 
     log.debug("Running flocra_pulseq using following parameters:")
     log.debug(f"rf_center={rf_center}")
@@ -92,14 +121,23 @@ def run_pulseq(
     log.debug(f"shim_y={shim_y}")
     log.debug(f"shim_z={shim_z}")
     log.debug(f"Seq file={seq_file}")
+    log.info("case path = %s", case_path)
 
-    print(f"case path = {case_path}")
+    try:
+        from external.marcos_client.local_config import apply_scanner_settings
+        from external.marcos_client import local_config as marcos_cfg
+
+        apply_scanner_settings()
+        clk_t = 1.0 / float(marcos_cfg.fpga_clk_freq_MHz)
+    except Exception:
+        clk_t = 1.0 / 122.88
 
     # Convert .seq file to machine dict
     psi = PSInterpreter(
         rf_center=rf_center * 1e6,
         tx_warmup=tx_warmup,
         rf_amp_max=rf_max,
+        clk_t=clk_t,
         tx_t=tx_t,
         grad_t=grad_t,
         gx_max=gx_max,
@@ -151,15 +189,49 @@ def run_pulseq(
 
     # Initialize experiment class
     if expt is None:
-        log.debug("Initializing marcos client...")
-        expt = ex.Experiment(
-            lo_freq=rf_center,
-            rx_t=param_dict["rx_t"],
-            init_gpa=True,
-            gpa_fhdo_offset_time=grad_t / 3,
-            grad_max_update_rate=0.125,
-            halt_and_reset=True,
+        from external.marcos_client import local_config as marcos_cfg
+        from sequences.common.util import reading_json_parameter
+
+        try:
+            from external.marcos_client.local_config import apply_scanner_settings
+
+            apply_scanner_settings()
+        except Exception as exc:
+            log.warning("Could not apply MaRCoS settings: %s", exc)
+
+        init_gpa = False
+        try:
+            init_gpa = bool(reading_json_parameter().marcos_parameters.initialize_gpa)
+        except Exception:
+            init_gpa = False
+
+        log.info(
+            "Connecting to MaRCoS at %s:%s (init_gpa=%s)",
+            marcos_cfg.ip_address,
+            marcos_cfg.port,
+            init_gpa,
         )
+        try:
+            expt = ex.Experiment(
+                lo_freq=rf_center,
+                rx_t=param_dict["rx_t"],
+                init_gpa=init_gpa,
+                gpa_fhdo_offset_time=grad_t / 3,
+                grad_max_update_rate=0.125,
+                halt_and_reset=False,
+                print_infos=False,
+            )
+        except ConnectionError:
+            raise
+        except OSError as exc:
+            hint = (
+                " Turn off Initialize GPA in Settings if no gradient board is attached."
+                if init_gpa
+                else ""
+            )
+            raise ConnectionError(
+                f"MaRCoS at {marcos_cfg.ip_address}:{marcos_cfg.port} dropped the connection: {exc}.{hint}"
+            ) from exc
 
     # Optionbally run gradient linearization calibration
     if grad_cal:
@@ -192,10 +264,7 @@ def run_pulseq(
 
     # Optionally save messages
     if save_msgs:
-        print("Received messages:")
-        print("---")
-        print(msgs)  # TODO include message saving
-        print("---")
+        log.info("Received MaRCoS messages: %s", msgs)
 
     # Announce completion
     nSamples = param_dict["readout_number"]

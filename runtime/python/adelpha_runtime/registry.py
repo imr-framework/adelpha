@@ -235,6 +235,7 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
         _prepend_sys_path(str(paths.console_root / "external"))
         os.environ.setdefault("MRI4ALL_BASE", str(paths.data_dir / "mri4all"))
         os.environ.setdefault("MRI4ALL_DEBUG", "true")
+        os.environ.setdefault("MPLBACKEND", "Agg")
         (paths.data_dir / "mri4all" / "logs").mkdir(parents=True, exist_ok=True)
         (paths.data_dir / "mri4all" / "config").mkdir(parents=True, exist_ok=True)
         (paths.data_dir / "mri4all" / "data").mkdir(parents=True, exist_ok=True)

@@ -6,7 +6,7 @@ import socket, time, warnings
 import numpy as np
 import matplotlib.pyplot as plt
 
-from external.marcos_client.local_config import ip_address, port, fpga_clk_freq_MHz, grad_board
+import external.marcos_client.local_config as marcos_cfg
 import external.marcos_client.grad_board as gb
 import external.marcos_client.server_comms as sc
 import external.marcos_client.marcompile as fc
@@ -82,15 +82,26 @@ class Experiment:
 
         # create socket early so that destructor works
         self._close_socket = True
+        self._s = None
         if prev_socket is None:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(5)
             try:
-                self._s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self._s.connect( (ip_address, port) )
-            except:
-                pass
-                log.error("Connection has timed out, may be the RedPitaya is not connected")
-                
-                
+                log.info("Connecting to MaRCoS at %s:%s", marcos_cfg.ip_address, marcos_cfg.port)
+                sock.connect((marcos_cfg.ip_address, marcos_cfg.port))
+            except OSError as exc:
+                sock.close()
+                log.error(
+                    "MaRCoS connection failed (%s:%s): %s",
+                    marcos_cfg.ip_address,
+                    marcos_cfg.port,
+                    exc,
+                )
+                raise ConnectionError(
+                    f"Cannot reach MaRCoS at {marcos_cfg.ip_address}:{marcos_cfg.port}: {exc}"
+                ) from exc
+            sock.settimeout(None)
+            self._s = sock
         else:
             self._s = prev_socket
             self._close_socket = False # do not close previous socket
@@ -101,15 +112,15 @@ class Experiment:
             rx_t = rx_t, rx_t # extend to 2 elements
 
         # TODO: enable variable rates during a single TR
-        self._rx_divs = np.round(np.array(rx_t) * fpga_clk_freq_MHz).astype(np.uint32)
-        self._rx_ts = self._rx_divs / fpga_clk_freq_MHz
+        self._rx_divs = np.round(np.array(rx_t) * marcos_cfg.fpga_clk_freq_MHz).astype(np.uint32)
+        self._rx_ts = self._rx_divs / marcos_cfg.fpga_clk_freq_MHz
 
         if not hasattr(rx_lo, "__len__"):
             rx_lo = rx_lo, rx_lo # extend to 2 elements
         self._rx_lo = rx_lo
 
-        assert grad_board in ('ocra1', 'gpa-fhdo'), "Unknown gradient board!"
-        if grad_board == 'ocra1':
+        assert marcos_cfg.grad_board in ('ocra1', 'gpa-fhdo'), "Unknown gradient board!"
+        if marcos_cfg.grad_board == 'ocra1':
             gradb_class = gb.OCRA1
             self._gpa_fhdo_offset_time = 0
         else:
@@ -135,10 +146,21 @@ class Experiment:
         self._assert_errors = assert_errors
 
         if init_gpa:
-            self.gradb.init_hw()
+            try:
+                self.gradb.init_hw()
+            except (OSError, ConnectionError) as exc:
+                raise ConnectionError(
+                    f"GPA initialization failed on {marcos_cfg.ip_address}:{marcos_cfg.port}: {exc}. "
+                    "Turn off Initialize GPA in Settings if no gradient board is attached."
+                ) from exc
 
         if halt_and_reset:
-            halted = sc.command({'halt_and_reset': 0}, self._s)[0][4]['halt_and_reset']
+            try:
+                halted = sc.command({'halt_and_reset': 0}, self._s)[0][4]['halt_and_reset']
+            except (OSError, ConnectionError) as exc:
+                raise ConnectionError(
+                    f"MaRCoS halt_and_reset failed on {marcos_cfg.ip_address}:{marcos_cfg.port}: {exc}"
+                ) from exc
             assert halted, "Could not halt the execution of an existing sequence. Please file a bug report."
 
         self._fix_cic_scale = fix_cic_scale
@@ -147,8 +169,11 @@ class Experiment:
         self._allow_user_init_cfg = allow_user_init_cfg
 
     def __del__(self):
-        if self._close_socket:
-            self._s.close()
+        if self._close_socket and getattr(self, "_s", None) is not None:
+            try:
+                self._s.close()
+            except Exception:
+                pass
 
     def server_command(self, server_dict):
         return sc.command(server_dict, self._s, self._print_infos, self._assert_errors)
@@ -165,8 +190,8 @@ class Experiment:
         elif len(lo_freq) < 3:
             lo_freq = lo_freq[0], lo_freq[1], lo_freq[0] # extend from 2 to 3 elements
 
-        self._dds_phase_steps = np.round(2**31 / fpga_clk_freq_MHz * np.array(lo_freq)).astype(np.uint32)
-        self._lo_freqs = self._dds_phase_steps * fpga_clk_freq_MHz / (2 ** 31) # real LO freqs -- TODO: print for debugging
+        self._dds_phase_steps = np.round(2**31 / marcos_cfg.fpga_clk_freq_MHz * np.array(lo_freq)).astype(np.uint32)
+        self._lo_freqs = self._dds_phase_steps * marcos_cfg.fpga_clk_freq_MHz / (2 ** 31) # real LO freqs -- TODO: print for debugging
 
         self._seq_compiled = False # force recompilation
 
@@ -179,11 +204,12 @@ class Experiment:
         ## Various functions to handle the conversion
         def times_us(farr):
             """ farr: float array, times in us units; [0, inf) """
-            return np.round(fpga_clk_freq_MHz * farr).astype(np.int64) # negative values will get rejected at a later stage
+            return np.round(marcos_cfg.fpga_clk_freq_MHz * farr).astype(np.int64) # negative values will get rejected at a later stage
 
         def tx_real(farr):
             """ farr: float array, [-1, 1] """
-            return np.round(32767 * farr).astype(np.uint16)
+            # int32 first so negative I/Q wrap to uint16 two's complement (NumPy 2-safe)
+            return np.round(32767 * np.asarray(farr, dtype=float)).astype(np.int32).astype(np.uint16)
 
         def tx_complex(times, farr, tolerance=2e-6):
             """times: float time array, farr: complex float array, [-1-1j, 1+1j]
@@ -351,7 +377,7 @@ class Experiment:
 
         def convert_t(t_bin, y):
             # add a zero event in the beginning, and shift the times to the 'user frame'
-            t = np.concatenate( ([0], t_bin) ) /fpga_clk_freq_MHz - self._initial_wait
+            t = np.concatenate( ([0], t_bin) ) /marcos_cfg.fpga_clk_freq_MHz - self._initial_wait
             # add a zero value in the beginning of outputs
             y2 = np.concatenate( ([0], y) )
             return t, y2
@@ -452,7 +478,15 @@ class Experiment:
             rx_data_old, _ = sc.command({'read_rx': 0}, self._s)
             # TODO: do something with RX data previously collected by the server
 
-        rx_data, msgs = sc.command({'run_seq': self._machine_code.tobytes()}, self._s)
+        bytecode = self._machine_code.tobytes()
+        log.info("Sending run_seq (%d bytes) to MaRCoS", len(bytecode))
+        try:
+            rx_data, msgs = sc.command({'run_seq': bytecode}, self._s)
+        except (OSError, ConnectionError) as exc:
+            raise ConnectionError(
+                f"MaRCoS closed while running the sequence ({exc}). "
+                "Do not Ping during a scan. On the Red Pitaya, watch marcos_server for an MPack error."
+            ) from exc
 
         rxd = rx_data[4]['run_seq']
         rxd_iq = {}
@@ -482,7 +516,7 @@ class Experiment:
 
 def test_rx_scaling(lo_freq=0.5, rf_amp=0.5, rf_steps=True, rx_time=50, rx_periods=[600], rx_padding=20, plot_rx=False):
 
-    expt = Experiment(lo_freq=lo_freq, rx_t=rx_periods[0] / fpga_clk_freq_MHz,
+    expt = Experiment(lo_freq=lo_freq, rx_t=rx_periods[0] / marcos_cfg.fpga_clk_freq_MHz,
                       fix_cic_scale=False, set_cic_shift=False, allow_user_init_cfg=True, flush_old_rx=True)
     tr_t = 0
     tr_period = rx_time + rx_padding
@@ -508,8 +542,8 @@ def test_rx_scaling(lo_freq=0.5, rf_amp=0.5, rf_steps=True, rx_time=50, rx_perio
         ar1 = np.arange(wds + 1, dtype=int)
         ow = np.ones(wds + 1, dtype=int)
         ow[-1] = 0
-        rate_seq = ( tstart + (rx_wait + ar0) / fpga_clk_freq_MHz, np.array(rx_words) )
-        rate_en_seq = ( tstart + (rx_wait + ar1) / fpga_clk_freq_MHz, ow )
+        rate_seq = ( tstart + (rx_wait + ar0) / marcos_cfg.fpga_clk_freq_MHz, np.array(rx_words) )
+        rate_en_seq = ( tstart + (rx_wait + ar1) / marcos_cfg.fpga_clk_freq_MHz, ow )
 
         value_dict = {
             'tx0': tx_seq, 'tx1': tx_seq,
@@ -528,7 +562,7 @@ def test_rx_scaling(lo_freq=0.5, rf_amp=0.5, rf_steps=True, rx_time=50, rx_perio
     for rt in rx_periods:
         expt.add_flodict( single_pulse_tr( tr_t , rt) )
         tr_t += tr_period
-        rx_lengths.append( int(rx_time * fpga_clk_freq_MHz / rt) + 1)
+        rx_lengths.append( int(rx_time * marcos_cfg.fpga_clk_freq_MHz / rt) + 1)
 
     rxd, msgs = expt.run()
     expt.close_server(True)

@@ -60,7 +60,13 @@ export type ScanTask = {
   exam: ExamInformation;
   parameters: Record<string, unknown>;
   other: Record<string, unknown>;
-  results: { type: string; name: string; file_path: string; primary?: boolean }[];
+  results: {
+    type: string;
+    name: string;
+    file_path: string;
+    primary?: boolean;
+    autoload_viewer?: number;
+  }[];
   journal: { created_at: string; prepared_at: string; fail_stage: string };
 };
 
@@ -109,6 +115,8 @@ export type HealthResponse = {
   exam_active: boolean;
   sequences: number;
   hardware_simulation: boolean;
+  sequence_registry?: boolean;
+  pipeline?: boolean;
 };
 
 export type ValidateResponse = {

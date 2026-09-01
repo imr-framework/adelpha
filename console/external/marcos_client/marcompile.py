@@ -8,7 +8,6 @@ try:
     from external.marcos_client.local_config import grad_board
 except ModuleNotFoundError:
     grad_board = "gpa-fhdo"
-print(grad_board)
 import pdb
 st = pdb.set_trace
 
@@ -31,21 +30,22 @@ def col2buf(col_idx, value):
     elif col_idx in (5, 6, 7, 8, 9, 10, 11, 12): # grad
         # Only encode value and channel into words here.  Precise
         # timing and broadcast logic will be handled at the next stage
+        value32 = np.asarray(value, dtype=np.uint32)
         if grad_board == "gpa-fhdo":
             if col_idx in (9, 10, 11, 12):
                 raise RuntimeError("GPA-FHDO is selected, but you are trying to control OCRA1")
             grad_chan = col_idx - 5
-            val_full = value | 0x80000 | ( grad_chan << 16 ) | (grad_chan << 25)
+            val_full = value32 | np.uint32(0x80000) | (np.uint32(grad_chan) << 16) | (np.uint32(grad_chan) << 25)
         elif grad_board == "ocra1":
             if col_idx in (5, 6, 7, 8):
                 raise RuntimeError("OCRA1 is selected, but you are trying to control GPA-FHDO")
             grad_chan = col_idx - 9
-            val_full = value << 2 | 0x00100000 | (grad_chan << 25) | 0x01000000 # always broadcast by default
+            val_full = (value32 << 2) | np.uint32(0x00100000) | (np.uint32(grad_chan) << 25) | np.uint32(0x01000000) # always broadcast by default
         else:
             raise ValueError("Unknown grad board")
 
         buf_idx = 2, 1 # GRAD_MSB, GRAD_LSB
-        val = val_full >> 16, val_full & 0xffff
+        val = (val_full >> 16).astype(np.uint16), (val_full & np.uint32(0xffff)).astype(np.uint16)
         mask = 0xffff, 0xffff
     elif col_idx in (13, 14): # RX rate
         buf_idx = col_idx - 10, # RX0_RATE, RX1_RATE
@@ -278,10 +278,17 @@ def cl2bin(changelist, changelist_grad,
             change_masks[:] = np.zeros(MARGA_BUFS, dtype=np.uint16)
             changed[:] = np.zeros(MARGA_BUFS, dtype=bool)
 
+        def as_u16(x):
+            # NumPy 2 rejects Python ints outside 0..65535 in uint16 bitwise ops.
+            # ~64 is Python -65, which used to wrap and now raises OverflowError.
+            return np.uint16(int(x) & 0xffff)
+
         for time, buf, val, mask in changelist:
             if time != current_time:
                 close_timestep(current_time)
                 current_time = time
+            val = as_u16(val)
+            mask = as_u16(mask)
             buf_diff = (current_bufs[buf] ^ val) & mask
             assert buf_diff & change_masks[buf] == 0, "Tried to set a buffer to two values at once"
             if buf_diff == 0:
@@ -289,7 +296,7 @@ def cl2bin(changelist, changelist_grad,
                     # gradient buffers will have unneeded instructions
                     # all the time, so not worth warning the user for
                     # those
-                    removed_instruction_warnings.append( "Instruction at tick {:d}, buffer {:d}, value 0x{:04x}, mask 0x{:04x} will have no effect. Skipping...".format(time, buf, val, mask) )
+                    removed_instruction_warnings.append( "Instruction at tick {:d}, buffer {:d}, value 0x{:04x}, mask 0x{:04x} will have no effect. Skipping...".format(time, buf, int(val), int(mask)) )
                 continue
             val_masked = val & mask
             old_val_unmasked = current_bufs[buf] & ~mask

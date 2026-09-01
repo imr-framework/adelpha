@@ -4,7 +4,6 @@ import {
   Bell,
   Box,
   Boxes,
-  ChevronRight,
   Cpu,
   Download,
   Info,
@@ -13,7 +12,6 @@ import {
   Puzzle,
   ScanLine,
   Search,
-  Server,
   Shield,
   Sparkles,
   User,
@@ -45,6 +43,9 @@ import {
   DtamRuntimeStatus,
   DtamTwinSetupSection,
 } from "./settings/DtamSetupSection";
+import { fetchSequences } from "./mri/api";
+import type { SequenceInfo } from "./mri/types";
+import { ScannerHardwareSection } from "./settings/ScannerHardwareSection";
 import { UpdatesSection } from "./settings/UpdatesSection";
 import { INITIAL_DRAFT, type Draft, type PatchDraft } from "./settings/draft";
 
@@ -124,7 +125,7 @@ const PANEL_COPY: Record<SettingsSectionId, { title: string; subtitle: string }>
   },
   "imaging-console": {
     title: "Imaging Console",
-    subtitle: "Theme, sequence defaults, and console behavior for acquisition.",
+    subtitle: "Theme, scanner hardware, and acquisition defaults for the connected Red Pitaya.",
   },
   "digital-twin": {
     title: "Digital Twin",
@@ -140,7 +141,7 @@ const PANEL_COPY: Record<SettingsSectionId, { title: string; subtitle: string }>
   },
   devices: {
     title: "Devices",
-    subtitle: "Scanner, camera, and local runtime connections.",
+    subtitle: "Red Pitaya / MaRCoS connection, acquisition hardware, and local devices.",
   },
   integrations: {
     title: "Integrations",
@@ -434,19 +435,9 @@ function GenericPanel({
           <SettingsSection title="Appearance">
             <ConsoleThemeRow />
           </SettingsSection>
+          <ScannerHardwareSection />
           <SettingsSection title="Acquisition">
-            <SettingsRow title="Default sequence" layout="stack">
-              <Select
-                label="Default sequence"
-                value={draft.defaultSequence}
-                onChange={(v) => patch("defaultSequence", v)}
-                options={[
-                  { value: "3d-tse", label: "3D Turbo Spin-Echo" },
-                  { value: "localizer", label: "Localizer" },
-                  { value: "b0-map", label: "B0 Map" },
-                ]}
-              />
-            </SettingsRow>
+            <DefaultSequenceRow value={draft.defaultSequence} onChange={(v) => patch("defaultSequence", v)} />
             <SettingsRow title="Units">
               <Select
                 compact
@@ -512,32 +503,18 @@ function GenericPanel({
       );
     case "devices":
       return (
-        <SettingsSection title="Connected hardware">
-          <button type="button" className="settings-link-row">
-            <Cpu size={16} strokeWidth={1.8} aria-hidden />
-            <span className="settings-row-copy">
-              <span className="settings-row-title">Scanner</span>
-              <span className="settings-row-desc">48 mT Halbach · MRI Uganda</span>
-            </span>
-            <span className="settings-link-status">Connected</span>
-            <ChevronRight size={16} strokeWidth={1.8} aria-hidden />
-          </button>
-          <SettingsRow title="Operator camera">
-            <Switch
-              label="Operator camera"
-              checked={draft.cameraEnabled}
-              onChange={(v) => patch("cameraEnabled", v)}
-            />
-          </SettingsRow>
-          <button type="button" className="settings-link-row">
-            <Server size={16} strokeWidth={1.8} aria-hidden />
-            <span className="settings-row-copy">
-              <span className="settings-row-title">Local model server</span>
-            </span>
-            <span className="settings-link-status">Connected · localhost:8000</span>
-            <ChevronRight size={16} strokeWidth={1.8} aria-hidden />
-          </button>
-        </SettingsSection>
+        <>
+          <ScannerHardwareSection compact />
+          <SettingsSection title="Workstation">
+            <SettingsRow title="Operator camera">
+              <Switch
+                label="Operator camera"
+                checked={draft.cameraEnabled}
+                onChange={(v) => patch("cameraEnabled", v)}
+              />
+            </SettingsRow>
+          </SettingsSection>
+        </>
       );
     case "integrations":
       return <DtamIntegrationsSection />;
@@ -590,6 +567,39 @@ function GenericPanel({
     default:
       return null;
   }
+}
+
+function DefaultSequenceRow({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [options, setOptions] = useState<{ value: string; label: string }[]>([
+    { value, label: value },
+  ]);
+  useEffect(() => {
+    let cancelled = false;
+    void fetchSequences(true)
+      .then((list: SequenceInfo[]) => {
+        if (cancelled || !list.length) return;
+        const next = list.map((seq) => ({ value: seq.id, label: seq.name || seq.id }));
+        if (!next.some((item) => item.value === value)) {
+          next.unshift({ value, label: value });
+        }
+        setOptions(next);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [value]);
+  return (
+    <SettingsRow title="Default sequence" layout="stack">
+      <Select label="Default sequence" value={value} onChange={onChange} options={options} />
+    </SettingsRow>
+  );
 }
 
 function WorkspacePanel() {

@@ -39,6 +39,7 @@ if str(CONSOLE_ROOT / "external") not in sys.path:
 os.environ["MRI4ALL_BASE"] = str(resolve_base())
 
 os.environ.setdefault("MRI4ALL_DEBUG", "true")
+os.environ.setdefault("MPLBACKEND", "Agg")
 Path(os.environ["MRI4ALL_BASE"], "logs").mkdir(parents=True, exist_ok=True)
 Path(os.environ["MRI4ALL_BASE"], "config").mkdir(parents=True, exist_ok=True)
 Path(os.environ["MRI4ALL_BASE"], "data").mkdir(parents=True, exist_ok=True)

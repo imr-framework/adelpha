@@ -4,6 +4,9 @@ pydantic>=2.2
 pydicom>=1.2.2
 uvicorn[standard]>=0.32.0
 websockets>=12.0
+matplotlib>=3.8
+scipy>=1.11
+Pillow>=10
 
 [build]
 pyinstaller>=6.11

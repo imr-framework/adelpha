@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
-import msgpack, warnings
+import msgpack, warnings, logging
 from external.marcos_client.marmachine import MarServerWarning
+
+log = logging.getLogger("mri4all")
 
 version_major = 1
 version_minor = 0
@@ -57,28 +59,34 @@ def construct_packet(data, packet_idx=0, command=request_pkt, version=(version_m
 #         print("Reply data: ")
 #         print(reply_data)
 
-def send_packet(packet, socket):
-    socket.sendall(msgpack.packb(packet))
+def send_packet(packet, sock):
+    try:
+        sock.sendall(msgpack.packb(packet))
+    except OSError as exc:
+        raise ConnectionError(f"MaRCoS closed the connection while sending: {exc}") from exc
 
     unpacker = msgpack.Unpacker()
     packet_done = False
     while not packet_done:
-        buf = socket.recv(1024)
+        try:
+            buf = sock.recv(1024)
+        except OSError as exc:
+            raise ConnectionError(f"MaRCoS closed the connection while receiving: {exc}") from exc
         if not buf:
             break
         unpacker.feed(buf)
         for o in unpacker: # ugly way of doing it
             return o # quit function after 1st reply (could make this a thread in the future)
 
-def command(server_dict, socket, print_infos=False, assert_errors=False):
+def command(server_dict, sock, print_infos=False, assert_errors=False):
     packet = construct_packet(server_dict)
-    reply = send_packet(packet, socket)
+    reply = send_packet(packet, sock)
+    if reply is None:
+        raise ConnectionError("MaRCoS closed the connection without a reply")
     return_status = reply[5]
 
     if print_infos and 'infos' in return_status:
-        print("Server info:")
-        for k in return_status['infos']:
-            print(k)
+        log.info("Server info: %s", return_status['infos'])
 
     if 'warnings' in return_status:
         for k in return_status['warnings']:

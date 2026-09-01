@@ -35,7 +35,7 @@ def pypulseq_1dse(
     TR = inputs["TR"] / 1000  # ms to s
     TE = inputs["TE"] / 1000
     num_averages = inputs["NSA"]
-    fov = inputs["FOV"] / 1000
+    fov = inputs["FOV"] / 1000  # mm to m (MRI4ALL convention)
     Nx = inputs["Base_Resolution"]
     BW = inputs["BW"]
     channel = inputs["Gradient"]
@@ -128,18 +128,6 @@ def pypulseq_1dse(
         )
     ) * seq.grad_raster_time
 
-    # tau2 = (
-    #     math.ceil(
-    #         (
-    #             TE / 2
-    #             - 0.5 * (pp.calc_duration(rf2))
-    #             - pp.calc_duration(gx_pre)
-    #             - 2 * rise_time
-    #         )
-    #         / seq.grad_raster_time
-    #     )
-    # ) * seq.grad_raster_time  # TODO: gradient delays need to be calibrated
-
     tau2 = (
         math.ceil(
             (TE / 2 - 0.5 * (pp.calc_duration(rf2) + pp.calc_duration(gx)))
@@ -148,18 +136,20 @@ def pypulseq_1dse(
     ) * seq.grad_raster_time
 
     delay_TR = TR - TE - (0.5 * readout_time)
-    assert np.all(tau1 >= 0)
-    assert np.all(tau2 >= 0)
-    assert np.all(delay_TR >= 0)
+    if tau1 < 0 or tau2 < 0 or delay_TR < 0:
+        log.error(
+            "1D SE timing is negative (tau1=%s tau2=%s delay_TR=%s TE=%s TR=%s)",
+            tau1,
+            tau2,
+            delay_TR,
+            TE,
+            TR,
+        )
+        return False
 
     # ======
     # CONSTRUCT SEQUENCE
     # ======
-    # Loop over phase encodes and define sequence blocks
-
-    # gx_pre.amplitude = 0
-    # gx.amplitude = 0
-
     for avg in range(num_averages):
         seq.add_block(rf1)
         seq.add_block(gx_pre)
@@ -169,24 +159,20 @@ def pypulseq_1dse(
         seq.add_block(gx, adc)  # Projection
         seq.add_block(pp.make_delay(delay_TR))
 
-    # seq.plot(time_range=[0, 2*TR])
-    # seq.write("se_1D_local.seq")
-
-    # Check whether the timing of the sequence is correct
     check_timing = True
     if check_timing:
         ok, error_report = seq.check_timing()
         if ok:
-            print("Timing check passed successfully")
+            log.info("Timing check passed successfully")
         else:
-            print("Timing check failed. Error listing follows:")
-            [print(e) for e in error_report]
+            log.error("Timing check failed: %s", error_report)
+            return False
 
     log.debug(output_file)
     try:
         seq.write(output_file)
         log.debug("Seq file stored")
-    except:
+    except Exception:
         log.error("Could not write sequence file")
         return False
 

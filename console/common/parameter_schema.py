@@ -21,7 +21,12 @@ PARAM_META: Dict[str, Dict[str, Any]] = {
         "tab": "sequence",
         "enum": ["Axial", "Sagittal", "Coronal"],
     },
-    "FOV": {"title": "FOV", "unit": "cm", "tab": "sequence", "minimum": 1},
+    "Gradient": {
+        "title": "Gradient",
+        "tab": "sequence",
+        "enum": ["x", "y", "z"],
+    },
+    "FOV": {"title": "FOV", "unit": "mm", "tab": "sequence", "minimum": 1},
     "Base_Resolution": {"title": "Base Resolution", "tab": "sequence", "minimum": 8},
     "baseresolution": {"title": "Base Resolution", "tab": "sequence", "minimum": 8},
     "Slices": {"title": "Slices", "tab": "sequence", "minimum": 1},

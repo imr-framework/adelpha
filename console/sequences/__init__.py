@@ -2,6 +2,11 @@ from importlib import import_module
 from pathlib import Path
 from typing import Dict, TypeVar, Generic
 import os
+
+from common.qtcompat import configure_headless
+
+configure_headless()
+
 import common.logger as logger
 
 log = logger.get_logger()
@@ -237,6 +242,9 @@ class PulseqSequence(SequenceBase[SequenceVar], registry_key=""):
 for f in Path(__file__).parent.glob("*.py"):
     module_name = f.stem
     if (not module_name.startswith("_")) and (module_name not in globals()):
-        import_module(f".{module_name}", __package__)
+        try:
+            import_module(f".{module_name}", __package__)
+        except Exception as exc:
+            log.warning("Could not load sequence module %s: %s", module_name, exc)
     del f, module_name
 del import_module, Path

@@ -67,7 +67,7 @@ export const INITIAL_DRAFT: Draft = {
   defaultWorkspace: "digital-twin",
   restoreLayout: true,
   rememberPanel: true,
-  defaultSequence: "3d-tse",
+  defaultSequence: "tse_3D",
   units: "si",
   plotTiming: false,
   telemetryHz: "2",

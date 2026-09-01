@@ -69,12 +69,8 @@ class ServiceStatusResponse(BaseModel):
     acq: Optional[bool] = None
     recon: Optional[bool] = None
     mode: str = "unknown"
-
-
-class EventRespondRequest(BaseModel):
-    response: Any = None
-    error: bool = False
-    source: str = "acq"
+    last_error: str = ""
+    sequence_registry: bool = False
 
 
 class HealthResponse(BaseModel):
@@ -83,6 +79,14 @@ class HealthResponse(BaseModel):
     exam_active: bool = False
     sequences: int = 0
     hardware_simulation: bool = False
+    sequence_registry: bool = False
+    pipeline: bool = False
+
+
+class EventRespondRequest(BaseModel):
+    response: Any = None
+    error: bool = False
+    source: str = "acq"
 
 
 class ScanDetail(BaseModel):

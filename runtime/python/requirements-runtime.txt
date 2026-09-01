@@ -1,8 +1,6 @@
 # Runtime-only Python dependencies for the Adelpha supervisor sidecar.
 # DTAM (numpy 2.x stack) is installed from dtam/pyproject.toml when present.
-# The heavy MRI4ALL console stack (numpy 1.25, numba, PyQt5) is intentionally
-# not installed — the HTTP façade uses the sequence FALLBACK catalog if the
-# full SequenceBase registry cannot import.
+# Sequence modules use vendored console/pypulseq. PyQt5 is stubbed at runtime.
 
 fastapi>=0.115.0
 httpx>=0.28.1
@@ -12,3 +10,7 @@ uvicorn[standard]>=0.32.0
 websockets>=12.0
 pyyaml>=6.0
 numpy>=2.2.6
+matplotlib>=3.8
+scipy>=1.11
+Pillow>=10
+msgpack>=1.0

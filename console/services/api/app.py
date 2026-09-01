@@ -15,6 +15,10 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
+from common.qtcompat import configure_headless
+
+configure_headless()
+
 import common.config as config
 import common.queue as queue
 from common.types import PatientInformation
@@ -33,7 +37,7 @@ from services.api.models import (
     ServiceStatusResponse,
     ValidateResponse,
 )
-from services.api.sequences_api import get_sequence_info, list_sequences, validate_parameters
+from services.api.sequences_api import get_sequence_info, list_sequences, registry_loaded, validate_parameters
 from services.api.session import session
 from services.ui.control import (
     control_service,
@@ -58,6 +62,8 @@ app.add_middleware(
 async def on_startup() -> None:
     import asyncio
     import common.runtime as rt
+    from services.api import pipeline
+    from services.api.sequences_api import reset_registry_cache
 
     Path(rt.get_base_path(), "config").mkdir(parents=True, exist_ok=True)
     Path(rt.get_base_path(), "data").mkdir(parents=True, exist_ok=True)
@@ -65,17 +71,32 @@ async def on_startup() -> None:
     queue.check_and_create_folders()
     events.attach_loop(asyncio.get_running_loop())
     events.start_listeners()
+    from sequences.common.util import reading_json_parameter
+
+    reading_json_parameter()
+    try:
+        from external.marcos_client.local_config import apply_scanner_settings
+
+        apply_scanner_settings()
+    except Exception as exc:
+        log.warning("Could not apply MaRCoS settings at startup: %s", exc)
+    reset_registry_cache()
+    pipeline.start()
     cfg = config.get_config()
     log.info(
-        "MRI4ALL API ready (base=%s simulation=%s scanner=%s)",
+        "MRI4ALL API ready (base=%s simulation=%s scanner=%s sequences=%s pipeline=%s)",
         rt.get_base_path(),
         cfg.is_hardware_simulation(),
         cfg.scanner_ip,
+        len(list_sequences(include_adjustments=True)),
+        pipeline.is_running(),
     )
 
 
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
+    from services.api import pipeline
+
     try:
         cfg = config.get_config()
         sim = cfg.is_hardware_simulation()
@@ -85,6 +106,8 @@ def health() -> HealthResponse:
         exam_active=session.exam_active(),
         sequences=len(list_sequences(include_adjustments=True)),
         hardware_simulation=sim,
+        sequence_registry=registry_loaded(),
+        pipeline=pipeline.is_running(),
     )
 
 
@@ -229,14 +252,56 @@ def put_config(body: dict):
     cfg = config.get_config()
     cfg.update(body)
     cfg.save_to_file()
+    try:
+        from external.marcos_client.local_config import apply_scanner_settings
+
+        apply_scanner_settings()
+    except Exception as exc:
+        log.warning("Could not apply MaRCoS settings: %s", exc)
     return cfg.model_dump()
+
+
+@app.get("/config/acq")
+def get_acq_config():
+    from sequences.common.util import reading_json_parameter
+
+    return reading_json_parameter().model_dump(mode="json")
+
+
+@app.put("/config/acq")
+def put_acq_config(body: dict):
+    from sequences.common.pydanticConfig import Config
+    from sequences.common.util import reading_json_parameter, writing_json_parameter
+    import external.seq.adjustments_acq.config as cfg
+
+    current = reading_json_parameter().model_dump(mode="json")
+    for section, values in body.items():
+        if section in current and isinstance(values, dict) and isinstance(current[section], dict):
+            current[section].update(values)
+        else:
+            current[section] = values
+    parsed = Config(**current)
+    writing_json_parameter(parsed)
+    try:
+        cfg.update()
+    except Exception as exc:
+        log.warning("Could not reload adjustment config: %s", exc)
+    try:
+        from external.marcos_client.local_config import apply_scanner_settings
+
+        apply_scanner_settings()
+    except Exception as exc:
+        log.warning("Could not apply MaRCoS settings: %s", exc)
+    return parsed.model_dump(mode="json")
 
 
 @app.post("/device/ping", response_model=DevicePingResponse)
 def device_ping() -> DevicePingResponse:
+    from services.ui.control import marcos_port
+
     config.load_config()
     cfg = config.get_config()
-    probe = probe_scanner(cfg.scanner_ip)
+    probe = probe_scanner(cfg.scanner_ip, port=marcos_port())
     return DevicePingResponse(
         ip=cfg.scanner_ip,
         ok=bool(probe["reachable"]),
@@ -249,12 +314,27 @@ def device_ping() -> DevicePingResponse:
 
 @app.get("/device/services", response_model=ServiceStatusResponse)
 def device_services() -> ServiceStatusResponse:
+    from services.api import pipeline
+
+    if pipeline.is_running():
+        return ServiceStatusResponse(
+            acq=pipeline.acq_enabled(),
+            recon=pipeline.recon_enabled(),
+            mode="adelpha",
+            last_error=pipeline.last_error(),
+            sequence_registry=registry_loaded(),
+        )
     acq = control_service(ServiceAction.STATUS, Service.ACQ_SERVICE)
     recon = control_service(ServiceAction.STATUS, Service.RECON_SERVICE)
     mode = "systemd" if acq is not None or recon is not None else "unavailable"
     if acq is False and recon is False:
         mode = "unavailable"
-    return ServiceStatusResponse(acq=acq, recon=recon, mode=mode)
+    return ServiceStatusResponse(
+        acq=acq,
+        recon=recon,
+        mode=mode,
+        sequence_registry=registry_loaded(),
+    )
 
 
 @app.delete("/scans/{scan_id}")
@@ -378,6 +458,8 @@ def device_disk():
 
 @app.post("/device/services/{service}/{action}")
 def device_one_service(service: str, action: str):
+    from services.api import pipeline
+
     mapping = {"acq": Service.ACQ_SERVICE, "recon": Service.RECON_SERVICE}
     if service not in mapping:
         raise HTTPException(400, "service must be acq or recon")
@@ -385,6 +467,9 @@ def device_one_service(service: str, action: str):
         act = ServiceAction(action)
     except ValueError:
         raise HTTPException(400, "action must be start, stop, kill, or status")
+    if pipeline.is_running() and act != ServiceAction.STATUS:
+        pipeline.set_worker(service, act == ServiceAction.START)
+        return device_services()
     result = control_service(act, mapping[service])
     return device_services() if act != ServiceAction.STATUS else {"ok": result}
 
@@ -549,8 +634,18 @@ def study_preview(folder: str, file_path: str = "", result_type: str = "", index
                 return empty
             with open(target, "rb") as handle:
                 fig = pickle.load(handle)
+            try:
+                fig.tight_layout()
+            except Exception:
+                pass
             buf = BytesIO()
             fig.savefig(buf, format="png", dpi=110, facecolor=fig.get_facecolor(), bbox_inches="tight")
+            try:
+                import matplotlib.pyplot as plt
+
+                plt.close(fig)
+            except Exception:
+                pass
             import base64
 
             return {
