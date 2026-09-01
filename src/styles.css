@@ -83,6 +83,85 @@ body,
   overflow: visible;
 }
 
+.topbar-drag {
+  flex: 1 1 20px;
+  align-self: stretch;
+  min-width: 12px;
+  min-height: 28px;
+  cursor: default;
+}
+
+html[data-desktop-chrome="custom"] .topbar {
+  padding: 10px 0 10px 16px;
+}
+
+html[data-desktop-chrome="custom"] .brand,
+html[data-desktop-chrome="native"] .brand {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.window-controls {
+  display: flex;
+  align-self: stretch;
+  flex-shrink: 0;
+  margin: -10px 0;
+}
+
+.window-ctrl {
+  appearance: none;
+  width: 46px;
+  min-height: 40px;
+  border: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: #d4d4d4;
+  cursor: pointer;
+}
+
+.window-ctrl:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.window-ctrl:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.window-ctrl-close:hover,
+.window-ctrl-close:active {
+  background: #e81123;
+  color: #fff;
+}
+
+.desktop-chrome-overlay {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 10050;
+  height: 36px;
+  display: flex;
+  align-items: stretch;
+  pointer-events: none;
+}
+
+.desktop-chrome-overlay > * {
+  pointer-events: auto;
+}
+
+.desktop-chrome-drag {
+  flex: 1;
+}
+
+.desktop-chrome-overlay .window-controls {
+  margin: 0;
+}
+
+.desktop-chrome-overlay .window-ctrl {
+  min-height: 36px;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -127,8 +206,12 @@ body,
   justify-content: flex-end;
   gap: 10px;
   min-width: 0;
-  flex: 1;
+  flex: 0 1 auto;
   flex-wrap: wrap;
+}
+
+html[data-desktop-chrome="custom"] .topbar-right {
+  padding-right: 8px;
 }
 
 .topbar-meta {
@@ -4114,6 +4197,10 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
     align-items: stretch;
     gap: 10px;
     padding: 14px 14px 12px;
+  }
+
+  html[data-desktop-chrome="custom"] .topbar {
+    padding: 10px 0 12px 14px;
   }
 
   .topbar-right {

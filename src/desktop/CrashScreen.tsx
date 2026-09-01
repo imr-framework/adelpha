@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { clearAllImportedModels } from "../twin/importedModels";
 import { quitApp } from "./runtime";
+import { OverlayChrome } from "./WindowControls";
 import "../styles.css";
 
 export function CrashScreen({ error }: { error: Error }) {
@@ -20,6 +21,7 @@ export function CrashScreen({ error }: { error: Error }) {
         fontFamily: "Geist Variable, system-ui, sans-serif",
       }}
     >
+      <OverlayChrome />
       <div style={{ maxWidth: 560 }}>
         <h1 id="app-crash-title" style={{ fontSize: 22, marginBottom: 12 }}>
           Adelpha hit a problem loading the interface

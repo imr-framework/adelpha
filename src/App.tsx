@@ -65,6 +65,7 @@ import {
   useWorkspacePrefs,
 } from "./twin/workspacePrefs";
 import { scheduleAutoUpdateCheck } from "./desktop/updater";
+import { TitleDrag, WindowControls } from "./desktop/WindowControls";
 import "./styles.css";
 import "./settings.css";
 
@@ -680,7 +681,7 @@ export default function App() {
   return (
     <div className="shell">
       <header className="topbar">
-        <div className="brand">
+        <TitleDrag className="brand">
           <img
             className="brand-mark"
             src="/logos/adelpha-gradient-logo.svg"
@@ -693,7 +694,8 @@ export default function App() {
             <div className="title">Adelpha</div>
             <div className="subtitle">The Intelligent Magnetic Resonance Framework</div>
           </div>
-        </div>
+        </TitleDrag>
+        <TitleDrag className="topbar-drag" aria-hidden />
         <div className="topbar-right">
           <TopbarControls
             scannerId={health?.scanner_id ?? systemState?.scanner_id ?? "—"}
@@ -722,6 +724,7 @@ export default function App() {
             <TopbarAppMenu workspace={workspace} />
           </div>
         </div>
+        <WindowControls />
       </header>
 
       <main

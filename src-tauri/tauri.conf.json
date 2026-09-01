@@ -19,7 +19,10 @@
         "minWidth": 1024,
         "minHeight": 700,
         "backgroundColor": "#050505",
-        "visible": true
+        "theme": "Dark",
+        "decorations": false,
+        "shadow": true,
+        "visible": false
       }
     ],
     "security": {

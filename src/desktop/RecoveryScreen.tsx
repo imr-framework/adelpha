@@ -6,6 +6,7 @@ import {
   restartRuntime,
   type RuntimeStatus,
 } from "./runtime";
+import { OverlayChrome } from "./WindowControls";
 
 export function RecoveryScreen({ runtime }: { runtime: RuntimeStatus }) {
   const [diag, setDiag] = useState<string | null>(null);
@@ -39,6 +40,7 @@ export function RecoveryScreen({ runtime }: { runtime: RuntimeStatus }) {
         fontFamily: "Geist Variable, system-ui, sans-serif",
       }}
     >
+      <OverlayChrome />
       <div style={{ maxWidth: 560 }}>
         <h1 id="runtime-recovery-title" style={{ fontSize: 22, marginBottom: 12 }}>
           Adelpha could not start its Python runtime

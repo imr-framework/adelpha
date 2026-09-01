@@ -8,6 +8,7 @@ import {
   LAUNCH_REDUCED_DURATION_S,
   markLaunchSeen,
 } from "./launchConfig";
+import { OverlayChrome } from "../../desktop/WindowControls";
 
 type LaunchScreenProps = {
   onComplete: () => void;
@@ -395,6 +396,7 @@ export function LaunchScreen({ onComplete, hold = false, status }: LaunchScreenP
       aria-label="Adelpha introduction"
       aria-busy={hold}
     >
+      <OverlayChrome />
       <div className="launch-ambient" aria-hidden />
       <div className="launch-stage" aria-hidden>
         <div className="launch-twin launch-twin-left">

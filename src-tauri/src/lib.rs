@@ -4,7 +4,32 @@ mod runtime;
 use std::sync::Arc;
 
 use runtime::RuntimeManager;
-use tauri::Manager;
+use tauri::{Manager, Theme};
+
+fn apply_window_chrome(window: &tauri::WebviewWindow) {
+    let (os, chrome) = if cfg!(target_os = "macos") {
+        ("macos", "native")
+    } else if cfg!(target_os = "windows") {
+        ("windows", "custom")
+    } else {
+        ("linux", "custom")
+    };
+
+    #[cfg(target_os = "macos")]
+    {
+        let _ = window.set_decorations(true);
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = window.set_decorations(false);
+    }
+    let _ = window.set_theme(Some(Theme::Dark));
+    let script = format!(
+        r#"document.documentElement.dataset.tauriOs={os:?};document.documentElement.dataset.desktopChrome={chrome:?};window.dispatchEvent(new Event("adelpha:chrome"));"#
+    );
+    let _ = window.eval(&script);
+    let _ = window.show();
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -19,6 +44,9 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .setup(move |app| {
+            if let Some(window) = app.get_webview_window("main") {
+                apply_window_chrome(&window);
+            }
             let handle = app.handle().clone();
             let mgr = manager.clone();
             tauri::async_runtime::spawn(async move {
