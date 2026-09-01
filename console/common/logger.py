@@ -1,5 +1,6 @@
 import logging, sys, os, re
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 import common.runtime as rt
 
@@ -55,6 +56,77 @@ def get_logger():
 
         return logger
     return logger
+
+
+def _log_stems(name: str) -> tuple[str, ...]:
+    if name == "api":
+        return ("unknown", "api")
+    return (name,)
+
+
+def collect_log_lines(name: str, base: str | None = None, limit: int = 2000) -> list[str]:
+    """Return recent lines for the Log Viewer.
+
+    Adelpha mounts the console API in-process and historically wrote ``unknown.log``
+    because the service name was never set. Console still reads that file so
+    existing sessions are not empty.
+    """
+    _require_log_name(name)
+    lines: list[str] = []
+    for path in _active_log_files(name, base):
+        try:
+            lines.extend(path.read_text(encoding="utf-8", errors="replace").splitlines())
+        except OSError:
+            continue
+    return lines[-limit:]
+
+
+def clear_log_files(name: str, base: str | None = None) -> int:
+    """Erase the on-disk history for a Log Viewer source."""
+    _require_log_name(name)
+    cleared = 0
+    for path in _log_files(name, base):
+        try:
+            if path.name.endswith(".log"):
+                path.write_text("", encoding="utf-8")
+            else:
+                path.unlink()
+            cleared += 1
+        except OSError:
+            continue
+    _reopen_file_handlers()
+    return cleared
+
+
+def _require_log_name(name: str) -> None:
+    if name not in {"acq", "recon", "ui", "api"}:
+        raise ValueError(f"Unknown log {name}")
+
+
+def _active_log_files(name: str, base: str | None = None) -> list[Path]:
+    root = Path(base or rt.get_base_path()) / "logs"
+    return [root / f"{stem}.log" for stem in _log_stems(name) if (root / f"{stem}.log").is_file()]
+
+
+def _log_files(name: str, base: str | None = None) -> list[Path]:
+    root = Path(base or rt.get_base_path()) / "logs"
+    found: list[Path] = []
+    for stem in _log_stems(name):
+        active = root / f"{stem}.log"
+        if active.is_file():
+            found.append(active)
+        found.extend(sorted(path for path in root.glob(f"{stem}.log.*") if path.is_file()))
+    return found
+
+
+def _reopen_file_handlers() -> None:
+    log = logger
+    if log is None:
+        return
+    for handler in list(log.handlers):
+        if isinstance(handler, RotatingFileHandler):
+            handler.close()
+            handler.stream = handler._open()
 
 
 def get_loglevel() -> int:

@@ -7,7 +7,6 @@ sequence payloads itself.
 
 from __future__ import annotations
 
-import logging
 import os
 from pathlib import Path
 from typing import Optional
@@ -19,12 +18,17 @@ from common.qtcompat import configure_headless
 
 configure_headless()
 
+import common.runtime as rt
+
+rt.set_service_name("api")
+
 import common.config as config
 import common.queue as queue
 from common.types import PatientInformation
 
 from services.api import events
 from services.api.models import (
+    DeviceMarcosStartResponse,
     DevicePingResponse,
     EventRespondRequest,
     ExamResponse,
@@ -46,8 +50,9 @@ from services.ui.control import (
     run_device_test,
 )
 from common.constants import Service, ServiceAction
+import common.logger as logger
 
-log = logging.getLogger("mri4all-api")
+log = logger.get_logger()
 
 app = FastAPI(title="MRI4ALL API", version="0.1.0")
 app.add_middleware(
@@ -83,14 +88,25 @@ async def on_startup() -> None:
     reset_registry_cache()
     pipeline.start()
     cfg = config.get_config()
-    log.info(
-        "MRI4ALL API ready (base=%s simulation=%s scanner=%s sequences=%s pipeline=%s)",
-        rt.get_base_path(),
-        cfg.is_hardware_simulation(),
-        cfg.scanner_ip,
-        len(list_sequences(include_adjustments=True)),
-        pipeline.is_running(),
-    )
+    if not cfg.is_hardware_simulation():
+        import threading
+        from services.ui.marcos_boot import ensure_marcos_server, fpga_device
+        from services.ui.control import marcos_port
+        from sequences.common.util import reading_json_parameter
+
+        def _boot_marcos() -> None:
+            try:
+                clock = reading_json_parameter().marcos_parameters.fpga_clock_frequency_MHz
+                result = ensure_marcos_server(cfg.scanner_ip, port=marcos_port(), device=fpga_device(clock))
+                if not result["ok"]:
+                    log.warning("MaRCoS not started · %s", result["detail"])
+            except Exception as exc:
+                log.warning("MaRCoS startup skipped · %s", exc)
+
+        threading.Thread(target=_boot_marcos, daemon=True, name="marcos-boot").start()
+    else:
+        log.info("Hardware simulation enabled · MaRCoS not started")
+    list_sequences(include_adjustments=True)
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -302,6 +318,13 @@ def device_ping() -> DevicePingResponse:
     config.load_config()
     cfg = config.get_config()
     probe = probe_scanner(cfg.scanner_ip, port=marcos_port())
+    if probe.get("method") == "tcp":
+        log.info("MaRCoS server running · %s", cfg.scanner_ip)
+        log.info("%s", probe.get("detail") or f"MaRCoS at {cfg.scanner_ip}:{marcos_port()}")
+    elif probe.get("reachable"):
+        log.warning("Red Pitaya reachable · MaRCoS not listening on %s:%s", cfg.scanner_ip, marcos_port())
+    else:
+        log.warning("Scanner unreachable · %s", cfg.scanner_ip)
     return DevicePingResponse(
         ip=cfg.scanner_ip,
         ok=bool(probe["reachable"]),
@@ -377,19 +400,22 @@ def about():
 
 @app.get("/logs/{name}")
 def read_log(name: str):
-    import common.runtime as rt
-
     allowed = {"acq", "recon", "ui", "api"}
     if name not in allowed:
         raise HTTPException(400, "Unknown log")
-    path = Path(rt.get_base_path()) / "logs" / f"{name}.log"
-    if not path.is_file():
-        return {"name": name, "lines": [f"— no log file at {path} —"]}
+    return {"name": name, "lines": logger.collect_log_lines(name)}
+
+
+@app.delete("/logs/{name}")
+def delete_log(name: str):
+    allowed = {"acq", "recon", "ui", "api"}
+    if name not in allowed:
+        raise HTTPException(400, "Unknown log")
     try:
-        text = path.read_text(encoding="utf-8", errors="replace")
+        logger.clear_log_files(name)
     except OSError as exc:
         raise HTTPException(500, str(exc)) from exc
-    return {"name": name, "lines": text.splitlines()[-2000:]}
+    return {"name": name, "ok": True}
 
 
 @app.get("/studies")
@@ -482,6 +508,26 @@ def device_test():
 @app.post("/device/reset")
 def device_reset():
     return {"ok": bool(restart_device())}
+
+
+@app.post("/device/marcos/start", response_model=DeviceMarcosStartResponse)
+def device_marcos_start() -> DeviceMarcosStartResponse:
+    from services.ui.control import marcos_port
+    from services.ui.marcos_boot import ensure_marcos_server, fpga_device
+    from sequences.common.util import reading_json_parameter
+
+    config.load_config()
+    cfg = config.get_config()
+    if cfg.is_hardware_simulation():
+        log.info("Hardware simulation enabled · MaRCoS not started")
+        return DeviceMarcosStartResponse(
+            ok=True,
+            detail="Hardware simulation is on — MaRCoS is not started",
+            ip=cfg.scanner_ip,
+        )
+    clock = reading_json_parameter().marcos_parameters.fpga_clock_frequency_MHz
+    result = ensure_marcos_server(cfg.scanner_ip, port=marcos_port(), device=fpga_device(clock), force=True)
+    return DeviceMarcosStartResponse(**result)
 
 
 @app.post("/studies/clone")

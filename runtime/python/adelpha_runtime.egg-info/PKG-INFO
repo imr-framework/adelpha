@@ -13,6 +13,7 @@ Requires-Dist: matplotlib>=3.8
 Requires-Dist: scipy>=1.11
 Requires-Dist: Pillow>=10
 Requires-Dist: msgpack>=1.0
+Requires-Dist: paramiko>=3.4
 Provides-Extra: dev
 Requires-Dist: pytest>=8.0; extra == "dev"
 Requires-Dist: pytest-asyncio>=0.24; extra == "dev"

@@ -65,6 +65,15 @@ class DevicePingResponse(BaseModel):
     detail: str = ""
 
 
+class DeviceMarcosStartResponse(BaseModel):
+    ok: bool
+    started: bool = False
+    compiled: bool = False
+    bitstream: bool = False
+    detail: str = ""
+    ip: str = ""
+
+
 class ServiceStatusResponse(BaseModel):
     acq: Optional[bool] = None
     recon: Optional[bool] = None

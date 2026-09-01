@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Any, Dict, List, Optional
 
 from common.parameter_schema import schema_for_defaults
+import common.logger as logger
 
 from services.api.models import SequenceInfo, ValidateResponse
 
-log = logging.getLogger("mri4all-api")
+log = logger.get_logger()
 
 FALLBACK: List[SequenceInfo] = [
     SequenceInfo(
@@ -160,9 +160,9 @@ def _from_registry() -> Optional[List[SequenceInfo]]:
                 )
             )
         _registry_cache = items
-        log.info("Loaded %s sequences from SequenceBase", len(items))
+        log.info("Sequence registry loaded")
     except Exception as exc:
-        log.warning("SequenceBase unavailable (%s); using fallback catalog", exc)
+        log.warning("Sequence registry unavailable — using fallback catalog (%s)", exc)
         _registry_cache = None
     return _registry_cache
 

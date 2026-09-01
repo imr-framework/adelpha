@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowLeftRight,
   Ban,
@@ -8,6 +8,7 @@ import {
   CircleHelp,
   CircleX,
   Copy,
+  Download,
   Image as ImageIcon,
   Maximize2,
   Minimize2,
@@ -18,9 +19,11 @@ import {
   Save,
   Send,
   Square,
+  Trash2,
   X,
 } from "lucide-react";
 import {
+  clearLog,
   cloneStudyScan,
   controlOneService,
   fetchAbout,
@@ -46,6 +49,7 @@ import {
 } from "./mri/api";
 import { getScannerProfile, useScannerModel } from "./scannerModel";
 import { Overlay } from "./ImagingOverlay";
+import { downloadTextFile } from "./headMotionLog";
 import { ADELPHA_VERSION } from "./adelphaVersion";
 import { ScientificPlot } from "./ScientificPlot";
 
@@ -269,47 +273,185 @@ export function FlexDialog({ onClose, target }: { onClose: () => void; target: V
 }
 
 export function LogDialog({ onClose }: { onClose: () => void }) {
-  const [name, setName] = useState<"acq" | "recon" | "ui">("acq");
+  const [name, setName] = useState<"api" | "acq" | "recon" | "ui">("api");
   const [lines, setLines] = useState<string[]>([]);
-  const scroller = useRef<HTMLPreElement | null>(null);
-  const load = (n: typeof name) => {
+  const [busy, setBusy] = useState(false);
+  const scroller = useRef<HTMLDivElement | null>(null);
+  const stickToBottom = useRef(true);
+  const load = useCallback((n: typeof name) => {
     void fetchLog(n)
-      .then((r) => setLines(r.lines))
-      .catch((e) => setLines([e instanceof Error ? e.message : "- Unable to load log -"]));
-  };
+      .then((r) => setLines(r.lines.filter((line) => line.trim().length > 0)))
+      .catch((e) => setLines([e instanceof Error ? e.message : "Unable to load log"]));
+  }, []);
   useEffect(() => {
     load(name);
-  }, [name]);
+    const t = window.setInterval(() => load(name), 2000);
+    return () => window.clearInterval(t);
+  }, [name, load]);
   useEffect(() => {
-    if (scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
+    const el = scroller.current;
+    if (el && stickToBottom.current) el.scrollTop = el.scrollHeight;
   }, [lines]);
+  const rows = lines.map(parseLogLine);
+  const empty = rows.length === 0;
+  const label = LOG_TAB_LABELS[name];
+
+  const exportTxt = () => {
+    if (empty) return;
+    downloadTextFile(`${logExportFilename(label)}.txt`, `${lines.join("\n")}\n`, "text/plain");
+  };
+  const exportCsv = () => {
+    if (empty) return;
+    downloadTextFile(`${logExportFilename(label)}.csv`, `\uFEFF${rowsToCsv(rows)}`, "text/csv;charset=utf-8");
+  };
+  const clearHistory = async () => {
+    if (empty || busy) return;
+    if (!window.confirm(`Clear ${label} log history? This cannot be undone.`)) return;
+    setBusy(true);
+    try {
+      await clearLog(name);
+      setLines([]);
+    } catch (err) {
+      setLines([err instanceof Error ? err.message : "Unable to clear log"]);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <Overlay title="Log Viewer" onClose={onClose} variant="m4" size="log" wide dismissOnBackdrop={false} footer={<M4Close onClose={onClose} />}>
       <div className="m4-log-toolbar">
         <select value={name} onChange={(e) => setName(e.target.value as typeof name)}>
-          <option value="acq">Acquisition Service</option>
-          <option value="recon">Reconstruction Service</option>
-          <option value="ui">UI Service</option>
+          <option value="api">Console</option>
+          <option value="acq">Acquisition</option>
+          <option value="recon">Reconstruction</option>
+          <option value="ui">UI</option>
         </select>
         <button type="button" className="m4-icon-btn" title="Refresh" onClick={() => load(name)}>
           <RefreshCw size={14} />
         </button>
+        <div className="m4-log-toolbar-actions">
+          <button type="button" className="m4-btn" title="Export as text" disabled={empty} onClick={exportTxt}>
+            <Download size={14} strokeWidth={1.8} aria-hidden />
+            TXT
+          </button>
+          <button type="button" className="m4-btn" title="Export as CSV" disabled={empty} onClick={exportCsv}>
+            <Download size={14} strokeWidth={1.8} aria-hidden />
+            CSV
+          </button>
+          <button type="button" className="m4-btn" title="Clear log history" disabled={empty || busy} onClick={() => void clearHistory()}>
+            <Trash2 size={14} strokeWidth={1.8} aria-hidden />
+            {busy ? "Clearing…" : "Clear"}
+          </button>
+        </div>
       </div>
-      <pre className="m4-log" ref={scroller}>
-        {lines.map((line, i) => (
-          <span
-            key={i}
-            className={
-              line.includes("| ERR |") ? "is-err" : line.includes("| WRN |") ? "is-wrn" : line.includes("| DBG |") ? "is-dbg" : undefined
-            }
-          >
-            {line}
-            {"\n"}
-          </span>
-        ))}
-      </pre>
+      <div
+        className="m4-log-table-wrap"
+        ref={scroller}
+        onScroll={(event) => {
+          const el = event.currentTarget;
+          stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+        }}
+      >
+        {empty ? (
+          <p className="m4-log-empty">No entries in this log yet.</p>
+        ) : (
+          <table className="m4-log-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Source</th>
+                <th>Level</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={`${row.time}-${i}`} className={row.tone ? `is-${row.tone}` : undefined}>
+                  <td className="m4-log-time">{row.time}</td>
+                  <td className="m4-log-source">{row.source}</td>
+                  <td>
+                    <span className={`m4-log-level${row.tone ? ` is-${row.tone}` : ""}`}>{row.level}</span>
+                  </td>
+                  <td className="m4-log-message">{row.message}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </Overlay>
   );
+}
+
+const LOG_TAB_LABELS = {
+  api: "Console",
+  acq: "Acquisition",
+  recon: "Reconstruction",
+  ui: "UI",
+} as const;
+
+const SOURCE_LABELS: Record<string, string> = {
+  api: "Console",
+  unknown: "Console",
+  "mri4all-api": "Console",
+  "mri4all-api.pipeline": "Console",
+  acq: "Acquisition",
+  recon: "Reconstruction",
+  ui: "UI",
+};
+
+const LEVEL_LABELS: Record<string, string> = {
+  INF: "INFO",
+  WRN: "WARN",
+  ERR: "ERROR",
+  DBG: "DEBUG",
+  CTL: "CRITICAL",
+  NOT: "NOTE",
+};
+
+function parseLogLine(line: string): { time: string; source: string; level: string; message: string; tone?: string } {
+  const parts = line.split(" | ");
+  if (parts.length >= 5) {
+    const [rawTime, rawSource, rawLevel, , ...rest] = parts;
+    const levelKey = rawLevel.trim();
+    const tone = levelKey === "ERR" || levelKey === "CTL" ? "err" : levelKey === "WRN" ? "wrn" : levelKey === "DBG" ? "dbg" : undefined;
+    return {
+      time: formatLogTime(rawTime),
+      source: SOURCE_LABELS[rawSource.trim()] ?? rawSource.trim(),
+      level: LEVEL_LABELS[levelKey] ?? levelKey,
+      message: rest.join(" | ").trim() || "—",
+      tone,
+    };
+  }
+  const tone = line.includes("| ERR |") ? "err" : line.includes("| WRN |") ? "wrn" : line.includes("| DBG |") ? "dbg" : undefined;
+  return { time: "", source: "", level: "", message: line, tone };
+}
+
+function formatLogTime(value: string): string {
+  const normalized = value.replace(",", ".").trim();
+  const match = normalized.match(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})(?:\.(\d{1,3}))?/);
+  if (!match) return normalized.slice(0, 23);
+  const ms = (match[3] || "000").padEnd(3, "0").slice(0, 3);
+  return `${match[1]}  ${match[2]}.${ms}`;
+}
+
+function logExportFilename(label: string): string {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  return `adelpha-${label.toLowerCase()}-log-${stamp}`;
+}
+
+function rowsToCsv(rows: ReturnType<typeof parseLogLine>[]): string {
+  const header = ["Time", "Source", "Level", "Message"];
+  const body = rows.map((row) => [row.time, row.source, row.level, row.message].map(csvCell).join(","));
+  return `${[header.join(","), ...body].join("\n")}\n`;
+}
+
+function csvCell(value: string): string {
+  if (/[",\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
 }
 
 export function ConfigDialog({ onClose }: { onClose: () => void }) {

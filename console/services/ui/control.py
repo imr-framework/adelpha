@@ -97,18 +97,18 @@ def probe_scanner(
     try:
         _marcos_handshake(host, port, timeout)
         detail = f"MaRCoS at {host}:{port}"
-        log.info("Scanner reachable: %s", detail)
+        log.debug("Scanner reachable: %s", detail)
         return {"reachable": True, "method": "tcp", "detail": detail}
     except OSError as exc:
         tcp_err = exc
 
     if icmp_ok:
         detail = f"{host} answers ping; MaRCoS port {port} is closed ({tcp_err})"
-        log.info("Scanner ICMP only: %s", detail)
+        log.debug("Scanner ICMP only: %s", detail)
         return {"reachable": True, "method": "icmp", "detail": detail}
 
     detail = f"No response from {host}:{port} ({tcp_err})"
-    log.info("Scanner unreachable: %s", detail)
+    log.debug("Scanner unreachable: %s", detail)
     return {"reachable": False, "method": "none", "detail": detail}
 
 
@@ -127,14 +127,43 @@ def _icmp_ping(ip: str) -> bool:
 
 
 def restart_device():
-    log.info("Hard reset of acquisition device requested")
-    # TODO
-    return True
+    log.info("Restarting MaRCoS server on the acquisition device")
+    import common.config as config
+    from sequences.common.util import reading_json_parameter
+    from services.ui.marcos_boot import ensure_marcos_server, fpga_device
+
+    config.load_config()
+    ip = config.get_config().scanner_ip
+    params = reading_json_parameter().marcos_parameters
+    result = ensure_marcos_server(
+        ip,
+        port=int(params.port),
+        device=fpga_device(params.fpga_clock_frequency_MHz),
+        force=True,
+    )
+    if not result["ok"]:
+        log.warning("MaRCoS restart failed: %s", result["detail"])
+    return bool(result["ok"])
 
 
 def run_device_bootsequence() -> bool:
-    # TODO
-    return True
+    log.info("MaRCoS boot sequence (bitstream + server)")
+    import common.config as config
+    from sequences.common.util import reading_json_parameter
+    from services.ui.marcos_boot import ensure_marcos_server, fpga_device
+
+    config.load_config()
+    ip = config.get_config().scanner_ip
+    params = reading_json_parameter().marcos_parameters
+    result = ensure_marcos_server(
+        ip,
+        port=int(params.port),
+        device=fpga_device(params.fpga_clock_frequency_MHz),
+        force=True,
+    )
+    if not result["ok"]:
+        log.warning("MaRCoS boot failed: %s", result["detail"])
+    return bool(result["ok"])
 
 
 def run_device_test() -> bool:

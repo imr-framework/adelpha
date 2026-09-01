@@ -8,7 +8,6 @@ runs SequenceBase on macOS and Windows.
 
 from __future__ import annotations
 
-import logging
 import os
 import threading
 import time
@@ -18,9 +17,10 @@ import common.helper as helper
 import common.queue as queue
 import common.runtime as rt
 import common.task as task
+import common.logger as logger
 from common.constants import mri4all_files, mri4all_paths, mri4all_taskdata
 
-log = logging.getLogger("mri4all-api.pipeline")
+log = logger.get_logger()
 
 _started = False
 _stop = threading.Event()
@@ -93,7 +93,8 @@ def start() -> None:
         threading.Thread(target=_acq_loop, name="mri4all-acq", daemon=True).start()
         threading.Thread(target=_recon_loop, name="mri4all-recon", daemon=True).start()
         _started = True
-        log.info("Adelpha acquisition and reconstruction pipeline started")
+        log.info("Acquisition pipeline running")
+        log.info("Reconstruction pipeline running")
 
 
 def stop() -> None:
@@ -153,6 +154,23 @@ def process_acquisition(scan_name: str) -> bool:
 
         apply_scanner_settings()
         log.info("MaRCoS target %s:%s", marcos_cfg.ip_address, marcos_cfg.port)
+        if not config.get_config().is_hardware_simulation():
+            from services.ui.control import probe_scanner
+            from services.ui.marcos_boot import ensure_marcos_server, fpga_device
+            from sequences.common.util import reading_json_parameter
+
+            probe = probe_scanner(marcos_cfg.ip_address, port=int(marcos_cfg.port))
+            if probe.get("method") != "tcp":
+                clock = reading_json_parameter().marcos_parameters.fpga_clock_frequency_MHz
+                boot = ensure_marcos_server(
+                    marcos_cfg.ip_address,
+                    port=int(marcos_cfg.port),
+                    device=fpga_device(clock),
+                )
+                if not boot["ok"]:
+                    _set_error(boot["detail"] or "MaRCoS server is not running")
+                    _move_to_fail(scan_name, mri4all_paths.DATA_ACQ)
+                    return False
     except Exception as exc:
         log.warning("Could not apply MaRCoS settings: %s", exc)
 

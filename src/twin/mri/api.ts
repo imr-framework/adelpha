@@ -136,11 +136,17 @@ export type DevicePing = {
 
 export function formatDevicePingStatus(ping: DevicePing): string {
   const reachable = ping.reachable ?? ping.ok;
-  if (ping.simulation && reachable) {
-    return ping.detail ? `Simulation · ${ping.detail}` : `Simulation · Red Pitaya at ${ping.ip}`;
+  if (ping.simulation && ping.method === "tcp") {
+    return ping.detail ? `Simulation · ${ping.detail}` : `Simulation · MaRCoS at ${ping.ip}`;
   }
   if (ping.simulation) {
-    return `Simulation · no Red Pitaya at ${ping.ip}`;
+    return `Simulation · no MaRCoS at ${ping.ip}`;
+  }
+  if (ping.method === "tcp") {
+    return ping.detail || `MaRCoS server running at ${ping.ip}`;
+  }
+  if (ping.method === "icmp" && reachable) {
+    return ping.detail || `Red Pitaya at ${ping.ip} answers ping; MaRCoS is not running`;
   }
   if (reachable) {
     return ping.detail || `Scanner reachable at ${ping.ip}`;
@@ -150,6 +156,19 @@ export function formatDevicePingStatus(ping: DevicePing): string {
 
 export async function pingDevice(): Promise<DevicePing> {
   return mriFetch("/device/ping", { method: "POST" });
+}
+
+export type MarcosStartResult = {
+  ok: boolean;
+  started?: boolean;
+  compiled?: boolean;
+  bitstream?: boolean;
+  detail?: string;
+  ip?: string;
+};
+
+export async function startMarcosServer(): Promise<MarcosStartResult> {
+  return mriFetch("/device/marcos/start", { method: "POST" });
 }
 
 export async function deleteScan(id: string): Promise<void> {
@@ -177,6 +196,10 @@ export async function fetchAbout(): Promise<{
 
 export async function fetchLog(name: "acq" | "recon" | "ui" | "api"): Promise<{ name: string; lines: string[] }> {
   return mriFetch(`/logs/${name}`);
+}
+
+export async function clearLog(name: "acq" | "recon" | "ui" | "api"): Promise<void> {
+  await mriFetch(`/logs/${name}`, { method: "DELETE" });
 }
 
 export async function fetchStudies(): Promise<StudyExam[]> {

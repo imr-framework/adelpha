@@ -1,25 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SatelliteDish } from "lucide-react";
+import { SatelliteDish, Play } from "lucide-react";
 
 import {
   fetchAcqConfig,
   fetchConfig,
-  fetchServices,
-  formatDevicePingStatus,
   pingDevice,
   saveAcqConfig,
   saveConfig,
+  startMarcosServer,
   type AcqConfig,
   type MriConfig,
-  type ServiceStatus,
 } from "../mri/api";
-import { Select, SettingsRow, SettingsSection, StatusBadge, Switch, TextInput, type BadgeTone } from "./controls";
-
-function serviceTone(on: boolean | null | undefined): BadgeTone {
-  if (on) return "live";
-  if (on === false) return "fault";
-  return "idle";
-}
+import { Select, SettingsRow, SettingsSection, Switch, TextInput } from "./controls";
 
 function NumberField({
   label,
@@ -49,24 +41,17 @@ function NumberField({
 export function ScannerHardwareSection({ compact = false }: { compact?: boolean }) {
   const [operator, setOperator] = useState<MriConfig | null>(null);
   const [acq, setAcq] = useState<AcqConfig | null>(null);
-  const [services, setServices] = useState<ServiceStatus | null>(null);
-  const [ping, setPing] = useState("");
-  const [pingOk, setPingOk] = useState<boolean | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [starting, setStarting] = useState(false);
   const operatorTimer = useRef<number | null>(null);
   const acqTimer = useRef<number | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const [nextOperator, nextAcq, nextServices] = await Promise.all([
-        fetchConfig(),
-        fetchAcqConfig(),
-        fetchServices().catch(() => null),
-      ]);
+      const [nextOperator, nextAcq] = await Promise.all([fetchConfig(), fetchAcqConfig()]);
       setOperator(nextOperator);
       setAcq(nextAcq);
-      setServices(nextServices);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load scanner settings");
@@ -75,12 +60,6 @@ export function ScannerHardwareSection({ compact = false }: { compact?: boolean 
 
   useEffect(() => {
     void load();
-    const t = window.setInterval(() => {
-      void fetchServices()
-        .then(setServices)
-        .catch(() => undefined);
-    }, 4000);
-    return () => window.clearInterval(t);
   }, [load]);
 
   const queueOperator = (next: MriConfig) => {
@@ -114,38 +93,47 @@ export function ScannerHardwareSection({ compact = false }: { compact?: boolean 
   };
 
   const runPing = async () => {
-    setPing("Checking MaRCoS…");
-    setPingOk(null);
     try {
       const result = await pingDevice();
-      setPingOk(result.reachable ?? result.ok);
-      setPing(formatDevicePingStatus(result));
+      if (!(result.reachable ?? result.ok)) {
+        setError(result.detail || "Scanner unreachable");
+      } else {
+        setError("");
+      }
     } catch (err) {
-      setPingOk(false);
-      setPing(err instanceof Error ? err.message : "Ping failed");
+      setError(err instanceof Error ? err.message : "Ping failed");
+    }
+  };
+
+  const runStart = async () => {
+    setStarting(true);
+    setError("");
+    try {
+      const result = await startMarcosServer();
+      if (!result.ok) setError(result.detail || "MaRCoS start failed");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "MaRCoS start failed");
+    } finally {
+      setStarting(false);
     }
   };
 
   if (!operator || !acq) {
     return (
-      <SettingsSection title="Scanner" description="Larmor, RF, gradients, shims, and MaRCoS defaults for the connected Red Pitaya.">
+      <SettingsSection title="Scanner">
         <p className="settings-about">{error || "Loading scanner settings…"}</p>
       </SettingsSection>
     );
   }
 
   const simulation = operator.hardware_simulation === "True";
-  const pipelineOn = services?.mode === "adelpha";
 
   return (
     <>
-      <SettingsSection
-        title="Scanner"
-        description="These values are written to config_acq.json and used by every sequence. Tune them for the scanner on the bench, then ping the Red Pitaya."
-      >
+      <SettingsSection title="Scanner">
         {error ? <p className="settings-about">{error}</p> : null}
         {saving ? <p className="settings-about">Saving…</p> : null}
-        <SettingsRow title="Scanner IP" description="Red Pitaya / MaRCoS address. Used on the next acquisition." layout="stack">
+        <SettingsRow title="Scanner IP" layout="stack">
           <TextInput
             label="Scanner IP"
             value={operator.scanner_ip}
@@ -153,39 +141,25 @@ export function ScannerHardwareSection({ compact = false }: { compact?: boolean 
             onChange={(scanner_ip) => queueOperator({ ...operator, scanner_ip })}
           />
         </SettingsRow>
-        <SettingsRow
-          title="Hardware simulation"
-          description="On skips the Red Pitaya and returns empty raw data. Off sends Pulseq instructions to MaRCoS."
-        >
+        <SettingsRow title="Hardware simulation">
           <Switch
             label="Hardware simulation"
             checked={simulation}
             onChange={(on) => queueOperator({ ...operator, hardware_simulation: on ? "True" : "False" })}
           />
         </SettingsRow>
-        <SettingsRow title="MaRCoS ping" description={ping || "Check that the board answers on the configured port."}>
+        <SettingsRow title="MaRCoS ping">
           <button type="button" className="settings-btn" onClick={() => void runPing()}>
             <SatelliteDish size={14} strokeWidth={1.8} aria-hidden />
             Ping
           </button>
         </SettingsRow>
-        {pingOk != null ? (
-          <div className="settings-key-actions" style={{ marginBottom: 12 }}>
-            <StatusBadge tone={pingOk ? "live" : "fault"}>{pingOk ? "Responding" : "Unreachable"}</StatusBadge>
-          </div>
-        ) : null}
-        <div className="settings-key-actions" style={{ marginBottom: 4 }}>
-          <StatusBadge tone={serviceTone(services?.acq)}>
-            {pipelineOn ? "Acquisition pipeline" : "Acquisition"} {services?.acq ? "running" : "paused"}
-          </StatusBadge>
-          <StatusBadge tone={serviceTone(services?.recon)}>
-            {pipelineOn ? "Reconstruction pipeline" : "Reconstruction"} {services?.recon ? "running" : "paused"}
-          </StatusBadge>
-          <StatusBadge tone={services?.sequence_registry ? "live" : "warning"}>
-            {services?.sequence_registry ? "Sequence registry loaded" : "Fallback sequence catalog"}
-          </StatusBadge>
-        </div>
-        {services?.last_error ? <p className="settings-about">{services.last_error}</p> : null}
+        <SettingsRow title="Start MaRCoS">
+          <button type="button" className="settings-btn settings-btn-accent" onClick={() => void runStart()} disabled={starting || simulation}>
+            <Play size={14} strokeWidth={1.8} aria-hidden />
+            {starting ? "Starting…" : "Start MaRCoS"}
+          </button>
+        </SettingsRow>
       </SettingsSection>
       <SettingsSection title="RF" description="Larmor is the magnet frequency. RF max is the Hz that maps to transmit DAC ±1 (MRI4ALL default 7661.29 Hz). Lowering RF max increases TX voltage for the same pulse.">
         <SettingsRow title="Larmor frequency" description="Center frequency in MHz. MRI4ALL Z1 default 15.58 MHz (~366 mT). Use your measured Larmor.">

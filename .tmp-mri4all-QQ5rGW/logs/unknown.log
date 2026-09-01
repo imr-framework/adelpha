@@ -36,3 +36,7 @@
 2026-09-01 13:11:05,609 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
 2026-09-01 13:11:05,609 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
 2026-09-01 13:11:05,610 | unknown | INF |  | Unable to remove fifo file /tmp/mri4all/pipes/acq_pipe, but not to worry about
+2026-09-01 16:45:42,842 | unknown | INF |  | MaRCoS server running · 169.254.44.172
+2026-09-01 16:45:42,842 | unknown | INF |  | MaRCoS at 169.254.44.172:11111
+2026-09-01 16:56:28,636 | unknown | INF |  | MaRCoS server running · 169.254.44.172
+2026-09-01 16:56:28,636 | unknown | INF |  | MaRCoS at 169.254.44.172:11111

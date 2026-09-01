@@ -245,6 +245,9 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
             asyncio.get_running_loop()
         except RuntimeError:
             asyncio.set_event_loop(asyncio.new_event_loop())
+        import common.runtime as rt
+
+        rt.set_service_name("api")
         from services.api.app import app as console_app
 
         return console_app

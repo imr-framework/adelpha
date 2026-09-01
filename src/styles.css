@@ -17,6 +17,7 @@
   --m4-accent: #8260fb;
   --m4-accent-soft: rgba(130, 96, 251, 0.45);
   --m4-ok: #3ee4a4;
+  --m4-warn: #e8c547;
   --m4-bad: #ff6b6b;
   --m4-dbg: #6eb6ff;
   --m4-muted: #8b919c;
@@ -38,6 +39,7 @@ html[data-console-theme="mri4all"] {
   --m4-accent: #e0a526;
   --m4-accent-soft: rgba(224, 165, 38, 0.47);
   --m4-ok: #40c1ac;
+  --m4-warn: #e8c547;
   --m4-bad: #e5554f;
   --m4-dbg: #489fdf;
   --m4-muted: #8b919c;
@@ -835,7 +837,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 12px;
-  padding: 6px 14px 3px;
+  padding: 8px 14px 12px;
   font-size: 12px;
   color: var(--ic-text);
 }
@@ -854,7 +856,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .ic-tabs {
   display: flex;
   gap: 2px;
-  padding: 0 12px;
+  padding: 4px 12px 0;
   border-bottom: 1px solid var(--ic-border);
 }
 
@@ -4606,7 +4608,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .ic-register-card.is-m4.is-log {
-  width: min(80vw, 1100px);
+  width: min(88vw, 1180px);
   height: min(80vh, 760px);
 }
 
@@ -4767,7 +4769,19 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   color: var(--m4-accent);
 }
 
+.ic-register-card.is-m4.is-log .ic-dialog-body {
+  overflow: hidden;
+}
+
 .m4-log-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.m4-log-toolbar-actions {
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -4808,11 +4822,113 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .m4-log .is-wrn {
-  color: var(--m4-accent);
+  color: var(--m4-warn);
 }
 
 .m4-log .is-dbg {
   color: var(--m4-dbg);
+}
+
+.m4-log-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #00000022;
+  border: 1px solid #ffffff12;
+}
+
+.m4-log-empty {
+  margin: 0;
+  padding: 28px 16px;
+  color: var(--m4-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.m4-log-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.m4-log-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--m4-muted);
+  background: var(--m4-panel);
+  border-bottom: 1px solid #ffffff18;
+}
+
+.m4-log-table td {
+  padding: 7px 12px;
+  vertical-align: top;
+  border-bottom: 1px solid #ffffff0c;
+  color: var(--m4-text);
+}
+
+.m4-log-table tbody tr:hover td {
+  background: var(--m4-row);
+}
+
+.m4-log-time {
+  width: 1%;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--m4-muted);
+}
+
+.m4-log-source {
+  width: 1%;
+  white-space: nowrap;
+  color: rgba(238, 240, 243, 0.78);
+}
+
+.m4-log-message {
+  width: 100%;
+}
+
+.m4-log-level {
+  display: inline-block;
+  min-width: 4.6em;
+  padding: 1px 0;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  color: var(--m4-ok);
+}
+
+.m4-log-table tr.is-wrn td {
+  color: var(--m4-warn);
+}
+
+.m4-log-table tr.is-wrn .m4-log-level,
+.m4-log-level.is-wrn {
+  color: var(--m4-warn);
+}
+
+.m4-log-table tr.is-err .m4-log-level,
+.m4-log-level.is-err {
+  color: var(--m4-bad);
+}
+
+.m4-log-table tr.is-dbg .m4-log-level,
+.m4-log-level.is-dbg {
+  color: var(--m4-dbg);
+}
+
+.m4-log-table tr.is-err .m4-log-message {
+  color: var(--m4-bad);
 }
 
 .m4-tabs {
