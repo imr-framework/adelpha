@@ -203,6 +203,23 @@ export function scannerAssetUrl(): string {
   return `${mriBaseUrl()}/assets/scanner.png`;
 }
 
+export type PlotSeries = {
+  name: string;
+  x: Array<number | null>;
+  y: Array<number | null>;
+};
+
+export type PlotAxes = {
+  title: string;
+  xlabel: string;
+  ylabel: string;
+  xmin: number;
+  xmax: number;
+  ymin: number;
+  ymax: number;
+  series: PlotSeries[];
+};
+
 export type StudyPreview = {
   kind: "dicom" | "plot" | "empty";
   slices: number;
@@ -211,6 +228,7 @@ export type StudyPreview = {
   vmax: number;
   histogram: number[];
   image: string;
+  series?: { axes: PlotAxes[] } | null;
   error?: string;
 };
 
@@ -219,6 +237,7 @@ export async function fetchStudyPreview(
   filePath: string,
   resultType: string,
   index = 0,
+  size?: { width?: number; height?: number; scale?: number },
 ): Promise<StudyPreview> {
   const query = new URLSearchParams({
     folder,
@@ -226,6 +245,9 @@ export async function fetchStudyPreview(
     result_type: resultType,
     index: String(index),
   });
+  if (size?.width && size.width > 0) query.set("width", String(Math.round(size.width)));
+  if (size?.height && size.height > 0) query.set("height", String(Math.round(size.height)));
+  if (size?.scale && size.scale > 1) query.set("scale", String(size.scale));
   return mriFetch(`/studies/preview?${query}`);
 }
 

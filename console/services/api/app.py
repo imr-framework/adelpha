@@ -575,7 +575,15 @@ def _png_data_url(image) -> str:
 
 
 @app.get("/studies/preview")
-def study_preview(folder: str, file_path: str = "", result_type: str = "", index: int = 0):
+def study_preview(
+    folder: str,
+    file_path: str = "",
+    result_type: str = "",
+    index: int = 0,
+    width: int = 0,
+    height: int = 0,
+    scale: float = 1.0,
+):
     """Render a DICOM slice or pickled matplotlib plot the way ViewerWidget does."""
     kind = (result_type or "").lower()
     target = _resolve_result_path(folder, file_path)
@@ -587,6 +595,7 @@ def study_preview(folder: str, file_path: str = "", result_type: str = "", index
         "vmax": 0,
         "histogram": [],
         "image": "",
+        "series": None,
         "error": "",
     }
     try:
@@ -621,11 +630,11 @@ def study_preview(folder: str, file_path: str = "", result_type: str = "", index
                 "vmax": vmax,
                 "histogram": hist.tolist(),
                 "image": _png_data_url(Image.fromarray(scaled, mode="L")),
+                "series": None,
                 "error": "",
             }
         if kind == "plot":
             import pickle
-            from io import BytesIO
             import matplotlib
 
             matplotlib.use("Agg")
@@ -634,12 +643,28 @@ def study_preview(folder: str, file_path: str = "", result_type: str = "", index
                 return empty
             with open(target, "rb") as handle:
                 fig = pickle.load(handle)
-            try:
-                fig.tight_layout()
-            except Exception:
-                pass
-            buf = BytesIO()
-            fig.savefig(buf, format="png", dpi=110, facecolor=fig.get_facecolor(), bbox_inches="tight")
+            from common.plotting import extract_figure_series, render_figure_png
+
+            payload = extract_figure_series(fig)
+            if payload:
+                try:
+                    import matplotlib.pyplot as plt
+
+                    plt.close(fig)
+                except Exception:
+                    pass
+                return {
+                    "kind": "plot",
+                    "slices": 1,
+                    "index": 0,
+                    "vmin": 0,
+                    "vmax": 0,
+                    "histogram": [],
+                    "image": "",
+                    "series": payload,
+                    "error": "",
+                }
+            png = render_figure_png(fig, width_px=width, height_px=height, scale=scale)
             try:
                 import matplotlib.pyplot as plt
 
@@ -655,7 +680,8 @@ def study_preview(folder: str, file_path: str = "", result_type: str = "", index
                 "vmin": 0,
                 "vmax": 0,
                 "histogram": [],
-                "image": "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("ascii"),
+                "image": "data:image/png;base64," + base64.b64encode(png).decode("ascii"),
+                "series": None,
                 "error": "",
             }
         empty["error"] = "Nothing to display"

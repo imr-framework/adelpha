@@ -48,6 +48,7 @@ import {
   StudyDialog,
   type ViewerTarget,
 } from "./ImagingDialogs";
+import { ScientificPlot } from "./ScientificPlot";
 
 /** Shown in the topbar hamburger while Imaging Console is active. */
 export type ImagingMenuAction =
@@ -181,13 +182,15 @@ function viewerTargetFromTask(task: ScanTask | null, folder: string, label: stri
 function ConsoleViewer({
   value,
   fallback,
+  fullYTicks = false,
 }: {
   value: ViewerSlotContent;
   fallback?: ReactNode;
+  fullYTicks?: boolean;
 }) {
-  if (isViewerTarget(value)) return <ResultStage target={value} />;
+  if (isViewerTarget(value)) return <ResultStage target={value} fullYTicks={fullYTicks} />;
   if (typeof value === "string" && value) return <p className="ic-muted">{value}</p>;
-  return fallback ? <>{fallback}</> : null;
+  return fallback ? <div className="m4-view-stage is-empty">{fallback}</div> : null;
 }
 
 function ParamField({
@@ -1042,6 +1045,7 @@ export function ImagingConsole() {
             <ConsoleViewer
               value={viewerSlots[1]}
               fallback={imageHint ? <p className="ic-muted">{imageHint}</p> : null}
+              fullYTicks={viewerCount === 1}
             />
           </div>
         </article>
@@ -1050,12 +1054,13 @@ export function ImagingConsole() {
             <ConsoleViewer
               value={viewerSlots[2]}
               fallback={plotSeries ? <Sparkline data={plotSeries} /> : null}
+              fullYTicks={viewerCount === 1}
             />
           </div>
         </article>
         <article className="ic-screen">
           <div className="ic-viewer-stage" aria-label="Viewer 3">
-            <ConsoleViewer value={viewerSlots[3]} />
+            <ConsoleViewer value={viewerSlots[3]} fullYTicks={viewerCount === 1} />
           </div>
         </article>
       </div>
@@ -1232,21 +1237,32 @@ export function ImagingConsole() {
 }
 
 function Sparkline({ data }: { data: number[] }) {
-  const w = 320;
-  const h = 120;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const span = max - min || 1;
-  const d = data
-    .map((y, i) => {
-      const x = (i / Math.max(data.length - 1, 1)) * w;
-      const py = h - ((y - min) / span) * (h - 8) - 4;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${py.toFixed(1)}`;
-    })
-    .join(" ");
+  const axes = useMemo(() => {
+    if (!data.length) return [];
+    let min = data[0];
+    let max = data[0];
+    for (const value of data) {
+      if (value < min) min = value;
+      if (value > max) max = value;
+    }
+    const pad = (max - min) * 0.08 || 1;
+    return [
+      {
+        title: "",
+        xlabel: "",
+        ylabel: "",
+        xmin: 0,
+        xmax: Math.max(data.length - 1, 1),
+        ymin: min - pad,
+        ymax: max + pad,
+        series: [{ name: "", x: data.map((_, i) => i), y: data }],
+      },
+    ];
+  }, [data]);
+  if (!axes.length) return null;
   return (
-    <svg className="ic-sparkline" viewBox={`0 0 ${w} ${h}`} aria-hidden>
-      <path d={d} fill="none" stroke="rgba(110, 182, 255, 0.9)" strokeWidth="1.5" />
-    </svg>
+    <div className="ic-sparkline-wrap">
+      <ScientificPlot axes={axes} compact />
+    </div>
   );
 }

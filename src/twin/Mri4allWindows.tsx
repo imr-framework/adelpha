@@ -47,12 +47,14 @@ import {
 import { getScannerProfile, useScannerModel } from "./scannerModel";
 import { Overlay } from "./ImagingOverlay";
 import { ADELPHA_VERSION } from "./adelphaVersion";
+import { ScientificPlot } from "./ScientificPlot";
 
 export type ViewerTarget = {
   label: string;
   folder: string;
   filePath: string;
   resultType: string;
+  resultName?: string;
   patientName: string;
   mrn: string;
   protocolName: string;
@@ -94,74 +96,148 @@ function Mark({
   );
 }
 
-export function ResultStage({ target }: { target: ViewerTarget | null }) {
+export function ResultStage({
+  target,
+  fullYTicks = false,
+}: {
+  target: ViewerTarget | null;
+  fullYTicks?: boolean;
+}) {
   const [slice, setSlice] = useState(0);
   const [preview, setPreview] = useState<StudyPreview | null>(null);
+  const [plotSize, setPlotSize] = useState({ w: 0, h: 0 });
+  const [loading, setLoading] = useState(false);
+  const plotRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<StudyPreview | null>(null);
+  previewRef.current = preview;
+  const plotAxes = preview?.series?.axes;
+  const needsSizedPng = Boolean(preview?.kind === "plot" && preview.image && !plotAxes?.length);
+  useEffect(() => {
+    const el = plotRef.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      const w = Math.round(r.width);
+      const h = Math.round(r.height);
+      setPlotSize((prev) => (Math.abs(prev.w - w) < 4 && Math.abs(prev.h - h) < 4 ? prev : { w, h }));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   useEffect(() => {
     setSlice(0);
   }, [target?.folder, target?.filePath]);
   useEffect(() => {
-    if (!target?.folder || !target.filePath) {
+    if (!target || !target.folder || !target.filePath) {
       setPreview(null);
+      setLoading(false);
+      return;
+    }
+    const folder = target.folder;
+    const filePath = target.filePath;
+    const resultType = target.resultType;
+    if (needsSizedPng && (plotSize.w < 80 || plotSize.h < 80)) {
+      setLoading(true);
       return;
     }
     let cancelled = false;
-    void fetchStudyPreview(target.folder, target.filePath, target.resultType, slice)
-      .then((next) => {
-        if (!cancelled) setPreview(next);
-      })
-      .catch((e) => {
-        if (!cancelled) {
-          setPreview({
-            kind: "empty",
-            slices: 0,
-            index: 0,
-            vmin: 0,
-            vmax: 0,
-            histogram: [],
-            image: "",
-            error: e instanceof Error ? e.message : "Preview failed",
-          });
-        }
-      });
+    const delay = needsSizedPng ? 120 : 0;
+    const timer = window.setTimeout(() => {
+      setLoading(!previewRef.current?.series && !previewRef.current?.image);
+      const scale = Math.min(window.devicePixelRatio || 1, 2);
+      void fetchStudyPreview(
+        folder,
+        filePath,
+        resultType,
+        slice,
+        needsSizedPng ? { width: plotSize.w, height: plotSize.h, scale } : undefined,
+      )
+        .then((next) => {
+          if (!cancelled) setPreview(next);
+        })
+        .catch((e) => {
+          if (!cancelled) {
+            setPreview({
+              kind: "empty",
+              slices: 0,
+              index: 0,
+              vmin: 0,
+              vmax: 0,
+              histogram: [],
+              image: "",
+              series: null,
+              error: e instanceof Error ? e.message : "Preview failed",
+            });
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, delay);
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
     };
-  }, [target, slice]);
+  }, [target?.folder, target?.filePath, target?.resultType, slice, needsSizedPng, needsSizedPng && plotSize.w, needsSizedPng && plotSize.h]);
+  const showStudyMeta = Boolean(target) && preview?.kind !== "plot" && !plotAxes?.length;
   const histMax = Math.max(1, ...(preview?.histogram ?? [1]));
+  const stageClass = [
+    "m4-view-stage",
+    target ? "is-loaded" : "is-empty",
+    loading ? "is-loading" : "",
+    preview?.error ? "is-error" : "",
+    preview?.kind === "plot" ? "is-plot" : "",
+    preview?.kind === "dicom" ? "is-dicom" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
-    <div className="m4-view-stage">
-      {preview?.image ? <img className="m4-view-image" src={preview.image} alt="" /> : <div className="m4-view-empty" />}
-      {target ? (
+    <div className={stageClass}>
+      {showStudyMeta && target ? (
         <div className="m4-view-meta">
-          <div>{target.patientName}</div>
+          <div className="m4-view-meta-primary">{target.patientName}</div>
           <div>{target.mrn}</div>
           <div>{target.protocolName}</div>
           <div>Scan {target.scanNumber}</div>
         </div>
       ) : null}
-      {preview?.kind === "dicom" && preview.histogram.length ? (
-        <div className="m4-hist" aria-hidden>
-          <span>{Math.round(preview.vmax)}</span>
-          <div className="m4-hist-bars">
-            {preview.histogram.map((v, i) => (
-              <i key={i} style={{ width: `${Math.max(4, (v / histMax) * 100)}%` }} />
-            ))}
-          </div>
-          <span>{Math.round(preview.vmin)}</span>
+      <div className="m4-view-canvas">
+        <div className="m4-view-plot" ref={plotRef}>
+          {plotAxes?.length ? (
+            <ScientificPlot axes={plotAxes} fullY={fullYTicks} />
+          ) : preview?.image ? (
+            <img className="m4-view-image" src={preview.image} alt="" />
+          ) : (
+            <div className="m4-view-empty" />
+          )}
         </div>
-      ) : null}
-      {preview?.kind === "dicom" && preview.slices > 1 ? (
-        <input
-          className="m4-slice"
-          type="range"
-          min={0}
-          max={preview.slices - 1}
-          value={Math.min(slice, preview.slices - 1)}
-          onChange={(e) => setSlice(Number(e.target.value))}
-        />
-      ) : null}
-      {preview?.error ? <p className="m4-view-placeholder">{preview.error}</p> : null}
+        {preview?.kind === "dicom" && preview.histogram.length ? (
+          <div className="m4-hist" aria-hidden>
+            <span>{Math.round(preview.vmax)}</span>
+            <div className="m4-hist-bars">
+              {preview.histogram.map((v, i) => (
+                <i key={i} style={{ width: `${Math.max(4, (v / histMax) * 100)}%` }} />
+              ))}
+            </div>
+            <span>{Math.round(preview.vmin)}</span>
+          </div>
+        ) : null}
+        {preview?.kind === "dicom" && preview.slices > 1 ? (
+          <input
+            className="m4-slice"
+            type="range"
+            min={0}
+            max={preview.slices - 1}
+            value={Math.min(slice, preview.slices - 1)}
+            onChange={(e) => setSlice(Number(e.target.value))}
+          />
+        ) : null}
+        {loading && !plotAxes?.length && !preview?.image ? <p className="m4-view-status">Loading</p> : null}
+        {!target ? <p className="m4-view-status">No result selected</p> : null}
+        {preview?.error ? <p className="m4-view-placeholder">{preview.error}</p> : null}
+      </div>
     </div>
   );
 }
@@ -576,6 +652,7 @@ export function StudyDialog({
         folder: scan.path,
         filePath: result?.file_path ?? "",
         resultType: result?.type ?? "dicom",
+        resultName: result?.name,
         patientName: selected?.patientName ?? "",
         mrn: selected?.mrn || task?.patient?.mrn || selected?.acc.toLowerCase() || "",
         protocolName: scan.protocol_name,
@@ -675,6 +752,7 @@ export function StudyDialog({
                     folder: scan.path,
                     filePath: result?.file_path ?? "",
                     resultType: result?.type ?? "dicom",
+                    resultName: result?.name,
                     patientName: selected?.patientName ?? "",
                     mrn: selected?.mrn || selected?.acc.toLowerCase() || "",
                     protocolName: scan.protocol_name,

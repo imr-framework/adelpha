@@ -1156,10 +1156,34 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
     linear-gradient(135deg, rgba(130, 96, 251, 0.55), rgba(110, 182, 255, 0.28)) border-box;
 }
 
+.ic-sparkline-wrap {
+  position: absolute;
+  inset: 0;
+  min-width: 0;
+  min-height: 0;
+  background: var(--ic-plot-bg, #090a0d);
+  border: 0;
+}
+
 .ic-sparkline {
   width: 100%;
   height: 100%;
-  min-height: 80px;
+  min-height: 0;
+  display: block;
+  color: var(--ic-plot-signal);
+}
+
+.ic-sparkline-fill {
+  fill: var(--ic-plot-fill);
+}
+
+.ic-sparkline-line {
+  fill: none;
+  stroke: var(--ic-plot-signal);
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
 }
 
 .ic-register-card.is-wide {
@@ -5152,9 +5176,77 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   position: relative;
   flex: 1;
   min-height: 350px;
-  background: #000;
-  border: 1px solid var(--m4-chrome);
+  min-width: 0;
+  background: var(--ic-plot-bg, #090a0d);
+  border: 1px solid var(--ic-plot-border, #363a43);
   overflow: hidden;
+}
+
+.m4-view-meta {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  right: 40px;
+  z-index: 4;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 0 14px;
+  padding: 0;
+  color: var(--ic-plot-tick, #9ca3af);
+  font-size: 11px;
+  line-height: 1.3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.m4-view-meta > div {
+  white-space: nowrap;
+}
+
+.m4-view-meta-primary {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ic-text, #eef0f3);
+}
+
+.m4-view-canvas {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  min-width: 0;
+  background: var(--ic-plot-bg, #090a0d);
+}
+
+.m4-view-plot {
+  position: absolute;
+  inset: 0;
+  min-width: 0;
+  min-height: 0;
+  background: var(--ic-plot-bg, #090a0d);
+  border: 0;
+  overflow: hidden;
+}
+
+.ic-scientific-plot {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ic-scientific-plot canvas {
+  display: block;
+}
+
+.ic-plot-tooltip {
+  width: auto !important;
+  height: auto !important;
+  max-width: 240px !important;
+  padding: 6px 8px !important;
+  border-radius: 4px !important;
+  pointer-events: none !important;
+  white-space: nowrap;
 }
 
 .m4-view-empty,
@@ -5164,17 +5256,18 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: #000;
+  object-position: center;
+  background: var(--ic-plot-bg, #090a0d);
 }
 
-.m4-view-meta {
+.m4-view-status {
   position: absolute;
-  top: 10px;
   left: 12px;
+  bottom: 12px;
   z-index: 2;
-  color: #9ba0a8;
+  margin: 0;
+  color: var(--ic-plot-tick, #9ca3af);
   font-size: 12px;
-  line-height: 1.4;
   pointer-events: none;
 }
 
@@ -5184,7 +5277,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   bottom: 28px;
   z-index: 2;
   margin: 0;
-  color: #8b919c;
+  color: var(--ic-plot-tick, #9ca3af);
   font-size: 12px;
 }
 
