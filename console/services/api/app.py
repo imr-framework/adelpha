@@ -423,34 +423,31 @@ def list_studies():
     from common.constants import mri4all_paths
     import common.task as task_mod
 
+    roots = (
+        mri4all_paths.DATA_COMPLETE,
+        mri4all_paths.DATA_QUEUE_RECON,
+        mri4all_paths.DATA_RECON,
+        mri4all_paths.DATA_ACQ,
+        mri4all_paths.DATA_QUEUE_ACQ,
+        mri4all_paths.DATA_FAILURE,
+        mri4all_paths.DATA_ARCHIVE,
+    )
     exams = []
     seen = {}
-    for root in (mri4all_paths.DATA_COMPLETE, mri4all_paths.DATA_ARCHIVE, mri4all_paths.DATA_FAILURE):
+    seen_scans = set()
+    for root in roots:
         folder = Path(root)
         if not folder.is_dir():
             continue
         for exam_dir in sorted(folder.iterdir(), key=os.path.getmtime, reverse=True):
             if not exam_dir.is_dir() or "#" not in exam_dir.name:
                 continue
-            exam_id = exam_dir.name.split("#", 1)[0]
-            scan_task = task_mod.read_task(str(exam_dir))
-            if not scan_task:
+            if exam_dir.name in seen_scans:
                 continue
-            exam = seen.get(exam_id)
-            if exam is None:
-                when = scan_task.exam.registration_time.replace("T", " ").split(".")[0]
-                exam = {
-                    "id": exam_id,
-                    "acc": scan_task.exam.acc,
-                    "patientName": f"{scan_task.patient.last_name}, {scan_task.patient.first_name}",
-                    "mrn": scan_task.patient.mrn,
-                    "examTime": when,
-                    "scans": [],
-                }
-                seen[exam_id] = exam
-                exams.append(exam)
-            exam["scans"].append(
-                {
+            scan_task = task_mod.read_task(str(exam_dir))
+            payload = None
+            if scan_task:
+                payload = {
                     "id": scan_task.id,
                     "folder": exam_dir.name,
                     "path": str(exam_dir),
@@ -461,7 +458,53 @@ def list_studies():
                     "results": [r.model_dump() for r in scan_task.results],
                     "task": scan_task.model_dump(),
                 }
-            )
+                exam_id = scan_task.exam.id or exam_dir.name.split("#", 1)[0]
+                acc = scan_task.exam.acc
+                patient_name = f"{scan_task.patient.last_name}, {scan_task.patient.first_name}"
+                mrn = scan_task.patient.mrn
+                when = (scan_task.exam.registration_time or "").replace("T", " ").split(".")[0]
+            else:
+                task_file = exam_dir / "scan.json"
+                if not task_file.is_file():
+                    continue
+                try:
+                    import json
+
+                    raw = json.loads(task_file.read_text())
+                except Exception:
+                    continue
+                exam_meta = raw.get("exam") or {}
+                patient = raw.get("patient") or {}
+                exam_id = exam_meta.get("id") or exam_dir.name.split("#", 1)[0]
+                acc = exam_meta.get("acc") or ""
+                patient_name = f"{patient.get('last_name', '')}, {patient.get('first_name', '')}"
+                mrn = patient.get("mrn") or ""
+                when = str(exam_meta.get("registration_time") or "").replace("T", " ").split(".")[0]
+                payload = {
+                    "id": raw.get("id") or exam_dir.name,
+                    "folder": exam_dir.name,
+                    "path": str(exam_dir),
+                    "protocol_name": raw.get("protocol_name") or "unknown",
+                    "scan_number": int(raw.get("scan_number") or 0),
+                    "sequence": raw.get("sequence") or "",
+                    "failed": bool((raw.get("journal") or {}).get("failed_at")),
+                    "results": list(raw.get("results") or []),
+                    "task": raw,
+                }
+            seen_scans.add(exam_dir.name)
+            exam = seen.get(exam_id)
+            if exam is None:
+                exam = {
+                    "id": exam_id,
+                    "acc": acc,
+                    "patientName": patient_name,
+                    "mrn": mrn,
+                    "examTime": when,
+                    "scans": [],
+                }
+                seen[exam_id] = exam
+                exams.append(exam)
+            exam["scans"].append(payload)
     for exam in exams:
         exam["scans"] = sorted(exam["scans"], key=lambda s: s["scan_number"])
     exams.sort(key=lambda e: e.get("examTime") or "", reverse=True)
@@ -620,6 +663,49 @@ def _png_data_url(image) -> str:
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
 
 
+def _load_dicom_array(path):
+    import numpy as np
+    import pydicom
+
+    arr = np.nan_to_num(
+        pydicom.dcmread(str(path)).pixel_array.astype("float32"),
+        nan=0.0,
+        posinf=0.0,
+        neginf=0.0,
+    )
+    if arr.ndim == 3:
+        arr = arr[0]
+    return arr
+
+
+def _encode_f32le(arr) -> str:
+    import base64
+    import numpy as np
+
+    return base64.b64encode(np.ascontiguousarray(arr, dtype="<f4").tobytes()).decode("ascii")
+
+
+def _dicom_window_stats(arr):
+    import numpy as np
+
+    data_min = float(np.min(arr))
+    data_max = float(np.max(arr))
+    if not np.isfinite(data_min) or not np.isfinite(data_max):
+        data_min = 0.0
+        data_max = 0.0
+    lo, hi = np.percentile(arr, (1.0, 99.0))
+    vmin = float(lo)
+    vmax = float(hi)
+    if not np.isfinite(vmin) or not np.isfinite(vmax) or vmax <= vmin:
+        vmin = data_min
+        vmax = data_max
+    if data_max > data_min:
+        hist, _ = np.histogram(arr, bins=64, range=(data_min, data_max))
+    else:
+        hist = np.zeros(64, dtype=np.int64)
+    return data_min, data_max, vmin, vmax, hist
+
+
 @app.get("/studies/preview")
 def study_preview(
     folder: str,
@@ -629,6 +715,7 @@ def study_preview(
     width: int = 0,
     height: int = 0,
     scale: float = 1.0,
+    all_slices: bool = False,
 ):
     """Render a DICOM slice or pickled matplotlib plot the way ViewerWidget does."""
     kind = (result_type or "").lower()
@@ -639,15 +726,20 @@ def study_preview(
         "index": 0,
         "vmin": 0,
         "vmax": 0,
+        "data_min": 0,
+        "data_max": 0,
+        "rows": 0,
+        "cols": 0,
+        "pixels": "",
         "histogram": [],
         "image": "",
+        "stack": [],
         "series": None,
         "error": "",
     }
     try:
         if kind == "dicom":
             import numpy as np
-            import pydicom
             from PIL import Image
 
             if target.is_file():
@@ -660,22 +752,51 @@ def study_preview(
                 empty["error"] = "No DICOM files found"
                 return empty
             idx = max(0, min(index, len(files) - 1))
-            arr = pydicom.dcmread(str(files[idx])).pixel_array.astype("float32")
-            vmin = float(arr.min())
-            vmax = float(arr.max())
-            hist, _ = np.histogram(arr, bins=64)
+            stack = []
+            if all_slices and len(files) > 1:
+                arrays = [_load_dicom_array(path) for path in files]
+                flat = np.concatenate([a.ravel() for a in arrays])
+                data_min, data_max, vmin, vmax, hist = _dicom_window_stats(flat)
+                for i, arr in enumerate(arrays):
+                    stack.append(
+                        {
+                            "index": i,
+                            "rows": int(arr.shape[0]),
+                            "cols": int(arr.shape[1]),
+                            "pixels": _encode_f32le(arr),
+                        }
+                    )
+                arr = arrays[idx]
+            else:
+                arr = _load_dicom_array(files[idx])
+                data_min, data_max, vmin, vmax, hist = _dicom_window_stats(arr)
             if vmax > vmin:
                 scaled = ((arr - vmin) / (vmax - vmin) * 255.0).clip(0, 255).astype("uint8")
             else:
                 scaled = np.zeros(arr.shape, dtype="uint8")
+            image = Image.fromarray(scaled, mode="L")
+            if not all_slices and width > 0 and height > 0:
+                iw, ih = image.size
+                if iw > 0 and ih > 0:
+                    fit = min(float(width) / iw, float(height) / ih)
+                    tw = max(iw, int(round(iw * fit)))
+                    th = max(ih, int(round(ih * fit)))
+                    resample = getattr(getattr(Image, "Resampling", Image), "BILINEAR", Image.BILINEAR)
+                    image = image.resize((tw, th), resample)
             return {
                 "kind": "dicom",
                 "slices": len(files),
                 "index": idx,
                 "vmin": vmin,
                 "vmax": vmax,
+                "data_min": data_min,
+                "data_max": data_max,
+                "rows": int(arr.shape[0]),
+                "cols": int(arr.shape[1]),
+                "pixels": _encode_f32le(arr),
                 "histogram": hist.tolist(),
-                "image": _png_data_url(Image.fromarray(scaled, mode="L")),
+                "image": "" if all_slices else _png_data_url(image),
+                "stack": stack,
                 "series": None,
                 "error": "",
             }

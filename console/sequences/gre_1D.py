@@ -157,11 +157,16 @@ class SequenceGRE_1D(PulseqSequence, registry_key=Path(__file__).stem):
             raw_filename="raw",
         )
 
+        if rxd is None or getattr(rxd, "size", 0) == 0:
+            log.info("No raw data (hardware simulation or empty acquisition)")
+            return True
+
         log.info("Plotting results...")
         plt.clf()
         plt.title("ADC Signal")
         plt.grid(True, color="#333")
-        plt.plot(np.abs(rxd))
+        recon = np.fft.fftshift(np.fft.ifft(np.fft.fftshift(rxd)))
+        plt.plot(np.abs(recon))
 
         file = open(self.get_working_folder() + "/other/gre_adc.plot", "wb")
         fig = plt.gcf()

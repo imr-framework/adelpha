@@ -7,6 +7,7 @@ import { Overlay } from "./ImagingOverlay";
 export { Overlay } from "./ImagingOverlay";
 export { LogDialog, ConfigDialog, StatusDialog, StudyDialog, FlexDialog, ResultStage } from "./Mri4allWindows";
 export type { ViewerTarget } from "./Mri4allWindows";
+export { viewerSeriesLabel } from "./Mri4allWindows";
 
 export const PATIENT_POSITIONS = [
   { code: "HFS", label: "Head-First Supine [HFS]" },

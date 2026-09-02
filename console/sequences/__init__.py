@@ -90,7 +90,7 @@ class SequenceBase(Generic[SequenceVar]):
     @classmethod
     def get_parameter_schema(cls) -> dict:
         """
-        JSON Schema for the sequence parameter form. Used by the Electron UI instead of Qt widgets.
+        JSON Schema for the sequence parameter form. Used by the Adelpha UI instead of Qt widgets.
         """
         from common.parameter_schema import schema_for_defaults
 

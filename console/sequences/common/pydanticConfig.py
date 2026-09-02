@@ -4,16 +4,12 @@ from pathlib import Path
 from common import runtime
 
 ### rf_parameters section
-# Larmor is MHz. rf_maximum_amplitude_Hze is the Hz that maps to TX DAC ±1
-# (flocra: pulse_Hz / rf_max). Lowering it increases RF drive.
 class RfParameters(BaseModel):
-    larmor_frequency_MHz: float = 15.58
-    rf_maximum_amplitude_Hze: float = 7661.29
+    larmor_frequency_MHz: float = 15.52
+    rf_maximum_amplitude_Hze: float = 10000 #7661.29
     rf_pi2_fraction: float = 0.6744
 
 ### gradients_parameters section
-# Hz/m that maps to gradient DAC ±1 (flocra: pulse_Hz_per_m / g_max).
-# MRI4ALL Z1 defaults. Lowering these increases gradient current for the same .seq file.
 class GradientsParameters(BaseModel):
     gx_maximum: float = 8000000.0
     gy_maximum: float = 9000000.0

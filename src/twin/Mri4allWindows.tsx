@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import {
   ArrowLeftRight,
   Ban,
@@ -10,6 +10,7 @@ import {
   Copy,
   Download,
   Image as ImageIcon,
+  LayoutGrid,
   Maximize2,
   Minimize2,
   Play,
@@ -65,6 +66,17 @@ export type ViewerTarget = {
   scanNumber: number;
 };
 
+export function viewerSeriesLabel(target: Pick<ViewerTarget, "resultName" | "resultType">): string {
+  const name = (target.resultName || "").trim();
+  const key = name.toLowerCase();
+  if (!name || key === "reconstruction" || key === "image") {
+    return target.resultType === "plot" ? "Plot" : "Magnitude";
+  }
+  if (key === "k-space" || key === "k space" || key === "kspace") return "k-Space";
+  if (key === "phase") return "Phase";
+  return name;
+}
+
 const GENERAL_SETTINGS: { key: keyof MriConfig; label: string }[] = [
   { key: "scanner_ip", label: "Scanner IP (Red Pitaya)" },
   { key: "debug_mode", label: "Debug Mode" },
@@ -100,22 +112,481 @@ function Mark({
   );
 }
 
+type WindowRange = { min: number; max: number };
+
+function emptyPreview(error: string): StudyPreview {
+  return {
+    kind: "empty",
+    slices: 0,
+    index: 0,
+    vmin: 0,
+    vmax: 0,
+    data_min: 0,
+    data_max: 0,
+    rows: 0,
+    cols: 0,
+    pixels: "",
+    histogram: [],
+    image: "",
+    stack: [],
+    series: null,
+    error,
+  };
+}
+
+function decodeF32leBase64(b64: string): Float32Array {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Float32Array(bytes.buffer, bytes.byteOffset, Math.floor(bytes.byteLength / 4));
+}
+
+function formatLutTick(value: number): string {
+  if (!Number.isFinite(value)) return "0";
+  const abs = Math.abs(value);
+  if (abs >= 100) return String(Math.round(value));
+  if (abs >= 10) return value.toFixed(0);
+  if (abs >= 1) return value.toFixed(1);
+  return value.toFixed(2);
+}
+
+function lutTicks(min: number, max: number): number[] {
+  const span = max - min;
+  if (!(span > 0) || !Number.isFinite(span)) return [min];
+  const raw = span / 3;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const norm = raw / mag;
+  const step = (norm >= 5 ? 5 : norm >= 2 ? 2 : 1) * mag;
+  const start = Math.ceil(min / step) * step;
+  const ticks: number[] = [];
+  for (let value = start; value <= max + step * 1e-6; value += step) ticks.push(value);
+  return ticks.length ? ticks : [min, max];
+}
+
+function valueToYPct(value: number, dataMin: number, dataMax: number): number {
+  const range = dataMax - dataMin;
+  if (!(range > 0)) return 50;
+  return ((dataMax - value) / range) * 100;
+}
+
+function yToValue(clientY: number, rect: DOMRect, dataMin: number, dataMax: number): number {
+  const t = Math.min(1, Math.max(0, (clientY - rect.top) / Math.max(rect.height, 1)));
+  return dataMax - t * (dataMax - dataMin);
+}
+
+function histogramOutline(bins: number[], histMax: number): string {
+  const n = bins.length;
+  const max = Math.max(1, histMax);
+  const pts: string[] = ["0,100"];
+  for (let i = 0; i < n; i++) {
+    const x = (bins[i] / max) * 100;
+    const y = 100 - ((i + 0.5) / n) * 100;
+    pts.push(`${x.toFixed(2)},${y.toFixed(2)}`);
+  }
+  pts.push("0,0");
+  return pts.join(" ");
+}
+
+function DicomSliceCanvas({
+  pixels,
+  rows,
+  cols,
+  winMin,
+  winMax,
+}: {
+  pixels: Float32Array;
+  rows: number;
+  cols: number;
+  winMin: number;
+  winMax: number;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const sourceRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    let source = sourceRef.current;
+    if (!source) {
+      source = document.createElement("canvas");
+      sourceRef.current = source;
+    }
+    source.width = cols;
+    source.height = rows;
+    const sctx = source.getContext("2d");
+    const wrap = wrapRef.current;
+    const canvas = canvasRef.current;
+    if (!sctx || !wrap || !canvas) return;
+    const image = sctx.createImageData(cols, rows);
+    const data = image.data;
+    const range = winMax - winMin || 1;
+    for (let i = 0; i < pixels.length; i++) {
+      let gray = ((pixels[i] - winMin) / range) * 255;
+      if (gray < 0) gray = 0;
+      else if (gray > 255) gray = 255;
+      const o = i * 4;
+      data[o] = data[o + 1] = data[o + 2] = gray;
+      data[o + 3] = 255;
+    }
+    sctx.putImageData(image, 0, 0);
+
+    const paint = () => {
+      const rect = wrap.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cw = Math.max(1, Math.round(rect.width));
+      const ch = Math.max(1, Math.round(rect.height));
+      canvas.width = Math.round(cw * dpr);
+      canvas.height = Math.round(ch * dpr);
+      canvas.style.width = `${cw}px`;
+      canvas.style.height = `${ch}px`;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = "#090a0d";
+      ctx.fillRect(0, 0, cw, ch);
+      const scale = Math.min(cw / cols, ch / rows);
+      const dw = cols * scale;
+      const dh = rows * scale;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(source, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+    };
+    paint();
+    const ro = new ResizeObserver(paint);
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, [pixels, rows, cols, winMin, winMax]);
+
+  return (
+    <div className="m4-view-image m4-view-dicom" ref={wrapRef}>
+      <canvas ref={canvasRef} />
+    </div>
+  );
+}
+
+function DicomWindowLut({
+  histogram,
+  dataMin,
+  dataMax,
+  winMin,
+  winMax,
+  onChange,
+  onReset,
+}: {
+  histogram: number[];
+  dataMin: number;
+  dataMax: number;
+  winMin: number;
+  winMax: number;
+  onChange: (next: WindowRange) => void;
+  onReset: () => void;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    mode: "min" | "max" | "level";
+    startValue: number;
+    startMin: number;
+    startMax: number;
+  } | null>(null);
+  const winRef = useRef({ min: winMin, max: winMax, dataMin, dataMax });
+  winRef.current = { min: winMin, max: winMax, dataMin, dataMax };
+  const histMax = Math.max(1, ...histogram);
+  const range = dataMax - dataMin;
+  const topPct = valueToYPct(winMax, dataMin, dataMax);
+  const heightPct = range > 0 ? ((winMax - winMin) / range) * 100 : 0;
+  const ticks = lutTicks(dataMin, dataMax);
+
+  const applyPointer = useCallback(
+    (clientY: number) => {
+      const track = trackRef.current;
+      const drag = dragRef.current;
+      if (!track || !drag) return;
+      const { min, max, dataMin: lo, dataMax: hi } = winRef.current;
+      const rect = track.getBoundingClientRect();
+      const value = yToValue(clientY, rect, lo, hi);
+      const minSpan = Math.max((hi - lo) * 0.002, 1e-6);
+      if (drag.mode === "max") {
+        onChange({ min, max: Math.max(min + minSpan, Math.min(hi, value)) });
+        return;
+      }
+      if (drag.mode === "min") {
+        onChange({ min: Math.min(max - minSpan, Math.max(lo, value)), max });
+        return;
+      }
+      const width = drag.startMax - drag.startMin;
+      if (width >= hi - lo) {
+        onChange({ min: lo, max: hi });
+        return;
+      }
+      let nextMin = drag.startMin + (value - drag.startValue);
+      nextMin = Math.min(Math.max(nextMin, lo), hi - width);
+      onChange({ min: nextMin, max: nextMin + width });
+    },
+    [onChange],
+  );
+
+  useEffect(() => {
+    const onMove = (event: PointerEvent) => {
+      if (!dragRef.current) return;
+      applyPointer(event.clientY);
+    };
+    const onUp = () => {
+      dragRef.current = null;
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, [applyPointer]);
+
+  const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    const track = trackRef.current;
+    if (!track) return;
+    event.preventDefault();
+    const rect = track.getBoundingClientRect();
+    const y = event.clientY - rect.top;
+    const yMax = (topPct / 100) * rect.height;
+    const yMin = ((topPct + heightPct) / 100) * rect.height;
+    const handlePx = 10;
+    let mode: "min" | "max" | "level";
+    if (Math.abs(y - yMax) <= handlePx) mode = "max";
+    else if (Math.abs(y - yMin) <= handlePx) mode = "min";
+    else if (y > yMax && y < yMin) mode = "level";
+    else mode = y < yMax ? "max" : "min";
+    dragRef.current = {
+      mode,
+      startValue: yToValue(event.clientY, rect, dataMin, dataMax),
+      startMin: winMin,
+      startMax: winMax,
+    };
+    applyPointer(event.clientY);
+  };
+
+  const minPct = topPct + heightPct;
+  const outline = histogramOutline(histogram, histMax);
+
+  return (
+    <div
+      className="m4-hist"
+      role="group"
+      aria-label="Image window and level"
+      title="Drag handles to window. Drag the shaded region to level. Double-click to reset."
+    >
+      <div className="m4-hist-scale" aria-hidden>
+        {ticks.map((tick, i) => (
+          <span key={`${tick}-${i}`} style={{ top: `${valueToYPct(tick, dataMin, dataMax)}%` }}>
+            {formatLutTick(tick)}
+          </span>
+        ))}
+      </div>
+      <div className="m4-hist-main">
+        <div
+          className="m4-hist-plot"
+          ref={trackRef}
+          onPointerDown={onPointerDown}
+          onDoubleClick={onReset}
+        >
+          <svg className="m4-hist-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+            <polygon className="m4-hist-fill" points={outline} />
+            <rect
+              className="m4-hist-window"
+              x="0"
+              y={topPct}
+              width="100"
+              height={Math.max(heightPct, 0)}
+            />
+          </svg>
+          <div
+            className="m4-hist-handle is-max"
+            style={{ top: `${topPct}%` }}
+            role="slider"
+            aria-label="Window maximum"
+            aria-valuemin={dataMin}
+            aria-valuemax={dataMax}
+            aria-valuenow={winMax}
+          />
+          <div
+            className="m4-hist-handle is-min"
+            style={{ top: `${minPct}%` }}
+            role="slider"
+            aria-label="Window minimum"
+            aria-valuemin={dataMin}
+            aria-valuemax={dataMax}
+            aria-valuenow={winMin}
+          />
+        </div>
+        <div className="m4-hist-lut" aria-hidden />
+        <svg className="m4-hist-links" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+          <line x1="52" y1={topPct} x2="80" y2="0" />
+          <line x1="52" y1={minPct} x2="80" y2="100" />
+          <line x1="80" y1="0" x2="100" y2="0" />
+          <line x1="80" y1="100" x2="100" y2="100" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function DicomSliceScrubber({
+  index,
+  count,
+  onChange,
+}: {
+  index: number;
+  count: number;
+  onChange: (index: number) => void;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef(false);
+  const [dragging, setDragging] = useState(false);
+  const indexRef = useRef(index);
+  const countRef = useRef(count);
+  const onChangeRef = useRef(onChange);
+  indexRef.current = index;
+  countRef.current = count;
+  onChangeRef.current = onChange;
+
+  const indexFromX = useCallback((clientX: number) => {
+    const track = trackRef.current;
+    const n = countRef.current;
+    if (!track || n <= 1) return 0;
+    const rect = track.getBoundingClientRect();
+    const t = (clientX - rect.left) / Math.max(rect.width, 1);
+    return Math.min(n - 1, Math.max(0, Math.round(t * (n - 1))));
+  }, []);
+
+  useEffect(() => {
+    const onMove = (event: PointerEvent) => {
+      if (!dragRef.current) return;
+      onChangeRef.current(indexFromX(event.clientX));
+    };
+    const onUp = () => {
+      if (!dragRef.current) return;
+      dragRef.current = false;
+      setDragging(false);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, [indexFromX]);
+
+  const pct = count > 1 ? (index / (count - 1)) * 100 : 0;
+  return (
+    <div
+      className={`m4-slice${dragging ? " is-dragging" : ""}`}
+      ref={trackRef}
+      role="slider"
+      aria-label="Slice"
+      aria-valuemin={0}
+      aria-valuemax={count - 1}
+      aria-valuenow={index}
+      aria-valuetext={`Slice ${index + 1} of ${count}`}
+      tabIndex={0}
+      title="Drag or scroll to change slice"
+      onPointerDown={(event) => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        dragRef.current = true;
+        setDragging(true);
+        onChange(indexFromX(event.clientX));
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+          event.preventDefault();
+          onChange(Math.min(count - 1, index + 1));
+        } else if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+          event.preventDefault();
+          onChange(Math.max(0, index - 1));
+        } else if (event.key === "Home") {
+          event.preventDefault();
+          onChange(0);
+        } else if (event.key === "End") {
+          event.preventDefault();
+          onChange(count - 1);
+        }
+      }}
+    >
+      <div className="m4-slice-rail" />
+      <div className="m4-slice-thumb" style={{ left: `${pct}%` }} />
+      <span className="m4-slice-label">
+        {index + 1} / {count}
+      </span>
+    </div>
+  );
+}
+
+function mosaicGrid(count: number) {
+  const cols = Math.max(1, Math.ceil(Math.sqrt(count)));
+  const rows = Math.max(1, Math.ceil(count / cols));
+  return { cols, rows };
+}
+
 export function ResultStage({
   target,
   fullYTicks = false,
+  mosaic = false,
+  onMosaicable,
+  onLeaveMosaic,
 }: {
   target: ViewerTarget | null;
   fullYTicks?: boolean;
+  mosaic?: boolean;
+  onMosaicable?: (ok: boolean) => void;
+  onLeaveMosaic?: () => void;
 }) {
   const [slice, setSlice] = useState(0);
   const [preview, setPreview] = useState<StudyPreview | null>(null);
   const [plotSize, setPlotSize] = useState({ w: 0, h: 0 });
   const [loading, setLoading] = useState(false);
+  const [win, setWin] = useState<WindowRange | null>(null);
   const plotRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<StudyPreview | null>(null);
+  const sliceRef = useRef(0);
   previewRef.current = preview;
+  sliceRef.current = slice;
   const plotAxes = preview?.series?.axes;
-  const needsSizedPng = Boolean(preview?.kind === "plot" && preview.image && !plotAxes?.length);
+  const isDicom = (target?.resultType || preview?.kind || "").toLowerCase() === "dicom";
+  const hasDicomPixels = Boolean(isDicom && preview?.pixels && preview.rows && preview.cols);
+  const needsSizedPng = Boolean(
+    (preview?.kind === "plot" && preview.image && !plotAxes?.length) ||
+      (isDicom && preview && !preview.pixels),
+  );
+  const pixels = useMemo(() => {
+    if (!preview?.pixels || !preview.rows || !preview.cols) return null;
+    try {
+      const decoded = decodeF32leBase64(preview.pixels);
+      if (decoded.length < preview.rows * preview.cols) return null;
+      return decoded;
+    } catch {
+      return null;
+    }
+  }, [preview?.pixels, preview?.rows, preview?.cols]);
+  const stackTiles = useMemo(() => {
+    const stack = preview?.stack;
+    if (!stack?.length) return [];
+    const tiles: { index: number; rows: number; cols: number; pixels: Float32Array }[] = [];
+    for (const item of stack) {
+      try {
+        const decoded = decodeF32leBase64(item.pixels);
+        if (decoded.length < item.rows * item.cols) continue;
+        tiles.push({ index: item.index, rows: item.rows, cols: item.cols, pixels: decoded });
+      } catch {
+        continue;
+      }
+    }
+    return tiles;
+  }, [preview?.stack]);
+  const showMosaic = Boolean(mosaic && isDicom && stackTiles.length > 1);
+  const mosaicShape = mosaicGrid(stackTiles.length);
   useEffect(() => {
     const el = plotRef.current;
     if (!el) return;
@@ -131,7 +602,35 @@ export function ResultStage({
     return () => ro.disconnect();
   }, []);
   useEffect(() => {
+    const el = plotRef.current;
+    if (!el) return;
+    let acc = 0;
+    const onWheel = (event: WheelEvent) => {
+      const n = previewRef.current?.kind === "dicom" ? previewRef.current.slices : 0;
+      if (n <= 1) return;
+      event.preventDefault();
+      event.stopPropagation();
+      let step = 0;
+      if (event.deltaMode !== WheelEvent.DOM_DELTA_PIXEL) {
+        step = Math.sign(event.deltaY);
+        acc = 0;
+      } else {
+        acc += event.deltaY;
+        if (Math.abs(acc) >= 48) {
+          step = Math.sign(acc);
+          acc = 0;
+        }
+      }
+      if (!step) return;
+      const next = Math.min(n - 1, Math.max(0, sliceRef.current + step));
+      if (next !== sliceRef.current) setSlice(next);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+  useEffect(() => {
     setSlice(0);
+    setWin(null);
   }, [target?.folder, target?.filePath]);
   useEffect(() => {
     if (!target || !target.folder || !target.filePath) {
@@ -149,7 +648,11 @@ export function ResultStage({
     let cancelled = false;
     const delay = needsSizedPng ? 120 : 0;
     const timer = window.setTimeout(() => {
-      setLoading(!previewRef.current?.series && !previewRef.current?.image);
+      setLoading(
+        mosaic
+          ? !((previewRef.current?.stack?.length ?? 0) > 1)
+          : !previewRef.current?.series && !previewRef.current?.image && !previewRef.current?.pixels,
+      );
       const scale = Math.min(window.devicePixelRatio || 1, 2);
       void fetchStudyPreview(
         folder,
@@ -157,23 +660,26 @@ export function ResultStage({
         resultType,
         slice,
         needsSizedPng ? { width: plotSize.w, height: plotSize.h, scale } : undefined,
+        mosaic,
       )
         .then((next) => {
-          if (!cancelled) setPreview(next);
+          if (cancelled) return;
+          setPreview(next);
+          if (next.kind !== "dicom") return;
+          const lo = next.data_min ?? next.vmin;
+          const hi = next.data_max ?? next.vmax;
+          setWin((prev) => {
+            if (!prev) return { min: next.vmin, max: next.vmax };
+            const minSpan = Math.max((hi - lo) * 0.002, 1e-6);
+            const min = Math.min(Math.max(prev.min, lo), hi);
+            const max = Math.min(Math.max(prev.max, lo), hi);
+            if (max - min < minSpan) return { min: next.vmin, max: next.vmax };
+            return { min, max };
+          });
         })
         .catch((e) => {
           if (!cancelled) {
-            setPreview({
-              kind: "empty",
-              slices: 0,
-              index: 0,
-              vmin: 0,
-              vmax: 0,
-              histogram: [],
-              image: "",
-              series: null,
-              error: e instanceof Error ? e.message : "Preview failed",
-            });
+            setPreview(emptyPreview(e instanceof Error ? e.message : "Preview failed"));
           }
         })
         .finally(() => {
@@ -184,16 +690,33 @@ export function ResultStage({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [target?.folder, target?.filePath, target?.resultType, slice, needsSizedPng, needsSizedPng && plotSize.w, needsSizedPng && plotSize.h]);
+  }, [
+    target?.folder,
+    target?.filePath,
+    target?.resultType,
+    mosaic,
+    mosaic ? -1 : slice,
+    needsSizedPng,
+    needsSizedPng && plotSize.w,
+    needsSizedPng && plotSize.h,
+  ]);
+  useEffect(() => {
+    onMosaicable?.(isDicom && (preview?.slices ?? 0) > 1);
+  }, [isDicom, preview?.slices, onMosaicable]);
   const showStudyMeta = Boolean(target) && preview?.kind !== "plot" && !plotAxes?.length;
-  const histMax = Math.max(1, ...(preview?.histogram ?? [1]));
+  const dataMin = preview?.data_min ?? preview?.vmin ?? 0;
+  const dataMax = preview?.data_max ?? preview?.vmax ?? 1;
+  const winMin = win?.min ?? preview?.vmin ?? dataMin;
+  const winMax = win?.max ?? preview?.vmax ?? dataMax;
+  const mosaicPending = mosaic && isDicom && (preview?.slices ?? 0) > 1 && !showMosaic && loading;
   const stageClass = [
     "m4-view-stage",
     target ? "is-loaded" : "is-empty",
-    loading ? "is-loading" : "",
+    loading || mosaicPending ? "is-loading" : "",
     preview?.error ? "is-error" : "",
     preview?.kind === "plot" ? "is-plot" : "",
-    preview?.kind === "dicom" ? "is-dicom" : "",
+    preview?.kind === "dicom" && (pixels || showMosaic) ? "is-dicom" : "",
+    showMosaic ? "is-mosaic" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -201,44 +724,83 @@ export function ResultStage({
     <div className={stageClass}>
       {showStudyMeta && target ? (
         <div className="m4-view-meta">
-          <div className="m4-view-meta-primary">{target.patientName}</div>
-          <div>{target.mrn}</div>
-          <div>{target.protocolName}</div>
-          <div>Scan {target.scanNumber}</div>
+          <span className="m4-view-meta-who">{target.patientName.replace(/,\s*$/, "").trim() || "Patient"}</span>
+          <span className="m4-view-meta-series">{viewerSeriesLabel(target).toUpperCase()}</span>
         </div>
       ) : null}
       <div className="m4-view-canvas">
         <div className="m4-view-plot" ref={plotRef}>
           {plotAxes?.length ? (
             <ScientificPlot axes={plotAxes} fullY={fullYTicks} />
+          ) : showMosaic ? (
+            <div
+              className="m4-mosaic"
+              style={{
+                gridTemplateColumns: `repeat(${mosaicShape.cols}, minmax(0, 1fr))`,
+                gridTemplateRows: `repeat(${mosaicShape.rows}, minmax(0, 1fr))`,
+              }}
+            >
+              {stackTiles.map((tile) => (
+                <button
+                  key={tile.index}
+                  type="button"
+                  className={`m4-mosaic-cell${tile.index === slice ? " is-active" : ""}`}
+                  aria-pressed={tile.index === slice}
+                  aria-label={`Slice ${tile.index + 1}`}
+                  onClick={() => setSlice(tile.index)}
+                  onDoubleClick={() => {
+                    setSlice(tile.index);
+                    onLeaveMosaic?.();
+                  }}
+                >
+                  <DicomSliceCanvas
+                    pixels={tile.pixels}
+                    rows={tile.rows}
+                    cols={tile.cols}
+                    winMin={winMin}
+                    winMax={winMax}
+                  />
+                  <span className="m4-mosaic-idx">{tile.index + 1}</span>
+                </button>
+              ))}
+            </div>
+          ) : pixels && preview?.rows && preview.cols ? (
+            <DicomSliceCanvas
+              pixels={pixels}
+              rows={preview.rows}
+              cols={preview.cols}
+              winMin={winMin}
+              winMax={winMax}
+            />
           ) : preview?.image ? (
             <img className="m4-view-image" src={preview.image} alt="" />
           ) : (
             <div className="m4-view-empty" />
           )}
+          {preview?.kind === "dicom" && preview.slices > 1 && !showMosaic ? (
+            <DicomSliceScrubber
+              index={Math.min(slice, preview.slices - 1)}
+              count={preview.slices}
+              onChange={setSlice}
+            />
+          ) : null}
         </div>
-        {preview?.kind === "dicom" && preview.histogram.length ? (
-          <div className="m4-hist" aria-hidden>
-            <span>{Math.round(preview.vmax)}</span>
-            <div className="m4-hist-bars">
-              {preview.histogram.map((v, i) => (
-                <i key={i} style={{ width: `${Math.max(4, (v / histMax) * 100)}%` }} />
-              ))}
-            </div>
-            <span>{Math.round(preview.vmin)}</span>
-          </div>
-        ) : null}
-        {preview?.kind === "dicom" && preview.slices > 1 ? (
-          <input
-            className="m4-slice"
-            type="range"
-            min={0}
-            max={preview.slices - 1}
-            value={Math.min(slice, preview.slices - 1)}
-            onChange={(e) => setSlice(Number(e.target.value))}
+        {(pixels || showMosaic) && preview?.kind === "dicom" && preview.histogram.length ? (
+          <DicomWindowLut
+            histogram={preview.histogram}
+            dataMin={dataMin}
+            dataMax={dataMax}
+            winMin={winMin}
+            winMax={winMax}
+            onChange={setWin}
+            onReset={() => setWin({ min: preview.vmin, max: preview.vmax })}
           />
         ) : null}
-        {loading && !plotAxes?.length && !preview?.image ? <p className="m4-view-status">Loading</p> : null}
+        {(loading || mosaicPending) && !plotAxes?.length && !preview?.image && !hasDicomPixels ? (
+          <p className="m4-view-status">Loading</p>
+        ) : mosaicPending ? (
+          <p className="m4-view-status">Loading slices</p>
+        ) : null}
         {!target ? <p className="m4-view-status">No result selected</p> : null}
         {preview?.error ? <p className="m4-view-placeholder">{preview.error}</p> : null}
       </div>
@@ -248,6 +810,14 @@ export function ResultStage({
 
 export function FlexDialog({ onClose, target }: { onClose: () => void; target: ViewerTarget | null }) {
   const [maximized, setMaximized] = useState(false);
+  const [mosaic, setMosaic] = useState(false);
+  const [canMosaic, setCanMosaic] = useState(false);
+  useEffect(() => {
+    setMosaic(false);
+  }, [target?.folder, target?.filePath, target?.resultType]);
+  useEffect(() => {
+    if (!canMosaic) setMosaic(false);
+  }, [canMosaic]);
   return (
     <Overlay
       title="Flex Viewer"
@@ -258,6 +828,15 @@ export function FlexDialog({ onClose, target }: { onClose: () => void; target: V
       dismissOnBackdrop={false}
       footer={
         <div className="m4-footer m4-footer-end">
+          <button
+            type="button"
+            className={`m4-btn m4-btn-flat${mosaic ? " is-on" : ""}`}
+            disabled={!canMosaic}
+            title={canMosaic ? "Show every slice in a grid" : "Mosaic needs more than one slice"}
+            onClick={() => setMosaic((v) => !v)}
+          >
+            {mosaic ? <Square size={14} /> : <LayoutGrid size={14} />} {mosaic ? "Slice" : "Mosaic"}
+          </button>
           <button type="button" className="m4-btn m4-btn-flat" onClick={() => setMaximized((v) => !v)}>
             {maximized ? <Minimize2 size={14} /> : <Maximize2 size={14} />} {maximized ? "Restore" : "Maximize"}
           </button>
@@ -267,7 +846,12 @@ export function FlexDialog({ onClose, target }: { onClose: () => void; target: V
         </div>
       }
     >
-      <ResultStage target={target} />
+      <ResultStage
+        target={target}
+        mosaic={mosaic}
+        onMosaicable={setCanMosaic}
+        onLeaveMosaic={() => setMosaic(false)}
+      />
     </Overlay>
   );
 }
@@ -741,6 +1325,14 @@ export function StatusDialog({ onClose }: { onClose: () => void }) {
   );
 }
 
+function pickScanIndex(exam: StudyExam | null): number {
+  if (!exam?.scans.length) return 0;
+  for (let i = exam.scans.length - 1; i >= 0; i--) {
+    if (exam.scans[i].results?.length) return i;
+  }
+  return 0;
+}
+
 export function StudyDialog({
   onClose,
   onLoad,
@@ -764,9 +1356,12 @@ export function StudyDialog({
     void fetchStudies()
       .then((list) => {
         setExams(list);
-        setSelected(list[0] ?? null);
-        const first = list[0]?.scans.length ?? 0;
-        setChecked(Array.from({ length: first }, () => false));
+        const first = list[0] ?? null;
+        setSelected(first);
+        const idx = pickScanIndex(first);
+        setScanIdx(idx);
+        setResultIdx(0);
+        setChecked(Array.from({ length: first?.scans.length ?? 0 }, () => false));
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Failed"));
     void fetchCurrentExam().then((e) => setExamActive(Boolean(e))).catch(() => setExamActive(false));
@@ -781,7 +1376,8 @@ export function StudyDialog({
   const result = scan?.results[resultIdx];
   const selectExam = (exam: StudyExam) => {
     setSelected(exam);
-    setScanIdx(0);
+    const idx = pickScanIndex(exam);
+    setScanIdx(idx);
     setResultIdx(0);
     setChecked(Array.from({ length: exam.scans.length }, () => false));
   };

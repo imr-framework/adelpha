@@ -4,10 +4,13 @@ import external.seq.adjustments_acq.config as cfg
 from external.seq.adjustments_acq.calibration import rf_max_cal
 
 import common.logger as logger
-
+import matplotlib.pyplot as plt
 from sequences import PulseqSequence  # type: ignore
 from sequences.common import make_rf_se  # type: ignore
 from sequences.common.util import reading_json_parameter, writing_json_parameter
+import numpy as np
+import pickle
+from common.types import ResultItem
 
 log = logger.get_logger()
 
@@ -15,9 +18,10 @@ log = logger.get_logger()
 class AdjRFAmplitude(PulseqSequence, registry_key=Path(__file__).stem):
     @classmethod
     def get_readable_name(self) -> str:
-        return "Adjust RF Amplitude  [untested]"
+        return "Adjust RF Amplitude  [per coil]"
 
     def calculate_sequence(self, scan_task) -> bool:
+        scan_task.processing.recon_mode = "bypass"
         self.seq_file_path = self.get_working_folder() + "/seq/acq0.seq"
         log.info("Calculating sequence " + self.get_name())
 
@@ -61,9 +65,41 @@ class AdjRFAmplitude(PulseqSequence, registry_key=Path(__file__).stem):
             plot=True,
             gui_test=False,
         )
+        peak_max_arr = data_dict["peak_max_arr"]
+        peak_max_arr = peak_max_arr.tolist()
+
+        rf_amp_vals  = data_dict["rf_amp_vals"]
+        rf_amp_vals = rf_amp_vals.tolist()
+        
+        rf_pi2_fraction = rf_amp_vals[np.argmax(peak_max_arr)]
+        # dec_inds = np.where(peak_max_arr[:-1] >= peak_max_arr[1:])[0]
+        # max_ind = dec_inds[0]
+        # rf_pi2_fraction = rf_amp_vals[max_ind]
+        
+        
+        
+        plt.clf()
+        plt.title("RF Amplitude Calibration")
+        plt.grid(True, color="#333")
+        plt.plot(rf_amp_vals, np.abs(peak_max_arr), marker="o")
+        plt.xlabel("RF pi/2 fraction [a.u.]")   
+        plt.ylabel("Signal [a.u.]")
+        file = open(self.get_working_folder() + "/other/plot_rf_cal_result.plot", "wb")
+        fig = plt.gcf()
+        pickle.dump(fig, file)
+        file.close()
+
+        result = ResultItem()
+        result.name = "RF_cal"
+        result.description = "Recorded RF calibration signal"
+        result.type = "plot"
+        result.primary = True
+        result.autoload_viewer = 1
+        result.file_path = "other/plot_rf_cal_result.plot"
+        scan_task.results.append(result)
 
         # updating the Larmor frequency in the config.json file
-        configuration_data.rf_parameters.rf_maximum_amplitude_Hze = est_rf_max
+        # configuration_data.rf_parameters.rf_maximum_amplitude_Hze = est_rf_max
         configuration_data.rf_parameters.rf_pi2_fraction = rf_pi2_fraction
         writing_json_parameter(config_data=configuration_data)
 

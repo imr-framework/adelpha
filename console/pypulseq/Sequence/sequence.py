@@ -635,7 +635,7 @@ class Sequence:
             fig2.savefig('seq_plot2.jpg')
         plt.show()
 
-    def read(self, file_path: str) -> None:
+    def read(self, file_path: str, detect_rf_use: bool = False) -> None:
         """
         Read `.seq` file from `file_path`.
 
@@ -643,8 +643,25 @@ class Sequence:
         ----------
         file_path : str
             Path to `.seq` file to be read.
+        detect_rf_use : bool, default=False
+            Infer RF pulse use (excitation/refocusing) from flip angle when the file omits it.
         """
-        read(self, file_path)
+        read(self, file_path, detect_rf_use=detect_rf_use)
+
+    @property
+    def block_events(self):
+        return self.dict_block_events
+
+    @property
+    def block_durations(self):
+        durations = {}
+        keys = list(self.dict_block_events.keys())
+        for i, key in enumerate(keys):
+            if i < len(self.arr_block_durations):
+                durations[key] = self.arr_block_durations[i]
+            else:
+                durations[key] = 0.0
+        return durations
 
     def rf_from_lib_data(self, lib_data: list) -> SimpleNamespace:
         """

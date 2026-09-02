@@ -40,7 +40,7 @@ class Opts:
     def __init__(self, adc_dead_time: float = 0, gamma: float = 42.576e6, grad_raster_time: float = 10e-6,
                  grad_unit: str = 'Hz/m', max_grad: float = 0, max_slew: float = 0, rf_dead_time: float = 0,
                  rf_raster_time: float = 1e-6, rf_ringdown_time: float = 0, rise_time: float = 0,
-                 slew_unit: str = 'Hz/m/s'):
+                 slew_unit: str = 'Hz/m/s', **_unused):
         valid_grad_units = ['Hz/m', 'mT/m', 'rad/ms/mm']
         valid_slew_units = ['Hz/m/s', 'mT/m/ms', 'T/m/s', 'rad/ms/mm/ms']
 
@@ -74,6 +74,7 @@ class Opts:
         self.rf_raster_time = rf_raster_time
         self.grad_raster_time = grad_raster_time
         self.gamma = gamma
+        self.adc_raster_time = _unused.get("adc_raster_time", rf_raster_time)
 
     def __str__(self):
         s = "System limits:"

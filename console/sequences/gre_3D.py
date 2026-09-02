@@ -4,8 +4,6 @@ import datetime
 import math
 import numpy as np
 from PyQt5 import uic
-import matplotlib.pyplot as plt
-import pickle
 
 import pypulseq as pp  # type: ignore
 import external.seq.adjustments_acq.config as cfg
@@ -37,7 +35,7 @@ class SequenceGRE_3D(PulseqSequence, registry_key=Path(__file__).stem):
     param_BW: int = 32000
     param_trajectory: str = "Cartesian"
     param_ordering: str = "linear_up"
-    param_dummy_shots: int = 20
+    param_dummy_shots: int = 10
 
     @classmethod
     def get_readable_name(self) -> str:
@@ -103,7 +101,7 @@ class SequenceGRE_3D(PulseqSequence, registry_key=Path(__file__).stem):
         self,
     ) -> dict:
         return {
-            "TE": 0,
+            "TE": 15,
             "TR": 1000,
             "NSA": 1,
             "orientation": "Axial",
@@ -197,8 +195,6 @@ class SequenceGRE_3D(PulseqSequence, registry_key=Path(__file__).stem):
             / 1000
         )
 
-        plot_instructions = True
-
         rxd, rx_t = run_pulseq(
             seq_file=self.seq_file_path,
             rf_center=cfg.LARMOR_FREQ,
@@ -216,23 +212,7 @@ class SequenceGRE_3D(PulseqSequence, registry_key=Path(__file__).stem):
             case_path=self.get_working_folder(),
             raw_filename="raw",
             expected_duration_sec=expected_duration_sec,
-            plot_instructions=plot_instructions,
         )
-        scan_task.adjustment.rf.larmor_frequency = cfg.LARMOR_FREQ
-
-        if plot_instructions:
-            file = open(self.get_working_folder() + "/other/seq.plot", "wb")
-            fig = plt.gcf()
-            pickle.dump(fig, file)
-            file.close()
-
-            result = ResultItem()
-            result.name = "seq_plot"
-            result.description = "Timing diagram of sequence"
-            result.type = "plot"
-            result.file_path = "other/seq.plot"
-            result.autoload_viewer = 4
-            scan_task.results.append(result)
 
         log.info("Done running sequence " + self.get_name())
         return True
@@ -242,7 +222,7 @@ class SequenceGRE_3D(PulseqSequence, registry_key=Path(__file__).stem):
         pe_order_file = self.get_working_folder() + "/rawdata/pe_order.npy"
 
         alpha1 = self.param_FA
-        alpha1_duration = 80e-6
+        alpha1_duration = 100e-6
 
         TR = self.param_TR / 1000
         TE = self.param_TE / 1000
@@ -250,7 +230,6 @@ class SequenceGRE_3D(PulseqSequence, registry_key=Path(__file__).stem):
         fovy = self.param_FOV / 1000
         # DEBUG! TODO: Expose FOV in Z on UI
         fovz = self.param_FOV / 1000 / 2
-        # fovz = self.param_FOV / 1000 / 4
         Nx = self.param_baseresolution
         Ny = self.param_baseresolution
         Nz = self.param_slices
@@ -308,7 +287,7 @@ class SequenceGRE_3D(PulseqSequence, registry_key=Path(__file__).stem):
         rf1 = pp.make_block_pulse(
             flip_angle=alpha1 * math.pi / 180,
             duration=alpha1_duration,
-            delay=0e-6,
+            delay=100e-6,
             system=system,
             use="excitation",
         )
@@ -326,8 +305,8 @@ class SequenceGRE_3D(PulseqSequence, registry_key=Path(__file__).stem):
 
         gx_pre = pp.make_trapezoid(
             channel=ch0,
-            area=gx.area / 2.0,
-            # duration=pp.calc_duration(gx) / 2,
+            area=gx.area / 2,
+            duration=pp.calc_duration(gx) / 2,
             system=system,
         )
         gx_pre.amplitude = -1 * gx_pre.amplitude
@@ -343,50 +322,25 @@ class SequenceGRE_3D(PulseqSequence, registry_key=Path(__file__).stem):
         phase_areas0 = pe_order[:, 0] * delta_ky
         phase_areas1 = pe_order[:, 1] * delta_kz
 
-        # Dummy calculation to estimate required spacing
-        gy_pre = pp.make_trapezoid(
-            channel=ch1,
-            area=1.0 * np.max(phase_areas0),
-            system=system,
-        )
-        gz_pre = pp.make_trapezoid(
-            channel=ch2,
-            area=-1.0 * np.max(phase_areas1),
-            system=system,
-        )
-
-        pre_duration = max(pp.calc_duration(gy_pre), pp.calc_duration(gz_pre))
-        pre_duration = max(pre_duration, pp.calc_duration(gx_pre))
-
         # Gradient spoiling -TODO: Need to see if this is really required based on data
-        gx_spoil = pp.make_trapezoid(channel=ch0, area=Nx * delta_kx, system=system)
+        gx_spoil = pp.make_trapezoid(channel=ch0, area=2 * Nx * delta_kx, system=system)
         # gy_spoil = pp.make_trapezoid(channel=ch1, area=5 * Nx * delta_kx, system=system)
         # gz_spoil = pp.make_trapezoid(channel=ch2, area=5 * Nx * delta_kx, system=system)
 
         # ======
         # CALCULATE DELAYS
         # ======
-
-        if TE == 0:
-            tau1 = 10 * seq.grad_raster_time
-            TE = (
-                tau1
-                + 0.5 * pp.calc_duration(rf1)
-                + pre_duration
-                + 0.5 * pp.calc_duration(gx)
-            )
-        else:
-            tau1 = (
-                math.ceil(
-                    (
-                        TE
-                        - 0.5 * pp.calc_duration(rf1)
-                        - pre_duration
-                        - 0.5 * pp.calc_duration(gx)
-                    )
-                    / seq.grad_raster_time
+        tau1 = (
+            math.ceil(
+                (
+                    TE
+                    - 0.5 * pp.calc_duration(rf1)
+                    - pp.calc_duration(gx_pre)
+                    - 0.5 * pp.calc_duration(gx)
                 )
-            ) * seq.grad_raster_time
+                / seq.grad_raster_time
+            )
+        ) * seq.grad_raster_time
 
         delay_TR = (
             math.ceil(
@@ -413,8 +367,7 @@ class SequenceGRE_3D(PulseqSequence, registry_key=Path(__file__).stem):
         adc_phase = []
         rfspoil_phase = 0
         rfspoil_inc = 0
-        rfspoil_incinc = 117.0
-        # rfspoil_incinc = 50.0
+        rfspoil_incinc = 0.0
 
         # Loop over phase encodes and define sequence blocks
         for avg in range(num_averages):
@@ -440,14 +393,14 @@ class SequenceGRE_3D(PulseqSequence, registry_key=Path(__file__).stem):
 
                 gy_pre = pp.make_trapezoid(
                     channel=ch1,
-                    area=-1.0 * phase_areas0[pe_idx],
-                    duration=pre_duration,
+                    area=1.0 * phase_areas0[pe_idx],
+                    duration=pp.calc_duration(gx_pre),
                     system=system,
                 )
                 gz_pre = pp.make_trapezoid(
                     channel=ch2,
-                    area=-1.0 * phase_areas1[pe_idx],
-                    duration=pre_duration,
+                    area=1.0 * phase_areas1[pe_idx],
+                    duration=pp.calc_duration(gx_pre),
                     system=system,
                 )
 
@@ -458,6 +411,7 @@ class SequenceGRE_3D(PulseqSequence, registry_key=Path(__file__).stem):
                     seq.add_block(gx)
                 else:
                     seq.add_block(gx, adc)
+                    # adc.phase_offset = rfspoil_phase / 180 * math.pi
                     adc_phase.append(rfspoil_phase)
 
                 gy_pre.amplitude = -gy_pre.amplitude

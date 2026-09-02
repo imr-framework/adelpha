@@ -161,7 +161,10 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
                 grad_prev_last[j] = 0
 
     if detect_rf_use:
-        for k in self.rf_library.keys():
+        rf_keys = self.rf_library.keys
+        if callable(rf_keys):
+            rf_keys = rf_keys()
+        for k in rf_keys:
             lib_data = self.rf_library.data[k]
             rf = self.rf_from_lib_data(lib_data)
             flip_deg = np.abs(np.sum(rf.signal)) * rf.t[0] * 360

@@ -131,13 +131,18 @@ def run_reconstruction_basic3d(folder: str, task: ScanTask) -> bool:
     if task.processing.oversampling_read > 0:
         offset = int(dims[2]) / 4
         fft = fft[int(offset) : int(3 * offset), :, :]
+        k_for_display = np.fft.fftshift(kSpace, axes=(0, 1))[
+            int(offset) : int(3 * offset), :, :
+        ]
+    else:
+        k_for_display = np.fft.fftshift(kSpace, axes=(0, 1))
 
     DICOM.write_dicom(fft, task, folder + "/" + mri4all_taskdata.DICOM, result_index=0)
 
-    # kSpace = np.angle(kSpace)
-    kSpace = 100 * (kSpace - kSpace.min()) / (kSpace.max() - kSpace.min())
+    k_mag = np.abs(k_for_display)
+    k_display = np.log1p(k_mag)
     DICOM.write_dicom(
-        kSpace,
+        k_display,
         task,
         folder + "/" + mri4all_taskdata.DICOM,
         series_offset=1,

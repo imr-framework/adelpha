@@ -249,8 +249,14 @@ export type StudyPreview = {
   index: number;
   vmin: number;
   vmax: number;
+  data_min?: number;
+  data_max?: number;
+  rows?: number;
+  cols?: number;
+  pixels?: string;
   histogram: number[];
   image: string;
+  stack?: { index: number; rows: number; cols: number; pixels: string }[];
   series?: { axes: PlotAxes[] } | null;
   error?: string;
 };
@@ -261,6 +267,7 @@ export async function fetchStudyPreview(
   resultType: string,
   index = 0,
   size?: { width?: number; height?: number; scale?: number },
+  allSlices = false,
 ): Promise<StudyPreview> {
   const query = new URLSearchParams({
     folder,
@@ -271,6 +278,7 @@ export async function fetchStudyPreview(
   if (size?.width && size.width > 0) query.set("width", String(Math.round(size.width)));
   if (size?.height && size.height > 0) query.set("height", String(Math.round(size.height)));
   if (size?.scale && size.scale > 1) query.set("scale", String(size.scale));
+  if (allSlices) query.set("all_slices", "true");
   return mriFetch(`/studies/preview?${query}`);
 }
 

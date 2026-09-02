@@ -17,9 +17,7 @@ from sequences.common import make_tse_3D
 import common.logger as logger
 from common.types import ResultItem
 import common.helper as helper
-
 log = logger.get_logger()
-
 from common.ipc import Communicator
 
 ipc_comm = Communicator(Communicator.ACQ)
@@ -30,6 +28,7 @@ class SequenceFID(PulseqSequence, registry_key=Path(__file__).stem):
     param_FA: int = 90
     param_ADC_samples: int = 4096
     param_ADC_duration: int = 6400
+    param_NSA: int = 1
 
     @classmethod
     def get_readable_name(self) -> str:
@@ -49,6 +48,7 @@ class SequenceFID(PulseqSequence, registry_key=Path(__file__).stem):
             "FA": self.param_FA,
             "ADC_samples": self.param_ADC_samples,
             "ADC_duration": self.param_ADC_duration,
+            "NSA": self.param_NSA
         }
 
     @classmethod
@@ -67,6 +67,7 @@ class SequenceFID(PulseqSequence, registry_key=Path(__file__).stem):
             self.param_FA = parameters["FA"]
             self.param_ADC_samples = parameters["ADC_samples"]
             self.param_ADC_duration = parameters["ADC_duration"]
+            self.param_NSA = parameters["NSA"]
         except:
             self.problem_list.append("Invalid parameters provided")
             return False
@@ -76,6 +77,7 @@ class SequenceFID(PulseqSequence, registry_key=Path(__file__).stem):
         widget.FA_SpinBox.setValue(self.param_FA)
         widget.ADC_samples_SpinBox.setValue(self.param_ADC_samples)
         widget.ADC_duration_SpinBox.setValue(self.param_ADC_duration)
+        widget.NSA_SpinBox.setValue(self.param_NSA)
         return True
 
     def read_parameters_from_ui(self, widget, scan_task) -> bool:
@@ -83,6 +85,7 @@ class SequenceFID(PulseqSequence, registry_key=Path(__file__).stem):
         self.param_FA = widget.FA_SpinBox.value()
         self.param_ADC_samples = widget.ADC_samples_SpinBox.value()
         self.param_ADC_duration = widget.ADC_duration_SpinBox.value()
+        self.param_NSA = widget.NSA_SpinBox.value()
         self.validate_parameters(scan_task)
         return self.is_valid()
 
@@ -109,7 +112,7 @@ class SequenceFID(PulseqSequence, registry_key=Path(__file__).stem):
 
         rxd, rx_t = run_pulseq(
             seq_file=self.seq_file_path,
-            rf_center=cfg.LARMOR_FREQ,
+            rf_center=scan_task.adjustment.rf.larmor_frequency,
             tx_t=1,
             grad_t=10,
             tx_warmup=100,
@@ -125,25 +128,89 @@ class SequenceFID(PulseqSequence, registry_key=Path(__file__).stem):
             raw_filename="raw",
         )
 
-        log.info("Plotting results...")
-        plt.clf()
-        plt.title("ADC Signal")
-        plt.grid(True, color="#333")
-        plt.plot(np.abs(rxd))
+        if rxd is None or getattr(rxd, "size", 0) == 0:
+            log.info("No raw data (hardware simulation or empty acquisition)")
+            return True
 
-        file = open(self.get_working_folder() + "/other/fid.plot", "wb")
+        # Display the data
+
+        # Compute the average
+        rxd_rs = np.reshape(rxd, (int(rxd.shape[0]/self.param_NSA), self.param_NSA), order='F')
+        log.info("New shape of rx data:", rxd_rs.shape)
+        rxd_avg = (np.average(rxd_rs, axis=1))
+        log.info("Done running sequence " + self.get_name())
+        log.info("Plotting figures")
+        
+        plt.clf()
+        plt.title(f"ADC Signal")
+        plt.grid(True, color="#333")
+        log.info("Plotting averaged raw signal")
+        plt.plot(np.abs(rxd_avg))
+        
+        file = open(self.get_working_folder() + "/other/adc.plot", "wb")
         fig = plt.gcf()
         pickle.dump(fig, file)
         file.close()
-
         result = ResultItem()
         result.name = "ADC"
-        result.description = "Recorded ADC signal"
+        result.description = "Acquired ADC signal"
         result.type = "plot"
-        result.primary = True
         result.autoload_viewer = 1
-        result.file_path = "other/fid.plot"
-        scan_task.results.append(result)
+        result.file_path = "other/adc.plot"
+        scan_task.results.insert(0, result)
+
+        plt.clf()
+        plt.title(f"FFT of Signal")
+        recon = np.fft.fftshift(np.fft.ifft(np.fft.fftshift(rxd_avg)))
+        plt.grid(True, color="#333")
+        plt.plot(np.abs(recon))
+        file = open(self.get_working_folder() + "/other/fft.plot", "wb")
+        fig = plt.gcf()
+        pickle.dump(fig, file)
+        file.close()
+        result = ResultItem()
+        result.name = "FFT"
+        result.description = "FFT of ADC signal"
+        result.type = "plot"
+        result.autoload_viewer = 2
+        result.primary = True
+        result.file_path = "other/fft.plot"
+        scan_task.results.insert(1, result)
+
+        # Save the raw data file
+        log.info("Saving rawdata, sequence " + self.get_name())
+        self.raw_file_path = self.get_working_folder() + "/rawdata/raw.npy"
+        np.save(self.raw_file_path, rxd)
+
+
+        # file = open(self.get_working_folder() + "/other/fid.plot", "wb")
+        # fig = plt.gcf()
+        # pickle.dump(fig, file)
+        # file.close()
+
+        # result = ResultItem()
+        # result.name = "ADC"
+        # result.description = "Recorded ADC signal"
+        # result.type = "plot"
+        # result.primary = True
+        # result.autoload_viewer = 1
+        # result.file_path = "other/fid.plot"
+        # scan_task.results.insert(result)
+
+        # file = open(self.get_working_folder() + "/other/fid.plot", "wb")
+        # fig = plt.gcf()
+        # pickle.dump(fig, file)
+        # file.close()
+
+        # result = ResultItem()
+        # result.name = "ADC"
+        # result.description = "Recorded ADC signal"
+        # result.type = "plot"
+        # result.primary = True
+        # result.autoload_viewer = 1
+        # result.file_path = "other/fid.plot"
+        # scan_task.results.append(result)
+
 
         log.info("Done running sequence " + self.get_name())
         return True
@@ -152,7 +219,7 @@ class SequenceFID(PulseqSequence, registry_key=Path(__file__).stem):
         output_file = self.seq_file_path
 
         alpha1 = self.param_FA
-        alpha1_duration = 200e-6
+        alpha1_duration = 50e-6
 
         adc_num_samples = self.param_ADC_samples
         adc_duration = self.param_ADC_duration / 1e6  # us to s
@@ -182,7 +249,7 @@ class SequenceFID(PulseqSequence, registry_key=Path(__file__).stem):
         # ======
 
         rf1 = pp.make_block_pulse(
-            flip_angle=alpha1 * math.pi / 180,
+            flip_angle =  alpha1 * math.pi / 180, # change this back by removing the 2
             duration=alpha1_duration,
             delay=0e-6,
             system=system,

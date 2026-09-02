@@ -647,9 +647,12 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .ic-screen-title {
   flex-shrink: 0;
-  padding: 6px 10px 4px;
-  font-size: 12px;
+  padding: 4px 10px 3px;
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ic-accent);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   background: var(--ic-panel);
 }
@@ -677,7 +680,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .ic-viewer-stage .m4-view-meta {
-  color: #d7dbe3;
+  color: #ffffff;
   text-shadow: 0 0 8px #000, 0 1px 2px #000;
 }
 
@@ -1022,11 +1025,82 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .ic-status {
   display: flex;
   align-items: center;
-  padding: 3px 12px;
+  min-height: 28px;
+  padding: 4px 12px;
   border-top: 1px solid var(--ic-border);
   background: var(--ic-status-bg);
   color: var(--ic-muted);
   font-size: 11px;
+}
+
+.ic-status.is-working {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 38%) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.ic-status-msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ic-status-end {
+  display: block;
+  min-width: 0;
+}
+
+.ic-scan-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ic-scan-progress-track {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ic-btn) 78%, #000);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.ic-scan-progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--ic-accent-hot), var(--ic-accent));
+  box-shadow: 0 0 10px var(--ic-accent-ring);
+  transition: width 180ms linear;
+}
+
+.ic-scan-progress.is-indeterminate .ic-scan-progress-fill {
+  width: 38%;
+  animation: ic-scan-progress-slide 1.35s ease-in-out infinite;
+}
+
+.ic-scan-progress-label {
+  flex: 0 0 2.6em;
+  color: var(--ic-accent);
+  font-size: 10px;
+  line-height: 1;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ic-scan-progress.is-indeterminate .ic-scan-progress-label {
+  color: transparent;
+}
+
+@keyframes ic-scan-progress-slide {
+  0% {
+    transform: translateX(-130%);
+  }
+  100% {
+    transform: translateX(280%);
+  }
 }
 
 .ic-register,
@@ -4730,6 +4804,11 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   cursor: default;
 }
 
+.m4-btn.is-on {
+  background: var(--m4-accent-soft);
+  color: #eef0f3;
+}
+
 .m4-btn-accent {
   background: var(--m4-accent-soft);
 }
@@ -5151,6 +5230,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   gap: 0 26px;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .m4-study-left,
@@ -5159,6 +5239,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   flex-direction: column;
   min-height: 0;
   gap: 10px;
+  overflow: hidden;
 }
 
 .m4-study > .m4-study-left {
@@ -5183,8 +5264,10 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .m4-exam-table {
-  flex: 1;
-  min-height: 120px;
+  flex: 0 1 34%;
+  min-height: 96px;
+  max-height: 220px;
+  overflow: auto;
   table-layout: fixed;
 }
 
@@ -5235,8 +5318,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .m4-scan-list {
-  flex: 1;
-  min-height: 90px;
+  flex: 1 1 auto;
+  min-height: 160px;
 }
 
 .m4-result-list {
@@ -5305,25 +5388,34 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   right: 40px;
   z-index: 4;
   display: flex;
-  flex-wrap: nowrap;
   align-items: baseline;
-  gap: 0 14px;
+  gap: 0.7em;
+  margin: 0;
   padding: 0;
-  color: var(--ic-plot-tick, #9ca3af);
-  font-size: 11px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 400;
   line-height: 1.3;
   pointer-events: none;
   overflow: hidden;
-}
-
-.m4-view-meta > div {
   white-space: nowrap;
+  text-shadow: 0 0 8px #000, 0 1px 2px #000;
 }
 
-.m4-view-meta-primary {
-  font-size: 12px;
+.m4-view-meta-who {
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-weight: 600;
-  color: var(--ic-text, #eef0f3);
+}
+
+.m4-view-meta-series {
+  flex-shrink: 0;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+}
+
+.m4-view-stage.is-dicom .m4-view-meta {
+  right: 72px;
 }
 
 .m4-view-canvas {
@@ -5342,6 +5434,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   background: var(--ic-plot-bg, #090a0d);
   border: 0;
   overflow: hidden;
+  overscroll-behavior: contain;
 }
 
 .ic-scientific-plot {
@@ -5397,55 +5490,276 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-size: 12px;
 }
 
+.m4-view-dicom {
+  background: var(--ic-plot-bg, #090a0d);
+}
+
+.m4-view-dicom canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.m4-mosaic {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  gap: 3px;
+  padding: 36px 78px 8px 8px;
+  overflow: hidden;
+  background: var(--ic-plot-bg, #090a0d);
+}
+
+.m4-mosaic-cell {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #000;
+  color: inherit;
+  cursor: pointer;
+  appearance: none;
+  overflow: hidden;
+}
+
+.m4-mosaic-cell:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.m4-mosaic-cell.is-active {
+  border-color: var(--ic-accent-hot, #e0a526);
+  box-shadow: inset 0 0 0 1px var(--ic-accent-hot, #e0a526);
+}
+
+.m4-mosaic-cell .m4-view-dicom {
+  position: absolute;
+  inset: 0;
+}
+
+.m4-mosaic-idx {
+  position: absolute;
+  left: 5px;
+  bottom: 4px;
+  z-index: 1;
+  color: #ffffff;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 6px #000, 0 1px 2px #000;
+  pointer-events: none;
+}
+
+.m4-view-stage.is-mosaic .m4-hist {
+  bottom: 4px;
+}
+
 .m4-hist {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  bottom: 28px;
-  z-index: 2;
+  top: 4px;
+  right: 2px;
+  bottom: 22px;
+  z-index: 3;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 52px;
-  color: #888;
-  font-size: 10px;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 2px;
+  width: 70px;
+  color: #b8bcc4;
+  font-size: 9px;
+  user-select: none;
+  touch-action: none;
+  pointer-events: none;
+  background: transparent;
 }
 
-.m4-hist-bars {
+.m4-hist-scale {
+  position: relative;
+  flex: 0 0 26px;
+  width: 26px;
+  pointer-events: none;
+}
+
+.m4-hist-scale span {
+  position: absolute;
+  right: 3px;
+  transform: translateY(-50%);
+  color: #9aa0aa;
+  font-size: 8px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  text-shadow: 0 0 4px #000, 0 1px 2px #000;
+}
+
+.m4-hist-scale span::after {
+  content: "";
+  position: absolute;
+  left: calc(100% + 3px);
+  top: 50%;
+  width: 6px;
+  height: 1px;
+  background: #6a7180;
+}
+
+.m4-hist-main {
+  position: relative;
   flex: 1;
+  min-width: 0;
   display: flex;
-  flex-direction: column-reverse;
-  justify-content: stretch;
+  flex-direction: row;
+  pointer-events: auto;
+}
+
+.m4-hist-plot {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  cursor: ns-resize;
+  overflow: hidden;
+  background: rgba(8, 10, 16, 0.55);
+  border: 1px solid #3a3f4d;
+}
+
+.m4-hist-svg {
+  position: absolute;
+  inset: 0;
   width: 100%;
+  height: 100%;
 }
 
-.m4-hist-bars i {
-  display: block;
-  flex: 1;
-  min-height: 1px;
-  background: var(--m4-dbg);
+.m4-hist-fill {
+  fill: rgba(100, 100, 200, 0.72);
+  stroke: rgba(190, 190, 210, 0.45);
+  stroke-width: 0.8;
+}
+
+.m4-hist-window {
+  fill: rgba(100, 100, 200, 0.16);
+  stroke: none;
+}
+
+.m4-hist-lut {
+  flex: 0 0 9px;
+  width: 9px;
+  background: linear-gradient(to top, #000 0%, #fff 100%);
+  border: 1px solid #4a4f5c;
+  pointer-events: none;
+}
+
+.m4-hist-links {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.m4-hist-links line {
+  stroke: #e0a526;
+  stroke-width: 1.1;
+  vector-effect: non-scaling-stroke;
+}
+
+.m4-hist-handle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 11px;
+  margin-top: -5px;
+  cursor: ns-resize;
+  z-index: 1;
+}
+
+.m4-hist-handle::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 5px;
+  height: 1px;
+  background: #e0a526;
+}
+
+.m4-hist-handle.is-max::after,
+.m4-hist-handle.is-min::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-style: solid;
+}
+
+.m4-hist-handle.is-max::after {
+  top: -1px;
+  border-width: 0 4px 6px 4px;
+  border-color: transparent transparent #e0a526 transparent;
+}
+
+.m4-hist-handle.is-min::after {
+  top: 6px;
+  border-width: 6px 4px 0 4px;
+  border-color: #e0a526 transparent transparent transparent;
+}
+
+.m4-view-stage.is-dicom .m4-slice {
+  right: 74px;
 }
 
 .m4-slice {
   position: absolute;
-  left: 8px;
+  left: 10px;
   right: 64px;
-  bottom: 8px;
+  bottom: 6px;
   z-index: 2;
-  appearance: none;
-  height: 8px;
-  background: #c8c8c8;
-  border-radius: 0;
+  height: 18px;
+  cursor: ew-resize;
+  outline: none;
+  touch-action: none;
 }
 
-.m4-slice::-webkit-slider-thumb {
-  appearance: none;
-  width: 18px;
-  height: 18px;
+.m4-slice-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  background: rgba(200, 200, 200, 0.28);
+}
+
+.m4-slice-thumb {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  width: 8px;
+  margin-left: -4px;
+  background: rgb(200, 200, 200);
+  pointer-events: none;
+}
+
+.m4-slice:hover .m4-slice-thumb,
+.m4-slice.is-dragging .m4-slice-thumb,
+.m4-slice:focus-visible .m4-slice-thumb {
   background: #ffffff;
-  border: 0;
-  cursor: pointer;
+}
+
+.m4-slice-label {
+  position: absolute;
+  left: 0;
+  top: -11px;
+  font-size: 9px;
+  line-height: 1;
+  color: #8b919c;
+  pointer-events: none;
+  text-shadow: 0 0 5px #000, 0 1px 2px #000;
+  font-variant-numeric: tabular-nums;
 }
 
 .m4-study-actions {

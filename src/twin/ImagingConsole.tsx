@@ -46,6 +46,7 @@ import {
   ShimDialog,
   StatusDialog,
   StudyDialog,
+  viewerSeriesLabel,
   type ViewerTarget,
 } from "./ImagingDialogs";
 import { ScientificPlot } from "./ScientificPlot";
@@ -165,6 +166,7 @@ function viewerTargetFromResult(
     folder,
     filePath: result.file_path,
     resultType: result.type,
+    resultName: result.name,
     patientName: `${task.patient.last_name}, ${task.patient.first_name}`,
     mrn: task.patient.mrn,
     protocolName: task.protocol_name,
@@ -191,6 +193,27 @@ function ConsoleViewer({
   if (isViewerTarget(value)) return <ResultStage target={value} fullYTicks={fullYTicks} />;
   if (typeof value === "string" && value) return <p className="ic-muted">{value}</p>;
   return fallback ? <div className="m4-view-stage is-empty">{fallback}</div> : null;
+}
+
+function ScreenPane({
+  slot,
+  value,
+  fallback,
+  fullYTicks = false,
+}: {
+  slot: ViewerSlot;
+  value: ViewerSlotContent;
+  fallback?: ReactNode;
+  fullYTicks?: boolean;
+}) {
+  const title = isViewerTarget(value) ? viewerSeriesLabel(value) : null;
+  return (
+    <article className="ic-screen">
+      <div className="ic-viewer-stage" aria-label={title ? `Viewer ${slot}: ${title}` : `Viewer ${slot}`}>
+        <ConsoleViewer value={value} fallback={fallback} fullYTicks={fullYTicks} />
+      </div>
+    </article>
+  );
 }
 
 function ParamField({
@@ -291,6 +314,7 @@ export function ImagingConsole() {
   });
   const autoloadedScans = useRef(new Set<string>());
   const [acqClock, setAcqClock] = useState<{ start: number; expected: number; disable: boolean } | null>(null);
+  const [clockSec, setClockSec] = useState(0);
   const shimValues = useRef({ x: 0, y: 0, z: 0 });
   const [patient, setPatient] = useState<PatientInformation>(emptyPatient());
   const [acc, setAcc] = useState("");
@@ -510,18 +534,22 @@ export function ImagingConsole() {
   }, [refreshQueue]);
 
   useEffect(() => {
-    if (!acqClock || acqClock.disable) return;
+    if (!acqClock || acqClock.disable) {
+      setClockSec(0);
+      return;
+    }
     const tick = () => {
-      const sec = Math.max(0, Math.floor((Date.now() - acqClock.start) / 1000));
+      const sec = Math.max(0, (Date.now() - acqClock.start) / 1000);
+      setClockSec(sec);
       if (acqClock.expected <= 0) {
-        setStatus(`Running scan...  (${formatElapsed(sec)})`);
+        setStatus(`Running scan...  (${formatElapsed(Math.floor(sec))})`);
       } else {
-        const remain = Math.max(0, acqClock.expected - sec);
+        const remain = Math.max(0, acqClock.expected - Math.floor(sec));
         setStatus(`Running scan...  remaining ${formatElapsed(remain)}`);
       }
     };
     tick();
-    const t = window.setInterval(tick, 1000);
+    const t = window.setInterval(tick, 200);
     return () => window.clearInterval(t);
   }, [acqClock]);
 
@@ -786,6 +814,19 @@ export function ImagingConsole() {
     return forTab.length ? forTab : tab === "sequence" ? entries : [];
   }, [seqInfo, tab]);
 
+  const acquiring = queue.some((s) => s.state === "acq");
+  const reconstructing = queue.some((s) => s.state === "recon" || s.state === "scheduled_recon");
+  const progressMode: "idle" | "determinate" | "indeterminate" =
+    acquiring && acqClock && acqClock.expected > 0 && !acqClock.disable
+      ? "determinate"
+      : acquiring || reconstructing
+        ? "indeterminate"
+        : "idle";
+  const progressPct =
+    progressMode === "determinate" && acqClock
+      ? Math.min(100, (clockSec / Math.max(acqClock.expected, 1e-6)) * 100)
+      : 0;
+
   return (
     <section className="imaging-console" aria-label="Imaging Console">
       {registerOpen ? (
@@ -1040,29 +1081,19 @@ export function ImagingConsole() {
       ) : null}
 
       <div className={`ic-screens is-${viewerCount}`}>
-        <article className="ic-screen">
-          <div className="ic-viewer-stage" aria-label="Viewer 1">
-            <ConsoleViewer
-              value={viewerSlots[1]}
-              fallback={imageHint ? <p className="ic-muted">{imageHint}</p> : null}
-              fullYTicks={viewerCount === 1}
-            />
-          </div>
-        </article>
-        <article className="ic-screen">
-          <div className="ic-viewer-stage" aria-label="Viewer 2">
-            <ConsoleViewer
-              value={viewerSlots[2]}
-              fallback={plotSeries ? <Sparkline data={plotSeries} /> : null}
-              fullYTicks={viewerCount === 1}
-            />
-          </div>
-        </article>
-        <article className="ic-screen">
-          <div className="ic-viewer-stage" aria-label="Viewer 3">
-            <ConsoleViewer value={viewerSlots[3]} fullYTicks={viewerCount === 1} />
-          </div>
-        </article>
+        <ScreenPane
+          slot={1}
+          value={viewerSlots[1]}
+          fallback={imageHint ? <p className="ic-muted">{imageHint}</p> : null}
+          fullYTicks={viewerCount === 1}
+        />
+        <ScreenPane
+          slot={2}
+          value={viewerSlots[2]}
+          fallback={plotSeries ? <Sparkline data={plotSeries} /> : null}
+          fullYTicks={viewerCount === 1}
+        />
+        <ScreenPane slot={3} value={viewerSlots[3]} fullYTicks={viewerCount === 1} />
       </div>
 
       <div className="ic-lower">
@@ -1229,10 +1260,42 @@ export function ImagingConsole() {
         </aside>
       </div>
 
-      <footer className="ic-status">
-        <span>{status}</span>
+      <footer className={`ic-status${progressMode === "idle" ? "" : " is-working"}`}>
+        <span className="ic-status-msg">{status}</span>
+        {progressMode !== "idle" ? <ScanProgressBar mode={progressMode} percent={progressPct} /> : null}
+        {progressMode !== "idle" ? <span className="ic-status-end" /> : null}
       </footer>
     </section>
+  );
+}
+
+function ScanProgressBar({
+  mode,
+  percent,
+}: {
+  mode: "determinate" | "indeterminate";
+  percent: number;
+}) {
+  const pct = Math.max(0, Math.min(100, percent));
+  const label = mode === "determinate" ? `${Math.round(pct)}%` : "";
+  return (
+    <div
+      className={`ic-scan-progress is-${mode}`}
+      role="progressbar"
+      aria-label="Scan progress"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={mode === "determinate" ? Math.round(pct) : undefined}
+      aria-valuetext={mode === "indeterminate" ? "In progress" : `${Math.round(pct)} percent`}
+    >
+      <div className="ic-scan-progress-track">
+        <div
+          className="ic-scan-progress-fill"
+          style={mode === "determinate" ? { width: `${pct}%` } : undefined}
+        />
+      </div>
+      <span className="ic-scan-progress-label">{label || "\u00a0"}</span>
+    </div>
   );
 }
 
