@@ -235,6 +235,7 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
         _prepend_sys_path(str(paths.console_root / "external"))
         os.environ.setdefault("MRI4ALL_BASE", str(paths.data_dir / "mri4all"))
         os.environ.setdefault("MRI4ALL_DEBUG", "true")
+        os.environ.setdefault("MPLBACKEND", "Agg")
         (paths.data_dir / "mri4all" / "logs").mkdir(parents=True, exist_ok=True)
         (paths.data_dir / "mri4all" / "config").mkdir(parents=True, exist_ok=True)
         (paths.data_dir / "mri4all" / "data").mkdir(parents=True, exist_ok=True)
@@ -244,6 +245,9 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
             asyncio.get_running_loop()
         except RuntimeError:
             asyncio.set_event_loop(asyncio.new_event_loop())
+        import common.runtime as rt
+
+        rt.set_service_name("api")
         from services.api.app import app as console_app
 
         return console_app

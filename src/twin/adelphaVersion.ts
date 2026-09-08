@@ -1,2 +1,2 @@
-/** Adelpha application version. Keep in sync with package.json. */
-export const ADELPHA_VERSION = "0.1.0";
+/** Adelpha application version. Injected from package.json at build time. */
+export const ADELPHA_VERSION = __ADELPHA_VERSION__;

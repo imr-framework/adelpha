@@ -123,7 +123,7 @@ def test_agents_unstarted_returns_actionable_error():
     assert res.json()["detail"]
 
 
-def test_agents_proxy_lazy_starts():
+def test_agents_proxy_lazy_starts(tmp_path):
     import os
     import sys
 
@@ -132,19 +132,31 @@ def test_agents_proxy_lazy_starts():
     registry = stub_registry()
 
     def child(port: int):
-        script = f"""
-from http.server import BaseHTTPRequestHandler, HTTPServer
-class H(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        self.wfile.write(b'["dtam"]')
-    def log_message(self, *args):
-        pass
-HTTPServer(("127.0.0.1", {port}), H).serve_forever()
-"""
-        return spawn_child([sys.executable, "-c", script], os.environ.copy())
+        # HTTPServer calls socket.getfqdn(host) during bind. On GitHub's
+        # macOS runners that reverse lookup of 127.0.0.1 can stall for ~30s,
+        # so wait_for_listen times out before the stub ever listens.
+        script = tmp_path / "agents_stub.py"
+        script.write_text(
+            "\n".join(
+                [
+                    "import socket",
+                    "from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer",
+                    "socket.getfqdn = lambda name='': name or 'localhost'",
+                    "class H(BaseHTTPRequestHandler):",
+                    "    def do_GET(self):",
+                    "        self.send_response(200)",
+                    "        self.send_header('Content-Type', 'application/json')",
+                    "        self.end_headers()",
+                    "        self.wfile.write(b'[\"dtam\"]')",
+                    "    def log_message(self, *args):",
+                    "        pass",
+                    f"ThreadingHTTPServer(('127.0.0.1', {port}), H).serve_forever()",
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return spawn_child([sys.executable, "-u", str(script)], os.environ.copy())
 
     registry.states["agents"].definition.child_factory = child
     registry.states["agents"].definition.wait_for_listen = True

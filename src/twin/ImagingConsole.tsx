@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Atom, Check, Image as ImageIcon, LayoutGrid, List, Loader, LogOut, Maximize2, Square, Wrench, X, Zap } from "lucide-react";
 import {
   connectMriEvents,
@@ -13,6 +13,7 @@ import {
   fetchScan,
   fetchScans,
   fetchSequences,
+  fetchServices,
   patchScan,
   formatDevicePingStatus,
   pingDevice,
@@ -41,11 +42,14 @@ import {
   Overlay,
   QueryDialog,
   RegistrationForm,
+  ResultStage,
   ShimDialog,
   StatusDialog,
   StudyDialog,
+  viewerSeriesLabel,
   type ViewerTarget,
 } from "./ImagingDialogs";
+import { ScientificPlot } from "./ScientificPlot";
 
 /** Shown in the topbar hamburger while Imaging Console is active. */
 export type ImagingMenuAction =
@@ -138,20 +142,78 @@ function patientLine(exam: ExamResponse | null): string {
   return `${name}  ·  MRN: ${p.mrn || "—"}`;
 }
 
-function viewerTargetFromTask(task: ScanTask | null, folder: string, label: string): ViewerTarget | null {
-  if (!task || !folder) return null;
-  const result = task.results.find((item) => item.primary) ?? task.results[0];
-  if (!result) return null;
+type ViewerSlot = 1 | 2 | 3;
+type ViewerSlotContent = ViewerTarget | string | null;
+
+function isViewerTarget(value: ViewerSlotContent): value is ViewerTarget {
+  return Boolean(value && typeof value === "object");
+}
+
+function autoloadSlot(viewer: number | undefined): ViewerSlot | "flex" | null {
+  if (viewer === 1 || viewer === 2 || viewer === 3) return viewer;
+  if (viewer === 4) return "flex";
+  return null;
+}
+
+function viewerTargetFromResult(
+  task: ScanTask,
+  folder: string,
+  label: string,
+  result: ScanTask["results"][number],
+): ViewerTarget {
   return {
     label,
     folder,
     filePath: result.file_path,
     resultType: result.type,
+    resultName: result.name,
     patientName: `${task.patient.last_name}, ${task.patient.first_name}`,
     mrn: task.patient.mrn,
     protocolName: task.protocol_name,
     scanNumber: task.scan_number,
   };
+}
+
+function viewerTargetFromTask(task: ScanTask | null, folder: string, label: string): ViewerTarget | null {
+  if (!task || !folder) return null;
+  const result = task.results.find((item) => item.primary) ?? task.results[0];
+  if (!result) return null;
+  return viewerTargetFromResult(task, folder, label, result);
+}
+
+function ConsoleViewer({
+  value,
+  fallback,
+  fullYTicks = false,
+}: {
+  value: ViewerSlotContent;
+  fallback?: ReactNode;
+  fullYTicks?: boolean;
+}) {
+  if (isViewerTarget(value)) return <ResultStage target={value} fullYTicks={fullYTicks} />;
+  if (typeof value === "string" && value) return <p className="ic-muted">{value}</p>;
+  return fallback ? <div className="m4-view-stage is-empty">{fallback}</div> : null;
+}
+
+function ScreenPane({
+  slot,
+  value,
+  fallback,
+  fullYTicks = false,
+}: {
+  slot: ViewerSlot;
+  value: ViewerSlotContent;
+  fallback?: ReactNode;
+  fullYTicks?: boolean;
+}) {
+  const title = isViewerTarget(value) ? viewerSeriesLabel(value) : null;
+  return (
+    <article className="ic-screen">
+      <div className="ic-viewer-stage" aria-label={title ? `Viewer ${slot}: ${title}` : `Viewer ${slot}`}>
+        <ConsoleViewer value={value} fallback={fallback} fullYTicks={fullYTicks} />
+      </div>
+    </article>
+  );
 }
 
 function ParamField({
@@ -223,6 +285,7 @@ export function ImagingConsole() {
   const [apiOk, setApiOk] = useState<boolean | null>(null);
   const [simulation, setSimulation] = useState(false);
   const [exam, setExam] = useState<ExamResponse | null>(null);
+  const examId = exam?.exam.id;
   const [registerOpen, setRegisterOpen] = useState(false);
   const [protocolsOpen, setProtocolsOpen] = useState(false);
   const [dialog, setDialog] = useState<
@@ -244,19 +307,23 @@ export function ImagingConsole() {
   >(null);
   const [flexOpen, setFlexOpen] = useState(false);
   const [flexTarget, setFlexTarget] = useState<ViewerTarget | null>(null);
-  const [viewerSlots, setViewerSlots] = useState<{ 1: string; 2: string; 3: string; flex: string }>({
-    1: "",
-    2: "",
-    3: "",
-    flex: "",
+  const [viewerSlots, setViewerSlots] = useState<{ 1: ViewerSlotContent; 2: ViewerSlotContent; 3: ViewerSlotContent }>({
+    1: null,
+    2: null,
+    3: null,
   });
+  const autoloadedScans = useRef(new Set<string>());
   const [acqClock, setAcqClock] = useState<{ start: number; expected: number; disable: boolean } | null>(null);
+  const [clockSec, setClockSec] = useState(0);
   const shimValues = useRef({ x: 0, y: 0, z: 0 });
   const [patient, setPatient] = useState<PatientInformation>(emptyPatient());
   const [acc, setAcc] = useState("");
   const [sequences, setSequences] = useState<SequenceInfo[]>([]);
   const [queue, setQueue] = useState<ScanQueueEntry[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedIdRef = useRef<string | null>(null);
+  selectedIdRef.current = selectedId;
+  const prevScanStates = useRef<Record<string, ScanQueueEntry["state"]>>({});
   const [draft, setDraft] = useState<Record<string, unknown>>({});
   const [tab, setTab] = useState<SeqTab>("sequence");
   const [status, setStatus] = useState("Connecting to MRI4ALL API…");
@@ -269,14 +336,68 @@ export function ImagingConsole() {
   const seqInfo = sequences.find((s) => s.id === selected?.sequence);
   const experimentActive = queue.some((s) => s.state === "acq" || s.state === "recon" || s.state === "scheduled_recon");
 
+  const loadIntoViewer = useCallback((slot: ViewerSlot | "flex", payload: string | ViewerTarget) => {
+    if (slot === "flex") {
+      setFlexTarget(typeof payload === "string" ? null : payload);
+      setFlexOpen(true);
+    } else {
+      setViewerSlots((prev) => ({ ...prev, [slot]: payload }));
+    }
+    setStatus(slot === "flex" ? "Loaded into Flex Viewer" : `Loaded into Viewer ${slot}`);
+  }, []);
+
+  const autoloadEntry = useCallback(
+    async (entry: ScanQueueEntry) => {
+      try {
+        const detail = await fetchScan(entry.id);
+        const task = detail.task;
+        if (!task?.results.length || !detail.folder) return;
+        const label = `${entry.scan_counter}:  ${entry.protocol_name}`;
+        let loaded = false;
+        for (const result of task.results) {
+          const slot = autoloadSlot(result.autoload_viewer);
+          if (!slot) continue;
+          loadIntoViewer(slot, viewerTargetFromResult(task, detail.folder, label, result));
+          loaded = true;
+        }
+        if (!loaded) {
+          const target = viewerTargetFromTask(task, detail.folder, label);
+          if (target) loadIntoViewer(1, target);
+        }
+      } catch {
+        /* keep the last successful view */
+      }
+    },
+    [loadIntoViewer],
+  );
+
   const refreshQueue = useCallback(async () => {
     try {
       const next = await fetchScans();
       setQueue(next);
+      const sid = selectedIdRef.current;
+      const selectedScan = sid ? next.find((s) => s.id === sid) : undefined;
+      if (selectedScan?.state === "failure" && prevScanStates.current[selectedScan.id] !== "failure") {
+        setAcqClock(null);
+        const svc = await fetchServices().catch(() => null);
+        setStatus(svc?.last_error || "Acquisition failed");
+      }
+      const prev = prevScanStates.current;
+      for (const entry of next) {
+        if (entry.state !== "complete" || !entry.has_results) continue;
+        if (autoloadedScans.current.has(entry.id)) continue;
+        if (prev[entry.id] && prev[entry.id] !== "complete") {
+          autoloadedScans.current.add(entry.id);
+          void autoloadEntry(entry);
+        }
+      }
+      const map: Record<string, ScanQueueEntry["state"]> = {};
+      for (const entry of next) map[entry.id] = entry.state;
+      prevScanStates.current = map;
     } catch {
       /* idle */
     }
-  }, []);
+  }, [autoloadEntry]);
 
   const loadExam = useCallback(async () => {
     try {
@@ -287,18 +408,26 @@ export function ImagingConsole() {
       setExam(current);
       const seqs = await fetchSequences(true);
       setSequences(seqs);
-      const ping = await pingDevice().catch(() => null);
-      const probe = ping ? formatDevicePingStatus(ping) : null;
+      const extras: string[] = [];
+      if (health.sequence_registry === false) extras.push("using fallback sequence catalog");
+      if (health.pipeline === false) extras.push("acquisition pipeline is not running");
+      const suffix = extras.length ? ` · ${extras.join("; ")}` : "";
       if (current) {
         await refreshQueue();
         setPatient(current.patient);
         setAcc(current.exam.acc);
         setPosition(current.exam.patient_position || "HFS");
-        setStatus(probe ?? (health.hardware_simulation ? "Scanner ready (simulation)" : "Scanner ready"));
+        setStatus(
+          (health.hardware_simulation ? "Scanner ready (simulation)" : "Scanner ready") + suffix,
+        );
         setRegisterOpen(false);
       } else {
         setQueue([]);
-        setStatus(probe ? `${probe} · Register a patient to start an exam` : "Register a patient to start an exam");
+        setStatus(
+          extras.length
+            ? `Register a patient to start an exam · ${extras.join("; ")}`
+            : "Register a patient to start an exam",
+        );
         setRegisterOpen(true);
       }
     } catch (err) {
@@ -316,6 +445,25 @@ export function ImagingConsole() {
     const t = window.setInterval(() => void refreshQueue(), 1500);
     return () => window.clearInterval(t);
   }, [exam, refreshQueue]);
+
+  useEffect(() => {
+    if (!examId) {
+      setViewerSlots({ 1: null, 2: null, 3: null });
+      setFlexTarget(null);
+      autoloadedScans.current.clear();
+      return;
+    }
+    let cancelled = false;
+    void fetchScans().then((scans) => {
+      const latest = scans.filter((s) => s.state === "complete" && s.has_results).at(-1);
+      if (!latest || cancelled) return;
+      autoloadedScans.current.add(latest.id);
+      void autoloadEntry(latest);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [examId, autoloadEntry]);
 
   useEffect(() => {
     return connectMriEvents((ev: MriEvent) => {
@@ -371,7 +519,6 @@ export function ImagingConsole() {
       if (kind === "show_dicom" && ev.value?.dicom_files?.length) {
         const files = ev.value.dicom_files;
         setImageHint(`${files.length} DICOM series ready`);
-        setViewerSlots((prev) => ({ ...prev, 1: files.join("\n") }));
         setIpc({ kind: "dicom", id: eventId, source, files });
       }
       if (kind === "acq_data") {
@@ -387,18 +534,22 @@ export function ImagingConsole() {
   }, [refreshQueue]);
 
   useEffect(() => {
-    if (!acqClock || acqClock.disable) return;
+    if (!acqClock || acqClock.disable) {
+      setClockSec(0);
+      return;
+    }
     const tick = () => {
-      const sec = Math.max(0, Math.floor((Date.now() - acqClock.start) / 1000));
+      const sec = Math.max(0, (Date.now() - acqClock.start) / 1000);
+      setClockSec(sec);
       if (acqClock.expected <= 0) {
-        setStatus(`Running scan...  (${formatElapsed(sec)})`);
+        setStatus(`Running scan...  (${formatElapsed(Math.floor(sec))})`);
       } else {
-        const remain = Math.max(0, acqClock.expected - sec);
+        const remain = Math.max(0, acqClock.expected - Math.floor(sec));
         setStatus(`Running scan...  remaining ${formatElapsed(remain)}`);
       }
     };
     tick();
-    const t = window.setInterval(tick, 1000);
+    const t = window.setInterval(tick, 200);
     return () => window.clearInterval(t);
   }, [acqClock]);
 
@@ -414,7 +565,7 @@ export function ImagingConsole() {
       setExam(null);
       setQueue([]);
       setSelectedId(null);
-      setViewerSlots({ 1: "", 2: "", 3: "", flex: "" });
+      setViewerSlots({ 1: null, 2: null, 3: null });
       setFlexOpen(false);
       setFlexTarget(null);
       setRegisterOpen(true);
@@ -505,11 +656,10 @@ export function ImagingConsole() {
       setRegisterOpen(false);
       setQueue([]);
       setSelectedId(null);
-      setViewerSlots({ 1: "", 2: "", 3: "", flex: "" });
+      setViewerSlots({ 1: null, 2: null, 3: null });
       setFlexOpen(false);
       setFlexTarget(null);
-      const ping = await pingDevice().catch(() => null);
-      setStatus(ping ? formatDevicePingStatus(ping) : "Scanner ready");
+      setStatus("Scanner ready");
     } catch (err) {
       setProblems([err instanceof Error ? err.message : "Failed to start exam"]);
     } finally {
@@ -539,7 +689,7 @@ export function ImagingConsole() {
       await patchScan(selectedId, { parameters: draft });
       await prepareScan(selectedId);
       await refreshQueue();
-      setStatus("Sequence prepared — waiting for acquisition");
+      setStatus("Sequence prepared — acquisition will start automatically");
     } catch (err) {
       setProblems([err instanceof Error ? err.message : "Invalid parameters"]);
     } finally {
@@ -593,17 +743,7 @@ export function ImagingConsole() {
     setIpc(null);
   };
 
-  const loadIntoViewer = (slot: 1 | 2 | 3 | "flex", payload: string | ViewerTarget) => {
-    const label = typeof payload === "string" ? payload : payload.label;
-    setViewerSlots((prev) => ({ ...prev, [slot]: label }));
-    if (slot === "flex") {
-      setFlexTarget(typeof payload === "string" ? null : payload);
-      setFlexOpen(true);
-    }
-    setStatus(slot === "flex" ? "Loaded into Flex Viewer" : `Loaded into Viewer ${slot}`);
-  };
-
-  const showQueueInViewer = (slot: 1 | 2 | 3 | "flex", id: string) => {
+  const showQueueInViewer = (slot: ViewerSlot | "flex", id: string) => {
     setCtxMenu(null);
     const entry = queue.find((q) => q.id === id);
     if (!entry) return;
@@ -673,6 +813,19 @@ export function ImagingConsole() {
     const forTab = entries.filter(([, p]) => (p.tab || "sequence") === tab);
     return forTab.length ? forTab : tab === "sequence" ? entries : [];
   }, [seqInfo, tab]);
+
+  const acquiring = queue.some((s) => s.state === "acq");
+  const reconstructing = queue.some((s) => s.state === "recon" || s.state === "scheduled_recon");
+  const progressMode: "idle" | "determinate" | "indeterminate" =
+    acquiring && acqClock && acqClock.expected > 0 && !acqClock.disable
+      ? "determinate"
+      : acquiring || reconstructing
+        ? "indeterminate"
+        : "idle";
+  const progressPct =
+    progressMode === "determinate" && acqClock
+      ? Math.min(100, (clockSec / Math.max(acqClock.expected, 1e-6)) * 100)
+      : 0;
 
   return (
     <section className="imaging-console" aria-label="Imaging Console">
@@ -928,21 +1081,19 @@ export function ImagingConsole() {
       ) : null}
 
       <div className={`ic-screens is-${viewerCount}`}>
-        <article className="ic-screen">
-          <div className="ic-viewer-stage" aria-label="Viewer 1">
-            {viewerSlots[1] ? <p className="ic-muted">{viewerSlots[1]}</p> : imageHint ? <p className="ic-muted">{imageHint}</p> : null}
-          </div>
-        </article>
-        <article className="ic-screen">
-          <div className="ic-viewer-stage" aria-label="Viewer 2">
-            {viewerSlots[2] ? <p className="ic-muted">{viewerSlots[2]}</p> : plotSeries ? <Sparkline data={plotSeries} /> : null}
-          </div>
-        </article>
-        <article className="ic-screen">
-          <div className="ic-viewer-stage" aria-label="Viewer 3">
-            {viewerSlots[3] ? <p className="ic-muted">{viewerSlots[3]}</p> : null}
-          </div>
-        </article>
+        <ScreenPane
+          slot={1}
+          value={viewerSlots[1]}
+          fallback={imageHint ? <p className="ic-muted">{imageHint}</p> : null}
+          fullYTicks={viewerCount === 1}
+        />
+        <ScreenPane
+          slot={2}
+          value={viewerSlots[2]}
+          fallback={plotSeries ? <Sparkline data={plotSeries} /> : null}
+          fullYTicks={viewerCount === 1}
+        />
+        <ScreenPane slot={3} value={viewerSlots[3]} fullYTicks={viewerCount === 1} />
       </div>
 
       <div className="ic-lower">
@@ -1109,29 +1260,72 @@ export function ImagingConsole() {
         </aside>
       </div>
 
-      <footer className="ic-status">
-        <span>{status}</span>
+      <footer className={`ic-status${progressMode === "idle" ? "" : " is-working"}`}>
+        <span className="ic-status-msg">{status}</span>
+        {progressMode !== "idle" ? <ScanProgressBar mode={progressMode} percent={progressPct} /> : null}
+        {progressMode !== "idle" ? <span className="ic-status-end" /> : null}
       </footer>
     </section>
   );
 }
 
-function Sparkline({ data }: { data: number[] }) {
-  const w = 320;
-  const h = 120;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const span = max - min || 1;
-  const d = data
-    .map((y, i) => {
-      const x = (i / Math.max(data.length - 1, 1)) * w;
-      const py = h - ((y - min) / span) * (h - 8) - 4;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${py.toFixed(1)}`;
-    })
-    .join(" ");
+function ScanProgressBar({
+  mode,
+  percent,
+}: {
+  mode: "determinate" | "indeterminate";
+  percent: number;
+}) {
+  const pct = Math.max(0, Math.min(100, percent));
+  const label = mode === "determinate" ? `${Math.round(pct)}%` : "";
   return (
-    <svg className="ic-sparkline" viewBox={`0 0 ${w} ${h}`} aria-hidden>
-      <path d={d} fill="none" stroke="rgba(110, 182, 255, 0.9)" strokeWidth="1.5" />
-    </svg>
+    <div
+      className={`ic-scan-progress is-${mode}`}
+      role="progressbar"
+      aria-label="Scan progress"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={mode === "determinate" ? Math.round(pct) : undefined}
+      aria-valuetext={mode === "indeterminate" ? "In progress" : `${Math.round(pct)} percent`}
+    >
+      <div className="ic-scan-progress-track">
+        <div
+          className="ic-scan-progress-fill"
+          style={mode === "determinate" ? { width: `${pct}%` } : undefined}
+        />
+      </div>
+      <span className="ic-scan-progress-label">{label || "\u00a0"}</span>
+    </div>
+  );
+}
+
+function Sparkline({ data }: { data: number[] }) {
+  const axes = useMemo(() => {
+    if (!data.length) return [];
+    let min = data[0];
+    let max = data[0];
+    for (const value of data) {
+      if (value < min) min = value;
+      if (value > max) max = value;
+    }
+    const pad = (max - min) * 0.08 || 1;
+    return [
+      {
+        title: "",
+        xlabel: "",
+        ylabel: "",
+        xmin: 0,
+        xmax: Math.max(data.length - 1, 1),
+        ymin: min - pad,
+        ymax: max + pad,
+        series: [{ name: "", x: data.map((_, i) => i), y: data }],
+      },
+    ];
+  }, [data]);
+  if (!axes.length) return null;
+  return (
+    <div className="ic-sparkline-wrap">
+      <ScientificPlot axes={axes} compact />
+    </div>
   );
 }

@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Any, Dict, List, Optional
 
 from common.parameter_schema import schema_for_defaults
+import common.logger as logger
 
 from services.api.models import SequenceInfo, ValidateResponse
 
-log = logging.getLogger("mri4all-api")
+log = logger.get_logger()
 
 FALLBACK: List[SequenceInfo] = [
     SequenceInfo(
@@ -17,11 +17,11 @@ FALLBACK: List[SequenceInfo] = [
         name="RF Spin-Echo",
         description="Acquisition of a single spin-echo without switching any gradients",
         defaults={
-            "TE": 20,
+            "TE": 10,
             "TR": 250,
             "NSA": 1,
-            "ADC_samples": 4096,
-            "ADC_duration": 6400,
+            "ADC_samples": 512,
+            "ADC_duration": 5120,
             "debug_plot": True,
         },
     ),
@@ -135,6 +135,9 @@ def _from_registry() -> Optional[List[SequenceInfo]]:
         return _registry_cache
     _tried_registry = True
     try:
+        from common.qtcompat import configure_headless
+
+        configure_headless()
         from sequences import SequenceBase
 
         items: List[SequenceInfo] = []
@@ -157,9 +160,9 @@ def _from_registry() -> Optional[List[SequenceInfo]]:
                 )
             )
         _registry_cache = items
-        log.info("Loaded %s sequences from SequenceBase", len(items))
+        log.info("Sequence registry loaded")
     except Exception as exc:
-        log.warning("SequenceBase unavailable (%s); using fallback catalog", exc)
+        log.warning("Sequence registry unavailable — using fallback catalog (%s)", exc)
         _registry_cache = None
     return _registry_cache
 
@@ -188,7 +191,8 @@ def validate_parameters(sequence_id: str, parameters: Dict[str, Any], scan_task:
 
         if sequence_id in SequenceBase.installed_sequences():
             instance = SequenceBase.get_sequence(sequence_id)()
-            ok = instance.set_parameters(parameters, scan_task)
+            merged = {**instance.get_default_parameters(), **parameters}
+            ok = instance.set_parameters(merged, scan_task)
             problems = instance.get_problems() if hasattr(instance, "get_problems") else []
             if not ok and not problems:
                 problems = ["Invalid parameters"]
@@ -205,3 +209,13 @@ def validate_parameters(sequence_id: str, parameters: Dict[str, Any], scan_task:
     except (TypeError, ValueError):
         problems.append("TE/TR must be numeric")
     return ValidateResponse(ok=len(problems) == 0, problems=problems)
+
+
+def registry_loaded() -> bool:
+    return _from_registry() is not None
+
+
+def reset_registry_cache() -> None:
+    global _registry_cache, _tried_registry
+    _registry_cache = None
+    _tried_registry = False

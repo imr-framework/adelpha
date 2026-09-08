@@ -491,13 +491,15 @@ class GPAFHDO:
             grad_vals_cal = self.apply_cal(grad_vals, channel)
         else:
             grad_vals_cal = grad_vals
-        gr_dacbits = np.round(32767.51 * (grad_vals_cal + 1)).astype(np.uint16)
-        gr = gr_dacbits | 0x80000 | (channel << 16)
+        # uint32: NumPy 2 raises OverflowError if a uint16 array is OR'd with 0x80000.
+        scaled = np.round(32767.51 * (np.asarray(grad_vals_cal, dtype=float) + 1))
+        gr_dacbits = np.clip(scaled, 0, 65535).astype(np.uint32)
+        gr = gr_dacbits | np.uint32(0x80000) | (np.uint32(channel) << 16)
 
         # # always broadcast for the final channel (TODO: probably not needed for GPA-FHDO, check then remove)
         # broadcast = channel == self.grad_channels - 1
         # grad_bram_data[channel::self.grad_channels] = gr | (channel << 25) | (broadcast << 24) # interleave data
-        return gr | (channel << 25) # extra channel word for gpa_fhdo_iface, not sure if it's currently used
+        return gr | (np.uint32(channel) << 25) # extra channel word for gpa_fhdo_iface, not sure if it's currently used
 
     def bin2float(self, grad_bin):
         return (grad_bin & 0xffff).astype(np.uint16) / 32768 - 1

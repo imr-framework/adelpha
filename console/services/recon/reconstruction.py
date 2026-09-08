@@ -9,13 +9,30 @@ from common.constants import *
 from common.types import ScanTask
 import services.recon.utils as utils
 
-from recon.kspaceFiltering.kspace_filtering import *
-from recon.B0Correction import B0Corrector
-import recon.DICOM.DICOM_utils as DICOM
-from recon.ismrmrd.numpy_to_ismrmrd import create_ismrmrd
-from recon.image_filters import denoise
-
 log = logger.get_logger()
+
+from recon.kspaceFiltering.kspace_filtering import *
+import recon.DICOM.DICOM_utils as DICOM
+
+try:
+    from recon.B0Correction import B0Corrector
+except Exception as exc:  # optional; cartesian recon only
+    B0Corrector = None  # type: ignore[misc, assignment]
+    log.warning("B0 correction unavailable: %s", exc)
+
+try:
+    from recon.ismrmrd.numpy_to_ismrmrd import create_ismrmrd
+except Exception as exc:  # optional; cartesian recon only
+    def create_ismrmrd(*_args, **_kwargs):
+        log.warning("ISMRMRD writer unavailable")
+
+    log.warning("ISMRMRD writer unavailable: %s", exc)
+
+try:
+    from recon.image_filters import denoise
+except Exception as exc:
+    denoise = None  # type: ignore[assignment]
+    log.warning("Image denoising unavailable: %s", exc)
 
 
 def run_reconstruction(folder: str, task: ScanTask) -> bool:
@@ -114,13 +131,18 @@ def run_reconstruction_basic3d(folder: str, task: ScanTask) -> bool:
     if task.processing.oversampling_read > 0:
         offset = int(dims[2]) / 4
         fft = fft[int(offset) : int(3 * offset), :, :]
+        k_for_display = np.fft.fftshift(kSpace, axes=(0, 1))[
+            int(offset) : int(3 * offset), :, :
+        ]
+    else:
+        k_for_display = np.fft.fftshift(kSpace, axes=(0, 1))
 
     DICOM.write_dicom(fft, task, folder + "/" + mri4all_taskdata.DICOM, result_index=0)
 
-    # kSpace = np.angle(kSpace)
-    kSpace = 100 * (kSpace - kSpace.min()) / (kSpace.max() - kSpace.min())
+    k_mag = np.abs(k_for_display)
+    k_display = np.log1p(k_mag)
     DICOM.write_dicom(
-        kSpace,
+        k_display,
         task,
         folder + "/" + mri4all_taskdata.DICOM,
         series_offset=1,
@@ -178,12 +200,17 @@ def run_reconstruction_cartesian(folder: str, task: ScanTask):
     Lx = 1
     nonCart = None
     params = None
+    if B0Corrector is None:
+        log.error("B0 correction is unavailable on this install.")
+        return False
     b0_corrector = B0Corrector(Y, kt, df, Lx, nonCart, params)
     iData = b0_corrector()
     log.info(f"B0 correction finished.")
 
     # Denoise the image
     try:
+        if denoise is None:
+            raise ValueError("denoiser unavailable")
         strength = task.processing.denoising_strength
         iData = denoise.remove_gaussian_noise_complex(
             iData, method="gaussian_filter", strength=strength

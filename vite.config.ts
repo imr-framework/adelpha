@@ -1,10 +1,13 @@
-import { cpSync, existsSync, mkdirSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 
 const root = dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8")) as {
+  version: string;
+};
 
 /** Ship MediaPipe WASM next to the UI so the packaged WebView does not load jsDelivr. */
 function mediapipeWasm(): Plugin {
@@ -20,6 +23,9 @@ function mediapipeWasm(): Plugin {
 
 export default defineConfig({
   plugins: [react(), mediapipeWasm()],
+  define: {
+    __ADELPHA_VERSION__: JSON.stringify(pkg.version),
+  },
   assetsInclude: ["**/*.wasm"],
   optimizeDeps: {
     exclude: ["occt-import-js"],
