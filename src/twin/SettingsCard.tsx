@@ -34,6 +34,7 @@ import {
   Switch,
   TextInput,
   UseModelColorsRow,
+  PolishedFinishRow,
   ViewportBgRow,
 } from "./settings/controls";
 import { GoogleApiKeySection } from "./settings/GoogleApiKeySection";
@@ -468,6 +469,7 @@ function GenericPanel({
           <SettingsSection title="Viewport">
             <ViewportBgRow />
             <UseModelColorsRow />
+            <PolishedFinishRow />
             <OrbitModeRow />
           </SettingsSection>
           <SettingsSection title="Observer">

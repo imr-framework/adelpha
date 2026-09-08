@@ -10,6 +10,7 @@ import {
   MousePointerClick,
   Move3d,
   Palette,
+  Sparkles,
   RotateCw,
   SlidersHorizontal,
   Thermometer,
@@ -17,7 +18,7 @@ import {
 import { useTwinStore } from "./telemetryStore";
 import { recenterViewport } from "./viewportRecenter";
 import { useOrbitMode } from "./orbitMode";
-import { useModelColors } from "./useModelColors";
+import { useModelColors, usePolishedFinish } from "./useModelColors";
 import { selectHiddenParts, usePartInspectorStore } from "./partInspectorStore";
 import { useScannerModel } from "./scannerModel";
 import { requestOpenSettings } from "./settingsOpen";
@@ -45,6 +46,7 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
   const setView = useTwinStore((s) => s.setView);
   const [orbitMode, setOrbitMode] = useOrbitMode();
   const [modelColors, setModelColors] = useModelColors();
+  const [polishedFinish, setPolishedFinish] = usePolishedFinish();
   const selectedPart = usePartInspectorStore((s) => s.selected);
   const inspectionMode = usePartInspectorStore((s) => s.inspectionMode);
   const setInspectionMode = usePartInspectorStore((s) => s.setInspectionMode);
@@ -284,6 +286,12 @@ export function ViewportContextMenu({ enabled }: { enabled: boolean }) {
             label="Model colors"
             checked={modelColors}
             onToggle={() => run(() => setModelColors(!modelColors))}
+          />
+          <ToggleRow
+            icon={Sparkles}
+            label="Polished metal"
+            checked={polishedFinish}
+            onToggle={() => run(() => setPolishedFinish(!polishedFinish))}
           />
         </div>
       ) : null}

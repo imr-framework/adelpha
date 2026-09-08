@@ -2,7 +2,7 @@ import { useId, type ReactNode } from "react";
 import { Check, ChevronDown } from "lucide-react";
 
 import { useConsoleTheme } from "../consoleTheme";
-import { useModelColors } from "../useModelColors";
+import { useModelColors, usePolishedFinish } from "../useModelColors";
 import { useOrbitMode } from "../orbitMode";
 import { VIEWPORT_BG_PRESETS, useViewportBg } from "../viewportBg";
 
@@ -358,9 +358,21 @@ export function UseModelColorsRow() {
   return (
     <SettingsRow
       title="Use model colors"
-      description="Show colors and textures from the CAD file. Off keeps the studio look."
+      description="Uses the file's materials exactly as exported."
     >
       <Switch label="Use model colors" checked={enabled} onChange={setEnabled} />
+    </SettingsRow>
+  );
+}
+
+export function PolishedFinishRow() {
+  const [enabled, setEnabled] = usePolishedFinish();
+  return (
+    <SettingsRow
+      title="Polished metal"
+      description="Uniform machined grey. Off keeps each part's CAD color with Adelpha's studio finish."
+    >
+      <Switch label="Polished metal" checked={enabled} onChange={setEnabled} />
     </SettingsRow>
   );
 }

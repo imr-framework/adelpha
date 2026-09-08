@@ -45,7 +45,7 @@ valid; run `make dmg` to wrap it with `hdiutil` (version comes from
 `tauri.conf.json`).
 
 The packaged WebView CSP allows `blob:` (imported CAD), `wasm-unsafe-eval`
-(STEP tessellation and MediaPipe), and `mediastream:` (camera). MediaPipe WASM
+(imported CAD and MediaPipe), and `mediastream:` (camera). MediaPipe WASM
 is copied from `node_modules` into `public/mediapipe/wasm` at Vite start (gitignored)
 and shipped in `dist/`. macOS hardened runtime includes the **camera** and
 **network.client** entitlements. See [Signing](signing.md).

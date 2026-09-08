@@ -1,4 +1,4 @@
-/** User-imported CAD. Tessellated meshes live in IndexedDB; metadata in localStorage. */
+/** User-imported GLB. Meshes live in IndexedDB; metadata in localStorage. */
 
 export const IMPORTED_PREFIX = "imported-";
 export const CATALOG_EVENT = "adelpha:model-catalog";
@@ -7,7 +7,8 @@ const META_KEY = "adelpha.importedModels";
 const DB_NAME = "adelpha-cad";
 const STORE = "glb";
 const DB_VERSION = 1;
-const MAX_BYTES = 80 * 1024 * 1024;
+/** GLB is stored as-is. */
+const MAX_GLB_BYTES = 2 * 1024 * 1024 * 1024;
 
 export type ImportedCadFormat = "glb" | "step";
 
@@ -103,27 +104,9 @@ async function isGlbFile(file: File): Promise<boolean> {
   return header[0] === 0x67 && header[1] === 0x6c && header[2] === 0x54 && header[3] === 0x46;
 }
 
-async function isStepFile(file: File): Promise<boolean> {
-  const name = file.name.toLowerCase();
-  if (!name.endsWith(".step") && !name.endsWith(".stp")) return false;
-  const head = (await file.slice(0, 64).text()).replace(/^\uFEFF/, "");
-  return /ISO-10303-21/i.test(head) || /HEADER;/i.test(head);
-}
-
 function displayNameFromFile(fileName: string): string {
-  const base = fileName.replace(/\.(glb|step|stp)$/i, "").trim();
+  const base = fileName.replace(/\.glb$/i, "").trim();
   return base || "Imported model";
-}
-
-async function blobForImport(file: File): Promise<{ blob: Blob; format: ImportedCadFormat }> {
-  if (await isGlbFile(file)) {
-    return { blob: file.slice(0, file.size, file.type || "model/gltf-binary"), format: "glb" };
-  }
-  if (await isStepFile(file)) {
-    const { stepFileToGlbBlob } = await import("./stepToGlb");
-    return { blob: await stepFileToGlbBlob(file), format: "step" };
-  }
-  throw new Error("Choose a .glb or STEP (.step / .stp) file.");
 }
 
 export async function hydrateImportedModels(): Promise<void> {
@@ -204,10 +187,13 @@ export async function clearAllImportedModels(): Promise<void> {
 
 export async function importCadFile(file: File): Promise<ImportedModelMeta> {
   if (file.size <= 0) throw new Error("That file is empty.");
-  if (file.size > MAX_BYTES) {
-    throw new Error("CAD files larger than 80 MB cannot be imported.");
+  if (!(await isGlbFile(file))) {
+    throw new Error("Choose a glTF binary (.glb) file.");
   }
-  const { blob, format } = await blobForImport(file);
+  if (file.size > MAX_GLB_BYTES) {
+    throw new Error("GLB files larger than 2 GB cannot be imported.");
+  }
+  const blob = file.slice(0, file.size, file.type || "model/gltf-binary");
   const id = `${IMPORTED_PREFIX}${crypto.randomUUID()}`;
   const db = await openDb();
   try {
@@ -225,7 +211,7 @@ export async function importCadFile(file: File): Promise<ImportedModelMeta> {
     fileName: file.name,
     displayName: displayNameFromFile(file.name),
     scale: 1,
-    format,
+    format: "glb",
   };
   writeImportedMeta([...readImportedMeta(), row]);
   urls.set(id, URL.createObjectURL(blob));

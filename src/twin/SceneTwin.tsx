@@ -4,11 +4,13 @@ import { useCallback, useEffect, useRef } from "react";
 import CameraControlsImpl from "camera-controls";
 import * as THREE from "three";
 import { MagnetCADSuspense } from "./MagnetCAD";
+import { CadInteractionInvalidate } from "./CadInteractionInvalidate";
 import { clearPartSelection, resetPartView } from "./partInspectorStore";
-import { cadForScanner, useScannerCatalog, useScannerModel } from "./scannerModel";
+import { cadExplodesParts, cadForScanner, useScannerCatalog, useScannerModel } from "./scannerModel";
 import { useTwinStore } from "./telemetryStore";
 import { useViewportBg } from "./viewportBg";
-import { useModelColors } from "./useModelColors";
+import { AdelphaSceneEnvironment } from "./AdelphaSceneEnvironment";
+import { useModelColors, usePolishedFinish } from "./useModelColors";
 import { subscribeViewportRecenter } from "./viewportRecenter";
 import { readOrbitMode, useOrbitMode, type OrbitMode } from "./orbitMode";
 
@@ -19,6 +21,10 @@ const TURNTABLE_POLAR = Math.PI / 2;
 const TURNTABLE_AZIMUTH = 0;
 const CAMERA_FOV_DEG = 45;
 const ACTION = CameraControlsImpl.ACTION;
+
+/** Survives Canvas remounts when the Digital Twin workspace is hidden. */
+let lastTwinViewKey = "";
+let twinCameraLive = false;
 
 function framingDistance(userScale: number, explodeParts: boolean): number {
   if (explodeParts) return Math.max(0.26, userScale * 1.25);
@@ -88,6 +94,39 @@ function applyDefaultView(
   applyOrbitLimits(controls, mode, animate);
 }
 
+function restoreSavedPose(controls: CameraControlsImpl, mode: OrbitMode) {
+  const pose = useTwinStore.getState().cameraPose;
+  void controls.setLookAt(
+    pose.position[0],
+    pose.position[1],
+    pose.position[2],
+    pose.target[0],
+    pose.target[1],
+    pose.target[2],
+    false,
+  );
+  void controls.setFocalOffset(0, 0, 0, false);
+  applyOrbitLimits(controls, mode, false);
+}
+
+function viewKeyFor(cadUrl: string | undefined, scannerId: string, distance: number) {
+  return `${cadUrl ?? ""}:${scannerId}:${distance.toFixed(5)}`;
+}
+
+function applyRememberedView(
+  controls: CameraControlsImpl,
+  key: string,
+  distance: number,
+) {
+  const mode = readOrbitMode();
+  if (lastTwinViewKey === key && twinCameraLive) {
+    restoreSavedPose(controls, mode);
+    return;
+  }
+  applyDefaultView(controls, false, mode, distance);
+  lastTwinViewKey = key;
+}
+
 export function SceneTwin() {
   const telemetry = useTwinStore((s) => s.telemetry);
   const view = useTwinStore((s) => s.view);
@@ -96,6 +135,7 @@ export function SceneTwin() {
   useScannerCatalog();
   const [viewportBg] = useViewportBg();
   const [preserveModelColors] = useModelColors();
+  const [polishedFinish] = usePolishedFinish();
   const [orbitMode] = useOrbitMode();
   const cad = cadForScanner(scannerId);
   const { camera, gl } = useThree();
@@ -103,9 +143,10 @@ export function SceneTwin() {
   const lastPose = useRef<string>("");
   const targetScratch = useRef(new THREE.Vector3());
   const positionScratch = useRef(new THREE.Vector3());
-  const explodeParts = cad?.explodeParts ?? false;
+  const explodeParts = cadExplodesParts(cad);
   const distance = framingDistance(cad?.scale ?? view.magnet_cad_scale, explodeParts);
   const homePosition = cameraPositionAt(TURNTABLE_POLAR, TURNTABLE_AZIMUTH, distance);
+  const viewKey = viewKeyFor(cad?.url, scannerId, distance);
 
   const bindControls = useCallback((controls: CameraControlsImpl | null) => {
     if (controls && controls !== controlsRef.current) {
@@ -113,10 +154,10 @@ export function SceneTwin() {
       controls.minDistance = 0.001;
       controls.draggingSmoothTime = 0.04;
       controls.smoothTime = 0.12;
-      applyDefaultView(controls, false, readOrbitMode(), distance);
+      applyRememberedView(controls, viewKey, distance);
     }
     controlsRef.current = controls;
-  }, [distance]);
+  }, [distance, viewKey]);
 
   useEffect(() => {
     const canvas = gl.domElement;
@@ -160,8 +201,8 @@ export function SceneTwin() {
   useEffect(() => {
     const controls = controlsRef.current;
     if (!controls) return;
-    applyDefaultView(controls, false, readOrbitMode(), distance);
-  }, [cad?.url, scannerId, distance]);
+    applyRememberedView(controls, viewKey, distance);
+  }, [distance, viewKey]);
 
   useEffect(() => {
     return subscribeViewportRecenter(() => {
@@ -193,6 +234,7 @@ export function SceneTwin() {
       .join(",")}|${dist.toFixed(4)}`;
     if (key === lastPose.current) return;
     lastPose.current = key;
+    twinCameraLive = true;
     setCameraPose(pose);
   });
 
@@ -207,11 +249,9 @@ export function SceneTwin() {
       />
       {/* makeDefault lets MagnetCAD reach these controls to frame a part. */}
       <CameraControls makeDefault ref={bindControls} />
+      <CadInteractionInvalidate />
 
-      <color key={viewportBg} attach="background" args={[viewportBg]} />
-      <ambientLight intensity={0.35} />
-      <directionalLight position={[4, 6, 3]} intensity={1.1} castShadow />
-      <directionalLight position={[-3, 2, -2]} intensity={0.35} />
+      <AdelphaSceneEnvironment background={viewportBg} variant="twin" />
 
       {cad ? (
         <MagnetCADSuspense
@@ -222,7 +262,7 @@ export function SceneTwin() {
           magnetTempC={telemetry.magnet_temp_C}
           userScale={view.magnet_cad_scale}
           rotationDeg={cad.rotationDeg}
-          explodeParts={cad.explodeParts}
+          explodeParts={explodeParts}
           offsetX={0}
           offsetY={0}
           offsetZ={0}
@@ -230,6 +270,7 @@ export function SceneTwin() {
           hybridRender={view.hybrid_render}
           showTemperatureMap={view.show_temperature_map}
           useModelColors={preserveModelColors}
+          polishedFinish={polishedFinish}
           fallback={null}
         />
       ) : null}

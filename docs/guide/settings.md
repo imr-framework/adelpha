@@ -26,9 +26,8 @@ You can also assign a **device picture** so the Devices list and System Status s
 Use **Settings → 3D Model → Files**.
 
 1. Click **Choose file**.
-2. Pick a **glTF binary (`.glb`)** or a **STEP (`.step` / `.stp`)** file, up to 80 MB.
-3. STEP is tessellated on this computer, then stored like a GLB.
-4. The new model becomes the active scanner.
+2. Pick a **glTF binary (`.glb`)**, up to 2 GB.
+3. The new model becomes the active scanner.
 
 Imports live only on this Mac or PC (IndexedDB + a short catalog in local storage). They are not uploaded anywhere.
 

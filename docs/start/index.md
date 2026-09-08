@@ -15,7 +15,7 @@ Adelpha is a desktop app. Most people only need the installer. Developers use th
 
     | Page | What to set |
     | --- | --- |
-    | **3D Model** | Bundled scanner, or import GLB / STEP. [Settings](../guide/settings.md). |
+    | **3D Model** | Bundled scanner, or import GLB. [Settings](../guide/settings.md). |
     | **AI & Agents** | Google AI key if you want Agents. |
     | **Digital Twin** | Simulated or 48 mT Halbach. Restart after a change. |
 

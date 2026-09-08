@@ -49,6 +49,7 @@ import type { AssessMode } from "./twin/dtamTypes";
 import { SettingsCard } from "./twin/SettingsCard";
 import { subscribeOpenSettings, type SettingsLaunch } from "./twin/settingsOpen";
 import {
+  cadExplodesParts,
   cadForScanner,
   MAGNET_CAD_SCALE_MAX,
   MAGNET_CAD_SCALE_MIN,
@@ -58,6 +59,8 @@ import {
 } from "./twin/scannerModel";
 import { ErrorBoundary } from "./twin/ErrorBoundary";
 import { isImportedModelId } from "./twin/importedModels";
+import { useCadPerfStore } from "./twin/cadPerf";
+import { usePolishedFinish } from "./twin/useModelColors";
 import { applyConsoleTheme, readConsoleTheme } from "./twin/consoleTheme";
 import {
   readWorkspacePrefs,
@@ -79,6 +82,9 @@ const AgentChatPanel = lazy(() =>
 );
 const ImagingConsole = lazy(() =>
   import("./twin/ImagingConsole").then((m) => ({ default: m.ImagingConsole })),
+);
+const EngineeringStudio = lazy(() =>
+  import("./twin/EngineeringStudio").then((m) => ({ default: m.EngineeringStudio })),
 );
 
 const HISTORY_POINTS = 140;
@@ -348,6 +354,8 @@ export default function App() {
   const [scannerId] = useScannerModel();
   const catalog = useScannerCatalog();
   const hasCadMagnet = Boolean(cadForScanner(scannerId));
+  const explodePartCount = useCadPerfStore((s) => s.explodePartCount);
+  const [polishedFinish, setPolishedFinish] = usePolishedFinish();
 
   useEffect(() => scheduleAutoUpdateCheck(), []);
 
@@ -739,23 +747,10 @@ export default function App() {
           <Suspense fallback={null}>
             <ImagingConsole />
           </Suspense>
-        ) : workspace !== "digital-twin" ? (
-          <section className="workspace-placeholder" aria-label="Workspace placeholder">
-            <div className="workspace-placeholder-card">
-              <h2>Engineering Studio</h2>
-              <p>
-                This workspace shell is ready. Switch back to{" "}
-                <button
-                  type="button"
-                  className="workspace-placeholder-link"
-                  onClick={() => setWorkspace("digital-twin")}
-                >
-                  Digital Twin
-                </button>{" "}
-                for live telemetry, the magnet viewport, and Agents.
-              </p>
-            </div>
-          </section>
+        ) : workspace === "engineering-studio" ? (
+          <Suspense fallback={null}>
+            <EngineeringStudio />
+          </Suspense>
         ) : null}
         <section className="viewport">
           <div className="viewport-stage">
@@ -797,7 +792,7 @@ export default function App() {
               }
             >
               <Suspense fallback={null}>
-                <TwinCanvas />
+                <TwinCanvas active={workspace === "digital-twin"} />
               </Suspense>
             </ErrorBoundary>
           )}
@@ -1513,7 +1508,12 @@ export default function App() {
 
             <InfoCard title="View">
               <label className="control">
-                <span>Exploded magnet</span>
+                <span>
+                  Exploded magnet
+                  {explodePartCount >= 2 ? (
+                    <span className="muted"> ({explodePartCount} parts)</span>
+                  ) : null}
+                </span>
                 <input
                   type="range"
                   min={0}
@@ -1525,9 +1525,11 @@ export default function App() {
               </label>
               {hasCadMagnet ? (
                 <p className="muted" style={{ margin: "0 0 10px", fontSize: 12, lineHeight: 1.4 }}>
-                  {cadForScanner(scannerId)?.explodeParts
-                    ? "Right-click the viewport and turn on Inspection mode, then click a part to inspect it. Right-click Properties to edit it in Settings → Model library."
-                    : "Right-click the viewport and turn on Inspection mode, then click the magnet to inspect it. Right-click Properties to edit it in Settings → Model library."}
+                  {cadExplodesParts(cadForScanner(scannerId))
+                    ? explodePartCount === 1
+                      ? "This file is a single fused mesh, so exploded view cannot pull bodies apart. Re-export from CAD with each assembly body as its own mesh."
+                      : "Separates the largest assembly parts. Fasteners stay put. Right-click the viewport for Inspection mode."
+                    : "This scanner ships as a single STL mesh, so exploded view scales the whole magnet. Import a GLB with separate bodies for a true explode."}
                 </p>
               ) : null}
               {hasCadMagnet ? (
@@ -1548,6 +1550,14 @@ export default function App() {
                       )}
                       onChange={(e) => setView({ magnet_cad_scale: Number(e.target.value) })}
                     />
+                  </label>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={polishedFinish}
+                      onChange={(e) => setPolishedFinish(e.target.checked)}
+                    />
+                    <span>Polished metal</span>
                   </label>
                   <label className="toggle">
                     <input

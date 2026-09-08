@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from "react";
 import { Crosshair, Eye, EyeOff, Search, SlidersHorizontal } from "lucide-react";
 
 import { iconForType } from "./componentIcons";
 import { formatMeasurement, type ComponentRow } from "./componentRows";
 import { Mono } from "./controls";
+import type { SelectMode } from "../partInspectorStore";
 
 const ROW_HEIGHT = 46;
 /** Below this many parts the DOM cost is trivial, so skip windowing. */
@@ -58,7 +59,9 @@ export function ComponentBrowser({
   type,
   onTypeChange,
   selectedId,
+  selectedIds,
   onSelect,
+  onToggleAll,
   onToggleVisibility,
   onFocus,
   emptyReason,
@@ -71,7 +74,9 @@ export function ComponentBrowser({
   type: string;
   onTypeChange: (value: string) => void;
   selectedId: string | null;
-  onSelect: (row: ComponentRow) => void;
+  selectedIds: string[];
+  onSelect: (row: ComponentRow, mode: SelectMode | "range") => void;
+  onToggleAll: (on: boolean) => void;
   onToggleVisibility: (row: ComponentRow) => void;
   onFocus: (row: ComponentRow) => void;
   /** Shown when the scanner has no discoverable parts at all. */
@@ -86,45 +91,83 @@ export function ComponentBrowser({
   const padTop = virtualize ? range.start * ROW_HEIGHT : 0;
   const padBottom = virtualize ? Math.max(0, (rows.length - range.end) * ROW_HEIGHT) : 0;
   const activeId = selectedId ?? rows[0]?.partId ?? null;
+  const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const allVisibleSelected = rows.length > 0 && rows.every((row) => selectedSet.has(row.partId));
+  const someVisibleSelected = rows.some((row) => selectedSet.has(row.partId));
 
-  // Keep the selected row reachable when selection arrives from the viewport.
-  useEffect(() => {
-    if (!selectedId) return;
-    const node = scrollRef.current?.querySelector(
-      `[data-part-id="${CSS.escape(selectedId)}"]`,
-    ) as HTMLElement | null;
-    node?.scrollIntoView({ block: "nearest" });
-    if (scrollRef.current?.contains(document.activeElement)) {
-      node?.focus({ preventScroll: true });
-    }
-  }, [selectedId, scrollRef, windowed.length]);
-
-  function moveSelection(fromId: string, delta: number) {
-    const index = rows.findIndex((row) => row.partId === fromId);
-    const next = rows[index + delta];
-    if (!next) return;
-    onSelect(next);
+  const caretIdRef = useRef<string | null>(null);
+  if (selectedId && caretIdRef.current !== selectedId && selectedIds.length <= 1) {
+    caretIdRef.current = selectedId;
   }
 
-  function onRowKey(event: KeyboardEvent<HTMLTableRowElement>, row: ComponentRow) {
-    if (event.key === "ArrowDown") {
+  function clickMode(event: MouseEvent): SelectMode | "range" {
+    if (event.shiftKey) return "range";
+    if (event.metaKey || event.ctrlKey) return "toggle";
+    return "replace";
+  }
+
+  function focusList() {
+    scrollRef.current?.focus({ preventScroll: true });
+  }
+
+  function revealRow(partId: string) {
+    const node = scrollRef.current?.querySelector(
+      `[data-part-id="${CSS.escape(partId)}"]`,
+    ) as HTMLElement | null;
+    node?.scrollIntoView({ block: "nearest" });
+  }
+
+  useEffect(() => {
+    if (!selectedId || selectedIds.length > 1) return;
+    if (scrollRef.current?.contains(document.activeElement)) return;
+    revealRow(selectedId);
+  }, [selectedId, selectedIds.length]);
+
+  function onListKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    const target = event.target as HTMLElement;
+    if (target.closest("thead, input, textarea, select")) return;
+
+    if ((event.key === "a" || event.key === "A") && (event.metaKey || event.ctrlKey)) {
       event.preventDefault();
-      moveSelection(row.partId, 1);
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      moveSelection(row.partId, -1);
-    } else if (event.key === "Home") {
-      event.preventDefault();
-      if (rows[0]) onSelect(rows[0]);
-    } else if (event.key === "End") {
-      event.preventDefault();
-      const last = rows[rows.length - 1];
-      if (last) onSelect(last);
-    } else if (event.key === "Enter" || event.key === " ") {
-      if ((event.target as HTMLElement).closest(".sw-icon-btn")) return;
-      event.preventDefault();
-      onSelect(row);
+      onToggleAll(true);
+      return;
     }
+
+    const step =
+      event.key === "ArrowDown"
+        ? 1
+        : event.key === "ArrowUp"
+          ? -1
+          : event.key === "Home"
+            ? "home"
+            : event.key === "End"
+              ? "end"
+              : null;
+    if (step === null) return;
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (rows.length === 0) return;
+    const fromId = caretIdRef.current ?? selectedId ?? rows[0].partId;
+    const index = Math.max(0, rows.findIndex((row) => row.partId === fromId));
+    const nextIndex =
+      step === "home" ? 0 : step === "end" ? rows.length - 1 : Math.min(rows.length - 1, Math.max(0, index + step));
+    const next = rows[nextIndex];
+    if (!next || (next.partId === fromId && (step === 1 || step === -1))) return;
+
+    caretIdRef.current = next.partId;
+    onSelect(next, event.shiftKey ? "range" : "replace");
+    revealRow(next.partId);
+  }
+
+  function toggleRow(row: ComponentRow, event: { preventDefault(): void; stopPropagation(): void }) {
+    event.preventDefault();
+    event.stopPropagation();
+    onSelect(row, "toggle");
+    caretIdRef.current = row.partId;
+    focusList();
   }
 
   return (
@@ -159,9 +202,11 @@ export function ComponentBrowser({
           </div>
         ) : null}
         <span className="sw-browser-count" aria-live="polite">
-          {rows.length === totalCount
-            ? `${totalCount} ${totalCount === 1 ? "part" : "parts"}`
-            : `${rows.length} of ${totalCount}`}
+          {selectedIds.length > 0
+            ? `${selectedIds.length} selected`
+            : rows.length === totalCount
+              ? `${totalCount} ${totalCount === 1 ? "part" : "parts"}`
+              : `${rows.length} of ${totalCount}`}
         </span>
       </div>
 
@@ -173,13 +218,32 @@ export function ComponentBrowser({
           {type === "all" ? "" : ` in ${type}`}.
         </p>
       ) : (
-        <div className="sw-table-scroll" ref={scrollRef}>
+        <div
+          className="sw-table-scroll"
+          ref={scrollRef}
+          tabIndex={0}
+          aria-label="Scanner components"
+          onKeyDown={onListKeyDown}
+        >
           <table className="sw-table">
             <caption className="sw-visually-hidden">
-              Scanner components with type, assigned sensor, telemetry, and visibility
+              Shift+Arrow extends the selection one row at a time. Checkboxes add or remove a part.
+              Command or Control+A selects every visible row.
             </caption>
             <thead>
               <tr>
+                <th scope="col" className="sw-col-check">
+                  <input
+                    type="checkbox"
+                    className="sw-check"
+                    checked={allVisibleSelected}
+                    ref={(node) => {
+                      if (node) node.indeterminate = someVisibleSelected && !allVisibleSelected;
+                    }}
+                    aria-label={allVisibleSelected ? "Deselect visible parts" : "Select visible parts"}
+                    onChange={(event) => onToggleAll(event.currentTarget.checked)}
+                  />
+                </th>
                 <th scope="col">Component</th>
                 <th scope="col">Type</th>
                 <th scope="col">Sensor</th>
@@ -198,27 +262,44 @@ export function ComponentBrowser({
               ) : null}
               {windowed.map((row) => {
                 const Icon = iconForType(row.type);
-                const selected = row.partId === selectedId;
+                const selected = selectedSet.has(row.partId);
                 const active = row.partId === activeId;
                 return (
                   <tr
                     key={row.partId}
                     id={`sw-row-${row.partId}`}
                     data-part-id={row.partId}
-                    tabIndex={active ? 0 : -1}
+                    role="row"
                     aria-selected={selected}
                     className={`sw-row${selected ? " is-selected" : ""}${
-                      row.hidden ? " is-hidden-part" : ""
-                    }${row.sensorStale ? " is-warning" : ""}${
+                      active ? " is-caret" : ""
+                    }${row.hidden ? " is-hidden-part" : ""}${row.sensorStale ? " is-warning" : ""}${
                       row.sensorDisconnected ? " is-disconnected" : ""
                     }`}
                     style={{ height: ROW_HEIGHT }}
                     onClick={(event) => {
-                      if ((event.target as HTMLElement).closest(".sw-icon-btn")) return;
-                      onSelect(row);
+                      if ((event.target as HTMLElement).closest(".sw-icon-btn, .sw-col-check")) return;
+                      caretIdRef.current = row.partId;
+                      onSelect(row, clickMode(event));
+                      focusList();
                     }}
-                    onKeyDown={(event) => onRowKey(event, row)}
                   >
+                    <td
+                      className="sw-col-check"
+                      onPointerDown={(event) => {
+                        toggleRow(row, event);
+                      }}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        className="sw-check"
+                        checked={selected}
+                        tabIndex={-1}
+                        readOnly
+                        aria-label={`Select ${row.displayName}`}
+                      />
+                    </td>
                     <td>
                       <span className="sw-row-select">
                         <span
@@ -232,7 +313,10 @@ export function ComponentBrowser({
                         </span>
                         <span className="sw-row-names">
                           <span className="sw-row-name">{row.displayName}</span>
-                          <span className="sw-row-node">{row.cadName}</span>
+                          <span className="sw-row-node">
+                            {row.materialLabel ? `${row.materialLabel} · ` : ""}
+                            {row.cadName}
+                          </span>
                         </span>
                       </span>
                     </td>
@@ -264,7 +348,7 @@ export function ComponentBrowser({
                       <button
                         type="button"
                         className="sw-icon-btn"
-                        tabIndex={selected ? 0 : -1}
+                        tabIndex={-1}
                         aria-label={`${row.hidden ? "Show" : "Hide"} ${row.displayName} in the viewport`}
                         aria-pressed={!row.hidden}
                         title={row.hidden ? "Show in viewport" : "Hide in viewport"}
@@ -281,7 +365,7 @@ export function ComponentBrowser({
                       <button
                         type="button"
                         className="sw-icon-btn"
-                        tabIndex={selected ? 0 : -1}
+                        tabIndex={-1}
                         aria-label={`Frame ${row.displayName} in the viewport`}
                         title="Frame in viewport (closes settings)"
                         onClick={() => onFocus(row)}
