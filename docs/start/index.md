@@ -11,7 +11,7 @@ Adelpha is a desktop app. Most people only need the installer. Developers use th
 ## If you have the app
 
 1. [Download](download.md) the `.dmg`, `.exe`, or `.deb` for this computer, then install it.
-2. Open it. On an unsigned Mac build, use **Right-click → Open** the first time.
+2. Open it. On an unsigned Mac build, use **Right-click → Open** the first time. If macOS still blocks it, see [If macOS blocks the DMG](download.md#if-macos-blocks-the-dmg).
 3. Wait for the intro and the Python runtime. The terminal live dot should turn green.
 4. Open **Settings** and set these:
 
@@ -123,4 +123,4 @@ Unsigned Mac builds: **Right-click → Open**, or see [Signing](../packaging/sig
 | Camera blocked (Mac) | System Settings → Camera, or `tccutil reset Camera org.adelpha.digital-twin-ui` |
 | CAD import missing in an old DMG | Rebuild the installer; older packages blocked WASM and `blob:` URLs |
 | Terminal has no shell | Use the desktop app, not `npm run dev` |
-| Gatekeeper warning | Unsigned local build. See [signing](../packaging/signing.md). |
+| Gatekeeper warning | Unsigned local build. **Right-click → Open**, or `xattr -cr` as in [If macOS blocks the DMG](download.md#if-macos-blocks-the-dmg). |

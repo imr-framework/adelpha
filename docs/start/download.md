@@ -86,7 +86,7 @@ hide:
 
 [Getting started](index.md) · [System requirements](#system-requirements) · [Release notes](https://github.com/imr-framework/adelpha/releases/tag/v0.5.2)
 
-Current public installers are **unsigned**. A macOS build will need **Right-click → Open** the first time. Windows may show a SmartScreen warning. See [Signing](../packaging/signing.md).
+Current public installers are **unsigned**. A macOS build will need **Right-click → Open** the first time. If that still fails, [clear the quarantine flag](#if-macos-blocks-the-dmg). Windows may show a SmartScreen warning. See [Signing](../packaging/signing.md).
 
 ## System requirements
 
@@ -102,3 +102,21 @@ Current public installers are **unsigned**. A macOS build will need **Right-clic
 1. Open the `.dmg`, run the `.exe`, or install the `.deb`.
 2. Launch **Adelpha**.
 3. Wait until the terminal live dot is green.
+
+## If macOS blocks the DMG
+
+Public Mac builds are unsigned, so Gatekeeper may refuse the download. First try **Right-click → Open** on the `.dmg` or on **Adelpha** in Applications.
+
+If macOS still says the app is damaged or cannot be opened, clear the quarantine flag in Terminal:
+
+```bash
+xattr -cr ~/Downloads/Adelpha_*.dmg
+```
+
+After you copy Adelpha into Applications:
+
+```bash
+xattr -cr /Applications/Adelpha.app
+```
+
+`-c` clears extended attributes; `-r` does it recursively. Do not disable Gatekeeper with `spctl`.
