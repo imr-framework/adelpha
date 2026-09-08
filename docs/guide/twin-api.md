@@ -1,4 +1,6 @@
 ---
+title: Adelpha MRI Twin, Agents, and MRI APIs
+description: HTTP contracts Adelpha MRI uses for DTAM twin state, Google ADK agents, and the imaging-console FastAPI façade in desktop and browser modes.
 icon: lucide/globe
 ---
 

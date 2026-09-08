@@ -1,8 +1,10 @@
 ---
+title: Adelpha MRI — Open-Source Low-Field MRI Console and Digital Twin
+description: Adelpha is an open-source platform for low-field MRI console operation, acquisition, digital twins, monitoring, engineering, and AI-assisted workflows.
 icon: lucide/monitor
 ---
 
-# What is Adelpha?
+# Adelpha MRI: Intelligent Console and Digital Twin for Low-Field MRI
 
 **Adelpha** is an open-source, intelligent digital-twin platform for developing, monitoring, and operating low-field MRI systems. It integrates scanner visualization, real-time system data, imaging workflows, engineering tools, and AI-assisted capabilities within a unified environment. Its modular architecture can also be adapted to other MRI systems and research applications.
 
@@ -37,7 +39,7 @@ icon: lucide/monitor
       <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
     </span>
     <strong>Engineering Studio</strong>
-    <span>Reserved for later coil and gradient tools. The shell is ready.</span>
+    <span>CAD assembly, simulation parts, and inspect tools in the same void as the Digital Twin.</span>
   </a>
   <a class="adelpha-card" href="guide/settings.md">
     <span class="adelpha-card__icon" aria-hidden="true">
@@ -79,6 +81,10 @@ Use **⌘K** (Ctrl+K on Windows/Linux) to switch workspaces. Add `?replayIntro=1
 ## Stack
 
 Tauri v2, React, Three.js, MediaPipe (camera), and a Python supervisor that mounts DTAM, the MRI façade, and optional Google ADK.
+
+## Learn more
+
+[About Adelpha](about/index.md) · [Architecture](guide/architecture.md) · [MaRCoS](about/marcos.md) · [Low-field digital twins](about/digital-twins.md) · [Citation](about/citation.md) · [Intended use](about/intended-use.md)
 
 ## Where to go next
 

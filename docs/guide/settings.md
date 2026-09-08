@@ -1,4 +1,6 @@
 ---
+title: Adelpha MRI settings
+description: Import GLB scanner models, choose a twin profile, add a Google API key for Agents, and manage camera and in-app updates in Adelpha MRI.
 icon: lucide/settings
 ---
 

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  {{ super() }}
+  {% if page and page.meta and page.meta.robots %}
+    <meta name="robots" content="{{ page.meta.robots }}" />
+  {% else %}
+    <meta name="robots" content="index, follow" />
+  {% endif %}
+  {% if config.extra and config.extra.google_site_verification %}
+    <meta name="google-site-verification" content="{{ config.extra.google_site_verification }}" />
+  {% endif %}
+  {% set og_title = page.meta.title if page and page.meta and page.meta.title else config.site_name %}
+  {% set og_desc = page.meta.description if page and page.meta and page.meta.description else config.site_description %}
+  {% set og_url = page.canonical_url if page and page.canonical_url else config.site_url %}
+  {% set og_image = config.site_url ~ "assets/adelpha-preview.png" %}
+  <link rel="canonical" href="{{ og_url }}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="{{ config.site_name }}" />
+  <meta property="og:title" content="{{ og_title }}" />
+  <meta property="og:description" content="{{ og_desc }}" />
+  <meta property="og:url" content="{{ og_url }}" />
+  <meta property="og:image" content="{{ og_image }}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{{ og_title }}" />
+  <meta name="twitter:description" content="{{ og_desc }}" />
+  <meta name="twitter:image" content="{{ og_image }}" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "name": "Adelpha",
+        "alternateName": "Adelpha MRI",
+        "url": "https://imr-framework.github.io/adelpha/",
+        "description": "Adelpha is an open-source low-field MRI console and digital twin for scanner control, acquisition, monitoring, engineering, and AI-assisted workflows."
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "Adelpha MRI",
+        "alternateName": "Adelpha",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Windows, macOS, Linux",
+        "description": "Open-source low-field MRI console and digital twin",
+        "url": "https://imr-framework.github.io/adelpha/",
+        "downloadUrl": "https://github.com/imr-framework/adelpha/releases",
+        "codeRepository": "https://github.com/imr-framework/adelpha",
+        "license": "https://github.com/imr-framework/adelpha/blob/main/LICENSE",
+        "publisher": {
+          "@type": "Organization",
+          "name": "Accessible Magnetic Resonance Laboratory",
+          "alternateName": "AMRL"
+        }
+      }
+    ]
+  }
+  </script>
+{% endblock %}

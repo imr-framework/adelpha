@@ -1,4 +1,6 @@
 ---
+title: Adelpha MRI configuration
+description: Environment variables, on-disk config, and desktop versus browser ports for Adelpha MRI twin, agents, and imaging-console services.
 icon: lucide/settings-2
 ---
 

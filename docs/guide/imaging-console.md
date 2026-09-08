@@ -1,4 +1,6 @@
 ---
+title: Adelpha MRI Imaging Console
+description: Register MRI examinations, queue pulse sequences, control acquisition, connect to Red Pitaya hardware, and review reconstructed studies in Adelpha.
 icon: lucide/scan-line
 ---
 

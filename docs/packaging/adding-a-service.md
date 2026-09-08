@@ -1,3 +1,9 @@
+---
+title: Adding a service to Adelpha MRI
+description: Register a new Python HTTP service in the Adelpha MRI supervisor without exposing a fixed port to the desktop frontend.
+icon: lucide/plus
+---
+
 # Adding a Python integration
 
 The desktop app must not learn how each service is launched. Register it in

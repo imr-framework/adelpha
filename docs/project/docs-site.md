@@ -1,5 +1,10 @@
 ---
+title: Adelpha MRI documentation site
+description: Build, preview, and publish the Adelpha MRI documentation site with Zensical, including sitemap and Search Console notes for maintainers.
 icon: lucide/book-open
+robots: noindex, nofollow
+search:
+  exclude: true
 ---
 
 # Docs site (Zensical)
@@ -49,6 +54,25 @@ The workflow installs Zensical, runs `zensical build --strict --clean`, and uplo
 ### Local vs production URL
 
 `zensical.toml` sets `site_url` to the GitHub Pages URL so instant navigation and sitemap links resolve correctly in production. Local preview still works with `make docs-serve` (default `http://127.0.0.1:8000/`).
+
+## Sitemap and search engines
+
+Zensical emits `sitemap.xml` at the site root (`https://imr-framework.github.io/adelpha/sitemap.xml`). Only pages in `nav` are treated as published for discovery. Add operator-facing pages to `zensical.toml` instead of leaving them as unlinked Markdown.
+
+**Robots:** crawlers honor the **origin** file `https://imr-framework.github.io/robots.txt`, not `/adelpha/robots.txt`. If you control the `imr-framework.github.io` repository, add:
+
+```text
+User-agent: *
+Allow: /
+
+Sitemap: https://imr-framework.github.io/adelpha/sitemap.xml
+```
+
+If changing the parent site is inconvenient, submit the sitemap in [Google Search Console](https://search.google.com/search-console). Do not rely on a project-level robots file.
+
+**Google verification:** set `google_site_verification` in `[project.extra]` in `zensical.toml` to the Search Console HTML-tag `content` value. Leave it empty until you have a real token. The theme override (`overrides/main.html`) emits the meta tag only when that string is non-empty.
+
+**noindex:** purely internal pages set `robots: noindex, nofollow` in front matter (this page). Public packaging pages stay in `nav` and are indexed.
 
 ### Manual deploy check
 

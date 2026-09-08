@@ -1,3 +1,9 @@
+---
+title: Adelpha MRI desktop packaging
+description: How Adelpha MRI packages a Tauri v2 desktop app with a single Python sidecar for DTAM, the imaging console, and optional Agents.
+icon: lucide/package
+---
+
 # Adelpha desktop packaging (Tauri v2)
 
 Adelpha’s production shell is **Tauri v2**. The React/Vite frontend is unchanged.

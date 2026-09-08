@@ -1,8 +1,14 @@
 <div align="center">
 
-<!-- <img src="public/logos/adelpha-gradient-logo.svg" alt="Adelpha" width="180" /> -->
+<!-- <img src="public/logos/adelpha-gradient-logo.svg" alt="Adelpha MRI" width="180" /> -->
 
-# Adelpha
+# Adelpha MRI
+
+</div>
+
+**Adelpha** is an open-source, intelligent digital-twin platform for developing, monitoring, and operating low-field MRI systems. It integrates scanner visualization, real-time system data, imaging workflows, engineering tools, and AI-assisted capabilities within a unified environment. Its modular architecture can also be adapted to other MRI systems and research applications.
+
+<div align="center">
 
 ![React](https://img.shields.io/badge/React-18-61DAFB.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg)
@@ -17,8 +23,6 @@
 ![adelpha UI](assets/README/adelpha.png)
 
 </div>
-
-**Adelpha** is an open-source, intelligent digital-twin platform for developing, monitoring, and operating low-field MRI systems. It integrates scanner visualization, real-time system data, imaging workflows, engineering tools, and AI-assisted capabilities within a unified environment. Its modular architecture can also be adapted to other MRI systems and research applications.
 
 > [!NOTE]
 > Packaging and signing: [`docs/packaging/index.md`](docs/packaging/index.md). DTAM is MIT; the imaging console in the sidecar is GPL-3.
@@ -116,18 +120,26 @@ Written next to other apps, never into the `.app`: MRI data under `<app-data>/mr
 
 ## Documentation
 
+Published site: [imr-framework.github.io/adelpha](https://imr-framework.github.io/adelpha/)
+
 | Topic | Link |
 | --- | --- |
 | Getting started | [`docs/start/index.md`](docs/start/index.md) |
+| About and maintainers | [`docs/about/index.md`](docs/about/index.md) |
+| Architecture | [`docs/guide/architecture.md`](docs/guide/architecture.md) |
 | Settings, CAD, camera, updates | [`docs/guide/settings.md`](docs/guide/settings.md) |
 | Imaging Console / Red Pitaya | [`docs/guide/imaging-console.md`](docs/guide/imaging-console.md) |
+| MaRCoS integration | [`docs/about/marcos.md`](docs/about/marcos.md) |
+| MRI4ALL attribution | [`docs/about/mri4all.md`](docs/about/mri4all.md) |
+| Citation and licensing | [`docs/about/citation.md`](docs/about/citation.md) |
+| Intended use | [`docs/about/intended-use.md`](docs/about/intended-use.md) |
 | Desktop packaging | [`docs/packaging/index.md`](docs/packaging/index.md) |
+
+Maintainers: Adelpha contributors and the Accessible Magnetic Resonance Laboratory (AMRL). Cite via [`CITATION.cff`](CITATION.cff).
 
 ```bash
 uv sync --group docs && make docs-serve
 ```
-
-Published: [imr-framework.github.io/adelpha](https://imr-framework.github.io/adelpha/)
 
 ## Troubleshooting
 

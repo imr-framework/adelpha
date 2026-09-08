@@ -1,4 +1,6 @@
 ---
+title: Adelpha MRI workspaces
+description: Switch among Digital Twin, Imaging Console, and Engineering Studio in Adelpha MRI without quitting the desktop app.
 icon: lucide/layout-grid
 ---
 

@@ -1,4 +1,6 @@
 ---
+title: Getting started with Adelpha MRI
+description: Install Adelpha MRI, launch the desktop app, configure a scanner model, and set up the developer toolchain for Tauri and the Python runtime.
 icon: lucide/rocket
 ---
 

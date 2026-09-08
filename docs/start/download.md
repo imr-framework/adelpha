@@ -1,4 +1,6 @@
 ---
+title: Download Adelpha MRI
+description: Download the Adelpha MRI desktop installer for macOS, Windows, or Linux from GitHub Releases.
 icon: lucide/download
 hide:
   - toc

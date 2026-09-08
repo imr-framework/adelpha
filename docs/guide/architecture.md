@@ -1,4 +1,6 @@
 ---
+title: Adelpha MRI architecture
+description: How Adelpha MRI layers the Tauri desktop shell, React workspaces, Python supervisor, DTAM digital twin, and MRI console façade.
 icon: lucide/waypoints
 ---
 
@@ -65,3 +67,7 @@ Alt workspaces keep the Digital Twin WebGL canvas mounted (hidden and paused) so
 ## Desktop shell
 
 Tauri v2 (`src-tauri/`) loads the Vite UI, spawns `adelpha-python-runtime`, and exposes a real PTY. Camera uses `NSCameraUsageDescription` plus the hardened-runtime camera entitlement. Imported CAD and MediaPipe WASM need the production CSP (`blob:`, `wasm-unsafe-eval`, `mediastream:`). See [Desktop packaging](../packaging/index.md) and [Settings](settings.md).
+
+## Related
+
+[MaRCoS](../about/marcos.md) · [MRI4ALL](../about/mri4all.md) · [Digital twins](../about/digital-twins.md) · [Sequences](../about/sequences.md) · [Reconstruction](../about/reconstruction.md)

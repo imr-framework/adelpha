@@ -1,3 +1,9 @@
+---
+title: Adelpha MRI packaging signing
+description: Sign and notarize Adelpha MRI installers for macOS, Windows, and Linux, and configure the in-app updater public key.
+icon: lucide/shield-check
+---
+
 # Signing, notarization, and trusted public releases
 
 CI produces **unsigned** artifacts unless the secrets below are present.
