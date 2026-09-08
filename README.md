@@ -48,6 +48,49 @@ git clone -b [branch_name] --single-branch https://github.com/imr-framework/adel
 
 If you already have a clone, switch with `git checkout [branch_name]`.
 
+## Contribute workshop notebooks (mentors)
+
+DELTA DIY MRI workshop notebooks live in [`console/notebooks/`](console/notebooks/) on the **`workshop/delta-2026`** branch. Open pull requests **into that branch**, not `main`.
+
+1. Clone the workshop branch (skip this if you already have the repo).
+
+   ```bash
+   git clone -b workshop/delta-2026 https://github.com/imr-framework/adelpha.git
+   cd adelpha
+   ```
+
+   Or, in an existing clone:
+
+   ```bash
+   git fetch origin
+   git checkout workshop/delta-2026
+   git pull --rebase origin workshop/delta-2026
+   ```
+
+2. Start a short-lived branch from `workshop/delta-2026` (do not commit on the shared workshop branch).
+
+   ```bash
+   git checkout -b workshop/notebooks-your-topic
+   ```
+
+3. Add or edit notebooks only under `console/notebooks/`. Name files `NN_short_name.ipynb` so they sort in teaching order (`01_setup_environment.ipynb` is the setup notebook). Use a title cell that states the session goal.
+
+4. Do not commit the workshop virtualenv, checkpoints, or bulky execution output. `console/notebooks/.diy-mri-workshop/` and `.ipynb_checkpoints/` stay local. Clear cell outputs before you commit if a notebook grew large.
+
+5. Commit, push, and open a PR **against `workshop/delta-2026`**.
+
+   ```bash
+   git add console/notebooks/
+   git commit -m "Add workshop notebook: short description"
+   git push -u origin HEAD
+   ```
+
+   On GitHub, set the PR base to `workshop/delta-2026`. With `gh`:
+
+   ```bash
+   gh pr create --base workshop/delta-2026 --title "Add workshop notebook: short description" --body "Mentor notebook for the DELTA DIY MRI workshop."
+   ```
+
 ## Install (developers)
 
 **Requirements:** Node.js 18+, [Rust](https://rustup.rs/) (stable), Python 3.10–3.12, optional [uv](https://docs.astral.sh/uv/) for docs.
