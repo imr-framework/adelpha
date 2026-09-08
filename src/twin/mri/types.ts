@@ -59,6 +59,16 @@ export type ScanTask = {
   patient: PatientInformation;
   exam: ExamInformation;
   parameters: Record<string, unknown>;
+  adjustment?: {
+    shim: { shim_x: number; shim_y: number; shim_z: number };
+    rf: { larmor_frequency: number; rf_max_amplitude: number; rf_pi2_fraction: number };
+    gradients: { gx_max: number; gy_max: number; gz_max: number };
+  };
+  processing?: {
+    trajectory: string;
+    recon_mode: string;
+    denoising_strength: number;
+  };
   other: Record<string, unknown>;
   results: {
     type: string;
@@ -67,7 +77,16 @@ export type ScanTask = {
     primary?: boolean;
     autoload_viewer?: number;
   }[];
-  journal: { created_at: string; prepared_at: string; fail_stage: string };
+  journal: {
+    created_at: string;
+    prepared_at: string;
+    acquisition_start: string;
+    acquisition_end: string;
+    reconstruction_start: string;
+    reconstruction_end: string;
+    failed_at: string;
+    fail_stage: string;
+  };
 };
 
 export type ParameterProperty = {

@@ -31,6 +31,7 @@ Restarting the API **clears the in-memory exam**. Register the patient again.
 | **Viewers** | One, two, or three dark stages |
 | **Sequence list** | Queue for the open exam. **+** at the bottom left inserts a sequence. **Play** starts the selected scan; **Stop** halts a running one. Right-click to rename, duplicate, or delete |
 | **Parameter tabs** | SEQUENCE · ADJUSTMENTS · SYSTEM · PROCESSING · OTHER. Fields come from Python ``param_*`` / ``param()`` on the sequence class. A running, reconstructed, or completed scan is read-only; other queued sequences stay editable. |
+| **Acquisition summary** | After a scan finishes, the right column lists timing, parameters, and results. Scroll if the list is long. |
 | **Tool rail** | Scanner ping, Study Viewer, protocols, Flex Viewer, layout, and end exam |
 | **Status line** | Exam and scanner reachability |
 

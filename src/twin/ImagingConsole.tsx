@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Atom, Check, Image as ImageIcon, LayoutGrid, List, Loader, LogOut, Maximize2, Play, PlusSquare, Square, Wrench, X, Zap } from "lucide-react";
 import {
   connectMriEvents,
@@ -8,6 +8,7 @@ import {
   editScan,
   emptyPatient,
   endExam,
+  fetchAcqConfig,
   fetchCurrentExam,
   fetchMriHealth,
   fetchScan,
@@ -32,6 +33,7 @@ import type {
   SeqTab,
   SequenceInfo,
 } from "./mri/types";
+import type { AcqConfig } from "./mri/api";
 import {
   AboutDialog,
   AlertDialog,
@@ -216,6 +218,221 @@ function ScreenPane({
   );
 }
 
+function formatSummaryValue(value: unknown, unit?: string): string {
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const text = Number.isInteger(value) ? String(value) : String(Math.round(value * 1000) / 1000);
+    return unit ? `${text} ${unit}` : text;
+  }
+  if (value == null || value === "") return "—";
+  const text = String(value);
+  return unit ? `${text} ${unit}` : text;
+}
+
+function clockLabel(iso: string): string {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return "";
+  return new Date(t).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+function elapsedLabel(start: string, end: string): string {
+  const a = Date.parse(start);
+  const b = Date.parse(end);
+  if (!Number.isFinite(a) || !Number.isFinite(b) || b < a) return "";
+  const sec = (b - a) / 1000;
+  if (sec < 1) return `${Math.round(sec * 1000)} ms`;
+  if (sec < 60) return `${sec < 10 ? sec.toFixed(1) : Math.round(sec)} s`;
+  const m = Math.floor(sec / 60);
+  const s = Math.round(sec % 60);
+  return s ? `${m} min ${s} s` : `${m} min`;
+}
+
+const GAMMA_1H_HZ_PER_T = 42.576e6;
+
+function formatMtPerM(hzPerM: number): string {
+  if (!Number.isFinite(hzPerM)) return "—";
+  const mtPerM = (1000 * hzPerM) / GAMMA_1H_HZ_PER_T;
+  const abs = Math.abs(mtPerM);
+  const text = abs >= 100 ? mtPerM.toFixed(1) : abs >= 10 ? mtPerM.toFixed(2) : mtPerM.toFixed(3);
+  return `${Number.parseFloat(text)} mT/m`;
+}
+
+function asNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function asString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function hardwareRows(
+  task: ScanTask | null,
+  acq: AcqConfig | null,
+  simulation: boolean,
+): { label: string; text: string }[] {
+  const adj = task?.adjustment;
+  const other = task?.other ?? {};
+  const larmor = adj?.rf.larmor_frequency || acq?.rf_parameters.larmor_frequency_MHz || 0;
+  const rfMax = adj?.rf.rf_max_amplitude || acq?.rf_parameters.rf_maximum_amplitude_Hze || 0;
+  const pi2 = adj?.rf.rf_pi2_fraction || acq?.rf_parameters.rf_pi2_fraction || 0;
+  const gx = adj?.gradients.gx_max || acq?.gradients_parameters.gx_maximum || 0;
+  const gy = adj?.gradients.gy_max || acq?.gradients_parameters.gy_maximum || 0;
+  const gz = adj?.gradients.gz_max || acq?.gradients_parameters.gz_maximum || 0;
+  const shimX = adj?.shim.shim_x ?? acq?.shim_parameters.shim_x ?? 0;
+  const shimY = adj?.shim.shim_y ?? acq?.shim_parameters.shim_y ?? 0;
+  const shimZ = adj?.shim.shim_z ?? acq?.shim_parameters.shim_z ?? 0;
+  const sim = other.hardware_simulation === true || other.hardware_simulation === "True" || simulation;
+  const board = asString(other.gradient_board) || acq?.marcos_parameters.gradient_board_type || "";
+  const ip = asString(other.scanner_ip);
+  const clock = asNumber(other.fpga_clock_MHz) ?? acq?.marcos_parameters.fpga_clock_frequency_MHz ?? 0;
+  const rows: { label: string; text: string }[] = [];
+  if (task?.system.model && task.system.model !== "unknown") {
+    rows.push({ label: "Scanner", text: task.system.model });
+  }
+  rows.push({ label: "Mode", text: sim ? "Simulation" : "Hardware" });
+  if (task?.exam.patient_position) {
+    rows.push({ label: "Position", text: task.exam.patient_position });
+  }
+  if (!sim && ip) rows.push({ label: "Scanner IP", text: ip });
+  if (larmor) rows.push({ label: "Larmor", text: `${formatSummaryValue(larmor)} MHz` });
+  if (rfMax) rows.push({ label: "RF max", text: formatSummaryValue(rfMax) });
+  if (pi2) rows.push({ label: "π/2 fraction", text: formatSummaryValue(pi2) });
+  if (gx) rows.push({ label: "Gx", text: formatMtPerM(gx) });
+  if (gy) rows.push({ label: "Gy", text: formatMtPerM(gy) });
+  if (gz) rows.push({ label: "Gz", text: formatMtPerM(gz) });
+  rows.push({ label: "Shim X", text: formatSummaryValue(shimX) });
+  rows.push({ label: "Shim Y", text: formatSummaryValue(shimY) });
+  rows.push({ label: "Shim Z", text: formatSummaryValue(shimZ) });
+  if (board) rows.push({ label: "Gradient board", text: board });
+  if (clock) rows.push({ label: "FPGA clock", text: `${formatSummaryValue(clock)} MHz` });
+  return rows;
+}
+
+function AcquisitionSummary({
+  entry,
+  task,
+  schema,
+  acq,
+  simulation,
+}: {
+  entry: ScanQueueEntry;
+  task: ScanTask | null;
+  schema: SequenceInfo["parameter_schema"] | undefined;
+  acq: AcqConfig | null;
+  simulation: boolean;
+}) {
+  const finished = entry.state === "complete" || entry.state === "failure";
+  if (!finished) return null;
+
+  const journal = task?.journal;
+  const params = task?.parameters ?? {};
+  const props = schema?.properties ?? {};
+  const paramKeys = [
+    ...Object.keys(props).filter((key) => Object.prototype.hasOwnProperty.call(params, key)),
+    ...Object.keys(params).filter((key) => !Object.prototype.hasOwnProperty.call(props, key)),
+  ];
+  const paramRows = paramKeys.flatMap((key) => {
+    const value = params[key];
+    if (value && typeof value === "object") return [];
+    const prop = props[key];
+    const tab = prop?.tab || "sequence";
+    if (tab === "adjustments" || tab === "system") return [];
+    return [
+      {
+        key,
+        label: prop?.title || key,
+        text: formatSummaryValue(value, prop?.unit),
+      },
+    ];
+  });
+  const hwRows = hardwareRows(task, acq, simulation);
+  const acqFor = elapsedLabel(journal?.acquisition_start ?? "", journal?.acquisition_end ?? "");
+  const reconFor = elapsedLabel(journal?.reconstruction_start ?? "", journal?.reconstruction_end ?? "");
+  const totalFor = elapsedLabel(journal?.acquisition_start ?? "", journal?.reconstruction_end || journal?.acquisition_end || "");
+  const failed = entry.state === "failure";
+
+  return (
+    <aside className="ic-acq-summary" aria-label="Acquisition summary">
+      <p className="ic-acq-summary-kicker">Summary</p>
+      <h3 className="ic-acq-summary-title">{entry.protocol_name}</h3>
+      <p className={`ic-acq-summary-state${failed ? " is-bad" : " is-ok"}`}>
+        {failed ? (journal?.fail_stage && journal.fail_stage !== "none" ? `Failed · ${journal.fail_stage}` : "Failed") : "Complete"}
+      </p>
+      <dl className="ic-acq-dl">
+        {clockLabel(journal?.acquisition_start ?? "") ? (
+          <>
+            <dt>Acquired</dt>
+            <dd>{clockLabel(journal?.acquisition_start ?? "")}</dd>
+          </>
+        ) : null}
+        {acqFor ? (
+          <>
+            <dt>Acquisition</dt>
+            <dd>{acqFor}</dd>
+          </>
+        ) : null}
+        {reconFor ? (
+          <>
+            <dt>Reconstruction</dt>
+            <dd>{reconFor}</dd>
+          </>
+        ) : null}
+        {totalFor && totalFor !== acqFor ? (
+          <>
+            <dt>Total</dt>
+            <dd>{totalFor}</dd>
+          </>
+        ) : null}
+        {clockLabel(journal?.failed_at ?? "") ? (
+          <>
+            <dt>Failed</dt>
+            <dd>{clockLabel(journal?.failed_at ?? "")}</dd>
+          </>
+        ) : null}
+      </dl>
+      {paramRows.length ? (
+        <div className="ic-acq-section">
+          <h4>Parameters</h4>
+          <dl className="ic-acq-dl">
+            {paramRows.map((row) => (
+              <Fragment key={row.key}>
+                <dt>{row.label}</dt>
+                <dd>{row.text}</dd>
+              </Fragment>
+            ))}
+          </dl>
+        </div>
+      ) : null}
+      {hwRows.length ? (
+        <div className="ic-acq-section">
+          <h4>Hardware</h4>
+          <dl className="ic-acq-dl">
+            {hwRows.map((row) => (
+              <Fragment key={row.label}>
+                <dt>{row.label}</dt>
+                <dd>{row.text}</dd>
+              </Fragment>
+            ))}
+          </dl>
+        </div>
+      ) : null}
+      {task?.results.length ? (
+        <div className="ic-acq-section">
+          <h4>Results</h4>
+          <ul className="ic-acq-results">
+            {task.results.map((result, i) => (
+              <li key={`${result.file_path}-${i}`}>
+                <span>{result.name || result.file_path}</span>
+                <span>{result.type}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </aside>
+  );
+}
+
 function ParamField({
   name,
   prop,
@@ -338,6 +555,8 @@ export function ImagingConsole() {
   selectedIdRef.current = selectedId;
   const prevScanStates = useRef<Record<string, ScanQueueEntry["state"]>>({});
   const [draft, setDraft] = useState<Record<string, unknown>>({});
+  const [selectedTask, setSelectedTask] = useState<ScanTask | null>(null);
+  const [acqConfig, setAcqConfig] = useState<AcqConfig | null>(null);
   const [tab, setTab] = useState<SeqTab>("sequence");
   const [status, setStatus] = useState("Connecting to MRI4ALL API…");
   const [problems, setProblems] = useState<string[]>([]);
@@ -577,6 +796,24 @@ export function ImagingConsole() {
     if (!experimentActive) setAcqClock(null);
   }, [experimentActive]);
 
+  useEffect(() => {
+    if (!selectedId || (selected?.state !== "complete" && selected?.state !== "failure")) return;
+    let cancelled = false;
+    void fetchScan(selectedId)
+      .then((detail) => {
+        if (!cancelled) setSelectedTask(detail.task);
+      })
+      .catch(() => undefined);
+    void fetchAcqConfig()
+      .then((cfg) => {
+        if (!cancelled) setAcqConfig(cfg);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId, selected?.state]);
+
   const onEndExam = useCallback(async () => {
     if (!exam) return;
     if (!window.confirm("End the active exam?")) return;
@@ -585,6 +822,7 @@ export function ImagingConsole() {
       setExam(null);
       setQueue([]);
       setSelectedId(null);
+      setSelectedTask(null);
       setViewerSlots({ 1: null, 2: null, 3: null });
       setFlexOpen(false);
       setFlexTarget(null);
@@ -670,6 +908,7 @@ export function ImagingConsole() {
     try {
       const detail = await fetchScan(id);
       setDraft({ ...(detail.task?.parameters ?? {}) });
+      setSelectedTask(detail.task);
       if (detail.entry.state === "created" || detail.entry.state === "scheduled_acq") {
         await editScan(id);
         await refreshQueue();
@@ -697,6 +936,7 @@ export function ImagingConsole() {
       setRegisterOpen(false);
       setQueue([]);
       setSelectedId(null);
+      setSelectedTask(null);
       setViewerSlots({ 1: null, 2: null, 3: null });
       setFlexOpen(false);
       setFlexTarget(null);
@@ -820,6 +1060,7 @@ export function ImagingConsole() {
       if (selectedId === deleteTarget.id) {
         setSelectedId(null);
         setDraft({});
+        setSelectedTask(null);
       }
       await refreshQueue();
       setStatus("Scan deleted");
@@ -1265,44 +1506,55 @@ export function ImagingConsole() {
             ))}
           </div>
 
-          <div className={`ic-tab-panel${paramsLocked ? " is-readonly" : ""}`} role="tabpanel">
-            {selected && schemaFields.length ? (
-              <>
-                <div className="ic-form-grid">
-                  <div className="ic-form-col">
-                    {schemaFields
-                      .filter((_, i) => i % 2 === 0)
-                      .map(([key, prop]) => (
-                        <ParamField
-                          key={key}
-                          name={key}
-                          prop={prop}
-                          value={draft[key] ?? prop.default}
-                          disabled={paramsLocked}
-                          onChange={(k, v) => setDraft((prev) => ({ ...prev, [k]: v }))}
-                        />
-                      ))}
+          <div className={`ic-config-body${selected && (selected.state === "complete" || selected.state === "failure") ? " has-summary" : ""}`}>
+            <div className={`ic-tab-panel${paramsLocked ? " is-readonly" : ""}`} role="tabpanel">
+              {selected && schemaFields.length ? (
+                <>
+                  <div className="ic-form-grid">
+                    <div className="ic-form-col">
+                      {schemaFields
+                        .filter((_, i) => i % 2 === 0)
+                        .map(([key, prop]) => (
+                          <ParamField
+                            key={key}
+                            name={key}
+                            prop={prop}
+                            value={draft[key] ?? prop.default}
+                            disabled={paramsLocked}
+                            onChange={(k, v) => setDraft((prev) => ({ ...prev, [k]: v }))}
+                          />
+                        ))}
+                    </div>
+                    <div className="ic-form-col">
+                      {schemaFields
+                        .filter((_, i) => i % 2 === 1)
+                        .map(([key, prop]) => (
+                          <ParamField
+                            key={key}
+                            name={key}
+                            prop={prop}
+                            value={draft[key] ?? prop.default}
+                            disabled={paramsLocked}
+                            onChange={(k, v) => setDraft((prev) => ({ ...prev, [k]: v }))}
+                          />
+                        ))}
+                    </div>
                   </div>
-                  <div className="ic-form-col">
-                    {schemaFields
-                      .filter((_, i) => i % 2 === 1)
-                      .map(([key, prop]) => (
-                        <ParamField
-                          key={key}
-                          name={key}
-                          prop={prop}
-                          value={draft[key] ?? prop.default}
-                          disabled={paramsLocked}
-                          onChange={(k, v) => setDraft((prev) => ({ ...prev, [k]: v }))}
-                        />
-                      ))}
-                  </div>
-                </div>
-                {problems.length ? <p className="ic-tab-placeholder">{problems.join(" ")}</p> : null}
-              </>
-            ) : exam ? null : (
-              <p className="ic-tab-placeholder">Start an exam to build a sequence queue.</p>
-            )}
+                  {problems.length ? <p className="ic-tab-placeholder">{problems.join(" ")}</p> : null}
+                </>
+              ) : exam ? null : (
+                <p className="ic-tab-placeholder">Start an exam to build a sequence queue.</p>
+              )}
+            </div>
+            {selected && (selected.state === "complete" || selected.state === "failure") ? (
+              <AcquisitionSummary
+                entry={selected}
+                task={selectedTask?.id === selected.id ? selectedTask : null}
+                schema={seqInfo?.parameter_schema}
+                acq={acqConfig}
+                simulation={simulation}
+              />
+            ) : null}
           </div>
         </div>
 
