@@ -186,6 +186,59 @@
   }
 }
 
+/*
+ * Left nav: overlay scrollbar. Hidden until the nav is hovered, no
+ * reserved gutter, and no accent-colored rail. Chrome 121+ ignores
+ * ::-webkit-scrollbar when scrollbar-width is set, so hover unsets it.
+ */
+[dir="ltr"] .md-sidebar--primary .md-sidebar__inner {
+  padding-right: 0.2rem;
+}
+
+[dir="rtl"] .md-sidebar--primary .md-sidebar__inner {
+  padding-left: 0.2rem;
+}
+
+.md-sidebar--primary .md-sidebar__scrollwrap {
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+  scrollbar-gutter: auto;
+}
+
+.md-sidebar--primary .md-sidebar__scrollwrap:hover {
+  scrollbar-width: unset;
+  scrollbar-color: unset;
+}
+
+.md-sidebar--primary .md-sidebar__scrollwrap::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.md-sidebar--primary .md-sidebar__scrollwrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.md-sidebar--primary .md-sidebar__scrollwrap::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 999px;
+}
+
+.md-sidebar--primary .md-sidebar__scrollwrap:hover::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--md-default-fg-color) 22%, transparent);
+}
+
+.md-sidebar--primary .md-sidebar__scrollwrap::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--md-default-fg-color) 36%, transparent);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .md-sidebar--primary .md-sidebar__scrollwrap:hover {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--md-default-fg-color) 22%, transparent) transparent;
+  }
+}
+
 /* Destination cards (home page). */
 .adelpha-cards {
   display: grid;
