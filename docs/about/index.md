@@ -36,7 +36,7 @@ Adelpha MRI is maintained by **Adelpha contributors** with the **Accessible Magn
 | Desktop identifier | `org.adelpha.digital-twin-ui` |
 | Contact in packaged Electron metadata | Adelpha / Geethanath lab |
 
-Issues and pull requests go to the GitHub repository. Workshop notebooks for the DELTA DIY MRI course live on the `workshop/delta-2026` branch, not `main`.
+Issues and pull requests go to the GitHub repository. Workshop notebooks for the DELTA DIY MRI course live on the `workshop/delta-2026` branch, not `main`. Mentees: [Learn](../learn/index.md) and [Repo setup](../learn/repo-setup.md).
 
 ## Lineage
 

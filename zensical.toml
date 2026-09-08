@@ -24,6 +24,12 @@ nav = [
     ]
   },
 
+  { Learn = [
+      { Workshop = "learn/index.md" },
+      { "Repo setup" = "learn/repo-setup.md" },
+    ]
+  },
+
   { Guide = [
       { Architecture = "guide/architecture.md" },
       { Workspaces = "guide/workspaces.md" },
@@ -149,6 +155,7 @@ custom_checkbox = true
 [[project.markdown_extensions.zensical.extensions.preview.configurations]]
 targets.include = [
   "start/*",
+  "learn/*",
   "guide/*",
   "packaging/*",
   "about/*",

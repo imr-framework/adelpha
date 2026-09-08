@@ -84,7 +84,7 @@ Tauri v2, React, Three.js, MediaPipe (camera), and a Python supervisor that moun
 
 ## Learn more
 
-[About Adelpha](about/index.md) · [Architecture](guide/architecture.md) · [MaRCoS](about/marcos.md) · [Low-field digital twins](about/digital-twins.md) · [Citation](about/citation.md) · [Intended use](about/intended-use.md)
+[About Adelpha](about/index.md) · [Learn](learn/index.md) · [Architecture](guide/architecture.md) · [MaRCoS](about/marcos.md) · [Low-field digital twins](about/digital-twins.md) · [Citation](about/citation.md) · [Intended use](about/intended-use.md)
 
 ## Where to go next
 
@@ -102,6 +102,13 @@ Tauri v2, React, Three.js, MediaPipe (camera), and a Python supervisor that moun
     </span>
     <strong>Getting started</strong>
     <span>Install Adelpha, first launch, and the developer setup.</span>
+  </a>
+  <a class="adelpha-card" href="learn/index.md">
+    <span class="adelpha-card__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+    </span>
+    <strong>Learn</strong>
+    <span>DELTA workshop notebooks. Fork, clone, and open a PR.</span>
   </a>
   <a class="adelpha-card" href="guide/workspaces.md">
     <span class="adelpha-card__icon" aria-hidden="true">
