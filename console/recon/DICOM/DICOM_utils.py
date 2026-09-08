@@ -12,6 +12,9 @@ import datetime
 from pydicom.dataset import FileDataset, FileMetaDataset
 from common.types import ResultItem
 from common.constants import *
+import common.logger as logger
+
+log = logger.get_logger()
 
 
 def write_dicom(
@@ -42,9 +45,12 @@ def write_dicom(
     seriesNumber = task.scan_number * 100 + series_offset
 
     instance_counter = 1
-    print(f"Writing {ndarray_dims[-1]} DICOMs")
+    os.makedirs(folder, exist_ok=True)
+    log.info("Writing %s DICOMs", ndarray_dims[-1])
 
     val_max = np.max(np.abs(image_ndarray))
+    if not np.isfinite(val_max) or val_max == 0:
+        val_max = 1.0
 
     for slc_id in range(ndarray_dims[-1]):
         # Generate magnitude image per slice
@@ -237,7 +243,7 @@ def set_misc_information(dicom_dataset):
     dicom_dataset.ImageType = ["ORIGINAL", "PRIMARY", "OTHER"]
     dicom_dataset.SamplesPerPixel = 1
     dicom_dataset.PhotometricInterpretation = "MONOCHROME2"
-    dicom_dataset.PixelRepresentation = 1
+    dicom_dataset.PixelRepresentation = 0
     dicom_dataset.BitsAllocated = 16
     dicom_dataset.BitsStored = 16
     dicom_dataset.HighBit = 15

@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import matplotlib.pyplot as plt
 import external.seq.adjustments_acq.config as cfg
 from external.seq.adjustments_acq.calibration import (
     larmor_cal,
@@ -7,10 +7,13 @@ from external.seq.adjustments_acq.calibration import (
     load_plot_in_ui,
 )
 from sequences.common.util import reading_json_parameter, writing_json_parameter
-
+import numpy as np
 from sequences import PulseqSequence  # type: ignore
 from sequences.common import make_rf_se  # type: ignore
 import common.logger as logger
+import pickle
+from common.types import ResultItem
+import external.seq.adjustments_acq.scripts as scr
 
 log = logger.get_logger()
 
@@ -20,7 +23,7 @@ class AdjFrequency(PulseqSequence, registry_key=Path(__file__).stem):
     param_TE: int = 20
     param_TR: int = 250
     param_NSA: int = 1
-    param_ADC_samples: int = 2048
+    param_ADC_samples: int = 256
     param_ADC_duration: int = 6400
 
     @classmethod
@@ -40,8 +43,8 @@ class AdjFrequency(PulseqSequence, registry_key=Path(__file__).stem):
                 "NSA": self.param_NSA,
                 "ADC_samples": self.param_ADC_samples,
                 "ADC_duration": self.param_ADC_duration,
-                "FA1": cfg.DBG_FA_EXC,
-                "FA2": cfg.DBG_FA_REF,
+                "FA1": 90,
+                "FA2": 180,
             },
             check_timing=True,
             output_file=self.seq_file_path,
@@ -50,136 +53,101 @@ class AdjFrequency(PulseqSequence, registry_key=Path(__file__).stem):
         self.calculated = True
         log.info("Done calculating sequence " + self.get_name())
         return True
+    
+    def get_freq_offset(self, x, t):
+        adc_time = t[-1]
+        X = np.fft.fft(x)
+        fmax = 1 / adc_time / 2 # -BW/2 to + BW/2
+        f = np.linspace(-fmax, fmax,t.shape[0])
+        del_f = f[-1] - f[-2]
+        freq_offset = (np.argmax(np.abs(X)) - int(0.5 * t.shape[0])) * del_f
+        return freq_offset
 
     def run_sequence(self, scan_task) -> bool:
         log.info("Running sequence " + self.get_name())
-
+        
         # Read scanner configuration data from config.json
         # TODO: Needs to be reworked
         configuration_data = reading_json_parameter()
         working_folder = self.get_working_folder()
-
+        scan_task.adjustment.rf.larmor_frequency = cfg.rf_parameters.larmor_frequency_MHz
+        
         # TODO: Convert to classes later (using external packages for now)
-
-        # max_freq, max_snr_freq, data_dict, fig_signal1, fig_noise1 = larmor_step_search(
-        #     seq_file=self.seq_file_path,
-        #     # step_search_center=configuration_data.rf_parameters.larmor_frequency_MHz,
-        #     # Debug: Always start at 1.83
-        #     step_search_center=1.83,
-        #     steps=20,
-        #     # step_bw_MHz=10e-3,
-        #     step_bw_MHz=1e-3,
-        #     plot=True,  # For Debug
-        #     shim_x=cfg.SHIM_X,
-        #     shim_y=cfg.SHIM_Y,
-        #     shim_z=cfg.SHIM_Z,
-        #     delay_s=1,
-        #     gui_test=False,
-        # )
-
-        # plot_result_signal1 = load_plot_in_ui(
-        #     working_folder=working_folder,
-        #     file_name="plot_result_signal1",
-        #     fig=fig_signal1,
-        # )
-        # scan_task.results.append(plot_result_signal1)
-        # plot_result_noise1 = load_plot_in_ui(
-        #     working_folder=working_folder,
-        #     file_name="plot_result_noise1",
-        #     fig=fig_noise1,
-        # )
-        # scan_task.results.append(plot_result_noise1)
-
-        # (
-        #     opt_max_freq,
-        #     opt_max_snr_freq,
-        #     data_dict,
-        #     fig_signal2,
-        #     fig_noise2,
-        # ) = larmor_step_search(
-        #     seq_file=self.seq_file_path,
-        #     step_search_center=max_freq,
-        #     steps=20,
-        #     # step_bw_MHz=5e-3,
-        #     step_bw_MHz=0.5e-3,
-        #     plot=True,  # For Debug
-        #     shim_x=cfg.SHIM_X,
-        #     shim_y=cfg.SHIM_Y,
-        #     shim_z=cfg.SHIM_Z,
-        #     delay_s=1,
-        #     gui_test=False,
-        # )
-
-        # log.info(f"Intermedite frequency = {opt_max_freq}")
-
-        # plot_result_signal2 = load_plot_in_ui(
-        #     working_folder=working_folder,
-        #     file_name="plot_result_signal2",
-        #     fig=fig_signal2,
-        # )
-        # scan_task.results.append(plot_result_signal2)
-        # plot_result_noise2 = load_plot_in_ui(
-        #     working_folder=working_folder,
-        #     file_name="plot_result_noise2",
-        #     fig=fig_noise2,
-        # )
-        # scan_task.results.append(plot_result_noise2)
-
-        opt_max_freq = 1.831
-        opt_max_freq = 1.828
-
-        larmor_freq, data_dict, fig1 = larmor_cal(
-            seq_file=self.seq_file_path,
-            larmor_start=opt_max_freq,
-            iterations=20,
-            delay_s=1,
-            echo_count=1,
-            # step_size=0.6,
-            # step_size=0.1,
-            step_size=0.1,
-            plot=True,  # For debug
+        # Run the experiment from seq file
+        rxd, rx_t = scr.run_pulseq(
+            self.seq_file_path,
+            rf_center=scan_task.adjustment.rf.larmor_frequency,
+            tx_t=1,
+            grad_t=10,
+            tx_warmup=100,
             shim_x=cfg.SHIM_X,
             shim_y=cfg.SHIM_Y,
             shim_z=cfg.SHIM_Z,
-            gui_test=False,
+            grad_cal=False,
+            save_np=False,
+            save_mat=False,
         )
 
-        # plot_result1 = load_plot_in_ui(
-        #     working_folder=working_folder, file_name="plot_result1", fig=fig1
-        # )
-        # scan_task.results.append(plot_result1)
-
-        calibrated_larmor_freq, data_dict, fig2 = larmor_cal(
-            seq_file=self.seq_file_path,
-            larmor_start=larmor_freq,
-            iterations=20,
-            delay_s=1,
-            echo_count=1,
-            # step_size=0.2,
-            step_size=0.1,
-            plot=True,  # For debug
-            shim_x=cfg.SHIM_X,
-            shim_y=cfg.SHIM_Y,
-            shim_z=cfg.SHIM_Z,
-            gui_test=False,
-        )
-
-        # plot_result2 = load_plot_in_ui(
-        #     working_folder=working_folder, file_name="plot_result2", fig=fig2
-        # )
-        # scan_task.results.append(plot_result2)
+        x = rxd
+        t = rx_t
+        adc_time = self.param_ADC_duration
+        X = np.fft.fft(x)
+        fmax = 1 / adc_time / 2 # -BW/2 to + BW/2
+        f = np.linspace(-fmax, fmax,rxd.shape[0])
+        del_f = f[-1] - f[-2]
+        freq_offset = (np.argmax(np.abs(X)) - int(0.5 * rxd.shape[0])) * del_f
 
         log.info(
-            f"Final Larmor frequency (using peak signal): {calibrated_larmor_freq} MHz"
+            f"Frequency offset (using peak signal): {freq_offset} MHz"
         )
-        scan_task.adjustment.rf.larmor_frequency = calibrated_larmor_freq
+
+
+        # freq_offset = get_freq_offset(self, rx_signal, rx_t)
+        scan_task.adjustment.rf.larmor_frequency += freq_offset
+        # Now scan again with the new frequency
+        rxd, rx_t = scr.run_pulseq(
+            self.seq_file_path,
+            rf_center=scan_task.adjustment.rf.larmor_frequency,
+            tx_t=1,
+            grad_t=10,
+            tx_warmup=100,
+            shim_x=cfg.SHIM_X,
+            shim_y=cfg.SHIM_Y,
+            shim_z=cfg.SHIM_Z,
+            grad_cal=False,
+            save_np=False,
+            save_mat=False,
+        )
+
+        # rx_signal = data_dict["rxd"]
+        rx_signal = rxd
+        log.info('Read the signal')
+        plt.clf()
+        plt.title("ADC Signal Final")
+        plt.grid(True, color="#333")
+        plt.plot(np.abs(rx_signal))
+        file = open(self.get_working_folder() + "/other/peak_frequency.plot", "wb")
+        fig = plt.gcf()
+        pickle.dump(fig, file)
+        file.close()
+
+        result = ResultItem()
+        result.name = "ADC"
+        result.description = "Recorded ADC signal"
+        result.type = "plot"
+        result.primary = True
+        result.autoload_viewer = 1
+        result.file_path = "other/peak_frequency.plot"
+        scan_task.results.append(result)
+        log.info(
+            f"Final Larmor frequency (using peak signal): {scan_task.adjustment.rf.larmor_frequency} MHz"
+        )
 
         # Updating the Larmor frequency in the config.json file
         # TODO: Needs to be reworked
-        configuration_data.rf_parameters.larmor_frequency_MHz = calibrated_larmor_freq
+        configuration_data.rf_parameters.larmor_frequency_MHz = scan_task.adjustment.rf.larmor_frequency
         writing_json_parameter(config_data=configuration_data)
         # Reload the configuration -- otherwise it does not get updated until the next start
         cfg.update()
-
         log.info("Done running sequence " + self.get_name())
         return True

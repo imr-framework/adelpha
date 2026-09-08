@@ -257,15 +257,21 @@ export function TextInput({
   onChange,
   label,
   placeholder,
+  type = "text",
+  step,
 }: {
   value: string;
   onChange: (value: string) => void;
   label: string;
   placeholder?: string;
+  type?: "text" | "number";
+  step?: string | number;
 }) {
   return (
     <input
       className="settings-input"
+      type={type}
+      step={step}
       value={value}
       aria-label={label}
       placeholder={placeholder}

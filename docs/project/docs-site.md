@@ -32,6 +32,7 @@ make docs-serve  # live preview (default http://127.0.0.1:8000)
 - Mermaid is enabled via `pymdownx.superfences`.
 - Left-sidebar sections are explicit in `zensical.toml` (`nav`). There is no top tab bar.
 - Math uses Arithmatex + MathJax (`docs/javascripts/mathjax.js`).
+- The [Download](../start/download.md) page is the product download UI. It recommends a platform in the browser and links to GitHub Release assets. Binaries are not stored in `docs/`.
 
 ## GitHub Pages
 

@@ -159,4 +159,9 @@ def create_ismrmrd(folder, raw_data, task):
 
     # Clean up
     dset.close()
-    print("ISMRMRD file created")
+    try:
+        from common.logger as logger
+
+        logger.get_logger().info("ISMRMRD file created")
+    except BrokenPipeError:
+        pass

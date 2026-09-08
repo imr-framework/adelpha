@@ -19,13 +19,19 @@ export function mriBaseUrl(): string {
 
 async function readError(res: Response): Promise<string> {
   const text = await res.text();
-  try {
-    const json = JSON.parse(text) as { detail?: unknown };
-    if (typeof json.detail === "string") return json.detail;
-    if (json.detail != null) return JSON.stringify(json.detail);
-  } catch {
-    /* plain */
-  }
+    try {
+      const json = JSON.parse(text) as { detail?: unknown };
+      if (typeof json.detail === "string") return json.detail;
+      if (json.detail && typeof json.detail === "object") {
+        const detail = json.detail as { problems?: unknown };
+        if (Array.isArray(detail.problems) && detail.problems.length) {
+          return detail.problems.map(String).join("; ");
+        }
+        return JSON.stringify(json.detail);
+      }
+    } catch {
+      /* plain */
+    }
   return text || `${res.status} ${res.statusText}`;
 }
 
@@ -130,11 +136,17 @@ export type DevicePing = {
 
 export function formatDevicePingStatus(ping: DevicePing): string {
   const reachable = ping.reachable ?? ping.ok;
-  if (ping.simulation && reachable) {
-    return ping.detail ? `Simulation · ${ping.detail}` : `Simulation · Red Pitaya at ${ping.ip}`;
+  if (ping.simulation && ping.method === "tcp") {
+    return ping.detail ? `Simulation · ${ping.detail}` : `Simulation · MaRCoS at ${ping.ip}`;
   }
   if (ping.simulation) {
-    return `Simulation · no Red Pitaya at ${ping.ip}`;
+    return `Simulation · no MaRCoS at ${ping.ip}`;
+  }
+  if (ping.method === "tcp") {
+    return ping.detail || `MaRCoS server running at ${ping.ip}`;
+  }
+  if (ping.method === "icmp" && reachable) {
+    return ping.detail || `Red Pitaya at ${ping.ip} answers ping; MaRCoS is not running`;
   }
   if (reachable) {
     return ping.detail || `Scanner reachable at ${ping.ip}`;
@@ -144,6 +156,19 @@ export function formatDevicePingStatus(ping: DevicePing): string {
 
 export async function pingDevice(): Promise<DevicePing> {
   return mriFetch("/device/ping", { method: "POST" });
+}
+
+export type MarcosStartResult = {
+  ok: boolean;
+  started?: boolean;
+  compiled?: boolean;
+  bitstream?: boolean;
+  detail?: string;
+  ip?: string;
+};
+
+export async function startMarcosServer(): Promise<MarcosStartResult> {
+  return mriFetch("/device/marcos/start", { method: "POST" });
 }
 
 export async function deleteScan(id: string): Promise<void> {
@@ -173,6 +198,10 @@ export async function fetchLog(name: "acq" | "recon" | "ui" | "api"): Promise<{ 
   return mriFetch(`/logs/${name}`);
 }
 
+export async function clearLog(name: "acq" | "recon" | "ui" | "api"): Promise<void> {
+  await mriFetch(`/logs/${name}`, { method: "DELETE" });
+}
+
 export async function fetchStudies(): Promise<StudyExam[]> {
   return mriFetch("/studies");
 }
@@ -197,14 +226,38 @@ export function scannerAssetUrl(): string {
   return `${mriBaseUrl()}/assets/scanner.png`;
 }
 
+export type PlotSeries = {
+  name: string;
+  x: Array<number | null>;
+  y: Array<number | null>;
+};
+
+export type PlotAxes = {
+  title: string;
+  xlabel: string;
+  ylabel: string;
+  xmin: number;
+  xmax: number;
+  ymin: number;
+  ymax: number;
+  series: PlotSeries[];
+};
+
 export type StudyPreview = {
   kind: "dicom" | "plot" | "empty";
   slices: number;
   index: number;
   vmin: number;
   vmax: number;
+  data_min?: number;
+  data_max?: number;
+  rows?: number;
+  cols?: number;
+  pixels?: string;
   histogram: number[];
   image: string;
+  stack?: { index: number; rows: number; cols: number; pixels: string }[];
+  series?: { axes: PlotAxes[] } | null;
   error?: string;
 };
 
@@ -213,6 +266,8 @@ export async function fetchStudyPreview(
   filePath: string,
   resultType: string,
   index = 0,
+  size?: { width?: number; height?: number; scale?: number },
+  allSlices = false,
 ): Promise<StudyPreview> {
   const query = new URLSearchParams({
     folder,
@@ -220,6 +275,10 @@ export async function fetchStudyPreview(
     result_type: resultType,
     index: String(index),
   });
+  if (size?.width && size.width > 0) query.set("width", String(Math.round(size.width)));
+  if (size?.height && size.height > 0) query.set("height", String(Math.round(size.height)));
+  if (size?.scale && size.scale > 1) query.set("scale", String(size.scale));
+  if (allSlices) query.set("all_slices", "true");
   return mriFetch(`/studies/preview?${query}`);
 }
 
@@ -232,7 +291,7 @@ export async function fetchConfig(): Promise<MriConfig> {
   return mriFetch("/config");
 }
 
-export async function saveConfig(body: MriConfig): Promise<MriConfig> {
+export async function saveConfig(body: Partial<MriConfig>): Promise<MriConfig> {
   return mriFetch("/config", {
     method: "PUT",
     headers: { "content-type": "application/json" },
@@ -240,7 +299,54 @@ export async function saveConfig(body: MriConfig): Promise<MriConfig> {
   });
 }
 
-export async function fetchServices(): Promise<{ acq: boolean | null; recon: boolean | null; mode: string }> {
+export type AcqConfig = {
+  rf_parameters: {
+    larmor_frequency_MHz: number;
+    rf_maximum_amplitude_Hze: number;
+    rf_pi2_fraction: number;
+  };
+  gradients_parameters: {
+    gx_maximum: number;
+    gy_maximum: number;
+    gz_maximum: number;
+  };
+  shim_parameters: {
+    shim_x: number;
+    shim_y: number;
+    shim_z: number;
+    shim_mc: number[];
+  };
+  marcos_parameters: {
+    port: number;
+    fpga_clock_frequency_MHz: number;
+    gradient_board_type: string;
+    gpa_fhdo_current_per_volt: number;
+    flocra_pulseq_path: string;
+    initialize_gpa?: boolean;
+  };
+};
+
+export async function fetchAcqConfig(): Promise<AcqConfig> {
+  return mriFetch("/config/acq");
+}
+
+export async function saveAcqConfig(body: Partial<AcqConfig>): Promise<AcqConfig> {
+  return mriFetch("/config/acq", {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export type ServiceStatus = {
+  acq: boolean | null;
+  recon: boolean | null;
+  mode: string;
+  last_error?: string;
+  sequence_registry?: boolean;
+};
+
+export async function fetchServices(): Promise<ServiceStatus> {
   return mriFetch("/device/services");
 }
 

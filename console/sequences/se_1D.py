@@ -4,14 +4,11 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
-
 from common.types import ResultItem
 from PyQt5 import uic
-
 import pypulseq as pp  # type: ignore
 import external.seq.adjustments_acq.config as cfg
 from external.seq.adjustments_acq.scripts import run_pulseq
-
 from sequences import PulseqSequence
 from sequences.common import make_se_1D
 import common.logger as logger
@@ -22,12 +19,12 @@ log = logger.get_logger()
 
 class SequenceRF_SE(PulseqSequence, registry_key=Path(__file__).stem):
     # Sequence parameters
-    param_TE: int = 50
+    param_TE: int = 10
     param_TR: int = 3000
     param_NSA: int = 1
-    param_FOV: int = 20
-    param_Base_Resolution: int = 96
-    param_BW: int = 32000
+    param_FOV: int = 64
+    param_Base_Resolution: int = 64
+    param_BW: int = 16000
     param_Gradient: str = "x"
     param_debug_plot: bool = True
 
@@ -59,28 +56,37 @@ class SequenceRF_SE(PulseqSequence, registry_key=Path(__file__).stem):
     @classmethod
     def get_default_parameters(self) -> dict:
         return {
-            "TE": 20,
+            "TE": 5,
             "TR": 1000,
             "NSA": 1,
-            "FOV": 15,
-            "Base_Resolution": 256,
-            "BW": 32000,
+            "FOV": 64,
+            "Base_Resolution": 64,
+            "BW": 16000,
             "Gradient": "x",
+            "debug_plot": True,
         }
 
     def set_parameters(self, parameters, scan_task) -> bool:
         self.problem_list = []
+        defaults = self.get_default_parameters()
         try:
-            self.param_TE = parameters["TE"]
-            self.param_TR = parameters["TR"]
-            self.param_NSA = parameters["NSA"]
-            self.param_FOV = parameters["FOV"]
-            self.param_Base_Resolution = parameters["Base_Resolution"]
-            self.param_BW = parameters["BW"]
-            self.param_Gradient = parameters["Gradient"]
-            self.param_debug_plot = parameters["debug_plot"]
-        except:
-            self.problem_list.append("Invalid parameters provided")
+            self.param_TE = parameters.get("TE", defaults["TE"])
+            self.param_TR = parameters.get("TR", defaults["TR"])
+            self.param_NSA = parameters.get("NSA", defaults["NSA"])
+            self.param_FOV = parameters.get("FOV", defaults["FOV"])
+            self.param_Base_Resolution = parameters.get(
+                "Base_Resolution", defaults["Base_Resolution"]
+            )
+            self.param_BW = parameters.get("BW", defaults["BW"])
+            self.param_Gradient = str(
+                parameters.get("Gradient", defaults["Gradient"])
+            ).strip().lower()
+            self.param_debug_plot = bool(
+                parameters.get("debug_plot", defaults["debug_plot"])
+            )
+        except Exception as exc:
+            log.exception("Invalid parameters for %s", self.get_name())
+            self.problem_list.append(f"Invalid parameters provided: {exc}")
             return False
         return self.validate_parameters(scan_task)
 
@@ -109,16 +115,59 @@ class SequenceRF_SE(PulseqSequence, registry_key=Path(__file__).stem):
     def validate_parameters(self, scan_task) -> bool:
         if self.param_TE > self.param_TR:
             self.problem_list.append("TE cannot be longer than TR")
+        if self.param_Gradient not in ("x", "y", "z"):
+            self.problem_list.append("Gradient must be x, y, or z")
+        try:
+            cfg.update()
+            fov_m = float(self.param_FOV) / 1000.0
+            bw = float(self.param_BW)
+            if fov_m > 0 and bw > 0:
+                g_hz = bw / fov_m
+                g_max = {
+                    "x": float(cfg.GX_MAX),
+                    "y": float(cfg.GY_MAX),
+                    "z": float(cfg.GZ_MAX),
+                }[self.param_Gradient]
+                if g_hz > g_max:
+                    self.problem_list.append(
+                        f"Readout gradient {g_hz:.0f} Hz/m exceeds {self.param_Gradient} "
+                        f"full-scale {g_max:.0f} Hz/m. Increase FOV (mm) or reduce BW."
+                    )
+        except Exception:
+            log.exception("Could not check 1D SE gradient limits")
         return self.is_valid()
 
-    def calculate_sequence(self, scan_task) -> bool:
+    def calculate_sequence(self, scan_task)-> bool:
         log.info("Calculating sequence " + self.get_name())
         scan_task.processing.recon_mode = "bypass"
         self.seq_file_path = self.get_working_folder() + "/seq/acq0.seq"
 
         plt.clf()
         plt.title("Sequence")
-
+        channel = self.param_Gradient
+        if channel == "x":
+            max_grad = cfg.GX_MAX
+        elif channel == "y":
+            max_grad = cfg.GY_MAX
+        elif channel == "z":
+            max_grad = cfg.GZ_MAX
+        
+        # seq = pp.Sequence()
+        self.system = pp.Opts(
+            max_grad=max_grad,  
+            grad_unit="Hz/m", # 
+            max_slew=1000,
+            slew_unit="T/m/s",
+            #rf_ringdown_time=100e-6,
+            rf_ringdown_time=20e-6,
+            rf_dead_time=100e-6,
+            rf_raster_time=1e-6,
+            #adc_dead_time=10e-6,
+            adc_dead_time=20e-6,
+            grad_raster_time = 1/self.param_BW,
+            B0=0.27,
+            )
+        log.info("Using system config: ", self.system)
         make_se_1D.pypulseq_1dse(
             inputs={
                 "TE": self.param_TE,
@@ -128,11 +177,12 @@ class SequenceRF_SE(PulseqSequence, registry_key=Path(__file__).stem):
                 "Base_Resolution": self.param_Base_Resolution,
                 "BW": self.param_BW,
                 "Gradient": self.param_Gradient,
+                "system": self.system,
             },
             check_timing=True,
             output_file=self.seq_file_path,
         )
-
+        
         file = open(self.get_working_folder() + "/other/seq1.plot", "wb")
         fig = plt.figure(1)
         pickle.dump(fig, file)
@@ -161,30 +211,35 @@ class SequenceRF_SE(PulseqSequence, registry_key=Path(__file__).stem):
 
     def run_sequence(self, scan_task) -> bool:
         log.info("Running sequence " + self.get_name())
-        rxd, rx_t = run_pulseq(
-            seq_file=self.seq_file_path,
-            rf_center=cfg.LARMOR_FREQ,
-            tx_t=1,
-            grad_t=10,
-            tx_warmup=100,
-            shim_x=-0.0,
-            shim_y=-0.0,
-            shim_z=-0.0,
-            grad_cal=False,
-            save_np=False,
-            save_mat=False,
-            save_msgs=True,
-            gui_test=False,
-            case_path=self.get_working_folder(),
+        rxd, _ = run_pulseq(
+        seq_file=self.seq_file_path,
+        rf_center=cfg.LARMOR_FREQ, #scan_task.adjustment.rf.larmor_frequency,
+        tx_t=1,
+        grad_t=np.round(self.system.grad_raster_time * 1e6, decimals=0), # us
+        tx_warmup=100,
+        shim_x=cfg.SHIM_X,
+        shim_y=cfg.SHIM_Y,
+        shim_z=cfg.SHIM_Z,
+        grad_cal=False,
+        save_np=False,
+        save_mat=False,
+        save_msgs=True,
+        gui_test=False,
+        case_path=self.get_working_folder(),
+        system = self.system
         )
-        scan_task.adjustment.rf.larmor_frequency = cfg.LARMOR_FREQ
-
-        log.info("Done running sequence " + self.get_name())
-
-        # Compute the average
+        if rxd is None or getattr(rxd, "size", 0) == 0:
+            log.info("No raw data (hardware simulation or empty acquisition)")
+            log.info("Done running sequence " + self.get_name())
+            return True
+    # Compute the average
         rxd_rs = np.reshape(rxd, (int(rxd.shape[0]/self.param_NSA), self.param_NSA), order='F')
         log.info("New shape of rx data:", rxd_rs.shape)
         rxd_avg = (np.average(rxd_rs, axis=1))
+        filtering = False
+        if filtering is True:
+            rxd_avg = np.convolve(rxd_avg, np.ones(5)/5, mode='same')
+
         log.info("Done running sequence " + self.get_name())
         log.info("Plotting figures")
         
@@ -192,7 +247,13 @@ class SequenceRF_SE(PulseqSequence, registry_key=Path(__file__).stem):
         plt.title(f"ADC Signal - Grad_{self.param_Gradient}")
         plt.grid(True, color="#333")
         log.info("Plotting averaged raw signal")
-        plt.plot(np.abs(rxd_avg))
+        dt = 1e6 / self.param_BW
+        log.info("dt: ", dt)
+        
+        t = np.arange(0, self.param_Base_Resolution * dt * 2, dt).T # oversampling by factor 2
+        plt.plot(t, np.abs(rxd_avg))
+        plt.xlabel('Time (us)')
+        plt.ylabel('Signal')
         
         file = open(self.get_working_folder() + "/other/adc.plot", "wb")
         fig = plt.gcf()
@@ -210,7 +271,13 @@ class SequenceRF_SE(PulseqSequence, registry_key=Path(__file__).stem):
         plt.title(f"FFT of Signal - Grad_{self.param_Gradient}")
         recon = np.fft.fftshift(np.fft.ifft(np.fft.fftshift(rxd_avg)))
         plt.grid(True, color="#333")
-        plt.plot(np.abs(recon))
+        kmax_half = -self.param_Base_Resolution / self.param_FOV / 2
+        k_array = np.linspace(-kmax_half, kmax_half, self.param_Base_Resolution)
+
+        r = np.linspace(-self.param_FOV/2, self.param_FOV/2, self.param_Base_Resolution * 2)
+        plt.plot(r, np.abs(recon))
+        plt.xlabel("Position (mm)")
+        plt.ylabel("Projection")
         file = open(self.get_working_folder() + "/other/fft.plot", "wb")
         fig = plt.gcf()
         pickle.dump(fig, file)
@@ -223,7 +290,7 @@ class SequenceRF_SE(PulseqSequence, registry_key=Path(__file__).stem):
         result.primary = True
         result.file_path = "other/fft.plot"
         scan_task.results.insert(1, result)
-        
+
         # Save the raw data file
         log.info("Saving rawdata, sequence " + self.get_name())
         self.raw_file_path = self.get_working_folder() + "/rawdata/raw.npy"

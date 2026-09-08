@@ -1,6 +1,6 @@
 [package]
 name = "adelpha"
-version = "0.1.0"
+version = "0.5.2"
 description = "Adelpha"
 authors = ["Adelpha / Geethanath lab"]
 edition = "2021"

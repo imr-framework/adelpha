@@ -685,8 +685,8 @@ export default function App() {
             className="brand-mark"
             src="/logos/adelpha-gradient-logo.svg"
             alt=""
-            width={44}
-            height={32}
+            width={38}
+            height={28}
             aria-hidden
           />
           <div className="brand-copy">
