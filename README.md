@@ -52,14 +52,18 @@ git clone -b [branch_name] --single-branch https://github.com/imr-framework/adel
 
 If you already have a clone, switch with `git checkout [branch_name]`.
 
-## Contribute workshop notebooks (mentors)
+## Contribute workshop notebooks
 
 DELTA DIY MRI workshop notebooks live in [`console/notebooks/`](console/notebooks/) on the **`workshop/delta-2026`** branch. Open pull requests **into that branch**, not `main`.
 
-1. Clone the workshop branch (skip this if you already have the repo).
+1. Fork the repo with all its branches
+Fork the adelpha repo. While forking, be sure to uncheck `copy the main branch only` so that you get all the branches on your fork.
+![Forking page](assets/README/forking_all_branches.png)
+
+2. Clone the workshop branch from your fork.
 
    ```bash
-   git clone -b workshop/delta-2026 https://github.com/imr-framework/adelpha.git
+   git clone -b workshop/delta-2026 [your repo url]
    cd adelpha
    ```
 
@@ -71,17 +75,17 @@ DELTA DIY MRI workshop notebooks live in [`console/notebooks/`](console/notebook
    git pull --rebase origin workshop/delta-2026
    ```
 
-2. Start a short-lived branch from `workshop/delta-2026` (do not commit on the shared workshop branch).
+3. Start a short-lived branch from `workshop/delta-2026` (do not commit on the shared workshop branch).
 
    ```bash
    git checkout -b workshop/notebooks-your-topic
    ```
 
-3. Add or edit notebooks only under `console/notebooks/`. Name files `NN_short_name.ipynb` so they sort in teaching order (`01_setup_environment.ipynb` is the setup notebook). Use a title cell that states the session goal.
+4. Add or edit notebooks only under `console/notebooks/`. Name files `NN_short_name.ipynb` so they sort in teaching order (`01_setup_environment.ipynb` is the setup notebook). Use a title cell that states the session goal. Also you can group them in subfolders such as console/notebooks/acq for acquisition notebooks.
 
-4. Do not commit the workshop virtualenv, checkpoints, or bulky execution output. `console/notebooks/.diy-mri-workshop/` and `.ipynb_checkpoints/` stay local. Clear cell outputs before you commit if a notebook grew large.
+5. Do not commit the workshop virtualenv, checkpoints, or bulky execution output. `console/notebooks/.diy-mri-workshop/` and `.ipynb_checkpoints/` stay local. Clear cell outputs before you commit if a notebook grew large.
 
-5. Commit, push, and open a PR **against `workshop/delta-2026`**.
+6. Commit, push, and open a PR **against `workshop/delta-2026`**.
 
    ```bash
    git add console/notebooks/
