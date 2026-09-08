@@ -152,51 +152,6 @@ body,
   position: relative;
 }
 
-/* Global health lives in the shell, not inside individual panels. */
-.system-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: 28px;
-  padding: 0 11px;
-  border-radius: 999px;
-  border: 1px solid #2c2c2e;
-  background: #131315;
-  font-size: 12px;
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.system-status-dot {
-  width: 7px;
-  height: 7px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.system-status.is-ok .system-status-dot {
-  color: #3ee4a4;
-}
-
-.system-status.is-warn .system-status-dot {
-  color: #e0a526;
-}
-
-.system-status.is-bad .system-status-dot {
-  color: #ff6b6b;
-}
-
-@media (max-width: 1100px) {
-  .system-status-label {
-    display: none;
-  }
-
-  .system-status {
-    padding: 0 9px;
-  }
-}
-
 .topbar-app-menu {
   position: relative;
 }
@@ -997,6 +952,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   display: flex;
   flex-direction: column;
   min-height: 0;
+  position: relative;
+  z-index: 2;
   border-right: 1px solid var(--ic-border);
   background: var(--ic-panel-2);
 }
@@ -1096,31 +1053,114 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   color: var(--ic-muted);
 }
 
+.ic-seq-add {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .ic-seq-footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  padding: 5px 8px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 4px 4px 4px 2px;
   border-top: 1px solid var(--ic-border);
   background: var(--ic-footer);
 }
 
-.ic-seq-footer button {
+.ic-seq-footer-edit {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ic-seq-tool {
   appearance: none;
-  width: 28px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   display: inline-grid;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 3px;
-  background: var(--ic-btn);
-  color: #d7dbe3;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--ic-muted);
   cursor: pointer;
   padding: 0;
 }
 
-.ic-seq-footer button:hover {
-  border-color: var(--ic-accent-ring);
+.ic-seq-tool:hover:not(:disabled) {
+  background: var(--ic-accent-wash);
+  color: #fff;
+}
+
+.ic-seq-tool.is-active {
+  background: var(--ic-accent-hot);
+  color: #fff;
+}
+
+.ic-seq-tool:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.ic-seq-add-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  z-index: 50;
+  max-height: min(240px, 38vh);
+  overflow: auto;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--ic-border);
+  border-radius: 0;
+  background: var(--ic-panel);
+  box-shadow: 0 -10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.ic-seq-add-sep {
+  margin: 0;
+  padding: 7px 10px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ic-muted);
+  border-top: 1px solid var(--ic-border);
+}
+
+.ic-seq-add-menu button {
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  display: block;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ic-text);
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+  line-height: 28px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ic-seq-add-menu button:hover,
+.ic-seq-add-menu button:focus-visible {
+  background: var(--ic-accent-hot);
+  color: #fff;
+  outline: none;
+}
+
+.ic-seq-add-menu p {
+  margin: 0;
+  padding: 10px;
 }
 
 .ic-config {
@@ -1279,10 +1319,20 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   accent-color: var(--ic-accent-hot);
 }
 
-.ic-tab-placeholder {
-  margin: 8px 0 0;
+.ic-field-control input:disabled,
+.ic-field-control select:disabled,
+.ic-field-control input:read-only {
+  opacity: 0.65;
+  cursor: default;
   color: var(--ic-muted);
-  line-height: 1.45;
+}
+
+.ic-check input:disabled {
+  cursor: default;
+}
+
+.ic-tab-panel.is-readonly .ic-form-grid {
+  opacity: 0.78;
 }
 
 .ic-rail {

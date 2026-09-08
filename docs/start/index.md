@@ -12,7 +12,7 @@ Adelpha is a desktop app. Most people only need the installer. Developers use th
 
 1. [Download](download.md) the `.dmg`, `.exe`, or `.deb` for this computer, then install it.
 2. Open it. On an unsigned Mac build, use **Right-click → Open** the first time.
-3. Wait for the intro and the Python runtime. The top bar should read **All systems operational**.
+3. Wait for the intro and the Python runtime. The terminal live dot should turn green.
 4. Open **Settings** and set these:
 
     | Page | What to set |
@@ -86,7 +86,7 @@ curl -s http://127.0.0.1:8002/health
 
 | Check | Expect |
 | --- | --- |
-| Top-bar health | Green · All systems operational |
+| Terminal live dot | Green · connected |
 | System Context | `scanner_id / mode` from the twin |
 | Telemetry | Thermal / \(B_0\) / EMI / RF updating about every 1.5 s |
 | Agents | Online after a key is saved (desktop) or `make agents-api` (browser) |

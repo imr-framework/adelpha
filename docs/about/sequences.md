@@ -8,6 +8,41 @@ icon: lucide/list
 
 Sequences in Adelpha MRI are MRI4ALL **plugins**, not a new pulse-sequence language. The Imaging Console lists them, edits parameters, and writes the exam queue. Python `SequenceBase` still builds the waveform.
 
+## Adding inputs from Python
+
+The Imaging Console SEQUENCE / ADJUSTMENTS / SYSTEM / PROCESSING / OTHER tabs are filled from Python. You do not write TypeScript or a Qt ``.ui`` file.
+
+Name every operator field ``param_<Name>``. ``param_TE`` becomes the **TE** box. Known names (TE, TR, FOV, …) pick up units from a shared table. Anything else still appears as a number, checkbox, or text field.
+
+```python
+from sequences import PulseqSequence, param
+from pathlib import Path
+
+class MySequence(PulseqSequence, registry_key=Path(__file__).stem):
+    param_TE: int = 10          # SEQUENCE tab, unit ms (known name)
+    param_TR: int = 250
+    param_coarse_steps = param(
+        100,
+        title="Coarse steps",
+        tab="adjustments",      # or sequence / system / processing / other
+        minimum=1,
+        description="Points in the first search",
+    )
+    param_mode = param("fast", enum=["fast", "slow"], tab="other")
+```
+
+``param()`` sets label, unit, tab, min/max, dropdown ``enum``, and optional help text. After you save the file, restart the Python runtime so the sequence catalog reloads.
+
+If you do **not** implement ``get_default_parameters`` / ``get_parameters`` / ``set_parameters``, Adelpha copies the ``param_*`` values for you. Existing sequences that still map those methods by hand keep working.
+
+Optional overlay without converting an attribute to ``param()``:
+
+```python
+parameter_ui = {"N_ITER": {"title": "Iterations", "tab": "adjustments", "minimum": 1}}
+```
+
+See ``console/sequences/adj_frequency_snr.py`` for a sequence that exposes search controls on the ADJUSTMENTS tab this way.
+
 ## Catalog the GUI sees
 
 `console/services/api/sequences_api.py` loads `SequenceBase` when the MRI4ALL environment is complete. If numba / numpy pins block that import (the desktop sidecar uses **numpy 2**), the façade serves a **FALLBACK** catalog so the UI still lists sequences:

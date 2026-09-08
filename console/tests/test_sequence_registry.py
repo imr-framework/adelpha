@@ -31,6 +31,13 @@ def test_sequence_registry_loads_updated_catalog():
     se_schema = se_1d.get_parameter_schema()
     assert se_schema["properties"]["FOV"]["unit"] == "mm"
     assert se_schema["properties"]["debug_plot"]["type"] == "boolean"
+    assert se_schema["properties"]["debug_plot"]["tab"] == "other"
+
+    snr = SequenceBase.get_sequence("adj_frequency_snr")
+    snr_schema = snr.get_parameter_schema()
+    assert snr_schema["properties"]["TE"]["unit"] == "ms"
+    assert snr_schema["properties"]["coarse_steps"]["tab"] == "adjustments"
+    assert snr_schema["properties"]["coarse_step_bw_MHz"]["unit"] == "MHz"
 
 
 def test_marcos_defaults_keep_adelpha_gpa_off():

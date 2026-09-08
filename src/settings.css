@@ -712,6 +712,17 @@
   color: var(--sw-text-2);
 }
 
+.settings-path {
+  display: block;
+  margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--sw-text);
+}
+
 .settings-segment {
   display: inline-flex;
   padding: 3px;

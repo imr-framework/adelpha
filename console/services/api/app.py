@@ -60,6 +60,7 @@ app.add_middleware(
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 
 
@@ -862,7 +863,7 @@ def study_preview(
 def study_export(folder: str, file_path: str = ""):
     from io import BytesIO
     import zipfile
-    from fastapi.responses import FileResponse, StreamingResponse
+    from fastapi.responses import FileResponse, Response
 
     target = _resolve_result_path(folder, file_path)
     if target.is_dir():
@@ -871,10 +872,9 @@ def study_export(folder: str, file_path: str = ""):
             for item in target.rglob("*"):
                 if item.is_file():
                     archive.write(item, item.relative_to(target.parent))
-        buf.seek(0)
         filename = f"{target.name}.zip"
-        return StreamingResponse(
-            buf,
+        return Response(
+            content=buf.getvalue(),
             media_type="application/zip",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )

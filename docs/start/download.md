@@ -101,4 +101,4 @@ Current public installers are **unsigned**. A macOS build will need **Right-clic
 
 1. Open the `.dmg`, run the `.exe`, or install the `.deb`.
 2. Launch **Adelpha**.
-3. Wait until the top bar reads **All systems operational**.
+3. Wait until the terminal live dot is green.

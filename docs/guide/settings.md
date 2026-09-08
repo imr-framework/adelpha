@@ -51,6 +51,16 @@ If a file is too heavy or damaged, Adelpha falls back to the bundled Halbach ins
 
 Twin and Imaging Console start automatically. Agents start after you save a Google API key.
 
+## Study data folder
+
+**Settings → Imaging Console → Study data** (desktop app).
+
+Default on macOS (desktop app): `~/Library/Application Support/org.adelpha.digital-twin-ui/mri4all`
+
+Completed exams are in `data/complete/` (and `data/archive/`) under that folder. **Choose folder** points the Imaging Console at another directory — a lab drive, for example. Adelpha creates `data/`, `config/`, and `logs/` inside it and restarts the imaging services. Studies already on disk are not copied.
+
+**Open folder** reveals `data/`. **Use default** restores the app data location.
+
 ## AI and Agents
 
 **Settings → AI & Agents**

@@ -19,7 +19,7 @@ Vite proxies `/api/mri` → `http://127.0.0.1:8002`.
 
 | Data folder | When |
 | --- | --- |
-| OS app data `mri4all/` | Packaged Adelpha |
+| **Settings → Imaging Console → Study data** | Desktop app (default: OS app data `mri4all/`) |
 | `adelpha/.mri4all/` | Local API if `/opt/mri4all` is missing |
 
 Restarting the API **clears the in-memory exam**. Register the patient again.
@@ -29,9 +29,9 @@ Restarting the API **clears the in-memory exam**. Register the patient again.
 | Area | Contents |
 | --- | --- |
 | **Viewers** | One, two, or three dark stages |
-| **Sequence list** | Queue for the open exam. Right-click to rename, duplicate, or delete |
-| **Parameter tabs** | SEQUENCE · ADJUST · SYSTEM · PROCESSING · OTHER |
-| **Tool rail** | Scanner ping, halt, protocols, and related actions |
+| **Sequence list** | Queue for the open exam. **+** at the bottom left inserts a sequence. **Play** starts the selected scan; **Stop** halts a running one. Right-click to rename, duplicate, or delete |
+| **Parameter tabs** | SEQUENCE · ADJUSTMENTS · SYSTEM · PROCESSING · OTHER. Fields come from Python ``param_*`` / ``param()`` on the sequence class. A running, reconstructed, or completed scan is read-only; other queued sequences stay editable. |
+| **Tool rail** | Scanner ping, Study Viewer, protocols, Flex Viewer, layout, and end exam |
 | **Status line** | Exam and scanner reachability |
 
 **Menu** (hamburger):

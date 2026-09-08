@@ -39,8 +39,8 @@ import {
   pingDevice,
   resetDevice,
   saveConfig,
+  downloadStudyExport,
   sendDicoms,
-  studyExportUrl,
   testDevice,
   type DicomTarget,
   type MriConfig,
@@ -1348,10 +1348,12 @@ export function StudyDialog({
   const [resultIdx, setResultIdx] = useState(0);
   const [checked, setChecked] = useState<boolean[]>([]);
   const [examActive, setExamActive] = useState(false);
+  const [dataRoot, setDataRoot] = useState("");
   const [targets, setTargets] = useState<DicomTarget[]>([]);
   const [targetName, setTargetName] = useState("Default");
   const [viewMenu, setViewMenu] = useState(false);
   const [definition, setDefinition] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   useEffect(() => {
     void fetchStudies()
       .then((list) => {
@@ -1365,6 +1367,9 @@ export function StudyDialog({
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Failed"));
     void fetchCurrentExam().then((e) => setExamActive(Boolean(e))).catch(() => setExamActive(false));
+    void fetchAbout()
+      .then((a) => setDataRoot(a.base))
+      .catch(() => setDataRoot(""));
     void fetchConfig()
       .then((c) => {
         setTargets(c.dicom_targets ?? []);
@@ -1404,7 +1409,13 @@ export function StudyDialog({
     <Overlay title="Study Viewer" onClose={onClose} variant="m4" size="study" wide dismissOnBackdrop={false} footer={<M4Close onClose={onClose} icon />}>
       {error ? <p className="ic-register-error">{error}</p> : null}
       {notice ? <p className="m4-notice">{notice}</p> : null}
-      {!exams.length && !error ? <p className="m4-muted">No completed exams in the archive yet.</p> : null}
+      {!exams.length && !error ? (
+        <p className="m4-muted">
+          {dataRoot
+            ? `No completed exams in ${dataRoot}/data/complete yet.`
+            : "No completed exams in the archive yet."}
+        </p>
+      ) : null}
       <div className="m4-study">
         <aside className="m4-study-left">
           <h3>EXAMS</h3>
@@ -1513,10 +1524,16 @@ export function StudyDialog({
             <button
               type="button"
               className="m4-btn"
-              disabled={!scan || !result}
+              disabled={!scan || !result || exporting}
               onClick={() => {
                 if (!scan || !result) return;
-                window.open(studyExportUrl(scan.path, result.file_path), "_blank");
+                setExporting(true);
+                void downloadStudyExport(scan.path, result.file_path)
+                  .then((saved) => {
+                    if (saved) setNotice(`Saved ${saved.split(/[/\\]/).pop()}`);
+                  })
+                  .catch((e) => setNotice(e instanceof Error ? e.message : "Export failed"))
+                  .finally(() => setExporting(false));
               }}
             >
               <Save size={14} /> Export

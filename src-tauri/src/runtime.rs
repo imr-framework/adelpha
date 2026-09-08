@@ -227,6 +227,7 @@ async fn spawn_supervisor(app: &AppHandle, manager: &Arc<RuntimeManager>) -> Res
     }
 
     apply_dtam_runtime_env(&mut cmd, &config);
+    apply_mri_data_env(&mut cmd, &config, &data);
 
     #[cfg(windows)]
     {
@@ -607,29 +608,152 @@ fn apply_dtam_runtime_env(cmd: &mut Command, config: &std::path::Path) {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct MriDataPrefs {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mri4all_base: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct MriDataInfo {
+    pub path: String,
+    pub data_path: String,
+    pub complete_path: String,
+    pub default_path: String,
+    pub is_default: bool,
+}
+
+fn mri_data_prefs_path(config: &std::path::Path) -> PathBuf {
+    config.join("mri_data.json")
+}
+
+fn default_mri_base(data: &std::path::Path) -> PathBuf {
+    usable_path(data.join("mri4all"))
+}
+
+/// Drop Windows `\\?\` prefixes so Python, Explorer, and JSON all see a normal path.
+fn usable_path(path: PathBuf) -> PathBuf {
+    #[cfg(windows)]
+    {
+        let s = path.to_string_lossy();
+        if let Some(rest) = s.strip_prefix(r"\\?\UNC\") {
+            return PathBuf::from(format!(r"\\{rest}"));
+        }
+        if let Some(rest) = s.strip_prefix(r"\\?\") {
+            return PathBuf::from(rest);
+        }
+    }
+    path
+}
+
+fn same_dir(a: &std::path::Path, b: &std::path::Path) -> bool {
+    #[cfg(windows)]
+    {
+        usable_path(a.to_path_buf())
+            .to_string_lossy()
+            .eq_ignore_ascii_case(&usable_path(b.to_path_buf()).to_string_lossy())
+    }
+    #[cfg(not(windows))]
+    {
+        a == b
+    }
+}
+
+fn read_mri_data_prefs(config: &std::path::Path) -> MriDataPrefs {
+    let Ok(raw) = std::fs::read_to_string(mri_data_prefs_path(config)) else {
+        return MriDataPrefs::default();
+    };
+    serde_json::from_str::<MriDataPrefs>(&raw).unwrap_or_default()
+}
+
+fn write_mri_data_prefs(config: &std::path::Path, prefs: &MriDataPrefs) -> Result<(), String> {
+    std::fs::create_dir_all(config).map_err(|e| e.to_string())?;
+    let body = serde_json::to_string_pretty(prefs).map_err(|e| e.to_string())?;
+    std::fs::write(mri_data_prefs_path(config), format!("{body}\n")).map_err(|e| e.to_string())
+}
+
+fn resolve_mri_base(config: &std::path::Path, data: &std::path::Path) -> PathBuf {
+    if let Some(raw) = read_mri_data_prefs(config).mri4all_base {
+        let trimmed = raw.trim();
+        if !trimmed.is_empty() {
+            return PathBuf::from(trimmed);
+        }
+    }
+    default_mri_base(data)
+}
+
+fn build_mri_data_info(config: &std::path::Path, data: &std::path::Path) -> MriDataInfo {
+    let default_path = default_mri_base(data);
+    let path = resolve_mri_base(config, data);
+    MriDataInfo {
+        data_path: path.join("data").display().to_string(),
+        complete_path: path.join("data").join("complete").display().to_string(),
+        is_default: same_dir(&path, &default_path),
+        path: path.display().to_string(),
+        default_path: default_path.display().to_string(),
+    }
+}
+
+fn apply_mri_data_env(cmd: &mut Command, config: &std::path::Path, data: &std::path::Path) {
+    let base = usable_path(resolve_mri_base(config, data));
+    let _ = std::fs::create_dir_all(&base);
+    cmd.env("MRI4ALL_BASE", &base);
+}
+
+fn normalize_mri_base(raw: &str) -> Result<PathBuf, String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Err("Choose a folder.".into());
+    }
+    let path = PathBuf::from(trimmed);
+    if path.is_file() {
+        return Err("Choose a folder, not a file.".into());
+    }
+    std::fs::create_dir_all(&path).map_err(|e| format!("Could not create folder ({e})"))?;
+    let resolved = path
+        .canonicalize()
+        .map_err(|e| format!("Could not open folder ({e})"))?;
+    Ok(usable_path(resolved))
+}
+
+fn mri_data_dirs(app: &AppHandle) -> Result<(PathBuf, PathBuf), String> {
+    Ok((
+        app.path().app_config_dir().map_err(|e| e.to_string())?,
+        app.path().app_data_dir().map_err(|e| e.to_string())?,
+    ))
+}
+
 fn reveal_path(path: &std::path::Path) -> Result<(), String> {
+    let shown = usable_path(path.to_path_buf());
     #[cfg(target_os = "macos")]
     {
-        std::process::Command::new("open")
-            .arg(path)
+        let status = std::process::Command::new("open")
+            .arg(&shown)
             .status()
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| format!("Could not open folder ({e})"))?;
+        if !status.success() {
+            return Err("Could not open folder.".into());
+        }
         return Ok(());
     }
     #[cfg(target_os = "windows")]
     {
+        // explorer.exe returns 1 even when it successfully opens a directory.
         std::process::Command::new("explorer")
-            .arg(path)
+            .arg(&shown)
             .status()
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| format!("Could not open folder ({e})"))?;
         return Ok(());
     }
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     {
-        std::process::Command::new("xdg-open")
-            .arg(path)
+        let status = std::process::Command::new("xdg-open")
+            .arg(&shown)
             .status()
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| format!("Could not open folder ({e}). Install xdg-utils."))?;
+        if !status.success() {
+            return Err("Could not open folder.".into());
+        }
         Ok(())
     }
 }
@@ -670,6 +794,57 @@ pub async fn set_dtam_runtime_prefs(
 pub async fn reveal_dtam_config_dir(app: AppHandle) -> Result<String, String> {
     let config = app.path().app_config_dir().map_err(|e| e.to_string())?;
     let dest = config.join("dtam");
+    std::fs::create_dir_all(&dest).map_err(|e| e.to_string())?;
+    reveal_path(&dest)?;
+    Ok(dest.display().to_string())
+}
+
+#[tauri::command]
+pub async fn mri_data_info(app: AppHandle) -> Result<MriDataInfo, String> {
+    let (config, data) = mri_data_dirs(&app)?;
+    Ok(build_mri_data_info(&config, &data))
+}
+
+#[tauri::command]
+pub async fn set_mri_data_dir(
+    app: AppHandle,
+    manager: State<'_, Arc<RuntimeManager>>,
+    path: Option<String>,
+) -> Result<MriDataInfo, String> {
+    let (config, data) = mri_data_dirs(&app)?;
+    let prefs = match path.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        Some(raw) => {
+            let chosen = normalize_mri_base(raw)?;
+            let default = default_mri_base(&data);
+            let default_canon = default
+                .canonicalize()
+                .map(usable_path)
+                .unwrap_or(default);
+            if same_dir(&chosen, &default_canon) {
+                MriDataPrefs::default()
+            } else {
+                MriDataPrefs {
+                    mri4all_base: Some(chosen.display().to_string()),
+                }
+            }
+        }
+        None => MriDataPrefs::default(),
+    };
+    write_mri_data_prefs(&config, &prefs)?;
+    let base = resolve_mri_base(&config, &data);
+    std::fs::create_dir_all(base.join("data")).map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(base.join("config")).map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(base.join("logs")).map_err(|e| e.to_string())?;
+    manager.shutdown().await;
+    manager.start(&app).await?;
+    Ok(build_mri_data_info(&config, &data))
+}
+
+#[tauri::command]
+pub async fn reveal_mri_data_dir(app: AppHandle) -> Result<String, String> {
+    let (config, data) = mri_data_dirs(&app)?;
+    let base = resolve_mri_base(&config, &data);
+    let dest = base.join("data");
     std::fs::create_dir_all(&dest).map_err(|e| e.to_string())?;
     reveal_path(&dest)?;
     Ok(dest.display().to_string())

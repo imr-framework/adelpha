@@ -90,6 +90,7 @@ def create_gateway_app(
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["Content-Disposition"],
     )
 
     for state in registry.states.values():

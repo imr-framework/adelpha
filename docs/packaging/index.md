@@ -96,7 +96,7 @@ Adding a future Python integration: see
 | --- | --- |
 | Bundled resources | Read-only app/resource directory (never write) |
 | User config | Tauri `app_config_dir` |
-| MRI / acquired data | `app_data_dir/mri4all` unless the user configures another data directory |
+| MRI / acquired data | `app_data_dir/mri4all`, or the folder chosen in **Settings → Imaging Console → Study data** |
 | Logs | Tauri `app_log_dir` |
 | Cache / temp | Tauri cache + temp directories |
 

@@ -8,8 +8,19 @@ from common.qtcompat import configure_headless
 configure_headless()
 
 import common.logger as logger
+from common.parameter_schema import (
+    Param,
+    attr_name_for,
+    coerce_param_value,
+    collect_param_specs,
+    param,
+    schema_for_defaults,
+    ui_meta_for_class,
+)
 
 log = logger.get_logger()
+
+__all__ = ["SequenceBase", "PulseqSequence", "Param", "param"]
 
 SequenceVar = TypeVar("SequenceVar")
 
@@ -73,38 +84,45 @@ class SequenceBase(Generic[SequenceVar]):
         return ""
 
     def get_parameters(self) -> dict:
-        """
-        Returns the current sequence parameters as dictionary.
-        ** Must be implemented by the individual sequence. **
-        """
-        return {}
+        """Current ``param_*`` values as the dictionary the Imaging Console stores."""
+        specs = collect_param_specs(type(self))
+        if not specs:
+            return {}
+        out: Dict = {}
+        for public, spec in specs.items():
+            out[public] = getattr(self, attr_name_for(public, spec), spec.default)
+        return out
 
     @classmethod
-    def get_default_parameters(self) -> dict:
-        """
-        Returns a dictionary with default values, used to initialize the protocol.
-        ** Must be implemented by the individual sequence. **
-        """
-        return {}
+    def get_default_parameters(cls) -> dict:
+        """Defaults from every ``param_*`` field. Override only if you need a subset."""
+        return {public: spec.default for public, spec in collect_param_specs(cls).items()}
 
     @classmethod
     def get_parameter_schema(cls) -> dict:
-        """
-        JSON Schema for the sequence parameter form. Used by the Adelpha UI instead of Qt widgets.
-        """
-        from common.parameter_schema import schema_for_defaults
-
-        return schema_for_defaults(cls.get_default_parameters())
+        """JSON Schema for the Adelpha parameter tabs. Built from ``param_*`` / ``param()``."""
+        return schema_for_defaults(cls.get_default_parameters(), ui_meta_for_class(cls))
 
     def set_parameters(self, parameters, scan_task) -> bool:
         """
-        Reads the sequence parameters from the provided dictionary. The sequence must
-        validate if the provided parameters can be used to run the sequence. If the
-        parameter set is invalid, False is returned. Detected problems should be stored as
-        strings in self.problem_list. The scan_task object can be used to access additional
-        information about the scan, such as the hardware capabilities.
-        ** Must be implemented by the individual sequence. **
+        Copy the Imaging Console dict onto ``param_*`` attributes, then validate.
+        Sequences that still override this method keep their own mapping.
         """
+        self.problem_list = []
+        specs = collect_param_specs(type(self))
+        try:
+            incoming = parameters or {}
+            for public, spec in specs.items():
+                if public not in incoming:
+                    continue
+                attr = attr_name_for(public, spec)
+                setattr(self, attr, coerce_param_value(spec.default, incoming[public]))
+        except (TypeError, ValueError, KeyError):
+            self.problem_list.append("Invalid parameters provided")
+            return False
+        validate = getattr(self, "validate_parameters", None)
+        if callable(validate):
+            return bool(validate(scan_task))
         return True
 
     def init_ui(self, widget, info_widget) -> bool:

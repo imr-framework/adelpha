@@ -78,6 +78,8 @@ export type ParameterProperty = {
   unit?: string;
   minimum?: number;
   maximum?: number;
+  step?: number;
+  description?: string;
   tab?: SeqTab;
 };
 

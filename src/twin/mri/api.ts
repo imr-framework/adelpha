@@ -1,3 +1,4 @@
+import { saveBlob } from "../../desktop/saveFile";
 import { apiRoot, runtimeFetch, withToken } from "../../desktop/runtime";
 import type {
   ExamResponse,
@@ -285,6 +286,37 @@ export async function fetchStudyPreview(
 export function studyExportUrl(folder: string, filePath: string): string {
   const query = new URLSearchParams({ folder, file_path: filePath });
   return `${mriBaseUrl()}/studies/export?${query}`;
+}
+
+function filenameFromDisposition(header: string | null, fallback: string): string {
+  if (!header) return fallback;
+  const star = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(header);
+  if (star?.[1]) {
+    try {
+      return decodeURIComponent(star[1].trim());
+    } catch {
+      /* fall through */
+    }
+  }
+  const quoted = /filename\s*=\s*"([^"]+)"/i.exec(header);
+  if (quoted?.[1]) return quoted[1];
+  const plain = /filename\s*=\s*([^;]+)/i.exec(header);
+  if (plain?.[1]) return plain[1].trim().replace(/^["']|["']$/g, "");
+  return fallback;
+}
+
+function fallbackExportName(filePath: string): string {
+  const base = filePath.replace(/\\/g, "/").split("/").filter(Boolean).pop();
+  return base || "export.zip";
+}
+
+/** Fetch the selected study result with session auth and save it locally. */
+export async function downloadStudyExport(folder: string, filePath: string): Promise<string | null> {
+  const res = await runtimeFetch(studyExportUrl(folder, filePath), { cache: "no-store" });
+  if (!res.ok) throw new Error(await readError(res));
+  const blob = await res.blob();
+  const name = filenameFromDisposition(res.headers.get("content-disposition"), fallbackExportName(filePath));
+  return saveBlob(name, blob);
 }
 
 export async function fetchConfig(): Promise<MriConfig> {

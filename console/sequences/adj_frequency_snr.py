@@ -6,7 +6,7 @@ from external.seq.adjustments_acq.calibration import (
     load_plot_in_ui,
 )
 from sequences.common.util import reading_json_parameter, writing_json_parameter
-from sequences import PulseqSequence  # type: ignore
+from sequences import PulseqSequence, param  # type: ignore
 from sequences.common import make_rf_se  # type: ignore
 import common.logger as logger
 import matplotlib.pyplot as plt
@@ -17,12 +17,44 @@ log = logger.get_logger()
 
 
 class AdjFrequency(PulseqSequence, registry_key=Path(__file__).stem):
-    # Sequence parameters
+    # SEQUENCE tab — plain param_* already appear in the Imaging Console.
     param_TE: int = 10
     param_TR: int = 250
     param_NSA: int = 1
     param_ADC_samples: int = 512
     param_ADC_duration: int = 5120
+    # ADJUSTMENTS tab — param() adds label, unit, and tab without TypeScript.
+    param_coarse_steps = param(
+        100,
+        title="Coarse steps",
+        tab="adjustments",
+        minimum=1,
+        description="Frequency points in the first SNR search",
+    )
+    param_coarse_step_bw_MHz = param(
+        1e-3,
+        title="Coarse step BW",
+        unit="MHz",
+        tab="adjustments",
+        minimum=0,
+    )
+    param_fine_steps = param(10, title="Fine steps", tab="adjustments", minimum=1)
+    param_fine_step_bw_MHz = param(
+        0.1e-3,
+        title="Fine step BW",
+        unit="MHz",
+        tab="adjustments",
+        minimum=0,
+    )
+    param_finest_steps = param(10, title="Finest steps", tab="adjustments", minimum=1)
+    param_finest_step_bw_MHz = param(
+        0.05e-3,
+        title="Finest step BW",
+        unit="MHz",
+        tab="adjustments",
+        minimum=0,
+    )
+    param_dummy_scans = param(1, title="Dummy scans", tab="adjustments", minimum=0)
 
     @classmethod
     def get_readable_name(self) -> str:
@@ -72,15 +104,15 @@ class AdjFrequency(PulseqSequence, registry_key=Path(__file__).stem):
         ) = larmor_step_search(
             seq_file=self.seq_file_path,
             step_search_center=scan_task.adjustment.rf.larmor_frequency,
-            steps=100,
-            step_bw_MHz=1e-3,
+            steps=self.param_coarse_steps,
+            step_bw_MHz=self.param_coarse_step_bw_MHz,
             plot=True,  # For Debug
             shim_x=cfg.SHIM_X,
             shim_y=cfg.SHIM_Y,
             shim_z=cfg.SHIM_Z,
             delay_s=1,
             gui_test=False,
-            dummy_scans=1,
+            dummy_scans=self.param_dummy_scans,
         )
         
         log.info('Starting frequency adjustment using SNR - fine search') #TODO: pick peak frequency instead of SNR at this stage
@@ -94,15 +126,15 @@ class AdjFrequency(PulseqSequence, registry_key=Path(__file__).stem):
         ) = larmor_step_search(
             seq_file=self.seq_file_path,
             step_search_center=max_snr_freq,
-            steps=10,
-            step_bw_MHz=0.1e-3,
+            steps=self.param_fine_steps,
+            step_bw_MHz=self.param_fine_step_bw_MHz,
             plot=True,  # For Debug
             shim_x=cfg.SHIM_X,
             shim_y=cfg.SHIM_Y,
             shim_z=cfg.SHIM_Z,
             delay_s=1,
             gui_test=False,
-            dummy_scans=1,        
+            dummy_scans=self.param_dummy_scans,        
             )
         
         log.info('Starting frequency adjustment using SNR - second fine search') #TODO: pick peak frequency instead of SNR at this stage
@@ -116,15 +148,15 @@ class AdjFrequency(PulseqSequence, registry_key=Path(__file__).stem):
         ) = larmor_step_search(
             seq_file=self.seq_file_path,
             step_search_center=max_snr_freq_fine,
-            steps=10,
-            step_bw_MHz=0.05e-3,
+            steps=self.param_finest_steps,
+            step_bw_MHz=self.param_finest_step_bw_MHz,
             plot=True,  # For Debug
             shim_x=cfg.SHIM_X,
             shim_y=cfg.SHIM_Y,
             shim_z=cfg.SHIM_Z,
             delay_s=1,
             gui_test=False,
-            dummy_scans=1,        
+            dummy_scans=self.param_dummy_scans,        
             )
 
 

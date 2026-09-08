@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Atom, Check, Image as ImageIcon, LayoutGrid, List, Loader, LogOut, Maximize2, Square, Wrench, X, Zap } from "lucide-react";
+import { Atom, Check, Image as ImageIcon, LayoutGrid, List, Loader, LogOut, Maximize2, Play, PlusSquare, Square, Wrench, X, Zap } from "lucide-react";
 import {
   connectMriEvents,
   createScan,
@@ -220,20 +220,23 @@ function ParamField({
   name,
   prop,
   value,
+  disabled,
   onChange,
 }: {
   name: string;
   prop: ParameterProperty;
   value: unknown;
+  disabled?: boolean;
   onChange: (key: string, value: unknown) => void;
 }) {
   const label = prop.title || name;
   if (prop.type === "boolean") {
     return (
-      <label className="ic-check">
+      <label className="ic-check" title={prop.description || undefined}>
         <input
           type="checkbox"
           checked={Boolean(value)}
+          disabled={disabled}
           onChange={(e) => onChange(name, e.target.checked)}
         />
         {label}
@@ -242,10 +245,14 @@ function ParamField({
   }
   if (prop.enum?.length) {
     return (
-      <label className="ic-field">
+      <label className="ic-field" title={prop.description || undefined}>
         <span>{label}</span>
         <span className="ic-field-control">
-          <select value={String(value ?? "")} onChange={(e) => onChange(name, e.target.value)}>
+          <select
+            value={String(value ?? "")}
+            disabled={disabled}
+            onChange={(e) => onChange(name, e.target.value)}
+          >
             {prop.enum.map((opt) => (
               <option key={opt} value={opt}>
                 {opt}
@@ -258,7 +265,7 @@ function ParamField({
   }
   const numeric = prop.type === "integer" || prop.type === "number";
   return (
-    <label className="ic-field">
+    <label className="ic-field" title={prop.description || undefined}>
       <span>{label}</span>
       <span className="ic-field-control">
         <input
@@ -266,7 +273,11 @@ function ParamField({
           value={value == null ? "" : String(value)}
           min={prop.minimum}
           max={prop.maximum}
+          step={prop.step ?? (prop.type === "integer" ? 1 : undefined)}
+          disabled={disabled}
+          readOnly={disabled}
           onChange={(e) => {
+            if (disabled) return;
             if (numeric) {
               const n = e.target.value === "" ? "" : Number(e.target.value);
               onChange(name, n);
@@ -296,6 +307,8 @@ export function ImagingConsole() {
   const [position, setPosition] = useState("HFS");
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; id: string; kind: "queue" | "results" } | null>(null);
   const ctxRef = useRef<HTMLDivElement | null>(null);
+  const addMenuRef = useRef<HTMLDivElement | null>(null);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<{ id: string; name: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [ipc, setIpc] = useState<
@@ -335,6 +348,13 @@ export function ImagingConsole() {
   const selected = queue.find((s) => s.id === selectedId) ?? null;
   const seqInfo = sequences.find((s) => s.id === selected?.sequence);
   const experimentActive = queue.some((s) => s.state === "acq" || s.state === "recon" || s.state === "scheduled_recon");
+  const paramsLocked = Boolean(
+    selected && selected.state !== "created" && selected.state !== "scheduled_acq",
+  );
+  const canStop =
+    selected?.state === "acq" ||
+    selected?.state === "scheduled_acq" ||
+    selected?.state === "recon";
 
   const loadIntoViewer = useCallback((slot: ViewerSlot | "flex", payload: string | ViewerTarget) => {
     if (slot === "flex") {
@@ -568,6 +588,7 @@ export function ImagingConsole() {
       setViewerSlots({ 1: null, 2: null, 3: null });
       setFlexOpen(false);
       setFlexTarget(null);
+      setAddMenuOpen(false);
       setRegisterOpen(true);
       setStatus("Exam closed");
     } catch (err) {
@@ -607,6 +628,26 @@ export function ImagingConsole() {
     window.addEventListener("adelpha:imaging-menu", onMenu);
     return () => window.removeEventListener("adelpha:imaging-menu", onMenu);
   }, [exam, onEndExam, refreshQueue]);
+
+  useEffect(() => {
+    if (!addMenuOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (addMenuRef.current?.contains(e.target as Node)) return;
+      setAddMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setAddMenuOpen(false);
+    };
+    const timer = window.setTimeout(() => {
+      document.addEventListener("pointerdown", onPointerDown, true);
+      document.addEventListener("keydown", onKey);
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [addMenuOpen]);
 
   useEffect(() => {
     if (!ctxMenu) return;
@@ -672,6 +713,7 @@ export function ImagingConsole() {
     try {
       const entry = await createScan(seqId);
       setProtocolsOpen(false);
+      setAddMenuOpen(false);
       await refreshQueue();
       await openScan(entry.id);
     } catch (err) {
@@ -681,41 +723,31 @@ export function ImagingConsole() {
     }
   };
 
-  const onAccept = async () => {
-    if (!selectedId) return;
+  const onPlay = async () => {
+    if (!selectedId || paramsLocked) return;
     setBusy(true);
     setProblems([]);
     try {
       await patchScan(selectedId, { parameters: draft });
       await prepareScan(selectedId);
       await refreshQueue();
-      setStatus("Sequence prepared — acquisition will start automatically");
+      setStatus("Sequence started");
     } catch (err) {
-      setProblems([err instanceof Error ? err.message : "Invalid parameters"]);
+      setProblems([err instanceof Error ? err.message : "Could not start sequence"]);
     } finally {
       setBusy(false);
     }
   };
 
-  const onDiscard = async () => {
+  const onStop = async () => {
     if (!selectedId) return;
-    try {
-      const detail = await fetchScan(selectedId);
-      setDraft({ ...(detail.task?.parameters ?? {}) });
-      setProblems([]);
-    } catch {
-      /* ignore */
-    }
-  };
-
-  const onHalt = async () => {
-    if (!selectedId) return;
+    if (!selectedId || !canStop) return;
     try {
       await stopScan(selectedId);
       await refreshQueue();
-      setStatus("Halt requested");
+      setStatus("Sequence stopped");
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : "Halt failed");
+      setStatus(err instanceof Error ? err.message : "Stop failed");
     }
   };
 
@@ -1140,13 +1172,69 @@ export function ImagingConsole() {
               );
             })}
           </ul>
-          <div className="ic-seq-footer">
-            <button type="button" aria-label="Accept" title="Accept and prepare" onClick={() => void onAccept()} disabled={!selectedId || busy}>
-              <Check size={16} strokeWidth={2} />
-            </button>
-            <button type="button" aria-label="Discard" title="Discard edits" onClick={() => void onDiscard()} disabled={!selectedId}>
-              <X size={16} strokeWidth={2} />
-            </button>
+          <div className="ic-seq-add" ref={addMenuRef}>
+            {addMenuOpen ? (
+              <div className="ic-seq-add-menu" role="menu" aria-label="Insert sequence">
+                {[...sequences]
+                  .filter((s) => !s.adjustment)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((s) => (
+                    <button key={s.id} type="button" role="menuitem" disabled={busy} onClick={() => void onAddSequence(s.id)}>
+                      {s.name}
+                    </button>
+                  ))}
+                {sequences.some((s) => s.adjustment) ? (
+                  <>
+                    <div className="ic-seq-add-sep">Adjustments</div>
+                    {[...sequences]
+                      .filter((s) => s.adjustment)
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((s) => (
+                        <button key={s.id} type="button" role="menuitem" disabled={busy} onClick={() => void onAddSequence(s.id)}>
+                          {s.name}
+                        </button>
+                      ))}
+                  </>
+                ) : null}
+                {!sequences.length ? <p className="ic-muted">No sequences loaded</p> : null}
+              </div>
+            ) : null}
+            <div className="ic-seq-footer">
+              <button
+                type="button"
+                className={`ic-seq-tool${addMenuOpen ? " is-active" : ""}`}
+                aria-label="Insert sequence"
+                title={exam ? "Insert new sequence" : "Start an exam to insert a sequence"}
+                aria-haspopup="menu"
+                aria-expanded={addMenuOpen}
+                disabled={!exam || busy}
+                onClick={() => setAddMenuOpen((open) => !open)}
+              >
+                <PlusSquare size={18} strokeWidth={1.6} />
+              </button>
+              <div className="ic-seq-footer-edit">
+                <button
+                  type="button"
+                  className="ic-seq-tool"
+                  aria-label="Run sequence"
+                  title={paramsLocked ? "This scan cannot be started" : "Run sequence"}
+                  onClick={() => void onPlay()}
+                  disabled={!selectedId || busy || paramsLocked}
+                >
+                  <Play size={15} strokeWidth={0} fill="currentColor" />
+                </button>
+                <button
+                  type="button"
+                  className="ic-seq-tool"
+                  aria-label="Stop sequence"
+                  title={canStop ? "Stop sequence" : "No running sequence"}
+                  onClick={() => void onStop()}
+                  disabled={!selectedId || busy || !canStop}
+                >
+                  <Square size={12} strokeWidth={0} fill="currentColor" />
+                </button>
+              </div>
+            </div>
           </div>
         </aside>
 
@@ -1177,7 +1265,7 @@ export function ImagingConsole() {
             ))}
           </div>
 
-          <div className="ic-tab-panel" role="tabpanel">
+          <div className={`ic-tab-panel${paramsLocked ? " is-readonly" : ""}`} role="tabpanel">
             {selected && schemaFields.length ? (
               <>
                 <div className="ic-form-grid">
@@ -1190,6 +1278,7 @@ export function ImagingConsole() {
                           name={key}
                           prop={prop}
                           value={draft[key] ?? prop.default}
+                          disabled={paramsLocked}
                           onChange={(k, v) => setDraft((prev) => ({ ...prev, [k]: v }))}
                         />
                       ))}
@@ -1203,6 +1292,7 @@ export function ImagingConsole() {
                           name={key}
                           prop={prop}
                           value={draft[key] ?? prop.default}
+                          disabled={paramsLocked}
                           onChange={(k, v) => setDraft((prev) => ({ ...prev, [k]: v }))}
                         />
                       ))}
@@ -1210,12 +1300,8 @@ export function ImagingConsole() {
                 </div>
                 {problems.length ? <p className="ic-tab-placeholder">{problems.join(" ")}</p> : null}
               </>
-            ) : (
-              <p className="ic-tab-placeholder">
-                {exam
-                  ? "Insert a protocol, then edit parameters. Accept prepares scan.json for acquisition."
-                  : "Start an exam to build a sequence queue."}
-              </p>
+            ) : exam ? null : (
+              <p className="ic-tab-placeholder">Start an exam to build a sequence queue.</p>
             )}
           </div>
         </div>
@@ -1224,8 +1310,14 @@ export function ImagingConsole() {
           <button type="button" title="Scanner" aria-label="Scanner" onClick={() => void pingDevice().then((p) => setStatus(formatDevicePingStatus(p)))}>
             <Atom size={22} strokeWidth={1.5} />
           </button>
-          <button type="button" title="Halt" aria-label="Halt" onClick={() => void onHalt()}>
-            <Square size={20} strokeWidth={1.5} />
+          <button
+            type="button"
+            title="Study Viewer"
+            aria-label="Study Viewer"
+            className={dialog === "study" ? "is-active" : undefined}
+            onClick={() => setDialog((d) => (d === "study" ? null : "study"))}
+          >
+            <ImageIcon size={20} strokeWidth={1.5} />
           </button>
           <button
             type="button"
