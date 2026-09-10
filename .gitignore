@@ -36,3 +36,8 @@ public/mediapipe/
 
 # Coding Editor
 .PROJECT/
+
+# Workshop notebook artifacts (see console/notebooks/)
+console/notebooks/seq_runner_output/
+console/notebooks/.diy-mri-workshop/
+.ipynb_checkpoints/
