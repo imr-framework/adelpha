@@ -7,9 +7,8 @@ from typing import Any
 
 from google.adk.agents import LlmAgent
 
+from dtam.agents.core.config import get_settings
 from dtam.skills import skill_toolset_for_agent
-
-DEFAULT_MODEL = "gemini-2.5-flash"
 
 
 def build_specialist_agent(
@@ -18,7 +17,7 @@ def build_specialist_agent(
     description: str,
     instruction: str,
     skill_group: str,
-    model: str = DEFAULT_MODEL,
+    model: str | None = None,
     extra_tools: Sequence[Any] | None = None,
 ) -> LlmAgent:
     """Build a specialist with diagram skills/tools, plus optional assessment tools."""
@@ -27,7 +26,7 @@ def build_specialist_agent(
         tools.extend(extra_tools)
     return LlmAgent(
         name=name,
-        model=model,
+        model=model or get_settings().model,
         description=description,
         instruction=instruction,
         tools=tools,

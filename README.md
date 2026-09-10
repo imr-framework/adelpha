@@ -101,7 +101,12 @@ Fork the adelpha repo. While forking, be sure to uncheck `copy the main branch o
 
 ## Install (developers)
 
-**Requirements:** Node.js 18+, [Rust](https://rustup.rs/) (stable), Python 3.10–3.12, optional [uv](https://docs.astral.sh/uv/) for docs.
+**Requirements:** Node.js 22+, [Rust](https://rustup.rs/) (stable), Python 3.10–3.12, [uv](https://docs.astral.sh/uv/).
+On Linux, Tauri also needs WebKitGTK:
+
+```bash
+sudo apt install -y libwebkit2gtk-4.1-dev libxdo-dev libayatana-appindicator3-dev librsvg2-dev
+```
 
 ```bash
 make install
