@@ -20,6 +20,7 @@ import type { ScannerModelId } from "../scannerModel";
 import { iconForType } from "./componentIcons";
 import { formatMeasurement, type ComponentRow, type SensorOption } from "./componentRows";
 import { Mono, Select, StatusBadge, Switch, TextInput } from "./controls";
+import { MaterialAssignForm } from "./MaterialAssignForm";
 
 export function ComponentInspector({
   row,
@@ -141,6 +142,11 @@ export function ComponentInspector({
             Simulation
           </StatusBadge>
         ) : null}
+        {row.materialLabel ? (
+          <StatusBadge tone="ai" title="Assigned MRI material class">
+            {row.materialLabel}
+          </StatusBadge>
+        ) : null}
         {row.sensorStale ? (
           <StatusBadge tone="warning" title="Sensor assigned but absent from the last batch">
             No recent sample
@@ -247,6 +253,8 @@ export function ComponentInspector({
           </div>
         </div>
       </div>
+
+      <MaterialAssignForm scannerId={scannerId} partIds={[row.partId]} />
 
       <div className="sw-inspector-actions">
         <button type="button" className="settings-btn" title="Frame in viewport" onClick={onFocus}>

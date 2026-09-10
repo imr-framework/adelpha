@@ -1,3 +1,9 @@
+---
+title: Adelpha MRI packaging exclusions
+description: Paths and secrets excluded from the Adelpha MRI Python sidecar and Tauri installer so development files never ship.
+icon: lucide/ban
+---
+
 # Excluded from the desktop sidecar and installer
 
 Do not package the repository wholesale. The following stay out of

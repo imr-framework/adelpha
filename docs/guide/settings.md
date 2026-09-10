@@ -1,4 +1,6 @@
 ---
+title: Adelpha MRI settings
+description: Import GLB scanner models, choose a twin profile, add a Google API key for Agents, and manage camera and in-app updates in Adelpha MRI.
 icon: lucide/settings
 ---
 
@@ -26,9 +28,8 @@ You can also assign a **device picture** so the Devices list and System Status s
 Use **Settings → 3D Model → Files**.
 
 1. Click **Choose file**.
-2. Pick a **glTF binary (`.glb`)** or a **STEP (`.step` / `.stp`)** file, up to 80 MB.
-3. STEP is tessellated on this computer, then stored like a GLB.
-4. The new model becomes the active scanner.
+2. Pick a **glTF binary (`.glb`)**, up to 2 GB.
+3. The new model becomes the active scanner.
 
 Imports live only on this Mac or PC (IndexedDB + a short catalog in local storage). They are not uploaded anywhere.
 
@@ -49,6 +50,16 @@ If a file is too heavy or damaged, Adelpha falls back to the bundled Halbach ins
 | **Restart** | Restarts the Python runtime after you save |
 
 Twin and Imaging Console start automatically. Agents start after you save a Google API key.
+
+## Study data folder
+
+**Settings → Imaging Console → Study data** (desktop app).
+
+Default on macOS (desktop app): `~/Library/Application Support/org.adelpha.digital-twin-ui/mri4all`
+
+Completed exams are in `data/complete/` (and `data/archive/`) under that folder. **Choose folder** points the Imaging Console at another directory — a lab drive, for example. Adelpha creates `data/`, `config/`, and `logs/` inside it and restarts the imaging services. Studies already on disk are not copied.
+
+**Open folder** reveals `data/`. **Use default** restores the app data location.
 
 ## AI and Agents
 

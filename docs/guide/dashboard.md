@@ -1,4 +1,6 @@
 ---
+title: Adelpha MRI Digital Twin dashboard
+description: Use the Adelpha MRI Digital Twin workspace for 3D scanner visualization, thermal and B0 telemetry, Agents, forecasting, and the system terminal.
 icon: lucide/layout-dashboard
 ---
 

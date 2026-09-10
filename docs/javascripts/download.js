@@ -23,7 +23,7 @@ const ADELPHA_PLATFORMS = {
     miniAction: "Download DMG",
     altKind: "macos-x64",
     altText: "Using an Intel Mac? Download the Intel version",
-    soon: "In packaging",
+    soon: null,
   },
   "macos-x64": {
     family: "mac",
@@ -36,7 +36,7 @@ const ADELPHA_PLATFORMS = {
     miniAction: "Download DMG",
     altKind: "macos-arm64",
     altText: "Using Apple Silicon? Download that version",
-    soon: "Planned",
+    soon: null,
   },
   "linux-deb": {
     family: "linux",
@@ -58,7 +58,7 @@ const ADELPHA_PLATFORMS = {
     miniLabel: "Windows",
     miniCompat: "Windows 10/11 · x64",
     miniAction: "Download EXE",
-    soon: "In testing",
+    soon: null,
   },
   mobile: {
     family: "mobile",
@@ -76,7 +76,82 @@ const ADELPHA_PLATFORMS = {
 const ADELPHA_KNOWN_SUMS = {
   "Adelpha_0.5.0_amd64.deb":
     "e17f61ed4abfa15e5d247183e62bc3b475d7022cc4f0c525232d0c0b59163170",
+  "Adelpha_0.5.2_aarch64.dmg":
+    "b225a72238dff6b643c50c63b7bf3f9866f2753a254fdcd32de30a6c13af1434",
+  "Adelpha_0.5.2_x86_64.dmg":
+    "5fca9d41f6344b7ca22de1a1cc23194388c59bdc0b85d45d88ed74b94291b4b8",
+  "Adelpha_0.5.2_x64-setup.exe":
+    "46ac933141bd9858321f30ecaad9e4a8e15e2f00c9134718606d51011a1ff709",
+  "Adelpha-windows-x86_64-setup.exe":
+    "46ac933141bd9858321f30ecaad9e4a8e15e2f00c9134718606d51011a1ff709",
+  "Adelpha_0.5.2_amd64.deb":
+    "03f1c35dc6b428320e7e4ee5aeae8086d5076c7b6812a230bb174a99be88a9c7",
 };
+
+const ADELPHA_DL = "https://github.com/imr-framework/adelpha/releases/download";
+
+/** Public catalog until GitHub latest is this version or newer. */
+const ADELPHA_BUNDLED_RELEASE = {
+  version: "0.5.2",
+  published_at: "2026-08-31T20:53:09Z",
+  assets: [
+    {
+      name: "Adelpha_0.5.2_aarch64.dmg",
+      browser_download_url: `${ADELPHA_DL}/v0.5.2/Adelpha_0.5.2_aarch64.dmg`,
+      size: 121644243,
+    },
+    {
+      name: "Adelpha_0.5.2_x86_64.dmg",
+      browser_download_url: `${ADELPHA_DL}/v0.5.2/Adelpha_0.5.2_x86_64.dmg`,
+      size: 126734170,
+    },
+    {
+      name: "Adelpha_0.5.2_x64-setup.exe",
+      browser_download_url: `${ADELPHA_DL}/v0.5.2/Adelpha_0.5.2_x64-setup.exe`,
+      size: 87223626,
+    },
+    {
+      name: "Adelpha_0.5.2_amd64.deb",
+      browser_download_url: `${ADELPHA_DL}/v0.5.2/Adelpha_0.5.2_amd64.deb`,
+      size: 174831936,
+    },
+  ],
+};
+
+function adelphaVersionParts(version) {
+  return String(version || "")
+    .replace(/^v/i, "")
+    .split(/[.+-]/)
+    .map((part) => parseInt(part, 10) || 0);
+}
+
+function adelphaCmpVersion(a, b) {
+  const left = adelphaVersionParts(a);
+  const right = adelphaVersionParts(b);
+  const len = Math.max(left.length, right.length);
+  for (let i = 0; i < len; i += 1) {
+    const delta = (left[i] || 0) - (right[i] || 0);
+    if (delta) return delta;
+  }
+  return 0;
+}
+
+function adelphaAssetRank(name) {
+  return /^Adelpha_\d/.test(name || "") ? 2 : 1;
+}
+
+function adelphaAssetsByKind(assets) {
+  const byKind = {};
+  for (const asset of assets || []) {
+    const kind = adelphaClassifyAsset(asset.name);
+    if (!kind) continue;
+    const current = byKind[kind];
+    if (!current || adelphaAssetRank(asset.name) > adelphaAssetRank(current.name)) {
+      byKind[kind] = asset;
+    }
+  }
+  return byKind;
+}
 
 function adelphaClassifyAsset(name) {
   const n = name.toLowerCase();
@@ -264,7 +339,7 @@ function adelphaFillFeatured(kind, asset, version, detected) {
     cta.textContent = spec.cta;
     if (wait) wait.hidden = true;
     const size = adelphaFormatBytes(asset.size);
-    const bits = [`Version ${version || "0.5.0"}`];
+    const bits = [`Version ${version || ADELPHA_BUNDLED_RELEASE.version}`];
     if (size) bits.push(size);
     if (fine) {
       fine.hidden = false;
@@ -407,58 +482,61 @@ async function adelphaHydrateDownloads() {
 
   adelphaBindCopyButtons();
 
+  let version = ADELPHA_BUNDLED_RELEASE.version;
+  let publishedAt = ADELPHA_BUNDLED_RELEASE.published_at;
+  let byKind = adelphaAssetsByKind(ADELPHA_BUNDLED_RELEASE.assets);
+  const sums = { ...ADELPHA_KNOWN_SUMS };
+  const detected = await adelphaDetectKind();
+
   try {
-    const [releaseRes, detected] = await Promise.all([
-      fetch(ADELPHA_RELEASES),
-      adelphaDetectKind(),
-    ]);
-    if (!releaseRes.ok) return;
-    const release = await releaseRes.json();
-    const assets = release.assets || [];
-    const tag = release.tag_name || "";
-    const version = tag.replace(/^v/i, "");
-    const sums = {};
-
-    document.querySelectorAll("[data-adelpha-version]").forEach((el) => {
-      if (version) el.textContent = version;
-    });
-    const released = adelphaFormatReleased(release.published_at);
-    document.querySelectorAll("[data-adelpha-released]").forEach((el) => {
-      if (released) el.textContent = released;
-    });
-
-    await Promise.all(
-      assets
-        .filter((asset) => /^SHA256SUMS/i.test(asset.name))
-        .map(async (asset) => {
-          try {
-            const res = await fetch(asset.browser_download_url);
-            if (!res.ok) return;
-            Object.assign(sums, adelphaParseSums(await res.text()));
-          } catch {
-            /* Checksums stay static. */
-          }
-        })
-    );
-
-    const byKind = {};
-    for (const asset of assets) {
-      const kind = adelphaClassifyAsset(asset.name);
-      if (kind && !byKind[kind]) byKind[kind] = asset;
+    const releaseRes = await fetch(ADELPHA_RELEASES);
+    if (releaseRes.ok) {
+      const release = await releaseRes.json();
+      const apiVersion = (release.tag_name || "").replace(/^v/i, "");
+      const assets = release.assets || [];
+      if (apiVersion && adelphaCmpVersion(apiVersion, version) >= 0) {
+        version = apiVersion;
+        publishedAt = release.published_at || publishedAt;
+        const apiKind = adelphaAssetsByKind(assets);
+        byKind =
+          adelphaCmpVersion(apiVersion, ADELPHA_BUNDLED_RELEASE.version) > 0
+            ? apiKind
+            : { ...byKind, ...apiKind };
+      }
+      await Promise.all(
+        assets
+          .filter((asset) => /^SHA256SUMS/i.test(asset.name))
+          .map(async (asset) => {
+            try {
+              const res = await fetch(asset.browser_download_url);
+              if (!res.ok) return;
+              Object.assign(sums, adelphaParseSums(await res.text()));
+            } catch {
+              /* Checksums stay static. */
+            }
+          })
+      );
     }
-
-    const featuredKind = adelphaPickFeatured(detected, byKind);
-    const featuredAsset = byKind[featuredKind];
-    adelphaFillFeatured(featuredKind, featuredAsset, version, detected);
-    adelphaSetVisitorNote(featuredKind, byKind);
-    adelphaFillVerify(featuredAsset || byKind["linux-deb"], sums);
-    adelphaRenderOthers(featuredKind, byKind);
-    adelphaRenderSoon(byKind, featuredKind);
   } catch {
-    /* Keep the static Linux featured card. */
-  } finally {
-    adelphaBindCopyButtons();
+    /* Bundled catalog still applies. */
   }
+
+  document.querySelectorAll("[data-adelpha-version]").forEach((el) => {
+    if (version) el.textContent = version;
+  });
+  const released = adelphaFormatReleased(publishedAt);
+  document.querySelectorAll("[data-adelpha-released]").forEach((el) => {
+    if (released) el.textContent = released;
+  });
+
+  const featuredKind = adelphaPickFeatured(detected, byKind);
+  const featuredAsset = byKind[featuredKind];
+  adelphaFillFeatured(featuredKind, featuredAsset, version, detected);
+  adelphaSetVisitorNote(featuredKind, byKind);
+  adelphaFillVerify(featuredAsset || byKind["linux-deb"], sums);
+  adelphaRenderOthers(featuredKind, byKind);
+  adelphaRenderSoon(byKind, featuredKind);
+  adelphaBindCopyButtons();
 }
 
 if (window.document$) {

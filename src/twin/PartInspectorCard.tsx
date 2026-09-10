@@ -9,6 +9,7 @@ import {
 import { getScannerProfile } from "./scannerModel";
 import { useTwinStore } from "./telemetryStore";
 import type { SensorMeasurement } from "./dtamTypes";
+import { MaterialAssignForm } from "./settings/MaterialAssignForm";
 
 function uniqueSensors(measurements: SensorMeasurement[] | undefined) {
   const map = new Map<string, SensorMeasurement[]>();
@@ -31,10 +32,12 @@ function formatReading(row: SensorMeasurement): string {
 
 export function PartInspectorCard() {
   const selected = usePartInspectorStore((s) => s.selected);
+  const selection = usePartInspectorStore((s) => s.selection);
   const bindings = usePartInspectorStore((s) => s.bindings);
   const clearSelection = usePartInspectorStore((s) => s.clearSelection);
   const hidePart = usePartInspectorStore((s) => s.hidePart);
   const isolatePart = usePartInspectorStore((s) => s.isolatePart);
+  const isolateParts = usePartInspectorStore((s) => s.isolateParts);
   const telemetry = useTwinStore((s) => s.telemetry);
   const systemState = useTwinStore((s) => s.systemState);
   const connection = useTwinStore((s) => s.connection);
@@ -56,6 +59,42 @@ export function PartInspectorCard() {
   const connected = connection === "connected";
 
   if (!selected || !binding) return null;
+
+  if (selection.length > 1) {
+    const partIds = selection.map((part) => part.partId);
+    return (
+      <article className="part-inspect-card" aria-label="Selected parts">
+        <header className="part-inspect-head">
+          <div className="part-inspect-kicker">Selection</div>
+          <div className="part-inspect-actions">
+            <button
+              type="button"
+              className="part-inspect-icon"
+              aria-label="Isolate selected parts"
+              title="Isolate selection"
+              onClick={() => isolateParts(selected.scannerId, partIds)}
+            >
+              <Focus size={14} strokeWidth={1.8} />
+            </button>
+            <button
+              type="button"
+              className="part-inspect-icon"
+              aria-label="Deselect parts"
+              title="Deselect"
+              onClick={() => clearSelection()}
+            >
+              <X size={14} strokeWidth={1.8} />
+            </button>
+          </div>
+        </header>
+        <h3 className="part-inspect-title">{selection.length} parts selected</h3>
+        <p className="part-inspect-meta">
+          Shift-click adds to the set. Assign an MRI class, then add to simulation.
+        </p>
+        <MaterialAssignForm scannerId={selected.scannerId} partIds={partIds} compact />
+      </article>
+    );
+  }
 
   return (
     <article className="part-inspect-card" aria-label="Selected part">
@@ -156,6 +195,7 @@ export function PartInspectorCard() {
           </dd>
         </div>
       </dl>
+        <MaterialAssignForm scannerId={selected.scannerId} partIds={[selected.partId]} compact />
     </article>
   );
 }

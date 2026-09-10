@@ -1,4 +1,6 @@
 ---
+title: Adelpha MRI configuration
+description: Environment variables, on-disk config, and desktop versus browser ports for Adelpha MRI twin, agents, and imaging-console services.
 icon: lucide/settings-2
 ---
 
@@ -49,9 +51,36 @@ Saved as `dtam_runtime.json` in the app config directory:
 
 Saving these restarts the Python runtime. User YAML under the config `dtam/` folder wins over the bundled copies.
 
+## MRI working directory
+
+The Imaging Console stores exams under **MRI4ALL_BASE**:
+
+| Platform | Default |
+| --- | --- |
+| macOS desktop | `~/Library/Application Support/org.adelpha.digital-twin-ui/mri4all` |
+| Windows desktop | `%APPDATA%\org.adelpha.digital-twin-ui\mri4all` |
+| Linux desktop | `~/.local/share/org.adelpha.digital-twin-ui/mri4all` |
+| Browser / `python -m services.api` | `adelpha/.mri4all` if `/opt/mri4all` is missing |
+
+Inside that folder:
+
+| Path | Contents |
+| --- | --- |
+| `data/complete/` | Finished reconstructions (Study Viewer) |
+| `data/archive/` | Archived exams |
+| `data/acq_queue/`, `data/acq/` | Acquisition queue and in-progress |
+| `data/recon_queue/`, `data/recon/` | Reconstruction queue and in-progress |
+| `data/failure/` | Failed scans |
+| `config/` | `mri4all.json`, `config_acq.json` |
+| `logs/` | acq / recon / ui / api logs |
+
+**Settings → Imaging Console → Study data** changes this folder. The choice is stored as `mri_data.json` in the app config directory and applied as `MRI4ALL_BASE` when the Python runtime starts.
+
+`ADELPHA_DATA_DIR` still names the Adelpha data root (lock file, default `mri4all` tree). It does not override a folder chosen in Settings.
+
 ## MRI console (`mri4all.json`)
 
-Under the MRI data directory (`<app-data>/mri4all/config/` in the desktop app):
+Under `MRI4ALL_BASE/config/` (default `<app-data>/mri4all/config/`):
 
 | Field | Role |
 | --- | --- |

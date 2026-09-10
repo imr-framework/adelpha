@@ -1,3 +1,9 @@
+---
+title: Adelpha MRI packaging limitations
+description: Known limits of Adelpha MRI installers, including GPL-3 console source, numpy constraints, MaRCoS hardware, and platform sidecar builds.
+icon: lucide/alert-triangle
+---
+
 # Known limitations
 
 - **DTAM** is MIT (`dtam/LICENSE`). A public installer that also bundles the

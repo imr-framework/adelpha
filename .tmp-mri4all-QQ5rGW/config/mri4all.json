@@ -1,0 +1,15 @@
+{
+    "scanner_ip": "10.42.0.251",
+    "debug_mode": "False",
+    "hardware_simulation": "False",
+    "dicom_targets": [
+        {
+            "target_type": "dicom",
+            "name": "Default",
+            "ip": "127.0.0.1",
+            "port": 11112,
+            "aet_target": "target",
+            "aet_source": "mri4all"
+        }
+    ]
+}

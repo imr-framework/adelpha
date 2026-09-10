@@ -59,9 +59,34 @@ export type ScanTask = {
   patient: PatientInformation;
   exam: ExamInformation;
   parameters: Record<string, unknown>;
+  adjustment?: {
+    shim: { shim_x: number; shim_y: number; shim_z: number };
+    rf: { larmor_frequency: number; rf_max_amplitude: number; rf_pi2_fraction: number };
+    gradients: { gx_max: number; gy_max: number; gz_max: number };
+  };
+  processing?: {
+    trajectory: string;
+    recon_mode: string;
+    denoising_strength: number;
+  };
   other: Record<string, unknown>;
-  results: { type: string; name: string; file_path: string; primary?: boolean }[];
-  journal: { created_at: string; prepared_at: string; fail_stage: string };
+  results: {
+    type: string;
+    name: string;
+    file_path: string;
+    primary?: boolean;
+    autoload_viewer?: number;
+  }[];
+  journal: {
+    created_at: string;
+    prepared_at: string;
+    acquisition_start: string;
+    acquisition_end: string;
+    reconstruction_start: string;
+    reconstruction_end: string;
+    failed_at: string;
+    fail_stage: string;
+  };
 };
 
 export type ParameterProperty = {
@@ -72,6 +97,8 @@ export type ParameterProperty = {
   unit?: string;
   minimum?: number;
   maximum?: number;
+  step?: number;
+  description?: string;
   tab?: SeqTab;
 };
 
@@ -109,6 +136,8 @@ export type HealthResponse = {
   exam_active: boolean;
   sequences: number;
   hardware_simulation: boolean;
+  sequence_registry?: boolean;
+  pipeline?: boolean;
 };
 
 export type ValidateResponse = {

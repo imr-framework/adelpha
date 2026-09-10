@@ -1,4 +1,6 @@
 ---
+title: Adelpha MRI workspaces
+description: Switch among Digital Twin, Imaging Console, and Engineering Studio in Adelpha MRI without quitting the desktop app.
 icon: lucide/layout-grid
 ---
 
@@ -57,4 +59,9 @@ See [Imaging Console](imaging-console.md).
 
 ## Engineering Studio
 
-A placeholder with a path back to Digital Twin. Reserved for coil and gradient work later.
+Full-width CAD stage for the MRI assembly used in simulation.
+
+| Area | Contents |
+| --- | --- |
+| **3D viewport** | Only parts marked **Add to simulation**, floating in the same void as Digital Twin |
+| **Controls** | Orbit / pan / inspect rail, Front / Right / Top / Iso, view cube, fit (F) |

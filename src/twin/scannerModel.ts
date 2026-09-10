@@ -208,6 +208,36 @@ export function cadForScanner(id: ScannerModelId = readScannerModel()): ScannerC
   return getScannerProfile(id).cad;
 }
 
+/** STL is a single mesh; GLB/STEP can separate assembly bodies. */
+export function cadExplodesParts(cad: ScannerCadSpec | undefined): boolean {
+  if (!cad?.url) return false;
+  return cad.format !== "stl";
+}
+
+/**
+ * CAD the Engineering Studio can actually put on the floor.
+ * The Halbach STL is referenced by scanner profiles but not shipped, so those
+ * fall back to the bundled Delta assembly (the multi-part MRI model).
+ */
+export function studioCadForScanner(id: ScannerModelId = readScannerModel()): {
+  cad: ScannerCadSpec;
+  label: string;
+  fallback: boolean;
+} {
+  const profile = getScannerProfile(id);
+  const cad = profile.cad;
+  if (cad && isStudioLoadableCad(cad)) {
+    return { cad, label: profile.displayName, fallback: false };
+  }
+  return { cad: DELTA_CAD, label: "Delta v2", fallback: true };
+}
+
+function isStudioLoadableCad(cad: ScannerCadSpec): boolean {
+  if (!cad.url) return false;
+  if (cad.url === "/MRI_base.stl") return false;
+  return true;
+}
+
 export function setScannerModel(id: ScannerModelId) {
   try {
     localStorage.setItem(KEY, id);

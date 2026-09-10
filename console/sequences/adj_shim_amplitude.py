@@ -3,7 +3,10 @@ import os
 from PyQt5 import uic
 
 from pathlib import Path
-
+import numpy as np
+import matplotlib.pyplot as plt
+import pickle
+from common.types import ResultItem
 from external.seq.adjustments_acq.calibration import shim_cal_linear
 import external.seq.adjustments_acq.config as cfg
 
@@ -49,11 +52,11 @@ class CalShimAmplitude(PulseqSequence, registry_key=Path(__file__).stem):
     @classmethod
     def get_default_parameters(self) -> dict:
         return {
-            "TE": 70,
+            "TE": 20,
             "TR": 250,
             "NSA": 1,
-            "ADC_samples": 4096,
-            "ADC_duration": 6400,
+            "ADC_samples": 512,
+            "ADC_duration": 5120,
             "N_ITER": 1,
         }
 
@@ -106,11 +109,11 @@ class CalShimAmplitude(PulseqSequence, registry_key=Path(__file__).stem):
         log.info("Calculating sequence " + self.get_name())
         make_rf_se.pypulseq_rfse(
             inputs={
-                "TE": 70,
+                "TE": 20,
                 "TR": 250,
                 "NSA": 1,
-                "ADC_samples": 4096,
-                "ADC_duration": 6400,
+                "ADC_samples": 512,
+                "ADC_duration": 5120,
                 "FA1": 90,
                 "FA2": 180,
             },
@@ -127,19 +130,19 @@ class CalShimAmplitude(PulseqSequence, registry_key=Path(__file__).stem):
         axes = ["x", "y", "z"]
         log.info("Running sequence " + self.get_name())
 
-        shim_range = 0.1
-        n_iter_linear = 2
+        shim_range = 0.25
+        n_iter_linear = 3
         for shim_iter in range(int(n_iter_linear)):
             for channel in axes:
                 log.info(f"Updating {channel} linear shim (iter {shim_iter + 1})")
-                shim_weight = shim_cal_linear(
+                shim_weight,fwhm_list, shim_range_plot = shim_cal_linear(
                     seq_file=self.seq_file_path,
-                    larmor_freq=LARMOR_FREQ,
+                    larmor_freq=cfg.LARMOR_FREQ,
                     channel=channel,
                     range=shim_range,
                     shim_points=5,
                     points=2,
-                    iterations=1,
+                    iterations=self.param_N_ITER,
                     zoom_factor=2,
                     shim_x=cfg.SHIM_X,
                     shim_y=cfg.SHIM_Y,
@@ -150,6 +153,7 @@ class CalShimAmplitude(PulseqSequence, registry_key=Path(__file__).stem):
                     smooth=True,
                     plot=True,
                     gui_test=False,
+                    grad_t = self.param_ADC_duration / self.param_ADC_samples,
                 )
 
                 # write to config file
@@ -166,6 +170,25 @@ class CalShimAmplitude(PulseqSequence, registry_key=Path(__file__).stem):
                 shim_range = shim_range / 2
             else:
                 shim_range = shim_range
+            plt.clf()
+            plt.title("Shim Calibration")
+            plt.grid(True, color="#333")
+            plt.plot(shim_range_plot, np.abs(fwhm_list), marker="o")
+            plt.xlabel("Shim range [a.u.]")   
+            plt.ylabel("FWHM [a.u.]")
+            file = open(self.get_working_folder() + "/other/plot_shim_cal_result.plot", "wb")
+            fig = plt.gcf()
+            pickle.dump(fig, file)
+        file.close()
+
+        result = ResultItem()
+        result.name = "Shim_cal"
+        result.description = "Recorded Shim calibration signal"
+        result.type = "plot"
+        result.primary = True
+        result.autoload_viewer = 1
+        result.file_path = "other/plot_shim_cal_result.plot"
+        scan_task.results.append(result)
 
         log.info("Done running sequence " + self.get_name())
         return True

@@ -58,6 +58,22 @@ def main() -> int:
             "signature": sig.read_text(encoding="utf-8").strip(),
         }
 
+    # Tauri 2 looks for `{os}-{arch}-{bundle}` first (darwin-aarch64-app),
+    # then the unsuffixed key. Duplicate so either lookup succeeds.
+    for key, value in list(platforms.items()):
+        if key.startswith("darwin-") and not key.endswith("-app"):
+            platforms[f"{key}-app"] = value
+
+    if not platforms:
+        print("no signed updater artifacts; skipping latest.json")
+        if args.out.exists():
+            args.out.unlink()
+        return 0
+
+    darwin = [k for k in platforms if k.startswith("darwin-")]
+    if not darwin:
+        print("warning: latest.json has no macOS platforms (need Adelpha-darwin-*.app.tar.gz.sig)")
+
     payload = {
         "version": args.version.lstrip("v"),
         "notes": args.notes,
@@ -66,8 +82,6 @@ def main() -> int:
     }
     args.out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {args.out} with {len(platforms)} platform(s)")
-    if not platforms:
-        return 1
     return 0
 
 

@@ -178,11 +178,41 @@ class ConsoleSession:
         if not folder:
             raise FileNotFoundError(scan_id)
         if prepared:
+            self._snapshot_hardware(scan_id)
             task.set_task_state(folder, mri4all_files.EDITING, False)
             task.set_task_state(folder, mri4all_files.PREPARED, True)
         else:
             task.set_task_state(folder, mri4all_files.PREPARED, False)
             task.set_task_state(folder, mri4all_files.EDITING, True)
+
+    def _snapshot_hardware(self, scan_id: str) -> None:
+        scan_task = self.read_task(scan_id)
+        if scan_task is None:
+            return
+        try:
+            import common.config as config
+            from sequences.common.util import reading_json_parameter
+
+            acq = reading_json_parameter()
+            op = config.get_config()
+            scan_task.adjustment.rf.larmor_frequency = acq.rf_parameters.larmor_frequency_MHz
+            scan_task.adjustment.rf.rf_max_amplitude = acq.rf_parameters.rf_maximum_amplitude_Hze
+            scan_task.adjustment.rf.rf_pi2_fraction = acq.rf_parameters.rf_pi2_fraction
+            scan_task.adjustment.shim.shim_x = acq.shim_parameters.shim_x
+            scan_task.adjustment.shim.shim_y = acq.shim_parameters.shim_y
+            scan_task.adjustment.shim.shim_z = acq.shim_parameters.shim_z
+            scan_task.adjustment.gradients.gx_max = acq.gradients_parameters.gx_maximum
+            scan_task.adjustment.gradients.gy_max = acq.gradients_parameters.gy_maximum
+            scan_task.adjustment.gradients.gz_max = acq.gradients_parameters.gz_maximum
+            extra = dict(scan_task.other or {})
+            extra["hardware_simulation"] = op.is_hardware_simulation()
+            extra["scanner_ip"] = op.scanner_ip
+            extra["gradient_board"] = acq.marcos_parameters.gradient_board_type
+            extra["fpga_clock_MHz"] = acq.marcos_parameters.fpga_clock_frequency_MHz
+            scan_task.other = extra
+            self.write_task(scan_id, scan_task)
+        except Exception:
+            return
 
     def halt(self, scan_id: str) -> None:
         folder = self.find_folder(scan_id)

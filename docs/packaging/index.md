@@ -1,3 +1,9 @@
+---
+title: Adelpha MRI desktop packaging
+description: How Adelpha MRI packages a Tauri v2 desktop app with a single Python sidecar for DTAM, the imaging console, and optional Agents.
+icon: lucide/package
+---
+
 # Adelpha desktop packaging (Tauri v2)
 
 Adelpha’s production shell is **Tauri v2**. The React/Vite frontend is unchanged.
@@ -45,7 +51,7 @@ valid; run `make dmg` to wrap it with `hdiutil` (version comes from
 `tauri.conf.json`).
 
 The packaged WebView CSP allows `blob:` (imported CAD), `wasm-unsafe-eval`
-(STEP tessellation and MediaPipe), and `mediastream:` (camera). MediaPipe WASM
+(imported CAD and MediaPipe), and `mediastream:` (camera). MediaPipe WASM
 is copied from `node_modules` into `public/mediapipe/wasm` at Vite start (gitignored)
 and shipped in `dist/`. macOS hardened runtime includes the **camera** and
 **network.client** entitlements. See [Signing](signing.md).
@@ -90,7 +96,7 @@ Adding a future Python integration: see
 | --- | --- |
 | Bundled resources | Read-only app/resource directory (never write) |
 | User config | Tauri `app_config_dir` |
-| MRI / acquired data | `app_data_dir/mri4all` unless the user configures another data directory |
+| MRI / acquired data | `app_data_dir/mri4all`, or the folder chosen in **Settings → Imaging Console → Study data** |
 | Logs | Tauri `app_log_dir` |
 | Cache / temp | Tauri cache + temp directories |
 

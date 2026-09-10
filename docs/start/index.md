@@ -1,4 +1,6 @@
 ---
+title: Getting started with Adelpha MRI
+description: Install Adelpha MRI, launch the desktop app, configure a scanner model, and set up the developer toolchain for Tauri and the Python runtime.
 icon: lucide/rocket
 ---
 
@@ -8,14 +10,14 @@ Adelpha is a desktop app. Most people only need the installer. Developers use th
 
 ## If you have the app
 
-1. [Download](download.md) the `.dmg` or `.deb` for this computer, then install it.
-2. Open it. On an unsigned Mac build, use **Right-click → Open** the first time.
-3. Wait for the intro and the Python runtime. The top bar should read **All systems operational**.
+1. [Download](download.md) the `.dmg`, `.exe`, or `.deb` for this computer, then install it.
+2. Open it. On an unsigned Mac build, use **Right-click → Open** the first time. If macOS still blocks it, see [If macOS blocks the DMG](download.md#if-macos-blocks-the-dmg).
+3. Wait for the intro and the Python runtime. The terminal live dot should turn green.
 4. Open **Settings** and set these:
 
     | Page | What to set |
     | --- | --- |
-    | **3D Model** | Bundled scanner, or import GLB / STEP. [Settings](../guide/settings.md). |
+    | **3D Model** | Bundled scanner, or import GLB. [Settings](../guide/settings.md). |
     | **AI & Agents** | Google AI key if you want Agents. |
     | **Digital Twin** | Simulated or 48 mT Halbach. Restart after a change. |
 
@@ -84,7 +86,7 @@ curl -s http://127.0.0.1:8002/health
 
 | Check | Expect |
 | --- | --- |
-| Top-bar health | Green · All systems operational |
+| Terminal live dot | Green · connected |
 | System Context | `scanner_id / mode` from the twin |
 | Telemetry | Thermal / \(B_0\) / EMI / RF updating about every 1.5 s |
 | Agents | Online after a key is saved (desktop) or `make agents-api` (browser) |
@@ -121,4 +123,4 @@ Unsigned Mac builds: **Right-click → Open**, or see [Signing](../packaging/sig
 | Camera blocked (Mac) | System Settings → Camera, or `tccutil reset Camera org.adelpha.digital-twin-ui` |
 | CAD import missing in an old DMG | Rebuild the installer; older packages blocked WASM and `blob:` URLs |
 | Terminal has no shell | Use the desktop app, not `npm run dev` |
-| Gatekeeper warning | Unsigned local build. See [signing](../packaging/signing.md). |
+| Gatekeeper warning | Unsigned local build. **Right-click → Open**, or `xattr -cr` as in [If macOS blocks the DMG](download.md#if-macos-blocks-the-dmg). |

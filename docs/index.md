@@ -1,12 +1,12 @@
 ---
+title: Adelpha MRI — Open-Source Low-Field MRI Console and Digital Twin
+description: Adelpha is an open-source platform for low-field MRI console operation, acquisition, digital twins, monitoring, engineering, and AI-assisted workflows.
 icon: lucide/monitor
 ---
 
-# What is Adelpha?
+# Adelpha MRI: Intelligent Console and Digital Twin for Low-Field MRI
 
 **Adelpha** is an open-source, intelligent digital-twin platform for developing, monitoring, and operating low-field MRI systems. It integrates scanner visualization, real-time system data, imaging workflows, engineering tools, and AI-assisted capabilities within a unified environment. Its modular architecture can also be adapted to other MRI systems and research applications.
-
-You get one window, three workspaces, and a bundled Python runtime. You do not install Python, Node, or Rust to *use* a release build.
 
 <!-- <p>
   <a class="adelpha-download-cta" href="start/download.md">Download for macOS</a>
@@ -39,14 +39,14 @@ You get one window, three workspaces, and a bundled Python runtime. You do not i
       <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
     </span>
     <strong>Engineering Studio</strong>
-    <span>Reserved for later coil and gradient tools. The shell is ready.</span>
+    <span>CAD assembly, simulation parts, and inspect tools in the same void as the Digital Twin.</span>
   </a>
   <a class="adelpha-card" href="guide/settings.md">
     <span class="adelpha-card__icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
     </span>
     <strong>Settings</strong>
-    <span>Import GLB or STEP, choose a twin profile, add a Gemini key, check for updates.</span>
+    <span>Import GLB, choose a twin profile, add a Gemini key, check for updates.</span>
   </a>
 </div>
 
@@ -82,6 +82,10 @@ Use **⌘K** (Ctrl+K on Windows/Linux) to switch workspaces. Add `?replayIntro=1
 
 Tauri v2, React, Three.js, MediaPipe (camera), and a Python supervisor that mounts DTAM, the MRI façade, and optional Google ADK.
 
+## Learn more
+
+[About Adelpha](about/index.md) · [Learn](learn/index.md) · [Architecture](guide/architecture.md) · [MaRCoS](about/marcos.md) · [Low-field digital twins](about/digital-twins.md) · [Citation](about/citation.md) · [Intended use](about/intended-use.md)
+
 ## Where to go next
 
 <div class="adelpha-cards">
@@ -98,6 +102,13 @@ Tauri v2, React, Three.js, MediaPipe (camera), and a Python supervisor that moun
     </span>
     <strong>Getting started</strong>
     <span>Install Adelpha, first launch, and the developer setup.</span>
+  </a>
+  <a class="adelpha-card" href="learn/index.md">
+    <span class="adelpha-card__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+    </span>
+    <strong>Learn</strong>
+    <span>DELTA workshop notebooks. Fork, clone, and open a PR.</span>
   </a>
   <a class="adelpha-card" href="guide/workspaces.md">
     <span class="adelpha-card__icon" aria-hidden="true">

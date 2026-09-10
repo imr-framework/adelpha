@@ -1,3 +1,9 @@
+---
+title: Adelpha MRI Electron to Tauri migration
+description: Feature map and remaining work for moving Adelpha MRI from Electron to the Tauri v2 production shell.
+icon: lucide/arrow-right-left
+---
+
 # Electron → Tauri migration notes
 
 Electron remains in `electron/` and `package.json` `electron:*` / `dist:*`

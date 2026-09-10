@@ -233,17 +233,21 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
             raise RuntimeError("Imaging console sources are not available in this install")
         _prepend_sys_path(str(paths.console_root))
         _prepend_sys_path(str(paths.console_root / "external"))
-        os.environ.setdefault("MRI4ALL_BASE", str(paths.data_dir / "mri4all"))
+        mri_base = Path(os.environ["MRI4ALL_BASE"]) if os.environ.get("MRI4ALL_BASE") else (paths.data_dir / "mri4all")
+        os.environ["MRI4ALL_BASE"] = str(mri_base)
         os.environ.setdefault("MRI4ALL_DEBUG", "true")
-        (paths.data_dir / "mri4all" / "logs").mkdir(parents=True, exist_ok=True)
-        (paths.data_dir / "mri4all" / "config").mkdir(parents=True, exist_ok=True)
-        (paths.data_dir / "mri4all" / "data").mkdir(parents=True, exist_ok=True)
+        os.environ.setdefault("MPLBACKEND", "Agg")
+        for name in ("logs", "config", "data"):
+            (mri_base / name).mkdir(parents=True, exist_ok=True)
         import asyncio
 
         try:
             asyncio.get_running_loop()
         except RuntimeError:
             asyncio.set_event_loop(asyncio.new_event_loop())
+        import common.runtime as rt
+
+        rt.set_service_name("api")
         from services.api.app import app as console_app
 
         return console_app

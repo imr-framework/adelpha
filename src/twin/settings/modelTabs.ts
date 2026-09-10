@@ -25,7 +25,7 @@ export const MODEL_TABS: {
     id: "components",
     label: "Components",
     Icon: Boxes,
-    summary: "Browse the CAD assembly, rename parts, and inspect properties.",
+    summary: "Select parts, assign MRI material classes, and add groups to simulation.",
   },
   {
     id: "sensors",

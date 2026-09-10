@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Atom, Check, Image as ImageIcon, LayoutGrid, List, Loader, LogOut, Maximize2, Square, Wrench, X, Zap } from "lucide-react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Atom, Check, Image as ImageIcon, LayoutGrid, List, Loader, LogOut, Maximize2, Play, PlusSquare, Square, Wrench, X, Zap } from "lucide-react";
 import {
   connectMriEvents,
   createScan,
@@ -8,11 +8,13 @@ import {
   editScan,
   emptyPatient,
   endExam,
+  fetchAcqConfig,
   fetchCurrentExam,
   fetchMriHealth,
   fetchScan,
   fetchScans,
   fetchSequences,
+  fetchServices,
   patchScan,
   formatDevicePingStatus,
   pingDevice,
@@ -31,6 +33,7 @@ import type {
   SeqTab,
   SequenceInfo,
 } from "./mri/types";
+import type { AcqConfig } from "./mri/api";
 import {
   AboutDialog,
   AlertDialog,
@@ -41,11 +44,14 @@ import {
   Overlay,
   QueryDialog,
   RegistrationForm,
+  ResultStage,
   ShimDialog,
   StatusDialog,
   StudyDialog,
+  viewerSeriesLabel,
   type ViewerTarget,
 } from "./ImagingDialogs";
+import { ScientificPlot } from "./ScientificPlot";
 
 /** Shown in the topbar hamburger while Imaging Console is active. */
 export type ImagingMenuAction =
@@ -138,15 +144,31 @@ function patientLine(exam: ExamResponse | null): string {
   return `${name}  ·  MRN: ${p.mrn || "—"}`;
 }
 
-function viewerTargetFromTask(task: ScanTask | null, folder: string, label: string): ViewerTarget | null {
-  if (!task || !folder) return null;
-  const result = task.results.find((item) => item.primary) ?? task.results[0];
-  if (!result) return null;
+type ViewerSlot = 1 | 2 | 3;
+type ViewerSlotContent = ViewerTarget | string | null;
+
+function isViewerTarget(value: ViewerSlotContent): value is ViewerTarget {
+  return Boolean(value && typeof value === "object");
+}
+
+function autoloadSlot(viewer: number | undefined): ViewerSlot | "flex" | null {
+  if (viewer === 1 || viewer === 2 || viewer === 3) return viewer;
+  if (viewer === 4) return "flex";
+  return null;
+}
+
+function viewerTargetFromResult(
+  task: ScanTask,
+  folder: string,
+  label: string,
+  result: ScanTask["results"][number],
+): ViewerTarget {
   return {
     label,
     folder,
     filePath: result.file_path,
     resultType: result.type,
+    resultName: result.name,
     patientName: `${task.patient.last_name}, ${task.patient.first_name}`,
     mrn: task.patient.mrn,
     protocolName: task.protocol_name,
@@ -154,24 +176,284 @@ function viewerTargetFromTask(task: ScanTask | null, folder: string, label: stri
   };
 }
 
+function viewerTargetFromTask(task: ScanTask | null, folder: string, label: string): ViewerTarget | null {
+  if (!task || !folder) return null;
+  const result = task.results.find((item) => item.primary) ?? task.results[0];
+  if (!result) return null;
+  return viewerTargetFromResult(task, folder, label, result);
+}
+
+function ConsoleViewer({
+  value,
+  fallback,
+  fullYTicks = false,
+}: {
+  value: ViewerSlotContent;
+  fallback?: ReactNode;
+  fullYTicks?: boolean;
+}) {
+  if (isViewerTarget(value)) return <ResultStage target={value} fullYTicks={fullYTicks} />;
+  if (typeof value === "string" && value) return <p className="ic-muted">{value}</p>;
+  return fallback ? <div className="m4-view-stage is-empty">{fallback}</div> : null;
+}
+
+function ScreenPane({
+  slot,
+  value,
+  fallback,
+  fullYTicks = false,
+}: {
+  slot: ViewerSlot;
+  value: ViewerSlotContent;
+  fallback?: ReactNode;
+  fullYTicks?: boolean;
+}) {
+  const title = isViewerTarget(value) ? viewerSeriesLabel(value) : null;
+  return (
+    <article className="ic-screen">
+      <div className="ic-viewer-stage" aria-label={title ? `Viewer ${slot}: ${title}` : `Viewer ${slot}`}>
+        <ConsoleViewer value={value} fallback={fallback} fullYTicks={fullYTicks} />
+      </div>
+    </article>
+  );
+}
+
+function formatSummaryValue(value: unknown, unit?: string): string {
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const text = Number.isInteger(value) ? String(value) : String(Math.round(value * 1000) / 1000);
+    return unit ? `${text} ${unit}` : text;
+  }
+  if (value == null || value === "") return "—";
+  const text = String(value);
+  return unit ? `${text} ${unit}` : text;
+}
+
+function clockLabel(iso: string): string {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return "";
+  return new Date(t).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+function elapsedLabel(start: string, end: string): string {
+  const a = Date.parse(start);
+  const b = Date.parse(end);
+  if (!Number.isFinite(a) || !Number.isFinite(b) || b < a) return "";
+  const sec = (b - a) / 1000;
+  if (sec < 1) return `${Math.round(sec * 1000)} ms`;
+  if (sec < 60) return `${sec < 10 ? sec.toFixed(1) : Math.round(sec)} s`;
+  const m = Math.floor(sec / 60);
+  const s = Math.round(sec % 60);
+  return s ? `${m} min ${s} s` : `${m} min`;
+}
+
+const GAMMA_1H_HZ_PER_T = 42.576e6;
+
+function formatMtPerM(hzPerM: number): string {
+  if (!Number.isFinite(hzPerM)) return "—";
+  const mtPerM = (1000 * hzPerM) / GAMMA_1H_HZ_PER_T;
+  const abs = Math.abs(mtPerM);
+  const text = abs >= 100 ? mtPerM.toFixed(1) : abs >= 10 ? mtPerM.toFixed(2) : mtPerM.toFixed(3);
+  return `${Number.parseFloat(text)} mT/m`;
+}
+
+function asNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function asString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function hardwareRows(
+  task: ScanTask | null,
+  acq: AcqConfig | null,
+  simulation: boolean,
+): { label: string; text: string }[] {
+  const adj = task?.adjustment;
+  const other = task?.other ?? {};
+  const larmor = adj?.rf.larmor_frequency || acq?.rf_parameters.larmor_frequency_MHz || 0;
+  const rfMax = adj?.rf.rf_max_amplitude || acq?.rf_parameters.rf_maximum_amplitude_Hze || 0;
+  const pi2 = adj?.rf.rf_pi2_fraction || acq?.rf_parameters.rf_pi2_fraction || 0;
+  const gx = adj?.gradients.gx_max || acq?.gradients_parameters.gx_maximum || 0;
+  const gy = adj?.gradients.gy_max || acq?.gradients_parameters.gy_maximum || 0;
+  const gz = adj?.gradients.gz_max || acq?.gradients_parameters.gz_maximum || 0;
+  const shimX = adj?.shim.shim_x ?? acq?.shim_parameters.shim_x ?? 0;
+  const shimY = adj?.shim.shim_y ?? acq?.shim_parameters.shim_y ?? 0;
+  const shimZ = adj?.shim.shim_z ?? acq?.shim_parameters.shim_z ?? 0;
+  const sim = other.hardware_simulation === true || other.hardware_simulation === "True" || simulation;
+  const board = asString(other.gradient_board) || acq?.marcos_parameters.gradient_board_type || "";
+  const ip = asString(other.scanner_ip);
+  const clock = asNumber(other.fpga_clock_MHz) ?? acq?.marcos_parameters.fpga_clock_frequency_MHz ?? 0;
+  const rows: { label: string; text: string }[] = [];
+  if (task?.system.model && task.system.model !== "unknown") {
+    rows.push({ label: "Scanner", text: task.system.model });
+  }
+  rows.push({ label: "Mode", text: sim ? "Simulation" : "Hardware" });
+  if (task?.exam.patient_position) {
+    rows.push({ label: "Position", text: task.exam.patient_position });
+  }
+  if (!sim && ip) rows.push({ label: "Scanner IP", text: ip });
+  if (larmor) rows.push({ label: "Larmor", text: `${formatSummaryValue(larmor)} MHz` });
+  if (rfMax) rows.push({ label: "RF max", text: formatSummaryValue(rfMax) });
+  if (pi2) rows.push({ label: "π/2 fraction", text: formatSummaryValue(pi2) });
+  if (gx) rows.push({ label: "Gx", text: formatMtPerM(gx) });
+  if (gy) rows.push({ label: "Gy", text: formatMtPerM(gy) });
+  if (gz) rows.push({ label: "Gz", text: formatMtPerM(gz) });
+  rows.push({ label: "Shim X", text: formatSummaryValue(shimX) });
+  rows.push({ label: "Shim Y", text: formatSummaryValue(shimY) });
+  rows.push({ label: "Shim Z", text: formatSummaryValue(shimZ) });
+  if (board) rows.push({ label: "Gradient board", text: board });
+  if (clock) rows.push({ label: "FPGA clock", text: `${formatSummaryValue(clock)} MHz` });
+  return rows;
+}
+
+function AcquisitionSummary({
+  entry,
+  task,
+  schema,
+  acq,
+  simulation,
+}: {
+  entry: ScanQueueEntry;
+  task: ScanTask | null;
+  schema: SequenceInfo["parameter_schema"] | undefined;
+  acq: AcqConfig | null;
+  simulation: boolean;
+}) {
+  const finished = entry.state === "complete" || entry.state === "failure";
+  if (!finished) return null;
+
+  const journal = task?.journal;
+  const params = task?.parameters ?? {};
+  const props = schema?.properties ?? {};
+  const paramKeys = [
+    ...Object.keys(props).filter((key) => Object.prototype.hasOwnProperty.call(params, key)),
+    ...Object.keys(params).filter((key) => !Object.prototype.hasOwnProperty.call(props, key)),
+  ];
+  const paramRows = paramKeys.flatMap((key) => {
+    const value = params[key];
+    if (value && typeof value === "object") return [];
+    const prop = props[key];
+    const tab = prop?.tab || "sequence";
+    if (tab === "adjustments" || tab === "system") return [];
+    return [
+      {
+        key,
+        label: prop?.title || key,
+        text: formatSummaryValue(value, prop?.unit),
+      },
+    ];
+  });
+  const hwRows = hardwareRows(task, acq, simulation);
+  const acqFor = elapsedLabel(journal?.acquisition_start ?? "", journal?.acquisition_end ?? "");
+  const reconFor = elapsedLabel(journal?.reconstruction_start ?? "", journal?.reconstruction_end ?? "");
+  const totalFor = elapsedLabel(journal?.acquisition_start ?? "", journal?.reconstruction_end || journal?.acquisition_end || "");
+  const failed = entry.state === "failure";
+
+  return (
+    <aside className="ic-acq-summary" aria-label="Acquisition summary">
+      <p className="ic-acq-summary-kicker">Summary</p>
+      <h3 className="ic-acq-summary-title">{entry.protocol_name}</h3>
+      <p className={`ic-acq-summary-state${failed ? " is-bad" : " is-ok"}`}>
+        {failed ? (journal?.fail_stage && journal.fail_stage !== "none" ? `Failed · ${journal.fail_stage}` : "Failed") : "Complete"}
+      </p>
+      <dl className="ic-acq-dl">
+        {clockLabel(journal?.acquisition_start ?? "") ? (
+          <>
+            <dt>Acquired</dt>
+            <dd>{clockLabel(journal?.acquisition_start ?? "")}</dd>
+          </>
+        ) : null}
+        {acqFor ? (
+          <>
+            <dt>Acquisition</dt>
+            <dd>{acqFor}</dd>
+          </>
+        ) : null}
+        {reconFor ? (
+          <>
+            <dt>Reconstruction</dt>
+            <dd>{reconFor}</dd>
+          </>
+        ) : null}
+        {totalFor && totalFor !== acqFor ? (
+          <>
+            <dt>Total</dt>
+            <dd>{totalFor}</dd>
+          </>
+        ) : null}
+        {clockLabel(journal?.failed_at ?? "") ? (
+          <>
+            <dt>Failed</dt>
+            <dd>{clockLabel(journal?.failed_at ?? "")}</dd>
+          </>
+        ) : null}
+      </dl>
+      {paramRows.length ? (
+        <div className="ic-acq-section">
+          <h4>Parameters</h4>
+          <dl className="ic-acq-dl">
+            {paramRows.map((row) => (
+              <Fragment key={row.key}>
+                <dt>{row.label}</dt>
+                <dd>{row.text}</dd>
+              </Fragment>
+            ))}
+          </dl>
+        </div>
+      ) : null}
+      {hwRows.length ? (
+        <div className="ic-acq-section">
+          <h4>Hardware</h4>
+          <dl className="ic-acq-dl">
+            {hwRows.map((row) => (
+              <Fragment key={row.label}>
+                <dt>{row.label}</dt>
+                <dd>{row.text}</dd>
+              </Fragment>
+            ))}
+          </dl>
+        </div>
+      ) : null}
+      {task?.results.length ? (
+        <div className="ic-acq-section">
+          <h4>Results</h4>
+          <ul className="ic-acq-results">
+            {task.results.map((result, i) => (
+              <li key={`${result.file_path}-${i}`}>
+                <span>{result.name || result.file_path}</span>
+                <span>{result.type}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </aside>
+  );
+}
+
 function ParamField({
   name,
   prop,
   value,
+  disabled,
   onChange,
 }: {
   name: string;
   prop: ParameterProperty;
   value: unknown;
+  disabled?: boolean;
   onChange: (key: string, value: unknown) => void;
 }) {
   const label = prop.title || name;
   if (prop.type === "boolean") {
     return (
-      <label className="ic-check">
+      <label className="ic-check" title={prop.description || undefined}>
         <input
           type="checkbox"
           checked={Boolean(value)}
+          disabled={disabled}
           onChange={(e) => onChange(name, e.target.checked)}
         />
         {label}
@@ -180,10 +462,14 @@ function ParamField({
   }
   if (prop.enum?.length) {
     return (
-      <label className="ic-field">
+      <label className="ic-field" title={prop.description || undefined}>
         <span>{label}</span>
         <span className="ic-field-control">
-          <select value={String(value ?? "")} onChange={(e) => onChange(name, e.target.value)}>
+          <select
+            value={String(value ?? "")}
+            disabled={disabled}
+            onChange={(e) => onChange(name, e.target.value)}
+          >
             {prop.enum.map((opt) => (
               <option key={opt} value={opt}>
                 {opt}
@@ -196,7 +482,7 @@ function ParamField({
   }
   const numeric = prop.type === "integer" || prop.type === "number";
   return (
-    <label className="ic-field">
+    <label className="ic-field" title={prop.description || undefined}>
       <span>{label}</span>
       <span className="ic-field-control">
         <input
@@ -204,7 +490,11 @@ function ParamField({
           value={value == null ? "" : String(value)}
           min={prop.minimum}
           max={prop.maximum}
+          step={prop.step ?? (prop.type === "integer" ? 1 : undefined)}
+          disabled={disabled}
+          readOnly={disabled}
           onChange={(e) => {
+            if (disabled) return;
             if (numeric) {
               const n = e.target.value === "" ? "" : Number(e.target.value);
               onChange(name, n);
@@ -223,6 +513,7 @@ export function ImagingConsole() {
   const [apiOk, setApiOk] = useState<boolean | null>(null);
   const [simulation, setSimulation] = useState(false);
   const [exam, setExam] = useState<ExamResponse | null>(null);
+  const examId = exam?.exam.id;
   const [registerOpen, setRegisterOpen] = useState(false);
   const [protocolsOpen, setProtocolsOpen] = useState(false);
   const [dialog, setDialog] = useState<
@@ -233,6 +524,8 @@ export function ImagingConsole() {
   const [position, setPosition] = useState("HFS");
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; id: string; kind: "queue" | "results" } | null>(null);
   const ctxRef = useRef<HTMLDivElement | null>(null);
+  const addMenuRef = useRef<HTMLDivElement | null>(null);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<{ id: string; name: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [ipc, setIpc] = useState<
@@ -244,20 +537,26 @@ export function ImagingConsole() {
   >(null);
   const [flexOpen, setFlexOpen] = useState(false);
   const [flexTarget, setFlexTarget] = useState<ViewerTarget | null>(null);
-  const [viewerSlots, setViewerSlots] = useState<{ 1: string; 2: string; 3: string; flex: string }>({
-    1: "",
-    2: "",
-    3: "",
-    flex: "",
+  const [viewerSlots, setViewerSlots] = useState<{ 1: ViewerSlotContent; 2: ViewerSlotContent; 3: ViewerSlotContent }>({
+    1: null,
+    2: null,
+    3: null,
   });
+  const autoloadedScans = useRef(new Set<string>());
   const [acqClock, setAcqClock] = useState<{ start: number; expected: number; disable: boolean } | null>(null);
+  const [clockSec, setClockSec] = useState(0);
   const shimValues = useRef({ x: 0, y: 0, z: 0 });
   const [patient, setPatient] = useState<PatientInformation>(emptyPatient());
   const [acc, setAcc] = useState("");
   const [sequences, setSequences] = useState<SequenceInfo[]>([]);
   const [queue, setQueue] = useState<ScanQueueEntry[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedIdRef = useRef<string | null>(null);
+  selectedIdRef.current = selectedId;
+  const prevScanStates = useRef<Record<string, ScanQueueEntry["state"]>>({});
   const [draft, setDraft] = useState<Record<string, unknown>>({});
+  const [selectedTask, setSelectedTask] = useState<ScanTask | null>(null);
+  const [acqConfig, setAcqConfig] = useState<AcqConfig | null>(null);
   const [tab, setTab] = useState<SeqTab>("sequence");
   const [status, setStatus] = useState("Connecting to MRI4ALL API…");
   const [problems, setProblems] = useState<string[]>([]);
@@ -268,15 +567,76 @@ export function ImagingConsole() {
   const selected = queue.find((s) => s.id === selectedId) ?? null;
   const seqInfo = sequences.find((s) => s.id === selected?.sequence);
   const experimentActive = queue.some((s) => s.state === "acq" || s.state === "recon" || s.state === "scheduled_recon");
+  const paramsLocked = Boolean(
+    selected && selected.state !== "created" && selected.state !== "scheduled_acq",
+  );
+  const canStop =
+    selected?.state === "acq" ||
+    selected?.state === "scheduled_acq" ||
+    selected?.state === "recon";
+
+  const loadIntoViewer = useCallback((slot: ViewerSlot | "flex", payload: string | ViewerTarget) => {
+    if (slot === "flex") {
+      setFlexTarget(typeof payload === "string" ? null : payload);
+      setFlexOpen(true);
+    } else {
+      setViewerSlots((prev) => ({ ...prev, [slot]: payload }));
+    }
+    setStatus(slot === "flex" ? "Loaded into Flex Viewer" : `Loaded into Viewer ${slot}`);
+  }, []);
+
+  const autoloadEntry = useCallback(
+    async (entry: ScanQueueEntry) => {
+      try {
+        const detail = await fetchScan(entry.id);
+        const task = detail.task;
+        if (!task?.results.length || !detail.folder) return;
+        const label = `${entry.scan_counter}:  ${entry.protocol_name}`;
+        let loaded = false;
+        for (const result of task.results) {
+          const slot = autoloadSlot(result.autoload_viewer);
+          if (!slot) continue;
+          loadIntoViewer(slot, viewerTargetFromResult(task, detail.folder, label, result));
+          loaded = true;
+        }
+        if (!loaded) {
+          const target = viewerTargetFromTask(task, detail.folder, label);
+          if (target) loadIntoViewer(1, target);
+        }
+      } catch {
+        /* keep the last successful view */
+      }
+    },
+    [loadIntoViewer],
+  );
 
   const refreshQueue = useCallback(async () => {
     try {
       const next = await fetchScans();
       setQueue(next);
+      const sid = selectedIdRef.current;
+      const selectedScan = sid ? next.find((s) => s.id === sid) : undefined;
+      if (selectedScan?.state === "failure" && prevScanStates.current[selectedScan.id] !== "failure") {
+        setAcqClock(null);
+        const svc = await fetchServices().catch(() => null);
+        setStatus(svc?.last_error || "Acquisition failed");
+      }
+      const prev = prevScanStates.current;
+      for (const entry of next) {
+        if (entry.state !== "complete" || !entry.has_results) continue;
+        if (autoloadedScans.current.has(entry.id)) continue;
+        if (prev[entry.id] && prev[entry.id] !== "complete") {
+          autoloadedScans.current.add(entry.id);
+          void autoloadEntry(entry);
+        }
+      }
+      const map: Record<string, ScanQueueEntry["state"]> = {};
+      for (const entry of next) map[entry.id] = entry.state;
+      prevScanStates.current = map;
     } catch {
       /* idle */
     }
-  }, []);
+  }, [autoloadEntry]);
 
   const loadExam = useCallback(async () => {
     try {
@@ -287,18 +647,26 @@ export function ImagingConsole() {
       setExam(current);
       const seqs = await fetchSequences(true);
       setSequences(seqs);
-      const ping = await pingDevice().catch(() => null);
-      const probe = ping ? formatDevicePingStatus(ping) : null;
+      const extras: string[] = [];
+      if (health.sequence_registry === false) extras.push("using fallback sequence catalog");
+      if (health.pipeline === false) extras.push("acquisition pipeline is not running");
+      const suffix = extras.length ? ` · ${extras.join("; ")}` : "";
       if (current) {
         await refreshQueue();
         setPatient(current.patient);
         setAcc(current.exam.acc);
         setPosition(current.exam.patient_position || "HFS");
-        setStatus(probe ?? (health.hardware_simulation ? "Scanner ready (simulation)" : "Scanner ready"));
+        setStatus(
+          (health.hardware_simulation ? "Scanner ready (simulation)" : "Scanner ready") + suffix,
+        );
         setRegisterOpen(false);
       } else {
         setQueue([]);
-        setStatus(probe ? `${probe} · Register a patient to start an exam` : "Register a patient to start an exam");
+        setStatus(
+          extras.length
+            ? `Register a patient to start an exam · ${extras.join("; ")}`
+            : "Register a patient to start an exam",
+        );
         setRegisterOpen(true);
       }
     } catch (err) {
@@ -316,6 +684,25 @@ export function ImagingConsole() {
     const t = window.setInterval(() => void refreshQueue(), 1500);
     return () => window.clearInterval(t);
   }, [exam, refreshQueue]);
+
+  useEffect(() => {
+    if (!examId) {
+      setViewerSlots({ 1: null, 2: null, 3: null });
+      setFlexTarget(null);
+      autoloadedScans.current.clear();
+      return;
+    }
+    let cancelled = false;
+    void fetchScans().then((scans) => {
+      const latest = scans.filter((s) => s.state === "complete" && s.has_results).at(-1);
+      if (!latest || cancelled) return;
+      autoloadedScans.current.add(latest.id);
+      void autoloadEntry(latest);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [examId, autoloadEntry]);
 
   useEffect(() => {
     return connectMriEvents((ev: MriEvent) => {
@@ -371,7 +758,6 @@ export function ImagingConsole() {
       if (kind === "show_dicom" && ev.value?.dicom_files?.length) {
         const files = ev.value.dicom_files;
         setImageHint(`${files.length} DICOM series ready`);
-        setViewerSlots((prev) => ({ ...prev, 1: files.join("\n") }));
         setIpc({ kind: "dicom", id: eventId, source, files });
       }
       if (kind === "acq_data") {
@@ -387,24 +773,46 @@ export function ImagingConsole() {
   }, [refreshQueue]);
 
   useEffect(() => {
-    if (!acqClock || acqClock.disable) return;
+    if (!acqClock || acqClock.disable) {
+      setClockSec(0);
+      return;
+    }
     const tick = () => {
-      const sec = Math.max(0, Math.floor((Date.now() - acqClock.start) / 1000));
+      const sec = Math.max(0, (Date.now() - acqClock.start) / 1000);
+      setClockSec(sec);
       if (acqClock.expected <= 0) {
-        setStatus(`Running scan...  (${formatElapsed(sec)})`);
+        setStatus(`Running scan...  (${formatElapsed(Math.floor(sec))})`);
       } else {
-        const remain = Math.max(0, acqClock.expected - sec);
+        const remain = Math.max(0, acqClock.expected - Math.floor(sec));
         setStatus(`Running scan...  remaining ${formatElapsed(remain)}`);
       }
     };
     tick();
-    const t = window.setInterval(tick, 1000);
+    const t = window.setInterval(tick, 200);
     return () => window.clearInterval(t);
   }, [acqClock]);
 
   useEffect(() => {
     if (!experimentActive) setAcqClock(null);
   }, [experimentActive]);
+
+  useEffect(() => {
+    if (!selectedId || (selected?.state !== "complete" && selected?.state !== "failure")) return;
+    let cancelled = false;
+    void fetchScan(selectedId)
+      .then((detail) => {
+        if (!cancelled) setSelectedTask(detail.task);
+      })
+      .catch(() => undefined);
+    void fetchAcqConfig()
+      .then((cfg) => {
+        if (!cancelled) setAcqConfig(cfg);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId, selected?.state]);
 
   const onEndExam = useCallback(async () => {
     if (!exam) return;
@@ -414,9 +822,11 @@ export function ImagingConsole() {
       setExam(null);
       setQueue([]);
       setSelectedId(null);
-      setViewerSlots({ 1: "", 2: "", 3: "", flex: "" });
+      setSelectedTask(null);
+      setViewerSlots({ 1: null, 2: null, 3: null });
       setFlexOpen(false);
       setFlexTarget(null);
+      setAddMenuOpen(false);
       setRegisterOpen(true);
       setStatus("Exam closed");
     } catch (err) {
@@ -458,6 +868,26 @@ export function ImagingConsole() {
   }, [exam, onEndExam, refreshQueue]);
 
   useEffect(() => {
+    if (!addMenuOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (addMenuRef.current?.contains(e.target as Node)) return;
+      setAddMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setAddMenuOpen(false);
+    };
+    const timer = window.setTimeout(() => {
+      document.addEventListener("pointerdown", onPointerDown, true);
+      document.addEventListener("keydown", onKey);
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [addMenuOpen]);
+
+  useEffect(() => {
     if (!ctxMenu) return;
     const onPointerDown = (e: PointerEvent) => {
       if (ctxRef.current?.contains(e.target as Node)) return;
@@ -478,6 +908,7 @@ export function ImagingConsole() {
     try {
       const detail = await fetchScan(id);
       setDraft({ ...(detail.task?.parameters ?? {}) });
+      setSelectedTask(detail.task);
       if (detail.entry.state === "created" || detail.entry.state === "scheduled_acq") {
         await editScan(id);
         await refreshQueue();
@@ -505,11 +936,11 @@ export function ImagingConsole() {
       setRegisterOpen(false);
       setQueue([]);
       setSelectedId(null);
-      setViewerSlots({ 1: "", 2: "", 3: "", flex: "" });
+      setSelectedTask(null);
+      setViewerSlots({ 1: null, 2: null, 3: null });
       setFlexOpen(false);
       setFlexTarget(null);
-      const ping = await pingDevice().catch(() => null);
-      setStatus(ping ? formatDevicePingStatus(ping) : "Scanner ready");
+      setStatus("Scanner ready");
     } catch (err) {
       setProblems([err instanceof Error ? err.message : "Failed to start exam"]);
     } finally {
@@ -522,6 +953,7 @@ export function ImagingConsole() {
     try {
       const entry = await createScan(seqId);
       setProtocolsOpen(false);
+      setAddMenuOpen(false);
       await refreshQueue();
       await openScan(entry.id);
     } catch (err) {
@@ -531,41 +963,31 @@ export function ImagingConsole() {
     }
   };
 
-  const onAccept = async () => {
-    if (!selectedId) return;
+  const onPlay = async () => {
+    if (!selectedId || paramsLocked) return;
     setBusy(true);
     setProblems([]);
     try {
       await patchScan(selectedId, { parameters: draft });
       await prepareScan(selectedId);
       await refreshQueue();
-      setStatus("Sequence prepared — waiting for acquisition");
+      setStatus("Sequence started");
     } catch (err) {
-      setProblems([err instanceof Error ? err.message : "Invalid parameters"]);
+      setProblems([err instanceof Error ? err.message : "Could not start sequence"]);
     } finally {
       setBusy(false);
     }
   };
 
-  const onDiscard = async () => {
+  const onStop = async () => {
     if (!selectedId) return;
-    try {
-      const detail = await fetchScan(selectedId);
-      setDraft({ ...(detail.task?.parameters ?? {}) });
-      setProblems([]);
-    } catch {
-      /* ignore */
-    }
-  };
-
-  const onHalt = async () => {
-    if (!selectedId) return;
+    if (!selectedId || !canStop) return;
     try {
       await stopScan(selectedId);
       await refreshQueue();
-      setStatus("Halt requested");
+      setStatus("Sequence stopped");
     } catch (err) {
-      setStatus(err instanceof Error ? err.message : "Halt failed");
+      setStatus(err instanceof Error ? err.message : "Stop failed");
     }
   };
 
@@ -593,17 +1015,7 @@ export function ImagingConsole() {
     setIpc(null);
   };
 
-  const loadIntoViewer = (slot: 1 | 2 | 3 | "flex", payload: string | ViewerTarget) => {
-    const label = typeof payload === "string" ? payload : payload.label;
-    setViewerSlots((prev) => ({ ...prev, [slot]: label }));
-    if (slot === "flex") {
-      setFlexTarget(typeof payload === "string" ? null : payload);
-      setFlexOpen(true);
-    }
-    setStatus(slot === "flex" ? "Loaded into Flex Viewer" : `Loaded into Viewer ${slot}`);
-  };
-
-  const showQueueInViewer = (slot: 1 | 2 | 3 | "flex", id: string) => {
+  const showQueueInViewer = (slot: ViewerSlot | "flex", id: string) => {
     setCtxMenu(null);
     const entry = queue.find((q) => q.id === id);
     if (!entry) return;
@@ -648,6 +1060,7 @@ export function ImagingConsole() {
       if (selectedId === deleteTarget.id) {
         setSelectedId(null);
         setDraft({});
+        setSelectedTask(null);
       }
       await refreshQueue();
       setStatus("Scan deleted");
@@ -673,6 +1086,19 @@ export function ImagingConsole() {
     const forTab = entries.filter(([, p]) => (p.tab || "sequence") === tab);
     return forTab.length ? forTab : tab === "sequence" ? entries : [];
   }, [seqInfo, tab]);
+
+  const acquiring = queue.some((s) => s.state === "acq");
+  const reconstructing = queue.some((s) => s.state === "recon" || s.state === "scheduled_recon");
+  const progressMode: "idle" | "determinate" | "indeterminate" =
+    acquiring && acqClock && acqClock.expected > 0 && !acqClock.disable
+      ? "determinate"
+      : acquiring || reconstructing
+        ? "indeterminate"
+        : "idle";
+  const progressPct =
+    progressMode === "determinate" && acqClock
+      ? Math.min(100, (clockSec / Math.max(acqClock.expected, 1e-6)) * 100)
+      : 0;
 
   return (
     <section className="imaging-console" aria-label="Imaging Console">
@@ -928,21 +1354,19 @@ export function ImagingConsole() {
       ) : null}
 
       <div className={`ic-screens is-${viewerCount}`}>
-        <article className="ic-screen">
-          <div className="ic-viewer-stage" aria-label="Viewer 1">
-            {viewerSlots[1] ? <p className="ic-muted">{viewerSlots[1]}</p> : imageHint ? <p className="ic-muted">{imageHint}</p> : null}
-          </div>
-        </article>
-        <article className="ic-screen">
-          <div className="ic-viewer-stage" aria-label="Viewer 2">
-            {viewerSlots[2] ? <p className="ic-muted">{viewerSlots[2]}</p> : plotSeries ? <Sparkline data={plotSeries} /> : null}
-          </div>
-        </article>
-        <article className="ic-screen">
-          <div className="ic-viewer-stage" aria-label="Viewer 3">
-            {viewerSlots[3] ? <p className="ic-muted">{viewerSlots[3]}</p> : null}
-          </div>
-        </article>
+        <ScreenPane
+          slot={1}
+          value={viewerSlots[1]}
+          fallback={imageHint ? <p className="ic-muted">{imageHint}</p> : null}
+          fullYTicks={viewerCount === 1}
+        />
+        <ScreenPane
+          slot={2}
+          value={viewerSlots[2]}
+          fallback={plotSeries ? <Sparkline data={plotSeries} /> : null}
+          fullYTicks={viewerCount === 1}
+        />
+        <ScreenPane slot={3} value={viewerSlots[3]} fullYTicks={viewerCount === 1} />
       </div>
 
       <div className="ic-lower">
@@ -989,13 +1413,69 @@ export function ImagingConsole() {
               );
             })}
           </ul>
-          <div className="ic-seq-footer">
-            <button type="button" aria-label="Accept" title="Accept and prepare" onClick={() => void onAccept()} disabled={!selectedId || busy}>
-              <Check size={16} strokeWidth={2} />
-            </button>
-            <button type="button" aria-label="Discard" title="Discard edits" onClick={() => void onDiscard()} disabled={!selectedId}>
-              <X size={16} strokeWidth={2} />
-            </button>
+          <div className="ic-seq-add" ref={addMenuRef}>
+            {addMenuOpen ? (
+              <div className="ic-seq-add-menu" role="menu" aria-label="Insert sequence">
+                {[...sequences]
+                  .filter((s) => !s.adjustment)
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((s) => (
+                    <button key={s.id} type="button" role="menuitem" disabled={busy} onClick={() => void onAddSequence(s.id)}>
+                      {s.name}
+                    </button>
+                  ))}
+                {sequences.some((s) => s.adjustment) ? (
+                  <>
+                    <div className="ic-seq-add-sep">Adjustments</div>
+                    {[...sequences]
+                      .filter((s) => s.adjustment)
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((s) => (
+                        <button key={s.id} type="button" role="menuitem" disabled={busy} onClick={() => void onAddSequence(s.id)}>
+                          {s.name}
+                        </button>
+                      ))}
+                  </>
+                ) : null}
+                {!sequences.length ? <p className="ic-muted">No sequences loaded</p> : null}
+              </div>
+            ) : null}
+            <div className="ic-seq-footer">
+              <button
+                type="button"
+                className={`ic-seq-tool${addMenuOpen ? " is-active" : ""}`}
+                aria-label="Insert sequence"
+                title={exam ? "Insert new sequence" : "Start an exam to insert a sequence"}
+                aria-haspopup="menu"
+                aria-expanded={addMenuOpen}
+                disabled={!exam || busy}
+                onClick={() => setAddMenuOpen((open) => !open)}
+              >
+                <PlusSquare size={18} strokeWidth={1.6} />
+              </button>
+              <div className="ic-seq-footer-edit">
+                <button
+                  type="button"
+                  className="ic-seq-tool"
+                  aria-label="Run sequence"
+                  title={paramsLocked ? "This scan cannot be started" : "Run sequence"}
+                  onClick={() => void onPlay()}
+                  disabled={!selectedId || busy || paramsLocked}
+                >
+                  <Play size={15} strokeWidth={0} fill="currentColor" />
+                </button>
+                <button
+                  type="button"
+                  className="ic-seq-tool"
+                  aria-label="Stop sequence"
+                  title={canStop ? "Stop sequence" : "No running sequence"}
+                  onClick={() => void onStop()}
+                  disabled={!selectedId || busy || !canStop}
+                >
+                  <Square size={12} strokeWidth={0} fill="currentColor" />
+                </button>
+              </div>
+            </div>
           </div>
         </aside>
 
@@ -1026,46 +1506,55 @@ export function ImagingConsole() {
             ))}
           </div>
 
-          <div className="ic-tab-panel" role="tabpanel">
-            {selected && schemaFields.length ? (
-              <>
-                <div className="ic-form-grid">
-                  <div className="ic-form-col">
-                    {schemaFields
-                      .filter((_, i) => i % 2 === 0)
-                      .map(([key, prop]) => (
-                        <ParamField
-                          key={key}
-                          name={key}
-                          prop={prop}
-                          value={draft[key] ?? prop.default}
-                          onChange={(k, v) => setDraft((prev) => ({ ...prev, [k]: v }))}
-                        />
-                      ))}
+          <div className={`ic-config-body${selected && (selected.state === "complete" || selected.state === "failure") ? " has-summary" : ""}`}>
+            <div className={`ic-tab-panel${paramsLocked ? " is-readonly" : ""}`} role="tabpanel">
+              {selected && schemaFields.length ? (
+                <>
+                  <div className="ic-form-grid">
+                    <div className="ic-form-col">
+                      {schemaFields
+                        .filter((_, i) => i % 2 === 0)
+                        .map(([key, prop]) => (
+                          <ParamField
+                            key={key}
+                            name={key}
+                            prop={prop}
+                            value={draft[key] ?? prop.default}
+                            disabled={paramsLocked}
+                            onChange={(k, v) => setDraft((prev) => ({ ...prev, [k]: v }))}
+                          />
+                        ))}
+                    </div>
+                    <div className="ic-form-col">
+                      {schemaFields
+                        .filter((_, i) => i % 2 === 1)
+                        .map(([key, prop]) => (
+                          <ParamField
+                            key={key}
+                            name={key}
+                            prop={prop}
+                            value={draft[key] ?? prop.default}
+                            disabled={paramsLocked}
+                            onChange={(k, v) => setDraft((prev) => ({ ...prev, [k]: v }))}
+                          />
+                        ))}
+                    </div>
                   </div>
-                  <div className="ic-form-col">
-                    {schemaFields
-                      .filter((_, i) => i % 2 === 1)
-                      .map(([key, prop]) => (
-                        <ParamField
-                          key={key}
-                          name={key}
-                          prop={prop}
-                          value={draft[key] ?? prop.default}
-                          onChange={(k, v) => setDraft((prev) => ({ ...prev, [k]: v }))}
-                        />
-                      ))}
-                  </div>
-                </div>
-                {problems.length ? <p className="ic-tab-placeholder">{problems.join(" ")}</p> : null}
-              </>
-            ) : (
-              <p className="ic-tab-placeholder">
-                {exam
-                  ? "Insert a protocol, then edit parameters. Accept prepares scan.json for acquisition."
-                  : "Start an exam to build a sequence queue."}
-              </p>
-            )}
+                  {problems.length ? <p className="ic-tab-placeholder">{problems.join(" ")}</p> : null}
+                </>
+              ) : exam ? null : (
+                <p className="ic-tab-placeholder">Start an exam to build a sequence queue.</p>
+              )}
+            </div>
+            {selected && (selected.state === "complete" || selected.state === "failure") ? (
+              <AcquisitionSummary
+                entry={selected}
+                task={selectedTask?.id === selected.id ? selectedTask : null}
+                schema={seqInfo?.parameter_schema}
+                acq={acqConfig}
+                simulation={simulation}
+              />
+            ) : null}
           </div>
         </div>
 
@@ -1073,8 +1562,14 @@ export function ImagingConsole() {
           <button type="button" title="Scanner" aria-label="Scanner" onClick={() => void pingDevice().then((p) => setStatus(formatDevicePingStatus(p)))}>
             <Atom size={22} strokeWidth={1.5} />
           </button>
-          <button type="button" title="Halt" aria-label="Halt" onClick={() => void onHalt()}>
-            <Square size={20} strokeWidth={1.5} />
+          <button
+            type="button"
+            title="Study Viewer"
+            aria-label="Study Viewer"
+            className={dialog === "study" ? "is-active" : undefined}
+            onClick={() => setDialog((d) => (d === "study" ? null : "study"))}
+          >
+            <ImageIcon size={20} strokeWidth={1.5} />
           </button>
           <button
             type="button"
@@ -1109,29 +1604,72 @@ export function ImagingConsole() {
         </aside>
       </div>
 
-      <footer className="ic-status">
-        <span>{status}</span>
+      <footer className={`ic-status${progressMode === "idle" ? "" : " is-working"}`}>
+        <span className="ic-status-msg">{status}</span>
+        {progressMode !== "idle" ? <ScanProgressBar mode={progressMode} percent={progressPct} /> : null}
+        {progressMode !== "idle" ? <span className="ic-status-end" /> : null}
       </footer>
     </section>
   );
 }
 
-function Sparkline({ data }: { data: number[] }) {
-  const w = 320;
-  const h = 120;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const span = max - min || 1;
-  const d = data
-    .map((y, i) => {
-      const x = (i / Math.max(data.length - 1, 1)) * w;
-      const py = h - ((y - min) / span) * (h - 8) - 4;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${py.toFixed(1)}`;
-    })
-    .join(" ");
+function ScanProgressBar({
+  mode,
+  percent,
+}: {
+  mode: "determinate" | "indeterminate";
+  percent: number;
+}) {
+  const pct = Math.max(0, Math.min(100, percent));
+  const label = mode === "determinate" ? `${Math.round(pct)}%` : "";
   return (
-    <svg className="ic-sparkline" viewBox={`0 0 ${w} ${h}`} aria-hidden>
-      <path d={d} fill="none" stroke="rgba(110, 182, 255, 0.9)" strokeWidth="1.5" />
-    </svg>
+    <div
+      className={`ic-scan-progress is-${mode}`}
+      role="progressbar"
+      aria-label="Scan progress"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={mode === "determinate" ? Math.round(pct) : undefined}
+      aria-valuetext={mode === "indeterminate" ? "In progress" : `${Math.round(pct)} percent`}
+    >
+      <div className="ic-scan-progress-track">
+        <div
+          className="ic-scan-progress-fill"
+          style={mode === "determinate" ? { width: `${pct}%` } : undefined}
+        />
+      </div>
+      <span className="ic-scan-progress-label">{label || "\u00a0"}</span>
+    </div>
+  );
+}
+
+function Sparkline({ data }: { data: number[] }) {
+  const axes = useMemo(() => {
+    if (!data.length) return [];
+    let min = data[0];
+    let max = data[0];
+    for (const value of data) {
+      if (value < min) min = value;
+      if (value > max) max = value;
+    }
+    const pad = (max - min) * 0.08 || 1;
+    return [
+      {
+        title: "",
+        xlabel: "",
+        ylabel: "",
+        xmin: 0,
+        xmax: Math.max(data.length - 1, 1),
+        ymin: min - pad,
+        ymax: max + pad,
+        series: [{ name: "", x: data.map((_, i) => i), y: data }],
+      },
+    ];
+  }, [data]);
+  if (!axes.length) return null;
+  return (
+    <div className="ic-sparkline-wrap">
+      <ScientificPlot axes={axes} compact />
+    </div>
   );
 }

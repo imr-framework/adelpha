@@ -7,7 +7,6 @@ sequence payloads itself.
 
 from __future__ import annotations
 
-import logging
 import os
 from pathlib import Path
 from typing import Optional
@@ -15,12 +14,21 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
+from common.qtcompat import configure_headless
+
+configure_headless()
+
+import common.runtime as rt
+
+rt.set_service_name("api")
+
 import common.config as config
 import common.queue as queue
 from common.types import PatientInformation
 
 from services.api import events
 from services.api.models import (
+    DeviceMarcosStartResponse,
     DevicePingResponse,
     EventRespondRequest,
     ExamResponse,
@@ -33,7 +41,7 @@ from services.api.models import (
     ServiceStatusResponse,
     ValidateResponse,
 )
-from services.api.sequences_api import get_sequence_info, list_sequences, validate_parameters
+from services.api.sequences_api import get_sequence_info, list_sequences, registry_loaded, validate_parameters
 from services.api.session import session
 from services.ui.control import (
     control_service,
@@ -42,8 +50,9 @@ from services.ui.control import (
     run_device_test,
 )
 from common.constants import Service, ServiceAction
+import common.logger as logger
 
-log = logging.getLogger("mri4all-api")
+log = logger.get_logger()
 
 app = FastAPI(title="MRI4ALL API", version="0.1.0")
 app.add_middleware(
@@ -51,6 +60,7 @@ app.add_middleware(
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 
 
@@ -58,6 +68,8 @@ app.add_middleware(
 async def on_startup() -> None:
     import asyncio
     import common.runtime as rt
+    from services.api import pipeline
+    from services.api.sequences_api import reset_registry_cache
 
     Path(rt.get_base_path(), "config").mkdir(parents=True, exist_ok=True)
     Path(rt.get_base_path(), "data").mkdir(parents=True, exist_ok=True)
@@ -65,17 +77,43 @@ async def on_startup() -> None:
     queue.check_and_create_folders()
     events.attach_loop(asyncio.get_running_loop())
     events.start_listeners()
+    from sequences.common.util import reading_json_parameter
+
+    reading_json_parameter()
+    try:
+        from external.marcos_client.local_config import apply_scanner_settings
+
+        apply_scanner_settings()
+    except Exception as exc:
+        log.warning("Could not apply MaRCoS settings at startup: %s", exc)
+    reset_registry_cache()
+    pipeline.start()
     cfg = config.get_config()
-    log.info(
-        "MRI4ALL API ready (base=%s simulation=%s scanner=%s)",
-        rt.get_base_path(),
-        cfg.is_hardware_simulation(),
-        cfg.scanner_ip,
-    )
+    if not cfg.is_hardware_simulation():
+        import threading
+        from services.ui.marcos_boot import ensure_marcos_server, fpga_device
+        from services.ui.control import marcos_port
+        from sequences.common.util import reading_json_parameter
+
+        def _boot_marcos() -> None:
+            try:
+                clock = reading_json_parameter().marcos_parameters.fpga_clock_frequency_MHz
+                result = ensure_marcos_server(cfg.scanner_ip, port=marcos_port(), device=fpga_device(clock))
+                if not result["ok"]:
+                    log.warning("MaRCoS not started · %s", result["detail"])
+            except Exception as exc:
+                log.warning("MaRCoS startup skipped · %s", exc)
+
+        threading.Thread(target=_boot_marcos, daemon=True, name="marcos-boot").start()
+    else:
+        log.info("Hardware simulation enabled · MaRCoS not started")
+    list_sequences(include_adjustments=True)
 
 
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
+    from services.api import pipeline
+
     try:
         cfg = config.get_config()
         sim = cfg.is_hardware_simulation()
@@ -85,6 +123,8 @@ def health() -> HealthResponse:
         exam_active=session.exam_active(),
         sequences=len(list_sequences(include_adjustments=True)),
         hardware_simulation=sim,
+        sequence_registry=registry_loaded(),
+        pipeline=pipeline.is_running(),
     )
 
 
@@ -229,14 +269,63 @@ def put_config(body: dict):
     cfg = config.get_config()
     cfg.update(body)
     cfg.save_to_file()
+    try:
+        from external.marcos_client.local_config import apply_scanner_settings
+
+        apply_scanner_settings()
+    except Exception as exc:
+        log.warning("Could not apply MaRCoS settings: %s", exc)
     return cfg.model_dump()
+
+
+@app.get("/config/acq")
+def get_acq_config():
+    from sequences.common.util import reading_json_parameter
+
+    return reading_json_parameter().model_dump(mode="json")
+
+
+@app.put("/config/acq")
+def put_acq_config(body: dict):
+    from sequences.common.pydanticConfig import Config
+    from sequences.common.util import reading_json_parameter, writing_json_parameter
+    import external.seq.adjustments_acq.config as cfg
+
+    current = reading_json_parameter().model_dump(mode="json")
+    for section, values in body.items():
+        if section in current and isinstance(values, dict) and isinstance(current[section], dict):
+            current[section].update(values)
+        else:
+            current[section] = values
+    parsed = Config(**current)
+    writing_json_parameter(parsed)
+    try:
+        cfg.update()
+    except Exception as exc:
+        log.warning("Could not reload adjustment config: %s", exc)
+    try:
+        from external.marcos_client.local_config import apply_scanner_settings
+
+        apply_scanner_settings()
+    except Exception as exc:
+        log.warning("Could not apply MaRCoS settings: %s", exc)
+    return parsed.model_dump(mode="json")
 
 
 @app.post("/device/ping", response_model=DevicePingResponse)
 def device_ping() -> DevicePingResponse:
+    from services.ui.control import marcos_port
+
     config.load_config()
     cfg = config.get_config()
-    probe = probe_scanner(cfg.scanner_ip)
+    probe = probe_scanner(cfg.scanner_ip, port=marcos_port())
+    if probe.get("method") == "tcp":
+        log.info("MaRCoS server running · %s", cfg.scanner_ip)
+        log.info("%s", probe.get("detail") or f"MaRCoS at {cfg.scanner_ip}:{marcos_port()}")
+    elif probe.get("reachable"):
+        log.warning("Red Pitaya reachable · MaRCoS not listening on %s:%s", cfg.scanner_ip, marcos_port())
+    else:
+        log.warning("Scanner unreachable · %s", cfg.scanner_ip)
     return DevicePingResponse(
         ip=cfg.scanner_ip,
         ok=bool(probe["reachable"]),
@@ -249,12 +338,27 @@ def device_ping() -> DevicePingResponse:
 
 @app.get("/device/services", response_model=ServiceStatusResponse)
 def device_services() -> ServiceStatusResponse:
+    from services.api import pipeline
+
+    if pipeline.is_running():
+        return ServiceStatusResponse(
+            acq=pipeline.acq_enabled(),
+            recon=pipeline.recon_enabled(),
+            mode="adelpha",
+            last_error=pipeline.last_error(),
+            sequence_registry=registry_loaded(),
+        )
     acq = control_service(ServiceAction.STATUS, Service.ACQ_SERVICE)
     recon = control_service(ServiceAction.STATUS, Service.RECON_SERVICE)
     mode = "systemd" if acq is not None or recon is not None else "unavailable"
     if acq is False and recon is False:
         mode = "unavailable"
-    return ServiceStatusResponse(acq=acq, recon=recon, mode=mode)
+    return ServiceStatusResponse(
+        acq=acq,
+        recon=recon,
+        mode=mode,
+        sequence_registry=registry_loaded(),
+    )
 
 
 @app.delete("/scans/{scan_id}")
@@ -297,19 +401,22 @@ def about():
 
 @app.get("/logs/{name}")
 def read_log(name: str):
-    import common.runtime as rt
-
     allowed = {"acq", "recon", "ui", "api"}
     if name not in allowed:
         raise HTTPException(400, "Unknown log")
-    path = Path(rt.get_base_path()) / "logs" / f"{name}.log"
-    if not path.is_file():
-        return {"name": name, "lines": [f"— no log file at {path} —"]}
+    return {"name": name, "lines": logger.collect_log_lines(name)}
+
+
+@app.delete("/logs/{name}")
+def delete_log(name: str):
+    allowed = {"acq", "recon", "ui", "api"}
+    if name not in allowed:
+        raise HTTPException(400, "Unknown log")
     try:
-        text = path.read_text(encoding="utf-8", errors="replace")
+        logger.clear_log_files(name)
     except OSError as exc:
         raise HTTPException(500, str(exc)) from exc
-    return {"name": name, "lines": text.splitlines()[-2000:]}
+    return {"name": name, "ok": True}
 
 
 @app.get("/studies")
@@ -317,34 +424,31 @@ def list_studies():
     from common.constants import mri4all_paths
     import common.task as task_mod
 
+    roots = (
+        mri4all_paths.DATA_COMPLETE,
+        mri4all_paths.DATA_QUEUE_RECON,
+        mri4all_paths.DATA_RECON,
+        mri4all_paths.DATA_ACQ,
+        mri4all_paths.DATA_QUEUE_ACQ,
+        mri4all_paths.DATA_FAILURE,
+        mri4all_paths.DATA_ARCHIVE,
+    )
     exams = []
     seen = {}
-    for root in (mri4all_paths.DATA_COMPLETE, mri4all_paths.DATA_ARCHIVE, mri4all_paths.DATA_FAILURE):
+    seen_scans = set()
+    for root in roots:
         folder = Path(root)
         if not folder.is_dir():
             continue
         for exam_dir in sorted(folder.iterdir(), key=os.path.getmtime, reverse=True):
             if not exam_dir.is_dir() or "#" not in exam_dir.name:
                 continue
-            exam_id = exam_dir.name.split("#", 1)[0]
-            scan_task = task_mod.read_task(str(exam_dir))
-            if not scan_task:
+            if exam_dir.name in seen_scans:
                 continue
-            exam = seen.get(exam_id)
-            if exam is None:
-                when = scan_task.exam.registration_time.replace("T", " ").split(".")[0]
-                exam = {
-                    "id": exam_id,
-                    "acc": scan_task.exam.acc,
-                    "patientName": f"{scan_task.patient.last_name}, {scan_task.patient.first_name}",
-                    "mrn": scan_task.patient.mrn,
-                    "examTime": when,
-                    "scans": [],
-                }
-                seen[exam_id] = exam
-                exams.append(exam)
-            exam["scans"].append(
-                {
+            scan_task = task_mod.read_task(str(exam_dir))
+            payload = None
+            if scan_task:
+                payload = {
                     "id": scan_task.id,
                     "folder": exam_dir.name,
                     "path": str(exam_dir),
@@ -355,7 +459,53 @@ def list_studies():
                     "results": [r.model_dump() for r in scan_task.results],
                     "task": scan_task.model_dump(),
                 }
-            )
+                exam_id = scan_task.exam.id or exam_dir.name.split("#", 1)[0]
+                acc = scan_task.exam.acc
+                patient_name = f"{scan_task.patient.last_name}, {scan_task.patient.first_name}"
+                mrn = scan_task.patient.mrn
+                when = (scan_task.exam.registration_time or "").replace("T", " ").split(".")[0]
+            else:
+                task_file = exam_dir / "scan.json"
+                if not task_file.is_file():
+                    continue
+                try:
+                    import json
+
+                    raw = json.loads(task_file.read_text())
+                except Exception:
+                    continue
+                exam_meta = raw.get("exam") or {}
+                patient = raw.get("patient") or {}
+                exam_id = exam_meta.get("id") or exam_dir.name.split("#", 1)[0]
+                acc = exam_meta.get("acc") or ""
+                patient_name = f"{patient.get('last_name', '')}, {patient.get('first_name', '')}"
+                mrn = patient.get("mrn") or ""
+                when = str(exam_meta.get("registration_time") or "").replace("T", " ").split(".")[0]
+                payload = {
+                    "id": raw.get("id") or exam_dir.name,
+                    "folder": exam_dir.name,
+                    "path": str(exam_dir),
+                    "protocol_name": raw.get("protocol_name") or "unknown",
+                    "scan_number": int(raw.get("scan_number") or 0),
+                    "sequence": raw.get("sequence") or "",
+                    "failed": bool((raw.get("journal") or {}).get("failed_at")),
+                    "results": list(raw.get("results") or []),
+                    "task": raw,
+                }
+            seen_scans.add(exam_dir.name)
+            exam = seen.get(exam_id)
+            if exam is None:
+                exam = {
+                    "id": exam_id,
+                    "acc": acc,
+                    "patientName": patient_name,
+                    "mrn": mrn,
+                    "examTime": when,
+                    "scans": [],
+                }
+                seen[exam_id] = exam
+                exams.append(exam)
+            exam["scans"].append(payload)
     for exam in exams:
         exam["scans"] = sorted(exam["scans"], key=lambda s: s["scan_number"])
     exams.sort(key=lambda e: e.get("examTime") or "", reverse=True)
@@ -378,6 +528,8 @@ def device_disk():
 
 @app.post("/device/services/{service}/{action}")
 def device_one_service(service: str, action: str):
+    from services.api import pipeline
+
     mapping = {"acq": Service.ACQ_SERVICE, "recon": Service.RECON_SERVICE}
     if service not in mapping:
         raise HTTPException(400, "service must be acq or recon")
@@ -385,6 +537,9 @@ def device_one_service(service: str, action: str):
         act = ServiceAction(action)
     except ValueError:
         raise HTTPException(400, "action must be start, stop, kill, or status")
+    if pipeline.is_running() and act != ServiceAction.STATUS:
+        pipeline.set_worker(service, act == ServiceAction.START)
+        return device_services()
     result = control_service(act, mapping[service])
     return device_services() if act != ServiceAction.STATUS else {"ok": result}
 
@@ -397,6 +552,26 @@ def device_test():
 @app.post("/device/reset")
 def device_reset():
     return {"ok": bool(restart_device())}
+
+
+@app.post("/device/marcos/start", response_model=DeviceMarcosStartResponse)
+def device_marcos_start() -> DeviceMarcosStartResponse:
+    from services.ui.control import marcos_port
+    from services.ui.marcos_boot import ensure_marcos_server, fpga_device
+    from sequences.common.util import reading_json_parameter
+
+    config.load_config()
+    cfg = config.get_config()
+    if cfg.is_hardware_simulation():
+        log.info("Hardware simulation enabled · MaRCoS not started")
+        return DeviceMarcosStartResponse(
+            ok=True,
+            detail="Hardware simulation is on — MaRCoS is not started",
+            ip=cfg.scanner_ip,
+        )
+    clock = reading_json_parameter().marcos_parameters.fpga_clock_frequency_MHz
+    result = ensure_marcos_server(cfg.scanner_ip, port=marcos_port(), device=fpga_device(clock), force=True)
+    return DeviceMarcosStartResponse(**result)
 
 
 @app.post("/studies/clone")
@@ -489,8 +664,60 @@ def _png_data_url(image) -> str:
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
 
 
+def _load_dicom_array(path):
+    import numpy as np
+    import pydicom
+
+    arr = np.nan_to_num(
+        pydicom.dcmread(str(path)).pixel_array.astype("float32"),
+        nan=0.0,
+        posinf=0.0,
+        neginf=0.0,
+    )
+    if arr.ndim == 3:
+        arr = arr[0]
+    return arr
+
+
+def _encode_f32le(arr) -> str:
+    import base64
+    import numpy as np
+
+    return base64.b64encode(np.ascontiguousarray(arr, dtype="<f4").tobytes()).decode("ascii")
+
+
+def _dicom_window_stats(arr):
+    import numpy as np
+
+    data_min = float(np.min(arr))
+    data_max = float(np.max(arr))
+    if not np.isfinite(data_min) or not np.isfinite(data_max):
+        data_min = 0.0
+        data_max = 0.0
+    lo, hi = np.percentile(arr, (1.0, 99.0))
+    vmin = float(lo)
+    vmax = float(hi)
+    if not np.isfinite(vmin) or not np.isfinite(vmax) or vmax <= vmin:
+        vmin = data_min
+        vmax = data_max
+    if data_max > data_min:
+        hist, _ = np.histogram(arr, bins=64, range=(data_min, data_max))
+    else:
+        hist = np.zeros(64, dtype=np.int64)
+    return data_min, data_max, vmin, vmax, hist
+
+
 @app.get("/studies/preview")
-def study_preview(folder: str, file_path: str = "", result_type: str = "", index: int = 0):
+def study_preview(
+    folder: str,
+    file_path: str = "",
+    result_type: str = "",
+    index: int = 0,
+    width: int = 0,
+    height: int = 0,
+    scale: float = 1.0,
+    all_slices: bool = False,
+):
     """Render a DICOM slice or pickled matplotlib plot the way ViewerWidget does."""
     kind = (result_type or "").lower()
     target = _resolve_result_path(folder, file_path)
@@ -500,14 +727,20 @@ def study_preview(folder: str, file_path: str = "", result_type: str = "", index
         "index": 0,
         "vmin": 0,
         "vmax": 0,
+        "data_min": 0,
+        "data_max": 0,
+        "rows": 0,
+        "cols": 0,
+        "pixels": "",
         "histogram": [],
         "image": "",
+        "stack": [],
+        "series": None,
         "error": "",
     }
     try:
         if kind == "dicom":
             import numpy as np
-            import pydicom
             from PIL import Image
 
             if target.is_file():
@@ -520,27 +753,56 @@ def study_preview(folder: str, file_path: str = "", result_type: str = "", index
                 empty["error"] = "No DICOM files found"
                 return empty
             idx = max(0, min(index, len(files) - 1))
-            arr = pydicom.dcmread(str(files[idx])).pixel_array.astype("float32")
-            vmin = float(arr.min())
-            vmax = float(arr.max())
-            hist, _ = np.histogram(arr, bins=64)
+            stack = []
+            if all_slices and len(files) > 1:
+                arrays = [_load_dicom_array(path) for path in files]
+                flat = np.concatenate([a.ravel() for a in arrays])
+                data_min, data_max, vmin, vmax, hist = _dicom_window_stats(flat)
+                for i, arr in enumerate(arrays):
+                    stack.append(
+                        {
+                            "index": i,
+                            "rows": int(arr.shape[0]),
+                            "cols": int(arr.shape[1]),
+                            "pixels": _encode_f32le(arr),
+                        }
+                    )
+                arr = arrays[idx]
+            else:
+                arr = _load_dicom_array(files[idx])
+                data_min, data_max, vmin, vmax, hist = _dicom_window_stats(arr)
             if vmax > vmin:
                 scaled = ((arr - vmin) / (vmax - vmin) * 255.0).clip(0, 255).astype("uint8")
             else:
                 scaled = np.zeros(arr.shape, dtype="uint8")
+            image = Image.fromarray(scaled, mode="L")
+            if not all_slices and width > 0 and height > 0:
+                iw, ih = image.size
+                if iw > 0 and ih > 0:
+                    fit = min(float(width) / iw, float(height) / ih)
+                    tw = max(iw, int(round(iw * fit)))
+                    th = max(ih, int(round(ih * fit)))
+                    resample = getattr(getattr(Image, "Resampling", Image), "BILINEAR", Image.BILINEAR)
+                    image = image.resize((tw, th), resample)
             return {
                 "kind": "dicom",
                 "slices": len(files),
                 "index": idx,
                 "vmin": vmin,
                 "vmax": vmax,
+                "data_min": data_min,
+                "data_max": data_max,
+                "rows": int(arr.shape[0]),
+                "cols": int(arr.shape[1]),
+                "pixels": _encode_f32le(arr),
                 "histogram": hist.tolist(),
-                "image": _png_data_url(Image.fromarray(scaled, mode="L")),
+                "image": "" if all_slices else _png_data_url(image),
+                "stack": stack,
+                "series": None,
                 "error": "",
             }
         if kind == "plot":
             import pickle
-            from io import BytesIO
             import matplotlib
 
             matplotlib.use("Agg")
@@ -549,8 +811,34 @@ def study_preview(folder: str, file_path: str = "", result_type: str = "", index
                 return empty
             with open(target, "rb") as handle:
                 fig = pickle.load(handle)
-            buf = BytesIO()
-            fig.savefig(buf, format="png", dpi=110, facecolor=fig.get_facecolor(), bbox_inches="tight")
+            from common.plotting import extract_figure_series, render_figure_png
+
+            payload = extract_figure_series(fig)
+            if payload:
+                try:
+                    import matplotlib.pyplot as plt
+
+                    plt.close(fig)
+                except Exception:
+                    pass
+                return {
+                    "kind": "plot",
+                    "slices": 1,
+                    "index": 0,
+                    "vmin": 0,
+                    "vmax": 0,
+                    "histogram": [],
+                    "image": "",
+                    "series": payload,
+                    "error": "",
+                }
+            png = render_figure_png(fig, width_px=width, height_px=height, scale=scale)
+            try:
+                import matplotlib.pyplot as plt
+
+                plt.close(fig)
+            except Exception:
+                pass
             import base64
 
             return {
@@ -560,7 +848,8 @@ def study_preview(folder: str, file_path: str = "", result_type: str = "", index
                 "vmin": 0,
                 "vmax": 0,
                 "histogram": [],
-                "image": "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("ascii"),
+                "image": "data:image/png;base64," + base64.b64encode(png).decode("ascii"),
+                "series": None,
                 "error": "",
             }
         empty["error"] = "Nothing to display"
@@ -574,7 +863,7 @@ def study_preview(folder: str, file_path: str = "", result_type: str = "", index
 def study_export(folder: str, file_path: str = ""):
     from io import BytesIO
     import zipfile
-    from fastapi.responses import FileResponse, StreamingResponse
+    from fastapi.responses import FileResponse, Response
 
     target = _resolve_result_path(folder, file_path)
     if target.is_dir():
@@ -583,10 +872,9 @@ def study_export(folder: str, file_path: str = ""):
             for item in target.rglob("*"):
                 if item.is_file():
                     archive.write(item, item.relative_to(target.parent))
-        buf.seek(0)
         filename = f"{target.name}.zip"
-        return StreamingResponse(
-            buf,
+        return Response(
+            content=buf.getvalue(),
             media_type="application/zip",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )

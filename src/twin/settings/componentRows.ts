@@ -3,11 +3,13 @@ import { useMemo } from "react";
 import type { MeasurementBatch, SensorMeasurement } from "../dtamTypes";
 import {
   inferPartRole,
+  listMaterialGroups,
   listPartsForScanner,
   resolvePartBinding,
   selectHiddenParts,
   usePartInspectorStore,
 } from "../partInspectorStore";
+import { materialClassLabel, materialFullLabel } from "../mriMaterials";
 import type { ScannerModelId } from "../scannerModel";
 import { useTwinStore } from "../telemetryStore";
 
@@ -27,6 +29,8 @@ export type ComponentRow = {
   sensorId: string | null;
   inSimulation: boolean;
   colorHex: string | null;
+  groupId: string | null;
+  materialLabel: string | null;
   hidden: boolean;
   /** Newest measurement for the assigned sensor, or null when there is none. */
   reading: SensorMeasurement | null;
@@ -58,6 +62,7 @@ export function useSensorOptions(): SensorOption[] {
 export function useComponentRows(scannerId: ScannerModelId): ComponentRow[] {
   const catalog = usePartInspectorStore((s) => s.catalog);
   const bindings = usePartInspectorStore((s) => s.bindings);
+  const groups = usePartInspectorStore((s) => listMaterialGroups(s, scannerId));
   const hiddenIds = usePartInspectorStore((s) => selectHiddenParts(s, scannerId));
   const sensors = useSensorOptions();
   const connection = useTwinStore((s) => s.connection);
@@ -67,25 +72,29 @@ export function useComponentRows(scannerId: ScannerModelId): ComponentRow[] {
   return useMemo(() => {
     const hidden = new Set(hiddenIds);
     const byId = new Map(sensors.map((sensor) => [sensor.id, sensor]));
+    const groupById = new Map(groups.map((group) => [group.id, group]));
     return listPartsForScanner(scannerId, catalog, bindings).map((part) => {
       const binding = resolvePartBinding({ ...part, scannerId }, bindings);
+      const group = binding.groupId ? groupById.get(binding.groupId) : undefined;
       const sensor = binding.sensorId ? byId.get(binding.sensorId) : undefined;
       const reading = sensor?.rows[sensor.rows.length - 1] ?? null;
       return {
         partId: part.partId,
         cadName: part.cadName,
         displayName: binding.displayName,
-        type: inferPartRole(part.cadName),
+        type: group ? materialClassLabel(group.classId) : inferPartRole(part.cadName),
         sensorId: binding.sensorId,
         inSimulation: binding.inSimulation,
         colorHex: binding.colorHex,
+        groupId: binding.groupId,
+        materialLabel: group ? materialFullLabel(group.classId, group.gradeId) : null,
         hidden: hidden.has(part.partId),
         reading,
         sensorStale: Boolean(binding.sensorId) && !reading && twinLive,
         sensorDisconnected: Boolean(binding.sensorId) && !twinLive,
       };
     });
-  }, [scannerId, catalog, bindings, hiddenIds, sensors, twinLive]);
+  }, [scannerId, catalog, bindings, groups, hiddenIds, sensors, twinLive]);
 }
 
 export function componentTypes(rows: ComponentRow[]): string[] {
@@ -106,6 +115,7 @@ export function filterComponentRows(
       row.displayName.toLowerCase().includes(q) ||
       row.cadName.toLowerCase().includes(q) ||
       row.type.toLowerCase().includes(q) ||
+      (row.materialLabel ?? "").toLowerCase().includes(q) ||
       (row.sensorId ?? "").toLowerCase().includes(q)
     );
   });

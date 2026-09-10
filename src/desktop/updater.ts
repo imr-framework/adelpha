@@ -43,6 +43,14 @@ export type UpdateStatus = {
 
 let pending: Update | null = null;
 
+export function explainUpdateError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  if (/fallback platforms/i.test(raw) || /were found in the response 'platforms'/i.test(raw)) {
+    return "This Mac is not in the GitHub update feed yet. Download a new installer from the Adelpha releases page. In-app updates need a later tagged release that includes a signed darwin package.";
+  }
+  return raw;
+}
+
 export async function checkForAppUpdate(): Promise<{
   available: boolean;
   version?: string;

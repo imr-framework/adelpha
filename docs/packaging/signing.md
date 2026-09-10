@@ -1,3 +1,9 @@
+---
+title: Adelpha MRI packaging signing
+description: Sign and notarize Adelpha MRI installers for macOS, Windows, and Linux, and configure the in-app updater public key.
+icon: lucide/shield-check
+---
+
 # Signing, notarization, and trusted public releases
 
 CI produces **unsigned** artifacts unless the secrets below are present.
@@ -35,8 +41,15 @@ GitHub Actions secrets (names only):
 Tauri env: `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`,
 `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`.
 
-Intel DMG is built on `macos-13` (x86_64). A universal DMG is **not** produced:
-the Python sidecar cannot be assumed universal.
+If `security import` fails (`SecKeychainItemImport: One or more parameters
+passed to a function were not valid`), the certificate secret is not a valid
+base64 `.p12` or the password does not match. CI then retries an **unsigned**
+`.app` and wraps it with `hdiutil`. Gatekeeper will still require
+**Right-click → Open**.
+
+Intel DMG is built on `macos-15-intel` (x86_64). Apple Silicon DMG is built on
+`macos-15`. A universal DMG is **not** produced: the Python sidecar cannot be
+assumed universal.
 
 ## Windows (x64 NSIS)
 
@@ -96,21 +109,24 @@ have the secrets configured.
    a later version is on GitHub Latest.
 2. Push a tag `vX.Y.Z` (example: `v0.2.0`).
 3. The `desktop.yml` workflow builds each platform, then the
-   `publish-updater` job writes `latest.json` and uploads artifacts to
-   that GitHub Release.
+   `publish-release` job writes `latest.json` (when signatures exist) and
+   uploads artifacts to that GitHub Release.
 
 `latest.json` is assembled by `packaging/updater/assemble_latest_json.py`
 from:
 
 | Platform key | Artifact |
 | --- | --- |
-| `darwin-aarch64` | `Adelpha-darwin-aarch64.app.tar.gz` + `.sig` |
-| `darwin-x86_64` | `Adelpha-darwin-x86_64.app.tar.gz` + `.sig` |
+| `darwin-aarch64` / `darwin-aarch64-app` | `Adelpha-darwin-aarch64.app.tar.gz` + `.sig` |
+| `darwin-x86_64` / `darwin-x86_64-app` | `Adelpha-darwin-x86_64.app.tar.gz` + `.sig` |
 | `windows-x86_64` | NSIS `*setup.exe` + `.sig` |
 | `linux-x86_64` | AppImage + `.sig` |
 
 Platforms without a matching `.sig` are omitted. The updater plugin
-rejects a feed that lists a platform with an empty URL.
+rejects a feed that lists a platform with an empty URL. macOS updater
+tarballs are produced even when Apple codesign fails (`packaging/updater/make_macos_updater_artifact.sh`).
+The DMG is still unsigned in that case; Settings trusts the updater
+signature, Gatekeeper does not.
 
 Local `make dist-current` signs updater artifacts when
 `TAURI_SIGNING_PRIVATE_KEY` is set, or when `src-tauri/updater.key` exists

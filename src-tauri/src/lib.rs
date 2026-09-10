@@ -6,6 +6,18 @@ use std::sync::Arc;
 use runtime::RuntimeManager;
 use tauri::Manager;
 
+fn apply_window_chrome(window: &tauri::WebviewWindow) {
+    let _ = window.set_decorations(true);
+    // Follow the OS appearance for the native title bar (Windows personalization,
+    // macOS appearance, desktop theme on Linux). The Adelpha UI stays dark via CSS.
+    let _ = window.set_theme(None);
+    #[cfg(target_os = "macos")]
+    {
+        let _ = window.set_title_bar_style(tauri::TitleBarStyle::Visible);
+        let _ = window.set_title("Adelpha");
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
@@ -19,6 +31,9 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .setup(move |app| {
+            if let Some(window) = app.get_webview_window("main") {
+                apply_window_chrome(&window);
+            }
             let handle = app.handle().clone();
             let mgr = manager.clone();
             tauri::async_runtime::spawn(async move {
@@ -39,6 +54,9 @@ pub fn run() {
             runtime::dtam_runtime_prefs,
             runtime::set_dtam_runtime_prefs,
             runtime::reveal_dtam_config_dir,
+            runtime::mri_data_info,
+            runtime::set_mri_data_dir,
+            runtime::reveal_mri_data_dir,
             pty::terminal_start,
             pty::terminal_write,
             pty::terminal_resize,

@@ -17,6 +17,7 @@ import {
   selectHiddenParts,
   usePartInspectorStore,
   type PartBinding,
+  type SelectMode,
 } from "../partInspectorStore";
 import { useGLTF } from "@react-three/drei";
 
@@ -32,16 +33,20 @@ import {
 import { clearAllImportedModels, importCadFile, importedObjectUrl, removeImportedModel } from "../importedModels";
 import {
   getScannerProfile,
+  cadExplodesParts,
   useScannerCatalog,
   useScannerModel,
   type ScannerModelId,
   type ScannerModelProfile,
 } from "../scannerModel";
 import { refreshSensorsBatch, useTwinStore } from "../telemetryStore";
+import { useCadPerfStore } from "../cadPerf";
 import { requestPartFocus } from "../viewportFocus";
 import type { SettingsLaunch } from "../settingsOpen";
 import { ComponentBrowser } from "./ComponentBrowser";
 import { ComponentInspector } from "./ComponentInspector";
+import { MaterialAssignForm } from "./MaterialAssignForm";
+import { MaterialGroupList } from "./MaterialGroupList";
 import {
   componentTypes,
   filterComponentRows,
@@ -64,6 +69,7 @@ import {
   StatusBadge,
   Switch,
   UseModelColorsRow,
+  PolishedFinishRow,
   ViewportBgRow,
 } from "./controls";
 import { FIELD_LAYERS, type FieldLayerId } from "./fieldLayers";
@@ -404,6 +410,7 @@ function GeneralTab({
       <SettingsSection title="Viewport" description="How the twin stage renders behind the CAD.">
         <ViewportBgRow />
         <UseModelColorsRow />
+        <PolishedFinishRow />
       </SettingsSection>
 
       <SettingsSection title="Camera">
@@ -448,7 +455,9 @@ function ComponentsTab({
   const sensors = useSensorOptions();
   const sensorsBatch = useTwinStore((s) => s.sensorsBatch);
   const selected = usePartInspectorStore((s) => s.selected);
+  const selection = usePartInspectorStore((s) => s.selection);
   const selectPart = usePartInspectorStore((s) => s.selectPart);
+  const selectMany = usePartInspectorStore((s) => s.selectMany);
   const clearSelection = usePartInspectorStore((s) => s.clearSelection);
   const patchBinding = usePartInspectorStore((s) => s.patchBinding);
   const hidePart = usePartInspectorStore((s) => s.hidePart);
@@ -464,13 +473,19 @@ function ComponentsTab({
   const [type, setType] = useState("all");
   const [loadingSensors, setLoadingSensors] = useState(false);
   const [sensorError, setSensorError] = useState<string | null>(null);
+  const anchorId = useRef<string | null>(null);
 
   const types = useMemo(() => componentTypes(rows), [rows]);
   const filtered = useMemo(() => filterComponentRows(rows, query, type), [rows, query, type]);
+  const selectedIds = useMemo(
+    () => selection.filter((part) => part.scannerId === scannerId).map((part) => part.partId),
+    [scannerId, selection],
+  );
   const selectedRow =
     selected?.scannerId === scannerId
       ? rows.find((row) => row.partId === selected.partId) ?? null
       : null;
+  const multi = selectedIds.length > 1;
 
   // Same lazy sensor fetch the old model library performed.
   useEffect(() => {
@@ -497,7 +512,7 @@ function ComponentsTab({
     if (!partId) return;
     const part = rows.find((row) => row.partId === partId);
     if (part) selectPart({ partId, cadName: part.cadName, scannerId });
-  }, [launch?.focusPartId, rows, scannerId, selectPart]);
+  }, [launch?.focusPartId, rows.length, scannerId, selectPart]);
 
   const emptyReason = !profile.cad
     ? `${profile.displayName} has no CAD assembly to configure.`
@@ -515,12 +530,43 @@ function ComponentsTab({
     else hidePart(scannerId, row.partId);
   }
 
+  function toSelected(row: ComponentRow) {
+    return { partId: row.partId, cadName: row.cadName, scannerId };
+  }
+
+  function onSelectRow(row: ComponentRow, mode: SelectMode | "range") {
+    if (mode === "range") {
+      const fromId = anchorId.current ?? selected?.partId ?? row.partId;
+      const start = filtered.findIndex((item) => item.partId === fromId);
+      const end = filtered.findIndex((item) => item.partId === row.partId);
+      if (start >= 0 && end >= 0) {
+        const lo = Math.min(start, end);
+        const hi = Math.max(start, end);
+        const slice = filtered.slice(lo, hi + 1).map(toSelected);
+        const caret = slice.find((part) => part.partId === row.partId);
+        const rest = slice.filter((part) => part.partId !== row.partId);
+        selectMany(caret ? [...rest, caret] : slice);
+        return;
+      }
+    }
+    if (mode === "replace") anchorId.current = row.partId;
+    selectPart(toSelected(row), mode === "range" ? "replace" : mode);
+  }
+
+  function onToggleAll(on: boolean) {
+    if (!on) {
+      clearSelection();
+      return;
+    }
+    selectMany(filtered.map(toSelected));
+  }
+
   return (
     <div className="sw-components">
       <div className="sw-components-toolbar">
         <label className="sw-toggle-pill">
           <MousePointerClick size={14} strokeWidth={1.8} aria-hidden />
-          <span>Click parts in the viewport</span>
+          <span>Shift+↓ / Shift-click extends · checkbox adds</span>
           <Switch
             label="Viewport inspection mode"
             checked={inspectionMode}
@@ -540,7 +586,9 @@ function ComponentsTab({
         ) : null}
       </div>
 
-      <div className={`sw-components-split${selectedRow ? " has-selection" : ""}`}>
+      <MaterialGroupList scannerId={scannerId} />
+
+      <div className={`sw-components-split${selectedRow || multi ? " has-selection" : ""}`}>
         <ComponentBrowser
           rows={filtered}
           totalCount={rows.length}
@@ -550,14 +598,43 @@ function ComponentsTab({
           type={type}
           onTypeChange={setType}
           selectedId={selectedRow?.partId ?? null}
-          onSelect={(row) =>
-            selectPart({ partId: row.partId, cadName: row.cadName, scannerId })
-          }
+          selectedIds={selectedIds}
+          onSelect={onSelectRow}
+          onToggleAll={onToggleAll}
           onToggleVisibility={onToggleVisibility}
           onFocus={onFocus}
           emptyReason={emptyReason}
         />
-        {selectedRow ? (
+        {multi ? (
+          <>
+            <button
+              type="button"
+              className="sw-inspector-backdrop"
+              aria-label="Clear part selection"
+              onClick={clearSelection}
+            />
+            <aside className="sw-inspector" aria-label="Selected parts">
+              <header className="sw-inspector-head">
+                <div className="sw-inspector-ident">
+                  <h4 className="sw-inspector-name">{selectedIds.length} parts selected</h4>
+                  <p className="sw-inspector-meta">
+                    Assign an MRI class, then add the group to simulation.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="sw-icon-btn"
+                  aria-label="Clear selection"
+                  title="Clear"
+                  onClick={clearSelection}
+                >
+                  <X size={15} strokeWidth={1.8} aria-hidden />
+                </button>
+              </header>
+              <MaterialAssignForm scannerId={scannerId} partIds={selectedIds} />
+            </aside>
+          </>
+        ) : selectedRow ? (
           <>
             <button
               type="button"
@@ -583,7 +660,10 @@ function ComponentsTab({
         ) : rows.length > 0 ? (
           <aside className="sw-inspector is-empty" aria-label="Component properties">
             <Info size={18} strokeWidth={1.7} aria-hidden />
-            <p>Select a component to edit its name, sensor, color, and visibility.</p>
+            <p>
+              Select a component, or Shift-click several parts and assign an MRI class (Magnet,
+              Copper, Plastic, Steel, Aluminium).
+            </p>
           </aside>
         ) : null}
       </div>
@@ -766,6 +846,7 @@ function SensorsTab({
 function VisualizationTab({ draft, patch }: { draft: Draft; patch: PatchDraft }) {
   const view = useTwinStore((s) => s.view);
   const setView = useTwinStore((s) => s.setView);
+  const explodePartCount = useCadPerfStore((s) => s.explodePartCount);
 
   const renderMode = view.hybrid_render ? "hybrid" : view.wireframe ? "wireframe" : "solid";
   const activeLayer: FieldLayerId = view.show_temperature_map
@@ -807,7 +888,11 @@ function VisualizationTab({ draft, patch }: { draft: Draft; patch: PatchDraft })
         </SettingsRow>
         <SettingsRow
           title="Exploded assembly"
-          description="Separate assembly parts to see internal hardware."
+          description={
+            explodePartCount === 1
+              ? "This file is a single fused mesh. Re-export from CAD with separate bodies to explode it."
+              : "Same radial explode on every GLB. Fasteners stay put."
+          }
           layout="stack"
         >
           <RangeInput
@@ -1030,7 +1115,7 @@ function FilesTab({
               { label: "Rotation (deg)", value: cad.rotationDeg.join(", "), mono: true },
               {
                 label: "Exploded view",
-                value: cad.explodeParts ? "Per assembly child" : "Whole assembly",
+                value: cadExplodesParts(cad) ? "Largest assembly bodies" : "Whole STL mesh",
               },
             ]}
           />
@@ -1045,12 +1130,12 @@ function FilesTab({
       <SettingsSection title="Import">
         <SettingsRow
           title="Import CAD"
-          description="glTF binary (.glb) or STEP (.step / .stp). STEP is tessellated at high quality on this computer, then stored like a GLB."
+          description="glTF binary (.glb), up to 2 GB. Imports stay on this computer."
         >
           <input
             ref={inputRef}
             type="file"
-            accept=".glb,.step,.stp,model/gltf-binary,application/step"
+            accept=".glb,model/gltf-binary"
             hidden
             onChange={(event) => void onPick(event.target.files?.[0])}
           />

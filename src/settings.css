@@ -712,6 +712,17 @@
   color: var(--sw-text-2);
 }
 
+.settings-path {
+  display: block;
+  margin: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--sw-text);
+}
+
 .settings-segment {
   display: inline-flex;
   padding: 3px;
@@ -1288,6 +1299,11 @@
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
+.sw-table-scroll:focus,
+.sw-table-scroll:focus-visible {
+  outline: none;
+}
+
 .sw-table-scroll::-webkit-scrollbar {
   width: 10px;
 }
@@ -1335,23 +1351,27 @@
 }
 
 .sw-table thead th:nth-child(1) {
-  width: 38%;
+  width: 44px;
 }
 
 .sw-table thead th:nth-child(2) {
-  width: 17%;
+  width: 34%;
 }
 
 .sw-table thead th:nth-child(3) {
-  width: 16%;
+  width: 15%;
 }
 
 .sw-table thead th:nth-child(4) {
-  width: 17%;
+  width: 15%;
 }
 
-.sw-table thead th:nth-child(5),
-.sw-table thead th:nth-child(6) {
+.sw-table thead th:nth-child(5) {
+  width: 16%;
+}
+
+.sw-table thead th:nth-child(6),
+.sw-table thead th:nth-child(7) {
   width: 60px;
 }
 
@@ -1686,6 +1706,115 @@
   align-items: center;
   gap: 6px;
   padding-top: 2px;
+}
+
+.sw-col-check {
+  width: 44px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.sw-table td.sw-col-check {
+  padding-inline: 8px;
+}
+
+.sw-check {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--sw-violet);
+}
+
+.sw-table td.sw-col-check .sw-check {
+  pointer-events: none;
+}
+
+.sw-table thead .sw-check {
+  cursor: pointer;
+}
+
+.sw-mat-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sw-mat-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--sw-raised);
+}
+
+.sw-mat-group-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sw-mat-group-main strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sw-text);
+}
+
+.sw-mat-group-main span {
+  font-size: 11.5px;
+  color: var(--sw-text-3);
+}
+
+.sw-mat-group-count {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.sw-mat-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sw-mat-form-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sw-text-3);
+}
+
+.sw-mat-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sw-mat-assign {
+  font-weight: 600;
+}
+
+.part-inspect-card .sw-mat-form {
+  margin-top: 8px;
+}
+
+.part-inspect-card .sw-field-label {
+  color: var(--inspect-muted, var(--sw-text-3));
 }
 
 .sw-menu-wrap {
@@ -2048,6 +2177,10 @@
   outline-offset: 2px;
 }
 
+.settings-overlay .sw-table-scroll:focus-visible {
+  outline: none;
+}
+
 .settings-overlay .settings-search:focus-within,
 .settings-overlay .sw-search:focus-within {
   border-color: var(--sw-violet-line);
@@ -2071,6 +2204,7 @@
   .sw-components-split.has-selection,
   .sw-components-split:has(.sw-inspector) {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
   }
 
   .sw-inspector.is-empty {
@@ -2078,27 +2212,20 @@
   }
 
   .sw-inspector-backdrop {
-    display: block;
-    position: absolute;
-    inset: 0;
-    z-index: 4;
-    border: 0;
-    border-radius: 12px;
-    background: rgba(0, 0, 0, 0.5);
-    cursor: pointer;
+    display: none;
   }
 
   .sw-inspector:not(.is-empty) {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 5;
-    width: min(360px, 92%);
-    max-height: 100%;
+    position: relative;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    z-index: 2;
+    width: auto;
+    max-height: 42vh;
     overflow-y: auto;
-    border-radius: 12px 0 0 12px;
-    box-shadow: -18px 0 40px rgba(0, 0, 0, 0.5);
+    border-radius: 12px;
+    box-shadow: none;
   }
 
   .sw-model-layout {

@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: Adelpha MRI
+message: If you use Adelpha MRI, please cite it using these metadata.
+type: software
+authors:
+  - name: Adelpha contributors
+  - name: Accessible Magnetic Resonance Laboratory
+    alias: AMRL
+repository-code: "https://github.com/imr-framework/adelpha"
+url: "https://imr-framework.github.io/adelpha/"
+license: MIT
+keywords:
+  - low-field MRI
+  - magnetic resonance imaging
+  - MRI console
+  - MRI digital twin
+  - MaRCoS
+  - Red Pitaya
+  - medical imaging
+abstract: >-
+  Adelpha MRI is an open-source low-field MRI console and digital twin
+  for scanner control, acquisition, monitoring, engineering, and
+  AI-assisted workflows. The desktop shell and DTAM twin are MIT-licensed.
+  The imaging console tree (console/) is GNU GPL v3, derived from the
+  MRI4ALL Zeugmatron Z1 console.

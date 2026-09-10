@@ -1,4 +1,6 @@
 ---
+title: Adelpha MRI architecture
+description: How Adelpha MRI layers the Tauri desktop shell, React workspaces, Python supervisor, DTAM digital twin, and MRI console façade.
 icon: lucide/waypoints
 ---
 
@@ -20,9 +22,9 @@ In the **desktop app** those three APIs are one supervisor process (dynamic port
 | --- | --- |
 | `digital-twin` | Viewport + resizable side panel + bottom console |
 | `imaging-console` | Full-width `ImagingConsole` |
-| `engineering-studio` | Placeholder card |
+| `engineering-studio` | Full-width Engineering Studio viewport (simulation parts in the same void as Digital Twin) |
 
-Alt workspaces add `main-alt-workspace` to hide the twin viewport, panel edge, and side panel.
+Alt workspaces keep the Digital Twin WebGL canvas mounted (hidden and paused) so orbit and CAD view survive a switch. The telemetry panel is hidden.
 
 ## Client modules
 
@@ -31,11 +33,12 @@ Alt workspaces add `main-alt-workspace` to hide the twin viewport, panel edge, a
 | `src/twin/TopbarControls.tsx` | System Context dropdown, workspace switcher (⌘K), app menu |
 | `src/twin/workspacePrefs.ts` | Persisted startup workspace / restore layout / panel width |
 | `src/twin/ImagingConsole.tsx` | Imaging Console shell (viewers + sequence editor) |
+| `src/twin/EngineeringStudio.tsx` | Engineering Studio shell, CAD viewport, and view controls |
 | `src/twin/Mri4allWindows.tsx` | Status, Log, Config, Study Viewer, Flex |
 | `src/twin/mri/api.ts` | MRI console REST + WebSocket client |
 | `src/twin/consoleTheme.ts` | Adelpha vs MRI4ALL console colors |
 | `src/twin/scannerModel.ts` | Bundled + imported scanner profiles |
-| `src/twin/importedModels.ts` | GLB / STEP import (IndexedDB) |
+| `src/twin/importedModels.ts` | GLB import (IndexedDB) |
 | `src/twin/settings/DtamSetupSection.tsx` | Twin scanner, environment, Agents key |
 | `src/twin/dtamApi.ts` | Twin: health, state, forecast, assess, sensors |
 | `src/twin/adkApi.ts` | Agents: sessions, SSE / run, list-apps, artifacts |
@@ -64,3 +67,7 @@ Alt workspaces add `main-alt-workspace` to hide the twin viewport, panel edge, a
 ## Desktop shell
 
 Tauri v2 (`src-tauri/`) loads the Vite UI, spawns `adelpha-python-runtime`, and exposes a real PTY. Camera uses `NSCameraUsageDescription` plus the hardened-runtime camera entitlement. Imported CAD and MediaPipe WASM need the production CSP (`blob:`, `wasm-unsafe-eval`, `mediastream:`). See [Desktop packaging](../packaging/index.md) and [Settings](settings.md).
+
+## Related
+
+[MaRCoS](../about/marcos.md) · [MRI4ALL](../about/mri4all.md) · [Digital twins](../about/digital-twins.md) · [Sequences](../about/sequences.md) · [Reconstruction](../about/reconstruction.md)
