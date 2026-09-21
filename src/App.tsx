@@ -10,20 +10,32 @@ import {
   type FormEvent,
   type PointerEvent as ReactPointerEvent,
   type CSSProperties,
-  type ReactNode,
 } from "react";
-import type { QuantitySource, TimestampedQuantity } from "./twin/dtamTypes";
 import {
   formatB0T,
-  formatConfidence,
   formatFreqMHz,
   formatHz,
   formatNoiseFloor,
   formatRmsV,
   formatTempC,
-  sourceClass,
-  sourceMonogram,
+  formatTs,
 } from "./twin/format";
+import { dftMagnitudeSpectrum, sampleJohnsonNoise } from "./twin/dashboard/noiseMath";
+import { linePath, linePathOffset } from "./twin/dashboard/chartPath";
+import { DashCameraPreview } from "./twin/dashboard/DashCameraPreview";
+import { InfoCard, MetricRow, QuantityRow } from "./twin/panel/metrics";
+import {
+  clampPanelWidth,
+  PANEL_CHAT_MIN_WIDTH,
+  PANEL_COLLAPSED_KEY,
+  PANEL_DEFAULT_WIDTH,
+  PANEL_MODE_KEY,
+  PANEL_WIDTH_KEY,
+  readPanelCollapsed,
+  readPanelMode,
+  readPanelWidth,
+  type PanelMode,
+} from "./twin/panel/panelPrefs";
 import {
   attachDtamTelemetryDriver,
   refreshSensorsBatch,
@@ -62,11 +74,7 @@ import { isImportedModelId } from "./twin/importedModels";
 import { useCadPerfStore } from "./twin/cadPerf";
 import { usePolishedFinish } from "./twin/useModelColors";
 import { applyConsoleTheme, readConsoleTheme } from "./twin/consoleTheme";
-import {
-  readWorkspacePrefs,
-  resolveLaunchWorkspace,
-  useWorkspacePrefs,
-} from "./twin/workspacePrefs";
+import { resolveLaunchWorkspace, useWorkspacePrefs } from "./twin/workspacePrefs";
 import { scheduleAutoUpdateCheck } from "./desktop/updater";
 import "./styles.css";
 import "./settings.css";
@@ -92,13 +100,6 @@ const POSE_HISTORY_POINTS = 160;
 const FFT_BINS = 72;
 /** Samples in the Johnson/thermal noise time-domain trace. */
 const JOHNSON_SAMPLES = 240;
-const PANEL_WIDTH_KEY = "twin_side_panel_width_px";
-const PANEL_COLLAPSED_KEY = "twin_side_panel_collapsed";
-const PANEL_MODE_KEY = "twin_side_panel_mode";
-const PANEL_DEFAULT_WIDTH = 380;
-const PANEL_CHAT_MIN_WIDTH = 360;
-const PANEL_MIN_WIDTH = 260;
-const PANEL_MAX_WIDTH_FRAC = 0.72;
 type DashboardCard =
   | "temp"
   | "noiseTime"
@@ -108,236 +109,6 @@ type DashboardCard =
   | "yaw"
   | "pitch"
   | "roll";
-type PanelMode = "telemetry" | "agents";
-
-/** Box–Muller Gaussian sample (Johnson / thermal noise). */
-function gaussianSample(): number {
-  let u = 0;
-  let v = 0;
-  while (u === 0) u = Math.random();
-  while (v === 0) v = Math.random();
-  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-}
-
-/**
- * Time-domain Johnson–Nyquist thermal noise.
- * Amplitude scales with √T (relative to 300 K).
- */
-function sampleJohnsonNoise(tempC: number, n: number): number[] {
-  const tK = Math.max(1, tempC + 273.15);
-  const sigma = 0.28 * Math.sqrt(tK / 300);
-  return Array.from({ length: n }, () => sigma * gaussianSample());
-}
-
-/** One-sided DFT magnitude spectrum of a real-valued time series. */
-function dftMagnitudeSpectrum(samples: number[]): number[] {
-  const n = samples.length;
-  if (n < 2) return [];
-  const bins = Math.floor(n / 2);
-  const out = new Array<number>(bins);
-  for (let k = 0; k < bins; k++) {
-    let re = 0;
-    let im = 0;
-    const omega = (2 * Math.PI * k) / n;
-    for (let t = 0; t < n; t++) {
-      const a = omega * t;
-      re += samples[t]! * Math.cos(a);
-      im -= samples[t]! * Math.sin(a);
-    }
-    out[k] = Math.sqrt(re * re + im * im) / n;
-  }
-  return out;
-}
-
-function readPanelMode(): PanelMode {
-  if (typeof localStorage === "undefined") return "telemetry";
-  try {
-    return localStorage.getItem(PANEL_MODE_KEY) === "agents" ? "agents" : "telemetry";
-  } catch {
-    return "telemetry";
-  }
-}
-
-function readPanelWidth(): number {
-  if (typeof localStorage === "undefined") return PANEL_DEFAULT_WIDTH;
-  try {
-    if (!readWorkspacePrefs().rememberPanel) return PANEL_DEFAULT_WIDTH;
-    const n = Number(localStorage.getItem(PANEL_WIDTH_KEY));
-    if (Number.isFinite(n) && n >= PANEL_MIN_WIDTH) return n;
-  } catch {
-    /* ignore */
-  }
-  return PANEL_DEFAULT_WIDTH;
-}
-
-function readPanelCollapsed(): boolean {
-  if (typeof localStorage === "undefined") return false;
-  try {
-    if (!readWorkspacePrefs().restoreLayout) return false;
-    return localStorage.getItem(PANEL_COLLAPSED_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function clampPanelWidth(px: number, viewportWidth: number) {
-  const max = Math.max(PANEL_MIN_WIDTH, Math.floor(viewportWidth * PANEL_MAX_WIDTH_FRAC));
-  return Math.min(max, Math.max(PANEL_MIN_WIDTH, Math.round(px)));
-}
-
-function formatTs(ms: number) {
-  return new Date(ms).toLocaleTimeString();
-}
-
-function DashCameraPreview({
-  stream,
-  expanded = false,
-}: {
-  stream: MediaStream | null;
-  expanded?: boolean;
-}) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
-    el.srcObject = stream;
-    if (stream) {
-      void el.play().catch(() => {
-        /* autoplay may be blocked briefly */
-      });
-    }
-    return () => {
-      el.srcObject = null;
-    };
-  }, [stream]);
-
-  return (
-    <div className={expanded ? "dash-camera-preview dash-camera-preview-expanded" : "dash-camera-preview"}>
-      <video ref={videoRef} className="dash-camera-video" muted playsInline autoPlay />
-      {!stream ? <span className="dash-camera-waiting">Waiting for camera…</span> : null}
-    </div>
-  );
-}
-
-function linePath(values: number[], min: number, max: number, width: number, height: number) {
-  const den = Math.max(values.length - 1, 1);
-  const span = Math.max(max - min, 1e-6);
-  const pad = Math.min(6, height * 0.06);
-  const usable = Math.max(height - pad * 2, 1);
-  return values
-    .map((v, i) => {
-      const x = (i / den) * width;
-      const y = pad + usable - ((v - min) / span) * usable;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
-    })
-    .join(" ");
-}
-
-function linePathOffset(
-  values: number[],
-  min: number,
-  max: number,
-  width: number,
-  height: number,
-  ox: number,
-  oy: number,
-) {
-  const den = Math.max(values.length - 1, 1);
-  const span = Math.max(max - min, 1e-6);
-  const pad = Math.min(8, height * 0.04);
-  const usable = Math.max(height - pad * 2, 1);
-  return values
-    .map((v, i) => {
-      const x = ox + (i / den) * width;
-      const y = oy + pad + usable - ((v - min) / span) * usable;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
-    })
-    .join(" ");
-}
-
-function InfoCard({
-  title,
-  children,
-  footer,
-}: {
-  title: string;
-  children: ReactNode;
-  footer?: ReactNode;
-}) {
-  return (
-    <section className="info-card">
-      <h2 className="info-card-title">{title}</h2>
-      <div className="info-card-body">{children}</div>
-      {footer ? <div className="info-card-footer">{footer}</div> : null}
-    </section>
-  );
-}
-
-function MetricRow({
-  label,
-  value,
-  source,
-  confidence,
-  nested,
-}: {
-  label: string;
-  value: string;
-  source?: QuantitySource | null;
-  confidence?: string | null;
-  nested?: boolean;
-}) {
-  return (
-    <div className={`metric-row${nested ? " metric-row-nested" : ""}`}>
-      <span className="metric-label">{label}</span>
-      <div className="metric-meta">
-        <span className="metric-value">{value}</span>
-        {source ? (
-          <span
-            className={`src-badge ${sourceClass(source)}`}
-            title={source}
-            aria-label={source}
-          >
-            {sourceMonogram(source)}
-          </span>
-        ) : null}
-        {confidence ? <span className="metric-conf">{confidence}</span> : null}
-      </div>
-    </div>
-  );
-}
-
-function QuantityRow({
-  label,
-  q,
-  format,
-  bare,
-  bareSource = "nominal",
-  nested,
-}: {
-  label: string;
-  q?: TimestampedQuantity | null;
-  format: (v: number) => string;
-  bare?: string | null;
-  bareSource?: QuantitySource;
-  nested?: boolean;
-}) {
-  if (bare != null) {
-    return <MetricRow label={label} value={bare} source={bareSource} nested={nested} />;
-  }
-  if (!q) {
-    return <MetricRow label={label} value="—" nested={nested} />;
-  }
-  return (
-    <MetricRow
-      label={label}
-      value={format(q.value)}
-      source={q.source}
-      confidence={formatConfidence(q) || null}
-      nested={nested}
-    />
-  );
-}
 
 export default function App() {
   const telemetry = useTwinStore((s) => s.telemetry);
