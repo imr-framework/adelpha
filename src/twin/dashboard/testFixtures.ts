@@ -1,4 +1,7 @@
+import { renderHook } from "@testing-library/react";
+
 import type { SystemState } from "../dtamTypes";
+import { useDashboardSeries } from "./useDashboardSeries";
 import type { TwinTelemetry } from "../types";
 
 export function telemetryFixture(over: Partial<TwinTelemetry> = {}): TwinTelemetry {
@@ -30,4 +33,20 @@ export function systemStateFixture(over: Partial<SystemState> = {}): SystemState
     },
     ...over,
   } as SystemState;
+}
+
+/**
+ * A fully-populated DashboardSeries for component tests. `showDashboard`
+ * matters: pose sampling and the Johnson-noise interval are both gated on it.
+ */
+export function seriesFixture({ showDashboard = true }: { showDashboard?: boolean } = {}) {
+  const { result } = renderHook(() =>
+    useDashboardSeries({
+      telemetry: telemetryFixture(),
+      systemState: systemStateFixture(),
+      showDashboard,
+      expandedCard: null,
+    }),
+  );
+  return result.current;
 }
