@@ -4,7 +4,6 @@ import {
   lazy,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type FormEvent,
@@ -18,11 +17,11 @@ import {
   formatNoiseFloor,
   formatRmsV,
   formatTempC,
-  formatTs,
 } from "./twin/format";
-import { dftMagnitudeSpectrum, sampleJohnsonNoise } from "./twin/dashboard/noiseMath";
-import { linePath, linePathOffset } from "./twin/dashboard/chartPath";
-import { DashCameraPreview } from "./twin/dashboard/DashCameraPreview";
+import { useDashboardSeries } from "./twin/dashboard/useDashboardSeries";
+import { LiveDashboard } from "./twin/dashboard/LiveDashboard";
+import { ExpandedChartModal } from "./twin/dashboard/ExpandedChartModal";
+import type { DashboardCard } from "./twin/dashboard/types";
 import { InfoCard, MetricRow, QuantityRow } from "./twin/panel/metrics";
 import {
   clampPanelWidth,
@@ -49,7 +48,6 @@ import { ViewportToolRail, type ViewportToolId } from "./twin/ViewportToolRail";
 import { ViewportContextMenu } from "./twin/ViewportContextMenu";
 import { PartInspectorCard } from "./twin/PartInspectorCard";
 import { PartVisibilityTray } from "./twin/PartVisibilityTray";
-import type { HeadPose } from "./twin/CameraFeed";
 import { useHeadMotionStore } from "./twin/headMotionStore";
 import {
   persistWorkspace,
@@ -95,21 +93,6 @@ const EngineeringStudio = lazy(() =>
   import("./twin/EngineeringStudio").then((m) => ({ default: m.EngineeringStudio })),
 );
 
-const HISTORY_POINTS = 140;
-const POSE_HISTORY_POINTS = 160;
-const FFT_BINS = 72;
-/** Samples in the Johnson/thermal noise time-domain trace. */
-const JOHNSON_SAMPLES = 240;
-type DashboardCard =
-  | "temp"
-  | "noiseTime"
-  | "noiseSpec"
-  | "mriSpec"
-  | "camPreview"
-  | "yaw"
-  | "pitch"
-  | "roll";
-
 export default function App() {
   const telemetry = useTwinStore((s) => s.telemetry);
   const systemState = useTwinStore((s) => s.systemState);
@@ -136,12 +119,7 @@ export default function App() {
   const [viewportTool, setViewportTool] = useState<ViewportToolId>("magnet");
   const [stageMode, setStageMode] = useState<"magnet" | "camera">("magnet");
   const [cameraPreviewStream, setCameraPreviewStream] = useState<MediaStream | null>(null);
-  const [yawHistory, setYawHistory] = useState<number[]>([]);
-  const [pitchHistory, setPitchHistory] = useState<number[]>([]);
-  const [rollHistory, setRollHistory] = useState<number[]>([]);
   const [expandedCard, setExpandedCard] = useState<DashboardCard | null>(null);
-  const [tempHistory, setTempHistory] = useState<number[]>([]);
-  const [timeHistory, setTimeHistory] = useState<number[]>([]);
   const [showRawSensors, setShowRawSensors] = useState(false);
 
   const [horizonS, setHorizonS] = useState(60);
@@ -301,83 +279,13 @@ export default function App() {
   }, []);
 
   useEffect(() => attachDtamTelemetryDriver(1500), []);
-  useEffect(() => {
-    setTempHistory((s) => [...s.slice(-HISTORY_POINTS + 1), telemetry.magnet_temp_C]);
-    setTimeHistory((s) => [...s.slice(-HISTORY_POINTS + 1), telemetry.device_time_ms]);
-  }, [telemetry.device_time_ms, telemetry.magnet_temp_C]);
+  const series = useDashboardSeries({
+    telemetry,
+    systemState,
+    showDashboard,
+    expandedCard,
+  });
 
-  const rangeStart = timeHistory[0] ?? telemetry.device_time_ms;
-  const rangeEnd = timeHistory[timeHistory.length - 1] ?? telemetry.device_time_ms;
-
-  const peakHz = systemState?.emi?.peak_frequency_hz?.value ?? 50_000;
-  const emiRms = systemState?.emi?.rms_v?.value ?? 0.01;
-  const phase = telemetry.device_time_ms / 1000;
-  const johnsonTempC =
-    systemState?.thermal?.mean_magnet_temperature_c?.value ?? telemetry.magnet_temp_C;
-
-  const [johnsonNoise, setJohnsonNoise] = useState(() =>
-    sampleJohnsonNoise(johnsonTempC, JOHNSON_SAMPLES),
-  );
-
-  // Live random thermal noise while the dashboard (or related card) is visible.
-  useEffect(() => {
-    if (!showDashboard && expandedCard !== "noiseSpec" && expandedCard !== "noiseTime") return;
-    const tick = () => setJohnsonNoise(sampleJohnsonNoise(johnsonTempC, JOHNSON_SAMPLES));
-    tick();
-    const id = window.setInterval(tick, 90);
-    return () => window.clearInterval(id);
-  }, [showDashboard, expandedCard, johnsonTempC]);
-
-  const johnsonAbsMax = Math.max(0.15, ...johnsonNoise.map((v) => Math.abs(v))) * 1.15;
-  const johnsonMin = -johnsonAbsMax;
-  const johnsonMax = johnsonAbsMax;
-
-  const johnsonSpectrum = useMemo(() => dftMagnitudeSpectrum(johnsonNoise), [johnsonNoise]);
-  const johnsonSpecMax = Math.max(0.02, ...johnsonSpectrum) * 1.12;
-
-  // Map peak frequency into FFT bin for highlight (log-ish 1 kHz–100 kHz).
-  const emiBin = useMemo(() => {
-    const lo = Math.log10(1e3);
-    const hi = Math.log10(1e5);
-    const t = (Math.log10(Math.max(peakHz, 1e3)) - lo) / (hi - lo);
-    return Math.round(Math.min(1, Math.max(0, t)) * (FFT_BINS - 1));
-  }, [peakHz]);
-
-  const mriSpectrum = useMemo(
-    () =>
-      Array.from({ length: FFT_BINS }, (_, i) => {
-        const f = i / FFT_BINS;
-        const carrier = 0.12 + 0.45 * Math.exp(-Math.pow((f - 0.48) / 0.09, 2));
-        const sideA = 0.18 * Math.exp(-Math.pow((f - 0.27) / 0.05, 2));
-        const sideB = 0.14 * Math.exp(-Math.pow((f - 0.68) / 0.06, 2));
-        const shimmer = 0.03 * Math.sin(phase * 4 + i * 0.25);
-        const emiHit = Math.abs(i - emiBin) <= 1 ? 0.35 * Math.min(1.5, emiRms / 0.01) : 0;
-        return Math.max(0.01, carrier + sideA + sideB + shimmer + emiHit);
-      }),
-    [phase, emiBin, emiRms],
-  );
-
-  const mriSpecMin = 0;
-  const mriSpecMax = Math.max(0.2, ...mriSpectrum) * 1.05;
-
-  const expandedTitle =
-    expandedCard === "temp"
-      ? "Temperature vs Time"
-      : expandedCard === "noiseTime"
-        ? "Johnson noise spectrum (DFT magnitude)"
-        : expandedCard === "noiseSpec"
-          ? "Johnson / thermal noise (time domain)"
-          : expandedCard === "mriSpec"
-            ? "MRI Signal Frequency Spectrum (EMI Highlighted)"
-            : expandedCard === "camPreview"
-              ? "Camera preview"
-              : expandedCard === "yaw"
-                ? "Head yaw vs time"
-                : expandedCard === "pitch"
-                  ? "Head pitch vs time"
-                  : expandedCard === "roll"
-                    ? "Head roll vs time"
-                    : "";
 
   const thermal = systemState?.thermal ?? null;
   const magnetic = systemState?.magnetic ?? null;
@@ -420,9 +328,6 @@ export default function App() {
     await refreshSensorsBatch();
   }
 
-  const tempMin = Math.min(20, ...tempHistory, telemetry.magnet_temp_C) - 0.5;
-  const tempMax = Math.max(26, ...tempHistory, telemetry.magnet_temp_C) + 0.5;
-
   function onViewportToolChange(id: ViewportToolId) {
     setViewportTool(id);
     if (id === "camera") {
@@ -432,29 +337,11 @@ export default function App() {
     if (id === "magnet") {
       setStageMode("magnet");
       setCameraPreviewStream(null);
-      setYawHistory([]);
-      setPitchHistory([]);
-      setRollHistory([]);
+      series.resetPoseHistories();
       setExpandedCard(null);
     }
   }
 
-  const showDashboardRef = useRef(showDashboard);
-  showDashboardRef.current = showDashboard;
-
-  function onCameraPoseUpdate(pose: HeadPose) {
-    if (!showDashboardRef.current) return;
-    setYawHistory((s) => [...s.slice(-(POSE_HISTORY_POINTS - 1)), pose.yaw]);
-    setPitchHistory((s) => [...s.slice(-(POSE_HISTORY_POINTS - 1)), pose.pitch]);
-    setRollHistory((s) => [...s.slice(-(POSE_HISTORY_POINTS - 1)), pose.roll]);
-  }
-
-  const yawMin = Math.min(-30, ...yawHistory, -5) - 2;
-  const yawMax = Math.max(30, ...yawHistory, 5) + 2;
-  const pitchMin = Math.min(-30, ...pitchHistory, -5) - 2;
-  const pitchMax = Math.max(30, ...pitchHistory, 5) + 2;
-  const rollMin = Math.min(-30, ...rollHistory, -5) - 2;
-  const rollMax = Math.max(30, ...rollHistory, 5) + 2;
 
   return (
     <div className="shell">
@@ -546,7 +433,7 @@ export default function App() {
             <Suspense fallback={null}>
               <CameraFeed
                 sharePreview={showDashboard}
-                onPoseUpdate={onCameraPoseUpdate}
+                onPoseUpdate={series.onCameraPoseUpdate}
                 onPreviewStreamChange={setCameraPreviewStream}
               />
             </Suspense>
@@ -568,372 +455,21 @@ export default function App() {
             </ErrorBoundary>
           )}
           {showDashboard ? (
-            <div className="liquid-dashboard">
-              <div className="dash-grid">
-                {stageMode === "camera" ? (
-                  <>
-                    <button
-                      type="button"
-                      className="dash-card"
-                      onClick={() => setExpandedCard("camPreview")}
-                    >
-                      <div className="dash-title">
-                        Camera preview{" "}
-                        <span className="dash-stamp-inline">live duplicate</span>
-                      </div>
-                      <DashCameraPreview stream={cameraPreviewStream} />
-                    </button>
-
-                    <button type="button" className="dash-card" onClick={() => setExpandedCard("yaw")}>
-                      <div className="dash-title">
-                        Yaw{" "}
-                        <span className="dash-stamp-inline">
-                          {yawHistory.length ? `${yawHistory[yawHistory.length - 1]!.toFixed(1)}°` : "—"}
-                        </span>
-                      </div>
-                      <svg viewBox="0 0 300 88" className="dash-svg" preserveAspectRatio="none">
-                        <path
-                          d={linePath(yawHistory, yawMin, yawMax, 300, 88)}
-                          className="dash-line dash-line-spectrum dash-line-pose-yaw"
-                        />
-                      </svg>
-                      <div className="dash-stamp-row">
-                        <span>left</span>
-                        <span>time</span>
-                        <span>right</span>
-                      </div>
-                    </button>
-
-                    <button type="button" className="dash-card" onClick={() => setExpandedCard("pitch")}>
-                      <div className="dash-title">
-                        Pitch{" "}
-                        <span className="dash-stamp-inline">
-                          {pitchHistory.length
-                            ? `${pitchHistory[pitchHistory.length - 1]!.toFixed(1)}°`
-                            : "—"}
-                        </span>
-                      </div>
-                      <svg viewBox="0 0 300 88" className="dash-svg" preserveAspectRatio="none">
-                        <path
-                          d={linePath(pitchHistory, pitchMin, pitchMax, 300, 88)}
-                          className="dash-line dash-line-spectrum dash-line-pose-pitch"
-                        />
-                      </svg>
-                      <div className="dash-stamp-row">
-                        <span>down</span>
-                        <span>time</span>
-                        <span>up</span>
-                      </div>
-                    </button>
-
-                    <button type="button" className="dash-card" onClick={() => setExpandedCard("roll")}>
-                      <div className="dash-title">
-                        Roll{" "}
-                        <span className="dash-stamp-inline">
-                          {rollHistory.length
-                            ? `${rollHistory[rollHistory.length - 1]!.toFixed(1)}°`
-                            : "—"}
-                        </span>
-                      </div>
-                      <svg viewBox="0 0 300 88" className="dash-svg" preserveAspectRatio="none">
-                        <path
-                          d={linePath(rollHistory, rollMin, rollMax, 300, 88)}
-                          className="dash-line dash-line-spectrum dash-line-pose-roll"
-                        />
-                      </svg>
-                      <div className="dash-stamp-row">
-                        <span>tilt −</span>
-                        <span>time</span>
-                        <span>tilt +</span>
-                      </div>
-                    </button>
-                  </>
-                ) : (
-                  <>
-                <button type="button" className="dash-card" onClick={() => setExpandedCard("temp")}>
-                  <div className="dash-title">Magnet temperature (time)</div>
-                  <svg viewBox="0 0 300 88" className="dash-svg">
-                    <path
-                      d={linePath(tempHistory, tempMin, tempMax, 300, 88)}
-                      className="dash-line dash-line-temp"
-                    />
-                  </svg>
-                  <div className="dash-stamp-row">
-                    <span>{formatTs(rangeStart)}</span>
-                    <span>{formatTs(rangeEnd)}</span>
-                  </div>
-                </button>
-
-                <button type="button" className="dash-card" onClick={() => setExpandedCard("noiseTime")}>
-                  <div className="dash-title">
-                    Johnson noise spectrum{" "}
-                    <span className="dash-stamp-inline">DFT · √T</span>
-                  </div>
-                  <svg viewBox="0 0 300 88" className="dash-svg" preserveAspectRatio="none">
-                    <path
-                      d={linePath(johnsonSpectrum, 0, johnsonSpecMax, 300, 88)}
-                      className="dash-line dash-line-spectrum dash-line-noise"
-                    />
-                  </svg>
-                  <div className="dash-stamp-row">
-                    <span>0</span>
-                    <span>|X(f)|</span>
-                    <span>Nyquist</span>
-                  </div>
-                </button>
-
-                <button type="button" className="dash-card" onClick={() => setExpandedCard("noiseSpec")}>
-                  <div className="dash-title">
-                    Johnson noise (time){" "}
-                    <span className="dash-stamp-inline">
-                      √T · {formatTempC(johnsonTempC, 1)}
-                    </span>
-                  </div>
-                  <svg viewBox="0 0 300 88" className="dash-svg" preserveAspectRatio="none">
-                    <path
-                      d={linePath(johnsonNoise, johnsonMin, johnsonMax, 300, 88)}
-                      className="dash-line dash-line-spectrum dash-line-noise"
-                    />
-                  </svg>
-                  <div className="dash-stamp-row">
-                    <span>0</span>
-                    <span>thermal / Gaussian</span>
-                    <span>t</span>
-                  </div>
-                </button>
-
-                <button type="button" className="dash-card" onClick={() => setExpandedCard("mriSpec")}>
-                  <div className="dash-title">
-                    MRI signal spectrum (EMI @ {formatHz(peakHz)}){" "}
-                    <span className="dash-stamp-inline">{formatTs(telemetry.device_time_ms)}</span>
-                  </div>
-                  <svg viewBox="0 0 300 88" className="dash-svg" preserveAspectRatio="none">
-                    <line
-                      x1={(emiBin / Math.max(FFT_BINS - 1, 1)) * 300}
-                      y1="0"
-                      x2={(emiBin / Math.max(FFT_BINS - 1, 1)) * 300}
-                      y2="88"
-                      className="dash-emi-marker"
-                    />
-                    <path
-                      d={linePath(mriSpectrum, mriSpecMin, mriSpecMax, 300, 88)}
-                      className="dash-line dash-line-spectrum dash-line-mri"
-                    />
-                  </svg>
-                  <div className="dash-stamp-row">
-                    <span>1 kHz</span>
-                    <span>EMI</span>
-                    <span>100 kHz</span>
-                  </div>
-                </button>
-                  </>
-                )}
-              </div>
-            </div>
+            <LiveDashboard
+              series={series}
+              stageMode={stageMode}
+              cameraPreviewStream={cameraPreviewStream}
+              telemetry={telemetry}
+              onExpand={setExpandedCard}
+            />
           ) : null}
           {expandedCard ? (
-            <div className="chart-modal-backdrop" onClick={() => setExpandedCard(null)}>
-              <div className="chart-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="chart-modal-head">
-                  <div className="chart-modal-title">{expandedTitle}</div>
-                  <button type="button" className="chart-modal-close" onClick={() => setExpandedCard(null)}>
-                    Close
-                  </button>
-                </div>
-
-                {expandedCard === "temp" ? (
-                  <svg viewBox="0 0 780 420" className="chart-modal-svg">
-                    <line x1="64" y1="30" x2="64" y2="360" className="axis-line" />
-                    <line x1="64" y1="360" x2="740" y2="360" className="axis-line" />
-                    <text x="402" y="398" className="axis-label">
-                      Time
-                    </text>
-                    <text x="18" y="200" className="axis-label" transform="rotate(-90, 18, 200)">
-                      Temperature (°C)
-                    </text>
-                    <path
-                      d={linePathOffset(tempHistory, tempMin, tempMax, 676, 330, 64, 30)}
-                      className="dash-line dash-line-temp"
-                    />
-                    <text x="64" y="380" className="axis-tick">
-                      {formatTs(rangeStart)}
-                    </text>
-                    <text x="640" y="380" className="axis-tick">
-                      {formatTs(rangeEnd)}
-                    </text>
-                  </svg>
-                ) : expandedCard === "noiseTime" ? (
-                  <svg viewBox="0 0 780 420" className="chart-modal-svg">
-                    <line x1="64" y1="30" x2="64" y2="360" className="axis-line" />
-                    <line x1="64" y1="360" x2="740" y2="360" className="axis-line" />
-                    <text x="402" y="398" className="axis-label">
-                      Frequency bin
-                    </text>
-                    <text x="18" y="200" className="axis-label" transform="rotate(-90, 18, 200)">
-                      |X(f)|
-                    </text>
-                    <path
-                      d={linePathOffset(johnsonSpectrum, 0, johnsonSpecMax, 676, 330, 64, 30)}
-                      className="dash-line dash-line-spectrum dash-line-noise"
-                    />
-                    <text x="64" y="380" className="axis-tick">
-                      0
-                    </text>
-                    <text x="300" y="380" className="axis-tick">
-                      DFT of Johnson noise
-                    </text>
-                    <text x="640" y="380" className="axis-tick">
-                      Nyquist
-                    </text>
-                  </svg>
-                ) : expandedCard === "noiseSpec" ? (
-                  <svg viewBox="0 0 780 420" className="chart-modal-svg">
-                    <line x1="64" y1="30" x2="64" y2="360" className="axis-line" />
-                    <line x1="64" y1="360" x2="740" y2="360" className="axis-line" />
-                    <line x1="64" y1="195" x2="740" y2="195" className="axis-line" opacity="0.35" />
-                    <text x="402" y="398" className="axis-label">
-                      Time
-                    </text>
-                    <text x="18" y="200" className="axis-label" transform="rotate(-90, 18, 200)">
-                      Voltage (a.u.)
-                    </text>
-                    <path
-                      d={linePathOffset(johnsonNoise, johnsonMin, johnsonMax, 676, 330, 64, 30)}
-                      className="dash-line dash-line-spectrum dash-line-noise"
-                    />
-                    <text x="64" y="380" className="axis-tick">
-                      0
-                    </text>
-                    <text x="320" y="380" className="axis-tick">
-                      Johnson–Nyquist · {formatTempC(johnsonTempC, 1)}
-                    </text>
-                    <text x="700" y="380" className="axis-tick">
-                      t
-                    </text>
-                  </svg>
-                ) : expandedCard === "mriSpec" ? (
-                  <svg viewBox="0 0 780 420" className="chart-modal-svg">
-                    <line x1="64" y1="30" x2="64" y2="360" className="axis-line" />
-                    <line x1="64" y1="360" x2="740" y2="360" className="axis-line" />
-                    <text x="402" y="398" className="axis-label">
-                      Frequency
-                    </text>
-                    <text x="18" y="200" className="axis-label" transform="rotate(-90, 18, 200)">
-                      Magnitude
-                    </text>
-                    <line
-                      x1={64 + (emiBin / Math.max(FFT_BINS - 1, 1)) * 676}
-                      y1="30"
-                      x2={64 + (emiBin / Math.max(FFT_BINS - 1, 1)) * 676}
-                      y2="360"
-                      className="dash-emi-marker"
-                    />
-                    <path
-                      d={linePathOffset(mriSpectrum, mriSpecMin, mriSpecMax, 676, 330, 64, 30)}
-                      className="dash-line dash-line-spectrum dash-line-mri"
-                    />
-                    <text x="64" y="380" className="axis-tick">
-                      1 kHz
-                    </text>
-                    <text
-                      x={64 + (emiBin / Math.max(FFT_BINS - 1, 1)) * 676 - 20}
-                      y="380"
-                      className="axis-tick"
-                    >
-                      {formatHz(peakHz)}
-                    </text>
-                    <text x="640" y="380" className="axis-tick">
-                      100 kHz
-                    </text>
-                  </svg>
-                ) : expandedCard === "camPreview" ? (
-                  <div className="chart-modal-camera">
-                    <DashCameraPreview stream={cameraPreviewStream} expanded />
-                  </div>
-                ) : expandedCard === "yaw" ? (
-                  <svg viewBox="0 0 780 420" className="chart-modal-svg">
-                    <line x1="64" y1="30" x2="64" y2="360" className="axis-line" />
-                    <line x1="64" y1="360" x2="740" y2="360" className="axis-line" />
-                    <line x1="64" y1="195" x2="740" y2="195" className="axis-line" opacity="0.35" />
-                    <text x="402" y="398" className="axis-label">
-                      Time
-                    </text>
-                    <text x="18" y="200" className="axis-label" transform="rotate(-90, 18, 200)">
-                      Yaw (°)
-                    </text>
-                    <path
-                      d={linePathOffset(yawHistory, yawMin, yawMax, 676, 330, 64, 30)}
-                      className="dash-line dash-line-spectrum dash-line-pose-yaw"
-                    />
-                    <text x="64" y="380" className="axis-tick">
-                      left
-                    </text>
-                    <text x="360" y="380" className="axis-tick">
-                      {yawHistory.length
-                        ? `${yawHistory[yawHistory.length - 1]!.toFixed(1)}°`
-                        : "—"}
-                    </text>
-                    <text x="700" y="380" className="axis-tick">
-                      right
-                    </text>
-                  </svg>
-                ) : expandedCard === "pitch" ? (
-                  <svg viewBox="0 0 780 420" className="chart-modal-svg">
-                    <line x1="64" y1="30" x2="64" y2="360" className="axis-line" />
-                    <line x1="64" y1="360" x2="740" y2="360" className="axis-line" />
-                    <line x1="64" y1="195" x2="740" y2="195" className="axis-line" opacity="0.35" />
-                    <text x="402" y="398" className="axis-label">
-                      Time
-                    </text>
-                    <text x="18" y="200" className="axis-label" transform="rotate(-90, 18, 200)">
-                      Pitch (°)
-                    </text>
-                    <path
-                      d={linePathOffset(pitchHistory, pitchMin, pitchMax, 676, 330, 64, 30)}
-                      className="dash-line dash-line-spectrum dash-line-pose-pitch"
-                    />
-                    <text x="64" y="380" className="axis-tick">
-                      down
-                    </text>
-                    <text x="360" y="380" className="axis-tick">
-                      {pitchHistory.length
-                        ? `${pitchHistory[pitchHistory.length - 1]!.toFixed(1)}°`
-                        : "—"}
-                    </text>
-                    <text x="700" y="380" className="axis-tick">
-                      up
-                    </text>
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 780 420" className="chart-modal-svg">
-                    <line x1="64" y1="30" x2="64" y2="360" className="axis-line" />
-                    <line x1="64" y1="360" x2="740" y2="360" className="axis-line" />
-                    <line x1="64" y1="195" x2="740" y2="195" className="axis-line" opacity="0.35" />
-                    <text x="402" y="398" className="axis-label">
-                      Time
-                    </text>
-                    <text x="18" y="200" className="axis-label" transform="rotate(-90, 18, 200)">
-                      Roll (°)
-                    </text>
-                    <path
-                      d={linePathOffset(rollHistory, rollMin, rollMax, 676, 330, 64, 30)}
-                      className="dash-line dash-line-spectrum dash-line-pose-roll"
-                    />
-                    <text x="64" y="380" className="axis-tick">
-                      tilt −
-                    </text>
-                    <text x="360" y="380" className="axis-tick">
-                      {rollHistory.length
-                        ? `${rollHistory[rollHistory.length - 1]!.toFixed(1)}°`
-                        : "—"}
-                    </text>
-                    <text x="700" y="380" className="axis-tick">
-                      tilt +
-                    </text>
-                  </svg>
-                )}
-              </div>
-            </div>
+            <ExpandedChartModal
+              expandedCard={expandedCard}
+              series={series}
+              cameraPreviewStream={cameraPreviewStream}
+              onClose={() => setExpandedCard(null)}
+            />
           ) : null}
           </div>
           <SystemConsole />
