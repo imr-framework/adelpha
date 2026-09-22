@@ -20,6 +20,8 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "sidecar:build": "python3 runtime/python/build_sidecar.py",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:runtime": "runtime/python/.venv/bin/pytest runtime/python/tests -q"
   },
   "dependencies": {
@@ -48,6 +50,10 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.8.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@types/node": "^26.2.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
@@ -55,8 +61,10 @@
     "@vitejs/plugin-react": "^4.3.4",
     "electron": "^35.2.1",
     "electron-builder": "^26.0.12",
+    "jsdom": "^25.0.1",
     "typescript": "~5.6.3",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vitest": "^2.1.9"
   },
   "build": {
     "appId": "org.adelpha.digital-twin-ui",

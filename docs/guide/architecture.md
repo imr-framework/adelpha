@@ -51,7 +51,10 @@ Alt workspaces keep the Digital Twin WebGL canvas mounted (hidden and paused) so
 | `src/twin/headMotionStore.ts` | Head motion recorder + agent share bridge |
 | `src/twin/ViewportToolRail.tsx` | Draggable viewport tool selector |
 | `src/twin/launch/LaunchScreen.tsx` | Session intro animation |
-| `src/App.tsx` | Shell, workspace routing, panels, live dashboard |
+| `src/App.tsx` | Shell composition: store reads, workspace routing, layout wiring |
+| `src/twin/shell/` | Topbar, twin viewport, settings overlay, lazy workspace chunks |
+| `src/twin/dashboard/` | Live dashboard grid, expanded charts, noise/DFT maths, series hook |
+| `src/twin/panel/` | Side panel shell, panel layout hook, telemetry cards |
 | `console/services/api/app.py` | MRI FastAPI façade |
 
 ## Polling vs forecast
