@@ -851,6 +851,7 @@ export function FlexDialog({ onClose, target }: { onClose: () => void; target: V
         mosaic={mosaic}
         onMosaicable={setCanMosaic}
         onLeaveMosaic={() => setMosaic(false)}
+        fullYTicks={(target?.resultType || "").toLowerCase() === "plot"}
       />
     </Overlay>
   );

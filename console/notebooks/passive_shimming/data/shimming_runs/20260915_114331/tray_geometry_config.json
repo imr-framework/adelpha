@@ -1,0 +1,19 @@
+{
+  "mode": "circular",
+  "plane_heights_m": [
+    -0.0485,
+    0.0485
+  ],
+  "bottom_height_m": -0.0485,
+  "top_height_m": 0.0485,
+  "separation_m": 0.097,
+  "usable_area_m2": 0.03246120509758196,
+  "usable_area_mm2": 32461.205097581962,
+  "bounds_xy_m": [
+    -0.10165,
+    -0.10165,
+    0.10165,
+    0.10165
+  ],
+  "diameter_m": 0.2033
+}

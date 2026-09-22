@@ -1,0 +1,5109 @@
+{
+  "n_candidates": 776,
+  "n_active": 204,
+  "n_positive": 82,
+  "n_negative": 122,
+  "n_absent": 572,
+  "magnets": [
+    {
+      "candidate_id": "bottom_0003",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.0055990981095660865,
+        0.007021046956078096,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0004",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.001998294979227216,
+        0.008755102350971994,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0010",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.01618186238174689,
+        0.0077927742080856465,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0046",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.03236372476349378,
+        0.015585548416171293,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0052",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.007993179916908864,
+        0.035020409403887974,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0058",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.035921024484276615,
+        4.399056765676306e-18,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0060",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.03236372476349378,
+        -0.015585548416171286,
+        -0.04849999999999999
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0061",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.028084187824312372,
+        -0.02239639243826435,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0065",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -7.976069690113577e-18,
+        -0.035921024484276615,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0073",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.0441796985535695,
+        0.008017433237372789,
+        -0.048500000000000015
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0074",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.042038144639104436,
+        0.015777179573730378,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0080",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.006027245535050508,
+        0.04449491331894258,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0082",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.00999147489613608,
+        0.04377551175485996,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0085",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.03102959791803277,
+        0.03245441500081639,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0089",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.044720521250391373,
+        0.004024919762342342,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000004
+      ]
+    },
+    {
+      "candidate_id": "bottom_0090",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.04472052125039136,
+        -0.004024919762342351,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0091",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.04328316690123633,
+        -0.011945395054150328,
+        -0.04849999999999999
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0094",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.03102959791803277,
+        -0.0324544150008164,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0095",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.024735979948818824,
+        -0.037473407851056635,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0097",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.009991474896136098,
+        -0.04377551175485996,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0098",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.0020144883368797086,
+        -0.044856068003566424,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0099",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.006027245535050508,
+        -0.04449491331894258,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0100",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.013875258776250059,
+        -0.042703655509711294,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0101",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.02127730978378002,
+        -0.03953986707571308,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0103",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.03381387321090726,
+        -0.029542291354542703,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0110",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.048545587145240675,
+        0.023378322624256938,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0116",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.011989769875363307,
+        0.052530614105831944,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0117",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.004026572282145348,
+        0.05373087302153817,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0126",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.05148773122972929,
+        0.015881861755321972,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0128",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.05388153672641492,
+        6.598585148514459e-18,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0129",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.053279724479460486,
+        -0.008030626338759606,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0132",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.04451901486309533,
+        -0.03035255039728123,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0133",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.039497961354365986,
+        -0.03664875235050999,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0137",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.011989769875363357,
+        -0.05253061410583194,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0138",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.004026572282145315,
+        -0.05373087302153817,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0139",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.004026572282145303,
+        -0.053730873021538166,
+        -0.04849999999999999
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0140",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.011989769875363291,
+        -0.052530614105831944,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0141",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.01968513582206394,
+        -0.05015690807522824,
+        -0.048500000000000015
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0146",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.048545587145240675,
+        -0.02337832262425695,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0149",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.06286179284748408,
+        0.0,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0150",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.06234569839716027,
+        0.008038587647735646,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0152",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.05826764918714729,
+        0.023589956723223015,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0156",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.03919368676696261,
+        0.04914732869254667,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0169",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.05268372083765142,
+        0.034293301950970176,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0171",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.05965934576929892,
+        0.019808267525940705,
+        -0.048500000000000015
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0176",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.05965934576929892,
+        -0.019808267525940716,
+        -0.048500000000000015
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0183",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.021710266507792283,
+        -0.058993807540797305,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0185",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.0060361795631972805,
+        -0.06257131560292496,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0186",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.00201481962974444,
+        -0.06282949547672333,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0188",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.017885914210194517,
+        -0.06026357998713288,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0190",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.03258708624281148,
+        -0.053755807223067234,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0191",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.03919368676696259,
+        -0.04914732869254668,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0195",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.05826764918714731,
+        -0.02358995672322299,
+        -0.048500000000000015
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0198",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.07184204896855323,
+        0.0,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0199",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.07139032124379958,
+        0.008043757374952252,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0200",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.07004081880777593,
+        0.01598635983381774,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0201",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.06781051243661484,
+        0.02372792454227094,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0202",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.06472744952698756,
+        0.031171096832342586,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0205",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.0508,
+        0.050800000000000005,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0210",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.015986359833817743,
+        0.07004081880777592,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0211",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.008043757374952254,
+        0.07139032124379957,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0212",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        1.5952139380227155e-17,
+        0.07184204896855323,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0214",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.01598635983381773,
+        0.07004081880777595,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0215",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.023727924542270944,
+        0.06781051243661483,
+        -0.04849999999999999
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0218",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.04479278487652868,
+        0.05616837564862477,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0219",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.0508,
+        0.05080000000000001,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0222",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.06472744952698756,
+        0.031171096832342593,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0223",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.06781051243661484,
+        0.023727924542270948,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0224",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.07004081880777593,
+        0.015986359833817746,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0230",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.06472744952698756,
+        -0.031171096832342572,
+        -0.04849999999999999
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0233",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.0508,
+        -0.0508,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0235",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.038222274493855866,
+        -0.06083040138381741,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0237",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.023727924542270937,
+        -0.06781051243661484,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0238",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.015986359833817756,
+        -0.07004081880777593,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0239",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.008043757374952262,
+        -0.07139032124379958,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0240",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -1.5952139380227155e-17,
+        -0.07184204896855323,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0242",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.015986359833817795,
+        -0.0700408188077759,
+        -0.04849999999999999
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0244",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.031171096832342572,
+        -0.06472744952698757,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0245",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.03822227449385586,
+        -0.060830401383817415,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0248",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.056168375648624765,
+        -0.044792784876528706,
+        -0.048500000000000015
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0249",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.060830401383817435,
+        -0.03822227449385583,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0256",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.07921979985334919,
+        0.016014628037993712,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0262",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.05643310913615973,
+        0.05785800889441567,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0266",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.029527703733095947,
+        0.07523536211284232,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0274",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.03324117172864929,
+        0.07367000408651032,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0276",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.04717950917149672,
+        0.0656227012118265,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0277",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.053478974639735694,
+        0.060599045136722283,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0284",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.07991958671919068,
+        0.012045939508139461,
+        -0.04849999999999999
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0286",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.08072183659712769,
+        -0.0040286593783312695,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0289",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.07594812368762552,
+        -0.027642856370663566,
+        -0.048500000000000015
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0294",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.053478974639735666,
+        -0.06059904513672232,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0295",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.0471795091714967,
+        -0.0656227012118265,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0308",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.050391882986094746,
+        -0.06318942260470287,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0313",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.07447583152861963,
+        -0.03139419561193862,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0321",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.08423478050550705,
+        0.031128792992807304,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0322",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.08115398884121769,
+        0.03845165919904514,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0323",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.07743805718160111,
+        0.04547358903736408,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0324",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.07311606773014008,
+        0.052139626386094935,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0325",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.06822184591426225,
+        0.058397600464836386,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0333",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.013851949244300414,
+        0.0887278056875821,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0336",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.00991366353057257,
+        0.08925367933817964,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0343",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.059892518831543354,
+        0.06691327363097116,
+        -0.04849999999999999
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0345",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.0707381934900142,
+        0.05532276187763327,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0346",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.07535081383414986,
+        0.048854425127426146,
+        -0.04849999999999999
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0349",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.08552926442984579,
+        0.027372338703324447,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0356",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.08552926442984579,
+        -0.02737233870332446,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0360",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.0707381934900142,
+        -0.05532276187763329,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0361",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.06557195087143164,
+        -0.061358123006775185,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0362",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.059892518831543375,
+        -0.06691327363097119,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0363",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        -0.05374434662652,
+        -0.07194473716463537,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0364",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.04717555203986584,
+        -0.07641313558370649,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0368",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        -0.01776311911689424,
+        -0.08802824319068868,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0374",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.029257725895729392,
+        -0.0849028001623643,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0378",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.05687409958941023,
+        -0.06949702724501133,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0381",
+      "plane": "bottom",
+      "state": 1,
+      "position_m": [
+        0.07311606773014008,
+        -0.052139626386094935,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0382",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.07743805718160107,
+        -0.04547358903736412,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "bottom_0383",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.08115398884121769,
+        -0.038451659199045134,
+        -0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0384",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.08423478050550705,
+        -0.031128792992807314,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "bottom_0385",
+      "plane": "bottom",
+      "state": -1,
+      "position_m": [
+        0.0866563208026044,
+        -0.023562301775423296,
+        -0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0060",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.03236372476349378,
+        -0.015585548416171286,
+        0.04849999999999999
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0061",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.028084187824312372,
+        -0.02239639243826435,
+        0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0063",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.015585548416171298,
+        -0.03236372476349378,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0069",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        0.028084187824312382,
+        -0.022396392438264353,
+        0.048500000000000015
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0070",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.03236372476349378,
+        -0.0155855484161713,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0076",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.03381387321090724,
+        0.029542291354542727,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0077",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.02799549054783043,
+        0.035105234780390474,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0078",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.02127730978377999,
+        0.039539867075713095,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0082",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.00999147489613608,
+        0.04377551175485996,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0083",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.01764732723121774,
+        0.04128797453974124,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0084",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.024735979948818834,
+        0.037473407851056635,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0085",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.03102959791803277,
+        0.03245441500081639,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0096",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.01764732723121769,
+        -0.04128797453974126,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0097",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.009991474896136098,
+        -0.04377551175485996,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0101",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        0.02127730978378002,
+        -0.03953986707571308,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0102",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.027995490547830414,
+        -0.03510523478039048,
+        0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0103",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.03381387321090726,
+        -0.029542291354542703,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0105",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.04203814463910444,
+        -0.015777179573730347,
+        0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0106",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        0.0441796985535695,
+        -0.0080174332373728,
+        0.048500000000000015
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0110",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        0.048545587145240675,
+        0.023378322624256938,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0119",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.011989769875363297,
+        0.05253061410583196,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0124",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.04451901486309532,
+        0.030352550397281245,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0125",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.048545587145240675,
+        0.023378322624256945,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0127",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.053279724479460465,
+        0.008030626338759667,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0130",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.05148773122972931,
+        -0.01588186175532196,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0133",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.039497961354365986,
+        -0.03664875235050999,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0135",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.02694076836320747,
+        -0.04666277960001953,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0136",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.01968513582206396,
+        -0.050156908075228226,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0141",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.01968513582206394,
+        -0.05015690807522824,
+        0.048500000000000015
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0143",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.0335945886573965,
+        -0.042126281736468575,
+        0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0151",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.06080588930279495,
+        0.015945181908534223,
+        0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0153",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        0.05477265588274278,
+        0.030847385100696043,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0159",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.01788591421019453,
+        0.06026357998713289,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0161",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.0020148196297444573,
+        0.06282949547672333,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0170",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.056636518336114126,
+        0.027274709728299772,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0172",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.06170256839432346,
+        0.012016574118434778,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0175",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.06170256839432346,
+        -0.01201657411843479,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0179",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.04786585809955453,
+        -0.04074879910369521,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0183",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.021710266507792283,
+        -0.058993807540797305,
+        0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0186",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.00201481962974444,
+        -0.06282949547672333,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0193",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        0.05037829708301542,
+        -0.03759830026763765,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0196",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        0.06080588930279495,
+        -0.015945181908534226,
+        0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0203",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.060830401383817415,
+        0.038222274493855866,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0210",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.015986359833817743,
+        0.07004081880777592,
+        0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0211",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.008043757374952254,
+        0.07139032124379957,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0212",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        1.5952139380227155e-17,
+        0.07184204896855323,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0216",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.03117109683234258,
+        0.06472744952698756,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0223",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.06781051243661484,
+        0.023727924542270948,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0224",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.07004081880777593,
+        0.015986359833817746,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0235",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.038222274493855866,
+        -0.06083040138381741,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0242",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        0.015986359833817795,
+        -0.0700408188077759,
+        0.04849999999999999
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0246",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.044792784876528664,
+        -0.05616837564862477,
+        0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0247",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        0.05079999999999999,
+        -0.05080000000000002,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0257",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.07723159684459394,
+        0.02382279263298295,
+        0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0259",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.07097989193921679,
+        0.038653588970457925,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0261",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        0.06191347769397192,
+        0.051951576297914595,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0268",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.0140346459936536,
+        0.07959443266857814,
+        0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0269",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.006039858423218008,
+        0.08059630953230726,
+        0.048500000000000015
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0276",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.04717950917149672,
+        0.0656227012118265,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0279",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.06442608669562666,
+        0.04880086426578527,
+        0.048500000000000015
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0286",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.08072183659712769,
+        -0.0040286593783312695,
+        0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0288",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.07832306008302985,
+        -0.019943501679246155,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0292",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.06442608669562666,
+        -0.04880086426578525,
+        0.04849999999999999
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0293",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.059246942031548976,
+        -0.054973128525764976,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0300",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.010049744832992912,
+        -0.08019505987772395,
+        0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0302",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.006039858423217954,
+        -0.08059630953230724,
+        0.04849999999999999
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0309",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        0.05643310913615976,
+        -0.05785800889441567,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0320",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        0.08665632080260435,
+        0.023562301775423344,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0328",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.05050938658127105,
+        0.074251611882731,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0330",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.03664695356757386,
+        0.08198475952404864,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0333",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.013851949244300414,
+        0.0887278056875821,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0334",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        0.005955971354937445,
+        0.08960483472011523,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0341",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.047175552039865815,
+        0.0764131355837065,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0342",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.05374434662652004,
+        0.07194473716463537,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0344",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.06557195087143165,
+        0.061358123006775185,
+        0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0350",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.08761374335800641,
+        0.01970614053530991,
+        0.04849999999999999
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0351",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.08901252595328707,
+        0.01188571509903376,
+        0.048500000000000015
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0352",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.08971466484534006,
+        0.003972267826859576,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0354",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.08901252595328704,
+        -0.011885715099033816,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    },
+    {
+      "candidate_id": "top_0355",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        -0.08761374335800645,
+        -0.019706140535309936,
+        0.048500000000000015
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0358",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.0793737118956241,
+        -0.042003736261319195,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0364",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.04717555203986584,
+        -0.07641313558370649,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0367",
+      "plane": "top",
+      "state": -1,
+      "position_m": [
+        -0.025473554211999237,
+        -0.08611386668712731,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        -0.0,
+        -0.0,
+        -1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        -1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0382",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        0.07743805718160107,
+        -0.04547358903736412,
+        0.0485
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2000000000000002
+      ]
+    },
+    {
+      "candidate_id": "top_0383",
+      "plane": "top",
+      "state": 1,
+      "position_m": [
+        0.08115398884121769,
+        -0.038451659199045134,
+        0.048499999999999995
+      ],
+      "dimension_m": [
+        0.00635,
+        0.00635,
+        0.00318
+      ],
+      "polarization_local_T": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "polarization_global_T": [
+        0.0,
+        0.0,
+        1.2
+      ]
+    }
+  ]
+}

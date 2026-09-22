@@ -76,6 +76,15 @@ export async function fetchSequences(adjustments = false): Promise<SequenceInfo[
   return mriFetch(`/sequences${qs}`);
 }
 
+export async function uploadSeqFile(file: File): Promise<{ name: string }> {
+  const name = file.name || "sequence.seq";
+  return mriFetch(`/sequences/seq-files?filename=${encodeURIComponent(name)}`, {
+    method: "POST",
+    headers: { "content-type": "application/octet-stream", "x-filename": name },
+    body: file,
+  });
+}
+
 export async function validateSequence(
   name: string,
   parameters: Record<string, unknown>,
@@ -182,6 +191,24 @@ export async function deleteScan(id: string): Promise<void> {
 
 export async function duplicateScan(id: string): Promise<ScanQueueEntry> {
   return mriFetch(`/scans/${encodeURIComponent(id)}/duplicate`, { method: "POST" });
+}
+
+export type ScanPsdResponse = {
+  folder: string;
+  file_path: string;
+  result_type: string;
+  result_name: string;
+};
+
+export async function createScanPsd(
+  id: string,
+  parameters?: Record<string, unknown>,
+): Promise<ScanPsdResponse> {
+  return mriFetch(`/scans/${encodeURIComponent(id)}/psd`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(parameters ? { parameters } : {}),
+  });
 }
 
 export async function fetchAbout(): Promise<{

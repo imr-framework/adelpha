@@ -17,7 +17,10 @@ def decompress_shape(compressed_shape: SimpleNamespace) -> np.ndarray:
     decompressed_shape : numpy.ndarray
         Decompressed shape.
     """
-    data_pack, num_samples = compressed_shape.data, int(compressed_shape.num_samples)
+    data_pack, num_samples = np.asarray(compressed_shape.data), int(compressed_shape.num_samples)
+    if data_pack.size == num_samples:
+        return data_pack.astype(float)
+
     decompressed_shape = np.zeros(num_samples)
 
     count_pack, count_unpack = 0, 0

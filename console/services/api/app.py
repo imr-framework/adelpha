@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import Body, FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from common.qtcompat import configure_headless
@@ -36,12 +36,15 @@ from services.api.models import (
     HealthResponse,
     ScanCreateRequest,
     ScanDetail,
+    ScanPsdRequest,
+    ScanPsdResponse,
     ScanUpdateRequest,
     ScanValidateRequest,
+    SeqFileUploadResponse,
     ServiceStatusResponse,
     ValidateResponse,
 )
-from services.api.sequences_api import get_sequence_info, list_sequences, registry_loaded, validate_parameters
+from services.api.sequences_api import get_sequence_info, import_seq_file, list_sequences, registry_loaded, validate_parameters
 from services.api.session import session
 from services.ui.control import (
     control_service,
@@ -160,6 +163,16 @@ def sequence_validate(name: str, body: ScanValidateRequest) -> ValidateResponse:
 
     dummy = ScanTask(sequence=name, parameters=body.parameters)
     return validate_parameters(name, body.parameters, dummy)
+
+
+@app.post("/sequences/seq-files", response_model=SeqFileUploadResponse)
+async def upload_seq_file(request: Request, filename: str = Query("")) -> SeqFileUploadResponse:
+    name = filename or request.headers.get("x-filename") or ""
+    try:
+        imported = import_seq_file(name, await request.body())
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return SeqFileUploadResponse(name=imported)
 
 
 @app.get("/scans")
@@ -383,6 +396,55 @@ def duplicate_scan(scan_id: str):
         raise HTTPException(404, "Scan not found")
     except (ValueError, RuntimeError) as exc:
         raise HTTPException(500, str(exc)) from exc
+
+
+def _materialize_scan_seq(folder: Path, scan_task, parameters: dict) -> Path | None:
+    """Build seq/acq0.seq from the queued sequence so PSD can show native gradients."""
+    from sequences import SequenceBase
+
+    try:
+        inst = SequenceBase.get_sequence(scan_task.sequence)()
+    except Exception:
+        return None
+    inst.set_parameters(parameters, scan_task)
+    if not inst.set_working_folder(str(folder)):
+        return None
+    try:
+        if not inst.calculate_sequence(scan_task):
+            return None
+    except Exception:
+        return None
+    played = folder / "seq" / "acq0.seq"
+    return played if played.is_file() else None
+
+
+@app.post("/scans/{scan_id}/psd", response_model=ScanPsdResponse)
+def scan_psd(scan_id: str, body: ScanPsdRequest = Body(default_factory=ScanPsdRequest)):
+    """Build a pulse-sequence diagram of every block and store it for Flex Viewer."""
+    from common.seq_psd import find_seq_for_scan, write_psd_plot
+
+    session.refresh_queue()
+    folder = session.find_folder(scan_id)
+    if not folder:
+        raise HTTPException(404, "Scan not found")
+    scan_task = session.read_task(scan_id)
+    if scan_task is None:
+        raise HTTPException(404, "Scan not found")
+    parameters = dict(scan_task.parameters or {})
+    if body.parameters:
+        parameters.update(body.parameters)
+    seq_path = find_seq_for_scan(Path(folder), parameters)
+    if seq_path is None:
+        seq_path = _materialize_scan_seq(Path(folder), scan_task, parameters)
+    if seq_path is None:
+        raise HTTPException(400, "No .seq file for this scan. Choose a sequence file first, or play the sequence once.")
+    dest = Path(folder) / "other" / "psd.plot"
+    title = seq_path.name if seq_path.name != "acq0.seq" else scan_task.protocol_name
+    try:
+        write_psd_plot(seq_path, dest, title=title)
+    except Exception as exc:
+        raise HTTPException(400, f"Could not plot the sequence: {exc}") from exc
+    return ScanPsdResponse(folder=folder)
 
 
 @app.get("/about")

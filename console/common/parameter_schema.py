@@ -110,6 +110,8 @@ class Param:
         enum: Optional[Iterable[str]] = None,
         description: Optional[str] = None,
         step: Optional[float] = None,
+        widget: Optional[str] = None,
+        accept: Optional[str] = None,
     ) -> None:
         self.default = default
         self.title = title
@@ -121,6 +123,8 @@ class Param:
         self.enum = list(enum) if enum is not None else None
         self.description = description
         self.step = step
+        self.widget = widget
+        self.accept = accept
         self.public_name = ""
         self.attr_name = ""
         self._storage = ""
@@ -161,6 +165,10 @@ class Param:
             meta["description"] = self.description
         if self.step is not None:
             meta["step"] = self.step
+        if self.widget:
+            meta["widget"] = self.widget
+        if self.accept:
+            meta["accept"] = self.accept
         return meta
 
 
@@ -175,6 +183,8 @@ def param(
     enum: Optional[Iterable[str]] = None,
     description: Optional[str] = None,
     step: Optional[float] = None,
+    widget: Optional[str] = None,
+    accept: Optional[str] = None,
 ) -> Param:
     """Declare a console input. Use as ``param_TE = param(10, unit="ms")``."""
     return Param(
@@ -187,6 +197,8 @@ def param(
         enum=enum,
         description=description,
         step=step,
+        widget=widget,
+        accept=accept,
     )
 
 
@@ -283,7 +295,7 @@ def schema_for_defaults(
             prop["type"] = "number"
         else:
             prop["type"] = "string"
-        for field in ("unit", "minimum", "maximum", "description", "step"):
+        for field in ("unit", "minimum", "maximum", "description", "step", "widget", "accept"):
             if field in meta and meta[field] is not None:
                 prop[field] = meta[field]
         prop["tab"] = meta.get("tab", "sequence")

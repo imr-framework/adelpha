@@ -1,0 +1,23 @@
+{
+  "mode": "external_stl",
+  "plane_heights_m": [
+    -0.0485,
+    0.0485
+  ],
+  "bottom_height_m": -0.0485,
+  "top_height_m": 0.0485,
+  "separation_m": 0.097,
+  "usable_area_m2": 0.0254019275495732,
+  "usable_area_mm2": 25401.9275495732,
+  "bounds_xy_m": [
+    -0.08997016474604606,
+    -0.08994033202528953,
+    0.08997016474604606,
+    0.08994033202528953
+  ],
+  "stl_file": "data/delta1_first_layer_shim_tray.STL",
+  "stl_units": "mm",
+  "margin_m": 0.0,
+  "tray_thickness_m": 0.00600000000000001,
+  "original_thickness_axis": 1
+}

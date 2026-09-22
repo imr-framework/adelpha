@@ -100,6 +100,8 @@ export type ParameterProperty = {
   step?: number;
   description?: string;
   tab?: SeqTab;
+  widget?: "file" | string;
+  accept?: string;
 };
 
 export type ParameterSchema = {

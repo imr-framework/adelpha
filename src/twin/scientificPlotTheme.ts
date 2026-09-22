@@ -66,11 +66,23 @@ function formatTooltipValue(value: number): string {
   return String(value);
 }
 
-function lineSeries(trace: PlotAxes): LineSeriesOption[] {
+function lineData(series: PlotAxes["series"][number]): LineSeriesOption["data"] {
+  return series.x.map((x, i) => {
+    const y = series.y[i];
+    if (x == null || y == null || !Number.isFinite(Number(x)) || !Number.isFinite(Number(y))) {
+      return "-";
+    }
+    return [x, y];
+  });
+}
+
+function lineSeries(trace: PlotAxes, xAxisIndex = 0, yAxisIndex = 0): LineSeriesOption[] {
   const fill = trace.series.length === 1;
   return trace.series.map((series, index) => ({
     type: "line",
-    name: series.name || trace.title || "signal",
+    name: series.name || trace.ylabel || trace.title || "signal",
+    xAxisIndex,
+    yAxisIndex,
     showSymbol: false,
     symbol: "none",
     large: (series.x?.length ?? 0) > 4000,
@@ -83,10 +95,156 @@ function lineSeries(trace: PlotAxes): LineSeriesOption[] {
       join: "round",
     },
     itemStyle: { color: PLOT_SIGNAL },
-    areaStyle: fill ? { color: PLOT_FILL, opacity: 1 } : undefined,
-    data: series.x.map((x, i) => [x, series.y[i] ?? null]),
+    areaStyle: fill ? { color: PLOT_FILL, opacity: 1, origin: 0 } : undefined,
+    data: lineData(series),
     emphasis: { disabled: true },
   }));
+}
+
+function tooltipConfig(axes: PlotAxes[]): EChartsOption["tooltip"] {
+  return {
+    trigger: "axis",
+    className: "ic-plot-tooltip",
+    confine: true,
+    renderMode: "html",
+    backgroundColor: "#12141A",
+    borderColor: PLOT_BORDER,
+    borderWidth: 1,
+    padding: [6, 8],
+    textStyle: { color: PLOT_TITLE, fontSize: 11, fontFamily: "inherit" },
+    extraCssText:
+      "width:auto!important;height:auto!important;max-width:220px;box-shadow:none;border-radius:4px;pointer-events:none;white-space:nowrap;line-height:1.35;",
+    axisPointer: {
+      type: "cross",
+      animation: false,
+      lineStyle: { color: PLOT_TICK, width: 1, type: "dashed", opacity: 0.7 },
+      crossStyle: { color: PLOT_TICK, width: 1, type: "dashed", opacity: 0.7 },
+      label: { show: false },
+    },
+    formatter: (raw) => {
+      const items = Array.isArray(raw) ? raw : [raw];
+      const first = items[0] as { value?: unknown; axisIndex?: number };
+      const pair = Array.isArray(first?.value) ? first.value : [];
+      const x = Number(pair[0]);
+      const y = Number(pair[1]);
+      const panel = axes[Number(first?.axisIndex ?? 0)] ?? axes[0];
+      const xLine = panel?.xlabel ? `${panel.xlabel}: ${formatTooltipValue(x)}` : formatTooltipValue(x);
+      const yLine = panel?.ylabel ? `${panel.ylabel}: ${formatTooltipValue(y)}` : formatTooltipValue(y);
+      return `${xLine}  ·  ${yLine}`;
+    },
+  };
+}
+
+function toolboxConfig(visible: boolean): EChartsOption["toolbox"] {
+  return {
+    show: visible,
+    itemSize: 13,
+    top: 6,
+    right: 8,
+    iconStyle: { borderColor: PLOT_TICK },
+    emphasis: { iconStyle: { borderColor: PLOT_TITLE } },
+    feature: {
+      restore: { title: "Reset view" },
+    },
+  };
+}
+
+function buildStackedPlotOption(axes: PlotAxes[], toolboxVisible: boolean, fullY: boolean): EChartsOption {
+  const n = axes.length;
+  const hasTitle = Boolean(axes[0]?.title);
+  const xMin = Math.min(...axes.map((trace) => trace.xmin));
+  const xMax = Math.max(...axes.map((trace) => trace.xmax));
+  const xSpan = Math.abs(xMax - xMin);
+  const header = hasTitle ? 0.05 : 0.02;
+  const footer = 0.16;
+  const gap = 0.012;
+  const height = (1 - header - footer - gap * (n - 1)) / n;
+  const xlabel = [...axes].reverse().find((trace) => trace.xlabel)?.xlabel || "";
+  return {
+    backgroundColor: PLOT_BG,
+    animation: false,
+    axisPointer: { link: [{ xAxisIndex: "all" }] },
+    title: hasTitle
+      ? {
+          text: axes[0].title,
+          left: "center",
+          top: 4,
+          textStyle: {
+            color: PLOT_TITLE,
+            fontSize: 14,
+            fontWeight: 500,
+            fontFamily: "inherit",
+          },
+        }
+      : undefined,
+    grid: axes.map((_, i) => ({
+      left: fullY ? 88 : 78,
+      right: 16,
+      top: `${(header + i * (height + gap)) * 100}%`,
+      height: `${height * 100}%`,
+      containLabel: false,
+    })),
+    tooltip: tooltipConfig(axes),
+    legend: { show: false },
+    toolbox: toolboxConfig(toolboxVisible),
+    dataZoom: [
+      {
+        type: "inside",
+        xAxisIndex: axes.map((_, i) => i),
+        filterMode: "none",
+        zoomOnMouseWheel: true,
+        moveOnMouseMove: true,
+        throttle: 16,
+      },
+    ],
+    xAxis: axes.map((_, i) => ({
+      type: "value" as const,
+      gridIndex: i,
+      min: xMin,
+      max: xMax,
+      name: i === n - 1 ? xlabel || undefined : undefined,
+      nameLocation: "middle" as const,
+      nameGap: xlabel ? 18 : 0,
+      nameTextStyle: { color: PLOT_TICK, fontSize: 11 },
+      axisLine: { lineStyle: { color: PLOT_BORDER, width: 1 } },
+      axisTick: { show: i === n - 1, lineStyle: { color: PLOT_TICK, width: 1 } },
+      axisLabel: {
+        show: i === n - 1,
+        color: PLOT_TICK,
+        fontSize: 11,
+        hideOverlap: true,
+        margin: 8,
+        formatter: (value: number) => formatAxisTick(value, xSpan),
+      },
+      splitLine: { show: true, lineStyle: { color: PLOT_GRID, width: 1 } },
+    })),
+    yAxis: axes.map((trace, i) => {
+      const ySpan = Math.abs(trace.ymax - trace.ymin);
+      return {
+        type: "value" as const,
+        gridIndex: i,
+        min: trace.ymin,
+        max: trace.ymax,
+        name: trace.ylabel || undefined,
+        nameLocation: "middle" as const,
+        nameGap: 48,
+        nameRotate: 90,
+        nameTextStyle: { color: PLOT_TICK, fontSize: 11, padding: [0, 0, 0, 0] },
+        scale: false,
+        axisLine: { lineStyle: { color: PLOT_BORDER, width: 1 } },
+        axisTick: { show: true, lineStyle: { color: PLOT_TICK, width: 1 } },
+        axisLabel: {
+          color: PLOT_TICK,
+          fontSize: 11,
+          hideOverlap: true,
+          margin: 8,
+          formatter: (value: number) => formatYAxisTick(value, ySpan, fullY),
+        },
+        splitLine: { show: true, lineStyle: { color: PLOT_GRID, width: 1 } },
+      };
+    }),
+    series: axes.flatMap((trace, i) => lineSeries(trace, i, i)),
+  };
 }
 
 export function buildScientificPlotOption(
@@ -97,6 +255,7 @@ export function buildScientificPlotOption(
 ): EChartsOption {
   const trace = axes[0];
   if (!trace) return {};
+  if (!compact && axes.length > 1) return buildStackedPlotOption(axes, toolboxVisible, fullY);
   const xSpan = Math.abs(trace.xmax - trace.xmin);
   const ySpan = Math.abs(trace.ymax - trace.ymin);
   const named = trace.series.some((s) => {
@@ -129,54 +288,9 @@ export function buildScientificPlotOption(
       bottom: compact ? 6 : xName ? 36 : 28,
       containLabel: false,
     },
-    tooltip: compact
-      ? { show: false }
-      : {
-          trigger: "axis",
-          className: "ic-plot-tooltip",
-          confine: true,
-          renderMode: "html",
-          backgroundColor: "#12141A",
-          borderColor: PLOT_BORDER,
-          borderWidth: 1,
-          padding: [6, 8],
-          textStyle: { color: PLOT_TITLE, fontSize: 11, fontFamily: "inherit" },
-          extraCssText:
-            "width:auto!important;height:auto!important;max-width:220px;box-shadow:none;border-radius:4px;pointer-events:none;white-space:nowrap;line-height:1.35;",
-          axisPointer: {
-            type: "cross",
-            animation: false,
-            lineStyle: { color: PLOT_TICK, width: 1, type: "dashed", opacity: 0.7 },
-            crossStyle: { color: PLOT_TICK, width: 1, type: "dashed", opacity: 0.7 },
-            label: { show: false },
-          },
-          formatter: (raw) => {
-            const items = Array.isArray(raw) ? raw : [raw];
-            const first = items[0] as { value?: unknown };
-            const pair = Array.isArray(first?.value) ? first.value : [];
-            const x = Number(pair[0]);
-            const y = Number(pair[1]);
-            const xLine = trace.xlabel ? `${trace.xlabel}: ${formatTooltipValue(x)}` : formatTooltipValue(x);
-            const yLine = trace.ylabel ? `${trace.ylabel}: ${formatTooltipValue(y)}` : formatTooltipValue(y);
-            return `${xLine}  ·  ${yLine}`;
-          },
-        },
-    legend: named && !compact
-      ? { show: true, left: "right", top: 6, right: 28, textStyle: { color: PLOT_TICK } }
-      : { show: false },
-    toolbox: compact
-      ? { show: false }
-      : {
-          show: toolboxVisible,
-          itemSize: 13,
-          top: 6,
-          right: 8,
-          iconStyle: { borderColor: PLOT_TICK },
-          emphasis: { iconStyle: { borderColor: PLOT_TITLE } },
-          feature: {
-            restore: { title: "Reset view" },
-          },
-        },
+    tooltip: compact ? { show: false } : tooltipConfig([trace]),
+    legend: named && !compact ? { show: true, textStyle: { color: PLOT_TICK }, top: 6, right: 28 } : { show: false },
+    toolbox: compact ? { show: false } : toolboxConfig(toolboxVisible),
     dataZoom: compact
       ? []
       : [

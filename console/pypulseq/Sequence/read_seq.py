@@ -42,6 +42,7 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
     self.dict_definitions = {}
 
     jemris_generated = False
+    compatibility_mode_12x_13x = False
 
     while True:
         section = __skip_comments(input_file)
@@ -54,33 +55,17 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
         elif section == '[VERSION]':
             version_major, version_minor, version_revision = __read_version(input_file)
 
-            if version_major != self.version_major:
-                raise RuntimeError(f'Unsupported version_major: {version_major}. Expected: {self.version_major}')
+            if version_major != 1:
+                raise RuntimeError(f'Unsupported version_major: {version_major}. Expected: 1')
 
-            if version_major == 1 and version_minor == 2 and self.version_major == 1 and self.version_minor == 3:
-                compatibility_mode_12x_13x = True
-            else:
-                compatibility_mode_12x_13x = False
-
-                if version_minor != self.version_minor:
-                    raise RuntimeError(f'Unsupported version_minor: {version_minor}. Expected: {self.version_minor}')
-
-                if version_revision > self.version_revision:
-                    raise RuntimeError(
-                        f'Unsupported version_revision: {version_revision}. Expected: {self.version_revision}')
-
-            if not compatibility_mode_12x_13x:
-                self.version_major = version_major
-                self.version_minor = version_minor
-                self.version_revision = version_revision
-
+            compatibility_mode_12x_13x = version_major == 1 and version_minor == 2
+            self.version_major = version_major
+            self.version_minor = version_minor
+            self.version_revision = version_revision
         elif section == '[BLOCKS]':
             self.dict_block_events = __read_blocks(input_file, compatibility_mode_12x_13x)
         elif section == '[RF]':
-            if jemris_generated:
-                self.rf_library = __read_events(input_file, (1, 1, 1, 1, 1), event_library=self.rf_library)
-            else:
-                self.rf_library = __read_events(input_file, (1, 1, 1, 1e-6, 1, 1), event_library=self.rf_library)
+            self.rf_library = __read_rf_events(input_file, jemris_generated)
         elif section == '[GRADIENTS]':
             self.grad_library = __read_events(input_file, (1, 1, 1e-6), 'g', self.grad_library)
         elif section == '[TRAP]':
@@ -96,17 +81,20 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
             self.shape_library = __read_shapes(input_file)
         elif section == '[EXTENSIONS]':
             self.extensions_library = __read_events(input_file)
-        elif section[:18] == 'extension TRIGGERS':
+        elif section == '[SIGNATURE]':
+            while __strip_line(input_file) != -1:
+                pass
+        elif isinstance(section, str) and section[:18] == 'extension TRIGGERS':
             extension_id = int(section[18:])
             self.set_extension_string_ID('TRIGGERS', extension_id)
             self.trigger_library = __read_events(input_file, (1, 1, 1e-6, 1e-6), event_library=self.trigger_library)
-        elif section[:18] == 'extension LABELSET':
+        elif isinstance(section, str) and section[:18] == 'extension LABELSET':
             extension_id = int(section[18:])
             self.set_extension_string_ID('LABELSET', extension_id)
             l1 = lambda s: int(s)
             l2 = lambda s: get_supported_labels().index(s) + 1
             self.label_set_library = __read_and_parse_events(input_file, l1, l2)
-        elif section[:18] == 'extension LABELINC':
+        elif isinstance(section, str) and section[:18] == 'extension LABELINC':
             extension_id = int(section[18:])
             self.set_extension_string_ID('LABELINC', extension_id)
             l1 = lambda s: int(s)
@@ -114,6 +102,28 @@ def read(self, path: str, detect_rf_use: bool = False) -> None:
             self.label_inc_library = __read_and_parse_events(input_file, l1, l2)
         else:
             raise ValueError(f'Unknown section code: {section}')
+
+    if not self.delay_library.data:
+        # Pulseq 1.3/1.4 store duration in column 1 instead of a delay-library id.
+        try:
+            raster = float(self.dict_definitions.get("BlockDurationRaster"))
+        except (TypeError, ValueError):
+            raster = float(getattr(self.system, "block_duration_raster", 1e-6) or 1e-6)
+        next_id = 1
+        for key, events in list(self.dict_block_events.items()):
+            events = np.asarray(events, dtype=int)
+            if len(events) < 6:
+                continue
+            dur_ticks = int(events[0])
+            rest = events[1:]
+            if dur_ticks == 0:
+                continue
+            if np.any(rest):
+                self.dict_block_events[key] = np.array([0, *rest], dtype=int)
+                continue
+            self.delay_library.insert(next_id, np.array([dur_ticks * raster]))
+            self.dict_block_events[key] = np.array([next_id, *rest], dtype=int)
+            next_id += 1
 
     self.arr_block_durations = np.zeros(len(self.dict_block_events))
     grad_channels = ['gx', 'gy', 'gz']
@@ -227,7 +237,10 @@ def __read_version(input_file) -> Tuple[int, int, int]:
         elif tok[0] == 'minor':
             minor = int(tok[1])
         elif tok[0] == 'revision':
-            revision = tok[1]
+            try:
+                revision = int(tok[1])
+            except ValueError:
+                revision = tok[1]
         else:
             raise RuntimeError(f'Incompatible version. Expected: {major}{minor}{revision}')
         line = __strip_line(input_file)
@@ -265,6 +278,41 @@ def __read_blocks(input_file, compatibility_mode_12x_13x: bool) -> dict:
         line = __strip_line(input_file)
 
     return event_table
+
+
+def __read_rf_events(input_file, jemris_generated: bool) -> EventLibrary:
+    """Read [RF] events and store them in the in-memory 1.3-style layout.
+
+    Pulseq 1.4 files insert ``time_shape_id`` before delay. That extra column is
+    kept at the end so ``rf_from_lib_data`` still sees delay/freq/phase at
+    indices 3/4/5 (what internally-built sequences use).
+    """
+    event_library = EventLibrary()
+    line = __strip_line(input_file)
+    while line != '' and line != '#':
+        data = np.fromstring(line, dtype=float, sep=' ')
+        event_id = int(data[0])
+        payload = data[1:]
+        time_shape = 0.0
+        if jemris_generated:
+            scale = np.ones(max(len(payload), 6))
+            payload = payload * scale[: len(payload)]
+        elif len(payload) >= 7:
+            scale = np.array([1, 1, 1, 1, 1e-6, 1, 1], dtype=float)
+            extra = np.ones(max(0, len(payload) - len(scale)))
+            payload = payload * np.concatenate([scale, extra])[: len(payload)]
+            time_shape = payload[3]
+            payload = np.concatenate([payload[:3], payload[4:7]])
+        else:
+            scale = np.array([1, 1, 1, 1e-6, 1, 1], dtype=float)
+            payload = payload * scale[: len(payload)]
+        while len(payload) < 9:
+            payload = np.append(payload, 0)
+        if time_shape:
+            payload = np.append(payload, time_shape)
+        event_library.insert(key_id=event_id, new_data=payload)
+        line = __strip_line(input_file)
+    return event_library
 
 
 def __read_events(input_file, scale: list = (1,), event_type: str = str(),
@@ -341,7 +389,7 @@ def __read_shapes(input_file) -> EventLibrary:
 
     line = __skip_comments(input_file)
 
-    while line != -1 and (line != '' or line[0:8] == 'shape_id'):
+    while isinstance(line, str) and line.startswith('shape_id'):
         tok = line.split(' ')
         id = int(tok[1])
         line = __skip_comments(input_file)
@@ -349,13 +397,16 @@ def __read_shapes(input_file) -> EventLibrary:
         num_samples = int(tok[1])
         data = []
         line = __skip_comments(input_file)
-        while line != '' and line != '#':
+        while line != '' and line != '#' and line != -1:
             data.append(float(line))
             line = __strip_line(input_file)
         line = __skip_comments(input_file)
         data.insert(0, num_samples)
         data = np.asarray(data)
         shape_library.insert(key_id=id, new_data=data)
+    if line == '[SIGNATURE]':
+        while __strip_line(input_file) != -1:
+            pass
     return shape_library
 
 

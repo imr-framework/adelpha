@@ -57,7 +57,7 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     watch: {
-      ignored: ["**/src-tauri/**", "**/packaging/**"],
+      ignored: ["**/src-tauri/**", "**/packaging/**", "**/.venv/**", "**/site/**"],
     },
     proxy: {
       // Twin HTTP API (make twin-api → :8080)

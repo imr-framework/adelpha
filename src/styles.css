@@ -1395,6 +1395,62 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-variant-numeric: tabular-nums;
 }
 
+.ic-file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  height: 26px;
+  line-height: 24px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  background: #07080b;
+  color: var(--ic-text);
+}
+
+.ic-file-name.is-empty {
+  color: var(--ic-muted);
+}
+
+.ic-field-file {
+  display: grid;
+  gap: 6px;
+}
+
+.ic-file-error {
+  margin: 0;
+  color: #f0a8a8;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.ic-file-browse {
+  appearance: none;
+  flex: 0 0 auto;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  background: var(--ic-btn);
+  color: var(--ic-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ic-file-browse:hover:not(:disabled),
+.ic-file-browse:focus-visible {
+  outline: none;
+  border-color: var(--ic-accent-focus);
+}
+
+.ic-file-browse:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
 .ic-field-control input:focus,
 .ic-field-control select:focus {
   outline: none;
@@ -1853,7 +1909,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .ic-ctx {
   position: fixed;
   z-index: 80;
-  min-width: 188px;
+  min-width: 228px;
   padding: 6px;
   border-radius: 10px;
   border: 1px solid transparent;
@@ -5915,6 +5971,11 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: 0;
   overflow: hidden;
   overscroll-behavior: contain;
+}
+
+.ic-register-card.is-flex .m4-view-stage.is-plot,
+.ic-register-card.is-flex-max .m4-view-stage.is-plot {
+  min-height: 0;
 }
 
 .ic-scientific-plot {

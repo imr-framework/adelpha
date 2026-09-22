@@ -47,6 +47,10 @@ class ValidateResponse(BaseModel):
     problems: List[str] = Field(default_factory=list)
 
 
+class SeqFileUploadResponse(BaseModel):
+    name: str
+
+
 class SequenceInfo(BaseModel):
     id: str
     name: str
@@ -104,3 +108,14 @@ class ScanDetail(BaseModel):
     folder: str = ""
     editing: bool = False
     prepared: bool = False
+
+
+class ScanPsdRequest(BaseModel):
+    parameters: Optional[Dict[str, Any]] = None
+
+
+class ScanPsdResponse(BaseModel):
+    folder: str
+    file_path: str = "other/psd.plot"
+    result_type: str = "plot"
+    result_name: str = "PSD"

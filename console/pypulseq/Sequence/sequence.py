@@ -691,7 +691,14 @@ class Sequence:
         compressed.data = shape_data[1:]
         phase = decompress_shape(compressed)
         rf.signal = amplitude * mag * np.exp(1j * 2 * np.pi * phase)
-        rf.t = np.arange(1, len(mag) + 1) * self.rf_raster_time
+        if len(lib_data) > 9 and lib_data[9] > 0:
+            shape_data = self.shape_library.data[int(lib_data[9])]
+            compressed = SimpleNamespace()
+            compressed.num_samples = shape_data[0]
+            compressed.data = shape_data[1:]
+            rf.t = decompress_shape(compressed) * self.rf_raster_time
+        else:
+            rf.t = np.arange(1, len(mag) + 1) * self.rf_raster_time
 
         rf.delay = lib_data[3]
         rf.freq_offset = lib_data[4]

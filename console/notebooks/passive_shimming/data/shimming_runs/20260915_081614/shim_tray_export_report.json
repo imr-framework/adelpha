@@ -1,0 +1,906 @@
+{
+  "stl_scale": 1.0,
+  "coordinate_units_before_export": "m",
+  "top": {
+    "side": "top",
+    "base_source": "external_stl",
+    "n_magnets": 89,
+    "source_extents_m": [
+      0.17994032949209213,
+      0.17988066405057906,
+      0.006000000000000012
+    ],
+    "tray_thickness_m": 0.006000000000000012,
+    "inner_face_z_m": -0.0030000000000000027,
+    "notch": null,
+    "orientation_marks": {
+      "X+": [
+        0.08297016474604606,
+        0.0
+      ],
+      "X-": [
+        -0.08197016474604607,
+        -0.012
+      ],
+      "Y+": [
+        0.008,
+        0.08494033202528953
+      ],
+      "Y-": [
+        -0.006,
+        -0.08494033202528953
+      ]
+    },
+    "polarity_marks": [
+      {
+        "magnet_index": 1,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.03922885874014389,
+          0.015561873901514955
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 3,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.015561873901514955,
+          0.03922885874014389
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 6,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.007904854815816386,
+          -0.0413743706625452
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 10,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.023729580112077757,
+          0.044096948953071716
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 11,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.04051256202481331,
+          0.029434099229481845
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 14,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.012930269167629897,
+          -0.04950348048095871
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 15,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.02372958011207779,
+          -0.0440969489530717
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 24,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.05983288162992916,
+          0.005984469853722162
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 30,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.021575775623160032,
+          -0.054974179724462
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 34,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.040074752044177465,
+          0.05506377601989493
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 39,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.05375102612003816,
+          0.041819043174305626
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 43,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.04986165574819144,
+          -0.04638771892452041
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 44,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.04796203039311429,
+          -0.048349238065779725
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 45,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.032394698417626856,
+          -0.062094571959168884
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 46,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.025201705938205393,
+          -0.06434246486163436
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 47,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.03526976778381845,
+          -0.0581811710216199
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 49,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.06162520153671655,
+          -0.031263609871950135
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 55,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.040975540489822736,
+          0.06521219911482377
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 56,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.045673850153743534,
+          0.06208482297597302
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 58,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.06938996341838258,
+          -0.03341644518227593
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 60,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.024351572754381542,
+          -0.07413441059420177
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 61,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.015898034732725264,
+          -0.07639478006643316
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 66,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.07508607075331687,
+          -0.017137905667041684
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 76,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.07579831276968398,
+          0.042803584827979024
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 77,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.0860399413214177,
+          0.0012903410729686675
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 78,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.08603994132141769,
+          -0.0012903410729686086
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 79,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.082263755835967,
+          -0.028345291824520707
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 80,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.07968351469451111,
+          -0.03504380942172906
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 81,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.06099996725495556,
+          -0.06069217805921896
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 83,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.00650131675111412,
+          -0.08675404297990102
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 84,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.015106923490746852,
+          -0.08567562054342856
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 85,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.0512729482633096,
+          -0.06910586993205112
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 86,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.06219408521753434,
+          -0.05946790938507649
+        ],
+        "collision_free": true
+      }
+    ],
+    "final_extents_m": [
+      0.179940328001976,
+      0.17988066375255585,
+      0.006000000052154064
+    ],
+    "watertight_before_export": true
+  },
+  "bottom": {
+    "side": "bottom",
+    "base_source": "external_stl",
+    "n_magnets": 116,
+    "source_extents_m": [
+      0.17994032949209213,
+      0.17988066405057906,
+      0.006000000000000012
+    ],
+    "tray_thickness_m": 0.006000000000000012,
+    "inner_face_z_m": 0.0030000000000000027,
+    "notch": null,
+    "orientation_marks": {
+      "X+": [
+        0.08297016474604606,
+        0.0
+      ],
+      "X-": [
+        -0.05597016474604606,
+        0.02
+      ],
+      "Y+": [
+        -0.03,
+        0.07894033202528954
+      ],
+      "Y-": [
+        -0.012,
+        -0.08494033202528953
+      ]
+    },
+    "polarity_marks": [
+      {
+        "magnet_index": 0,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.001909969878134721,
+          0.015109063609629225
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 2,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.02558304232721509,
+          0.01964511447773003
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 3,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.028935307464015354,
+          -0.013934509662061828
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 4,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.0370262386548888,
+          0.017830896766104658
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 5,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.03400063515166064,
+          0.023277457715479195
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 6,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.007904854815816377,
+          0.04137437066254519
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 7,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.0370262386548888,
+          0.01783089676610466
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 10,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -9.125150520600614e-18,
+          -0.041096024484276614
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 11,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.0370262386548888,
+          -0.017830896766104665
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 14,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.04834645720142682,
+          0.016542566806473064
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 17,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.0007503153656803199,
+          0.05016045161396927
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 18,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.011143020729360006,
+          0.0488207637004009
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 19,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.036774231718021966,
+          0.03412169047416255
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 22,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.05019960042672907,
+          -0.013854209421091224
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 28,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.048346457201426836,
+          -0.01654256680647303
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 31,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.03447565393461137,
+          0.048042729063816826
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 32,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.027430192151854157,
+          0.05351048646838845
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 39,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.03682114838201546,
+          -0.04617225965824062
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 45,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.06847000173251881,
+          0.008828229121137472
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 48,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.0314696218371452,
+          0.06032137334642287
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 50,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.06678213703175223,
+          0.01300582002196438
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 51,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.06889494935240613,
+          0.004423202504501205
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 52,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.06889494935240612,
+          -0.004423202504501218
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 55,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.06310096996331398,
+          -0.030387825556468233
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 57,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.03892498268932649,
+          -0.05580188978526708
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 58,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.031064799458067355,
+          -0.06278837939453014
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 59,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.0065330987222695334,
+          -0.06772240251243707
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 62,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.06162520153671655,
+          -0.031263609871950135
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 65,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.07269510867096064,
+          0.02543711868788893
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 66,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.06938996341838258,
+          0.03341644518227595
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 67,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.06765501954359808,
+          0.03896739996865321
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 69,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.025437118687888914,
+          0.07269510867096066
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 70,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.014435642864452515,
+          0.07672856146736762
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 75,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.07508607075331687,
+          0.017137905667041674
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 82,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -1.7101220210714192e-17,
+          -0.07701704896855323
+        ],
+        "collision_free": false
+      },
+      {
+        "magnet_index": 88,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.08527236496581395,
+          0.01723818047224999
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 89,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.08357439168193971,
+          0.02420954662629107
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 91,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.05127294826330963,
+          0.0691058699320511
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 92,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.037019482316455875,
+          0.07878508121388493
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 93,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.02211845446722815,
+          0.08415197600079272
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 95,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.01081756720919114,
+          0.08632213697848001
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 97,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.05915254245820264,
+          0.06249410534928972
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 98,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.07036266065148171,
+          0.049534154567550844
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 99,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.07579831276968398,
+          0.042803584827979024
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 100,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.08226375583596697,
+          0.02834529182452072
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 101,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.08467724842202984,
+          0.02001361268064012
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 105,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.075798312769684,
+          -0.042803584827979003
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 107,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          -0.04776456865816417,
+          -0.07157571140811043
+        ],
+        "collision_free": true
+      },
+      {
+        "magnet_index": 112,
+        "symbol": "+",
+        "positive_global_z": true,
+        "center_xy_m": [
+          0.06219408521753434,
+          -0.05946790938507649
+        ],
+        "collision_free": true
+      }
+    ],
+    "final_extents_m": [
+      0.179940328001976,
+      0.17988066375255585,
+      0.006000000052154064
+    ],
+    "watertight_before_export": true
+  },
+  "filenames": {
+    "top": "data/shimming_runs/20260915_081614/shim_tray_top.stl",
+    "bottom": "data/shimming_runs/20260915_081614/shim_tray_bottom.stl"
+  }
+}

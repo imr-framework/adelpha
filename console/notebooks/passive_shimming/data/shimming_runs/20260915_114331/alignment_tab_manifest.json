@@ -1,0 +1,50 @@
+[
+  {
+    "input_stl": "data/shimming_runs/20260915_114331/shim_tray_bottom.stl",
+    "output_stl": "data/shimming_runs/20260915_114331/shim_tray_bottom_with_alignment_tab.stl",
+    "detected_stl_units": "m",
+    "mesh_bounds": {
+      "xmin": -0.10164999961853027,
+      "xmax": 0.10164999961853027,
+      "ymin": -0.10164999961853027,
+      "ymax": 0.10164999961853027,
+      "zmin": -0.0016400000313296914,
+      "zmax": 0.0016400000313296914
+    },
+    "alignment_feature": {
+      "description": "External tab marking x=0, y=-ymax",
+      "center": [
+        0.0,
+        -0.10314999961853027,
+        0.0
+      ],
+      "width": 0.008,
+      "length": 0.006,
+      "height": 0.003280000062659383
+    }
+  },
+  {
+    "input_stl": "data/shimming_runs/20260915_114331/shim_tray_top.stl",
+    "output_stl": "data/shimming_runs/20260915_114331/shim_tray_top_with_alignment_tab.stl",
+    "detected_stl_units": "m",
+    "mesh_bounds": {
+      "xmin": -0.10164999961853027,
+      "xmax": 0.10164999961853027,
+      "ymin": -0.10164999961853027,
+      "ymax": 0.10164999961853027,
+      "zmin": -0.0016400000313296914,
+      "zmax": 0.0016400000313296914
+    },
+    "alignment_feature": {
+      "description": "External tab marking x=0, y=-ymax",
+      "center": [
+        0.0,
+        -0.10314999961853027,
+        0.0
+      ],
+      "width": 0.008,
+      "length": 0.006,
+      "height": 0.003280000062659383
+    }
+  }
+]

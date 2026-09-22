@@ -67,6 +67,25 @@ def test_native_seq2flocra_accepts_adelpha_calibrations():
     assert psi._gz_max == 1000000
 
 
+def test_pypulseq_reads_console_example_seq():
+    import pypulseq as pp
+
+    path = console / "notebooks" / "acq" / "seq" / "rf_spin_echo_02516T.seq"
+    seq = pp.Sequence()
+    seq.read(str(path))
+    assert seq.version_major == 1
+    assert seq.version_minor == 4
+    assert any(getattr(seq.get_block(i), "adc", None) is not None for i in seq.block_events)
+
+
+def test_import_seq_file_accepts_console_example():
+    from services.api.sequences_api import import_seq_file
+
+    path = console / "notebooks" / "acq" / "seq" / "rf_spin_echo_02516T.seq"
+    name = import_seq_file(path.name, path.read_bytes())
+    assert name == path.name
+
+
 def test_native_seq2flocra_compiles_a_seq_file(tmp_path):
     import math
     import pypulseq as pp

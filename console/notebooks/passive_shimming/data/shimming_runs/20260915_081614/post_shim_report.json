@@ -1,0 +1,50 @@
+{
+  "label": "post_shim",
+  "n_points": 3071,
+  "field": {
+    "mean_T": 0.2515773476468617,
+    "mean_mT": 251.57734764686168,
+    "std_T": 0.00020184532153571096,
+    "std_uT": 201.84532153571095,
+    "std_ppm": 802.3191413045685,
+    "minimum_T": 0.24984051652413103,
+    "minimum_mT": 249.84051652413103,
+    "maximum_T": 0.25367025479738925,
+    "maximum_mT": 253.67025479738925,
+    "peak_to_peak_T": 0.003829738273258221,
+    "peak_to_peak_mT": 3.829738273258221,
+    "peak_to_peak_ppm": 15222.905834248688,
+    "peak_to_peak_Hz": 163060.59905921432,
+    "peak_to_peak_kHz": 163.06059905921433
+  },
+  "objective": {
+    "mean_field_T": 0.2515773476468617,
+    "std_T": 0.00020184532153571096,
+    "std_ppm": 802.3191413045685,
+    "low_percentile": 1.0,
+    "high_percentile": 99.0,
+    "low_percentile_T": 0.2511448499281071,
+    "high_percentile_T": 0.25203327820614224,
+    "percentile_range_T": 0.0008884282780351471,
+    "percentile_range_ppm": 3531.4319287690046,
+    "std_weight": 0.75,
+    "percentile_range_weight": 0.25,
+    "std_term": 601.7393559784264,
+    "percentile_range_term": 882.8579821922511,
+    "total": 1484.5973381706776
+  },
+  "shim_state": {
+    "n_candidates": 634,
+    "n_active": 205,
+    "n_positive": 82,
+    "n_negative": 123,
+    "n_absent": 429
+  },
+  "improvement": {
+    "std_ppm_percent": 65.65985137273348,
+    "percentile_range_ppm_percent": 67.57717715805695,
+    "peak_to_peak_ppm_percent": -8.705889871084088,
+    "peak_to_peak_kHz_percent": -8.669471224224363,
+    "objective_cost_percent": 66.8264441565638
+  }
+}

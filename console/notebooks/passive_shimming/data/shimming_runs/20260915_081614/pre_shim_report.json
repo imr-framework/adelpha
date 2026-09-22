@@ -1,0 +1,36 @@
+{
+  "label": "pre_shim",
+  "n_points": 3071,
+  "field": {
+    "mean_T": 0.2516616593351274,
+    "mean_mT": 251.6616593351274,
+    "std_T": 0.0005879793026193276,
+    "std_uT": 587.9793026193275,
+    "std_ppm": 2336.3880861817725,
+    "minimum_T": 0.24959224700927735,
+    "minimum_mT": 249.59224700927734,
+    "maximum_T": 0.253116455078125,
+    "maximum_mT": 253.11645507812503,
+    "peak_to_peak_T": 0.0035242080688476785,
+    "peak_to_peak_mT": 3.5242080688476785,
+    "peak_to_peak_ppm": 14003.75439849833,
+    "peak_to_peak_Hz": 150051.8933443243,
+    "peak_to_peak_kHz": 150.0518933443243
+  },
+  "objective": {
+    "mean_field_T": 0.2516616593351274,
+    "std_T": 0.0005879793026193276,
+    "std_ppm": 2336.3880861817725,
+    "low_percentile": 1.0,
+    "high_percentile": 99.0,
+    "low_percentile_T": 0.24998382568359376,
+    "high_percentile_T": 0.2527248764038086,
+    "percentile_range_T": 0.002741050720214827,
+    "percentile_range_ppm": 10891.808976609676,
+    "std_weight": 0.75,
+    "percentile_range_weight": 0.25,
+    "std_term": 1752.2910646363293,
+    "percentile_range_term": 2722.952244152419,
+    "total": 4475.243308788748
+  }
+}

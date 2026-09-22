@@ -1,14 +1,11 @@
-from pathlib import Path
-
 import numpy as np
 
-path_version = Path(__file__).parent.parent / 'VERSION'
-with open(str(path_version), 'r') as version_file:
-    # s = version_file.read().strip().split('.')
-    # print(s)
-    major, minor, revision, _ = version_file.read().strip().split('.')
-    major = int(major)
-    minor = int(minor)
+# Pulseq file-format version this library reads and writes. This is not the
+# Adelpha console version in console/VERSION (0.0.1-alpha.1) — pointing at that
+# file made Sequence.read reject every real .seq (major 1).
+major = 1
+minor = 4
+revision = 2
 
 
 # =========

@@ -1,0 +1,23 @@
+{
+  "material": "N45",
+  "dimensions_m": [
+    0.00635,
+    0.00635,
+    0.00318
+  ],
+  "dimensions_mm": [
+    6.35,
+    6.35,
+    3.18
+  ],
+  "polarization_T": 1.2,
+  "polarization_vector_T": [
+    0.0,
+    0.0,
+    1.2
+  ],
+  "footprint_area_m2": 4.03225e-05,
+  "footprint_area_mm2": 40.3225,
+  "volume_m3": 1.2822555e-07,
+  "in_plane_diagonal_m": 0.008980256121069154
+}

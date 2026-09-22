@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Atom, Check, Image as ImageIcon, LayoutGrid, List, Loader, LogOut, Maximize2, Play, PlusSquare, Square, Wrench, X, Zap } from "lucide-react";
+import { pickSeqFile } from "../desktop/pickSeqFile";
 import {
   connectMriEvents,
   createScan,
+  createScanPsd,
   deleteScan,
   duplicateScan,
   editScan,
@@ -22,6 +24,7 @@ import {
   respondEvent,
   startExam,
   stopScan,
+  uploadSeqFile,
 } from "./mri/api";
 import type {
   ExamResponse,
@@ -411,6 +414,57 @@ function AcquisitionSummary({
   );
 }
 
+function SeqFileField({
+  name,
+  prop,
+  value,
+  disabled,
+  onChange,
+}: {
+  name: string;
+  prop: ParameterProperty;
+  value: unknown;
+  disabled?: boolean;
+  onChange: (key: string, value: unknown) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const selected = String(value ?? "").trim();
+  const empty = !selected;
+  const label = selected && selected.toLowerCase() !== "latest" ? selected : empty ? "No file selected" : "latest";
+
+  const onBrowse = async () => {
+    if (disabled || busy) return;
+    setError("");
+    try {
+      const file = await pickSeqFile();
+      if (!file) return;
+      setBusy(true);
+      const uploaded = await uploadSeqFile(file);
+      onChange(name, uploaded.name);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load the sequence file");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="ic-field-file">
+      <div className="ic-field" title={prop.description || undefined}>
+        <span>{prop.title || name}</span>
+        <span className="ic-field-control">
+          <span className={`ic-file-name${empty ? " is-empty" : ""}`}>{busy ? "Checking…" : label}</span>
+          <button type="button" className="ic-file-browse" disabled={disabled || busy} onClick={() => void onBrowse()}>
+            {busy ? "Loading…" : "Browse…"}
+          </button>
+        </span>
+      </div>
+      {error ? <p className="ic-file-error">{error}</p> : null}
+    </div>
+  );
+}
+
 function ParamField({
   name,
   prop,
@@ -425,6 +479,9 @@ function ParamField({
   onChange: (key: string, value: unknown) => void;
 }) {
   const label = prop.title || name;
+  if (prop.widget === "file") {
+    return <SeqFileField name={name} prop={prop} value={value} disabled={disabled} onChange={onChange} />;
+  }
   if (prop.type === "boolean") {
     return (
       <label className="ic-check" title={prop.description || undefined}>
@@ -1078,6 +1135,33 @@ export function ImagingConsole() {
     }
   };
 
+  const onShowPsd = async (id: string) => {
+    const entry = queue.find((q) => q.id === id);
+    if (!entry) return;
+    setBusy(true);
+    setStatus("Building pulse sequence diagram…");
+    try {
+      const psd = await createScanPsd(id, id === selectedId ? draft : undefined);
+      const detail = await fetchScan(id);
+      const task = detail.task;
+      loadIntoViewer("flex", {
+        label: `${entry.scan_counter}. ${entry.protocol_name}`,
+        folder: psd.folder,
+        filePath: psd.file_path,
+        resultType: psd.result_type,
+        resultName: psd.result_name,
+        patientName: task ? `${task.patient.last_name}, ${task.patient.first_name}` : "",
+        mrn: task?.patient.mrn ?? "",
+        protocolName: entry.protocol_name,
+        scanNumber: entry.scan_counter,
+      });
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : "Unable to show PSD");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const schemaFields = useMemo(() => {
     const props = seqInfo?.parameter_schema?.properties ?? {};
     const entries = Object.entries(props);
@@ -1307,6 +1391,16 @@ export function ImagingConsole() {
                 }}
               >
                 Show definition…
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const id = ctxMenu.id;
+                  setCtxMenu(null);
+                  void onShowPsd(id);
+                }}
+              >
+                PSD (Pulse Sequence Diagram)
               </button>
             </>
           )}

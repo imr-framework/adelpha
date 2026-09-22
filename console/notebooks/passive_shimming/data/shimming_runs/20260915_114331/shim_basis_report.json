@@ -1,0 +1,64 @@
+{
+  "matrix_shape": [
+    3071,
+    776
+  ],
+  "dtype": "float64",
+  "memory_bytes": 19064768,
+  "memory_MB": 18.18157958984375,
+  "n_field_points": 3071,
+  "n_candidates": 776,
+  "axis": 2,
+  "basis_min_T": -0.00021659096960992838,
+  "basis_max_T": 0.009660686991937,
+  "basis_rms_T": 0.00010644417585430121,
+  "validation": {
+    "all_passed": true,
+    "n_tests": 5,
+    "atol_T": 1e-10,
+    "rtol": 1e-08,
+    "random_seed": 42,
+    "tests": [
+      {
+        "test": 1,
+        "n_active": 525,
+        "max_abs_error_T": 2.42861286636753e-17,
+        "rms_error_T": 2.2985677870159053e-18,
+        "max_relative_error": 1.5902242742135799e-15,
+        "passed": true
+      },
+      {
+        "test": 2,
+        "n_active": 516,
+        "max_abs_error_T": 1.734723475976807e-17,
+        "rms_error_T": 2.3655292320359414e-18,
+        "max_relative_error": 1.1385370725154002e-15,
+        "passed": true
+      },
+      {
+        "test": 3,
+        "n_active": 522,
+        "max_abs_error_T": 2.6020852139652106e-17,
+        "rms_error_T": 2.1595904883491273e-18,
+        "max_relative_error": 9.386162403820082e-16,
+        "passed": true
+      },
+      {
+        "test": 4,
+        "n_active": 507,
+        "max_abs_error_T": 2.5153490401663703e-17,
+        "rms_error_T": 2.260225432819934e-18,
+        "max_relative_error": 1.3417809911941864e-15,
+        "passed": true
+      },
+      {
+        "test": 5,
+        "n_active": 519,
+        "max_abs_error_T": 3.122502256758253e-17,
+        "rms_error_T": 2.549801990455623e-18,
+        "max_relative_error": 1.9288310744659885e-15,
+        "passed": true
+      }
+    ]
+  }
+}

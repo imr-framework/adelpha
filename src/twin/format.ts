@@ -78,3 +78,7 @@ export function formatIsoTime(iso: string | null | undefined): string {
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleTimeString();
 }
+
+export function formatTs(ms: number) {
+  return new Date(ms).toLocaleTimeString();
+}

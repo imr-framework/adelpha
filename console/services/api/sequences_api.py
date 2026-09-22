@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from common.parameter_schema import schema_for_defaults
@@ -219,3 +221,30 @@ def reset_registry_cache() -> None:
     global _registry_cache, _tried_registry
     _registry_cache = None
     _tried_registry = False
+
+
+MAX_SEQ_UPLOAD_BYTES = 32 * 1024 * 1024
+
+
+def import_seq_file(filename: str, data: bytes) -> str:
+    """Check an uploaded .seq file and copy it into the session library."""
+    from sequences.pulseq_file import check_seq_file, stage_seq_file
+
+    name = Path(filename or "").name
+    if not name.lower().endswith(".seq"):
+        raise ValueError("Choose a .seq file")
+    if len(data) > MAX_SEQ_UPLOAD_BYTES:
+        raise ValueError("Sequence file is too large")
+    if not data:
+        raise ValueError("Sequence file is empty")
+
+    with tempfile.NamedTemporaryFile(suffix=".seq", delete=False) as handle:
+        handle.write(data)
+        tmp_path = Path(handle.name)
+    try:
+        problems = check_seq_file(tmp_path)
+        if problems:
+            raise ValueError("; ".join(problems))
+        return stage_seq_file(tmp_path, name).name
+    finally:
+        tmp_path.unlink(missing_ok=True)

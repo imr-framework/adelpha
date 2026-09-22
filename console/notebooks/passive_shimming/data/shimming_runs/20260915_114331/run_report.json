@@ -1,0 +1,7 @@
+{
+  "run_id": "20260915_114331",
+  "output_root": "data/shimming_runs",
+  "run_dir": "data/shimming_runs/20260915_114331",
+  "random_seed": 42,
+  "stop_after_step": null
+}
