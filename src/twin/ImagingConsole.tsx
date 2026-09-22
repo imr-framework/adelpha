@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Atom, Check, Image as ImageIcon, LayoutGrid, List, Loader, LogOut, Maximize2, Play, PlusSquare, Square, Wrench, X, Zap } from "lucide-react";
 import { pickSeqFile } from "../desktop/pickSeqFile";
 import {
@@ -311,6 +311,29 @@ function hardwareRows(
   return rows;
 }
 
+function SummaryTable({
+  caption,
+  rows,
+}: {
+  caption?: string;
+  rows: { key: string; label: string; value: string }[];
+}) {
+  if (!rows.length) return null;
+  return (
+    <table className="ic-acq-table">
+      {caption ? <caption>{caption}</caption> : null}
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.key}>
+            <th scope="row">{row.label}</th>
+            <td>{row.value}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 function AcquisitionSummary({
   entry,
   task,
@@ -352,86 +375,41 @@ function AcquisitionSummary({
   const acqFor = elapsedLabel(journal?.acquisition_start ?? "", journal?.acquisition_end ?? "");
   const reconFor = elapsedLabel(journal?.reconstruction_start ?? "", journal?.reconstruction_end ?? "");
   const totalFor = elapsedLabel(journal?.acquisition_start ?? "", journal?.reconstruction_end || journal?.acquisition_end || "");
+  const acquired = clockLabel(journal?.acquisition_start ?? "");
+  const failedAt = clockLabel(journal?.failed_at ?? "");
+  const timingRows = [
+    acquired ? { key: "acquired", label: "Acquired", value: acquired } : null,
+    acqFor ? { key: "acquisition", label: "Acquisition", value: acqFor } : null,
+    reconFor ? { key: "reconstruction", label: "Reconstruction", value: reconFor } : null,
+    totalFor && totalFor !== acqFor ? { key: "total", label: "Total", value: totalFor } : null,
+    failedAt ? { key: "failed-at", label: "Failed", value: failedAt } : null,
+  ].filter((row): row is { key: string; label: string; value: string } => row !== null);
   const failed = entry.state === "failure";
 
   return (
     <aside className="ic-acq-summary" aria-label="Acquisition summary">
       <p className="ic-acq-summary-kicker">Summary</p>
       <h3 className="ic-acq-summary-title">{entry.protocol_name}</h3>
+      <SummaryTable rows={timingRows} />
+      <SummaryTable
+        caption="Parameters"
+        rows={paramRows.map((row) => ({ key: row.key, label: row.label, value: row.text }))}
+      />
+      <SummaryTable
+        caption="Hardware"
+        rows={hwRows.map((row) => ({ key: row.label, label: row.label, value: row.text }))}
+      />
+      <SummaryTable
+        caption="Results"
+        rows={(task?.results ?? []).map((result, i) => ({
+          key: `${result.file_path}-${i}`,
+          label: result.name || result.file_path,
+          value: result.type,
+        }))}
+      />
       <p className={`ic-acq-summary-state${failed ? " is-bad" : " is-ok"}`}>
         {failed ? (journal?.fail_stage && journal.fail_stage !== "none" ? `Failed · ${journal.fail_stage}` : "Failed") : "Complete"}
       </p>
-      <dl className="ic-acq-dl">
-        {clockLabel(journal?.acquisition_start ?? "") ? (
-          <>
-            <dt>Acquired</dt>
-            <dd>{clockLabel(journal?.acquisition_start ?? "")}</dd>
-          </>
-        ) : null}
-        {acqFor ? (
-          <>
-            <dt>Acquisition</dt>
-            <dd>{acqFor}</dd>
-          </>
-        ) : null}
-        {reconFor ? (
-          <>
-            <dt>Reconstruction</dt>
-            <dd>{reconFor}</dd>
-          </>
-        ) : null}
-        {totalFor && totalFor !== acqFor ? (
-          <>
-            <dt>Total</dt>
-            <dd>{totalFor}</dd>
-          </>
-        ) : null}
-        {clockLabel(journal?.failed_at ?? "") ? (
-          <>
-            <dt>Failed</dt>
-            <dd>{clockLabel(journal?.failed_at ?? "")}</dd>
-          </>
-        ) : null}
-      </dl>
-      {paramRows.length ? (
-        <div className="ic-acq-section">
-          <h4>Parameters</h4>
-          <dl className="ic-acq-dl">
-            {paramRows.map((row) => (
-              <Fragment key={row.key}>
-                <dt>{row.label}</dt>
-                <dd>{row.text}</dd>
-              </Fragment>
-            ))}
-          </dl>
-        </div>
-      ) : null}
-      {hwRows.length ? (
-        <div className="ic-acq-section">
-          <h4>Hardware</h4>
-          <dl className="ic-acq-dl">
-            {hwRows.map((row) => (
-              <Fragment key={row.label}>
-                <dt>{row.label}</dt>
-                <dd>{row.text}</dd>
-              </Fragment>
-            ))}
-          </dl>
-        </div>
-      ) : null}
-      {task?.results.length ? (
-        <div className="ic-acq-section">
-          <h4>Results</h4>
-          <ul className="ic-acq-results">
-            {task.results.map((result, i) => (
-              <li key={`${result.file_path}-${i}`}>
-                <span>{result.name || result.file_path}</span>
-                <span>{result.type}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
     </aside>
   );
 }
@@ -957,6 +935,26 @@ export function ImagingConsole() {
       window.clearTimeout(timer);
       document.removeEventListener("pointerdown", onPointerDown, true);
     };
+  }, [ctxMenu]);
+
+  useLayoutEffect(() => {
+    if (!ctxMenu) return;
+    const el = ctxRef.current;
+    if (!el) return;
+    const pad = 8;
+    const root = el.closest(".imaging-console");
+    const bounds = root?.getBoundingClientRect() ?? {
+      left: 0,
+      top: 0,
+      right: window.innerWidth,
+      bottom: window.innerHeight,
+    };
+    const maxX = Math.max(bounds.left + pad, bounds.right - el.offsetWidth - pad);
+    const maxY = Math.max(bounds.top + pad, bounds.bottom - el.offsetHeight - pad);
+    const x = Math.min(Math.max(bounds.left + pad, ctxMenu.x), maxX);
+    const y = Math.min(Math.max(bounds.top + pad, ctxMenu.y), maxY);
+    if (x === ctxMenu.x && y === ctxMenu.y) return;
+    setCtxMenu({ ...ctxMenu, x, y });
   }, [ctxMenu]);
 
   const openScan = async (id: string) => {

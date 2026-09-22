@@ -1240,7 +1240,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .ic-config-body.has-summary {
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  grid-template-columns: minmax(0, 1fr) minmax(13.5rem, 16.5rem);
 }
 
 .ic-acq-summary {
@@ -1263,7 +1263,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .ic-acq-summary-title {
-  margin: 0 0 4px;
+  margin: 0 0 10px;
   font-size: 13px;
   font-weight: 600;
   line-height: 1.35;
@@ -1271,8 +1271,10 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .ic-acq-summary-state {
-  margin: 0 0 12px;
-  font-size: 11px;
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--ic-border);
+  font-size: 12px;
   letter-spacing: 0.02em;
   color: var(--ic-muted);
 }
@@ -1285,34 +1287,24 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   color: #f87171;
 }
 
-.ic-acq-dl {
-  display: grid;
-  grid-template-columns: minmax(72px, 0.95fr) minmax(0, 1.15fr);
-  gap: 5px 10px;
-  margin: 0;
-}
-
-.ic-acq-dl dt {
-  color: var(--ic-muted);
-  font-size: 11px;
-  line-height: 1.35;
-}
-
-.ic-acq-dl dd {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.35;
-  font-variant-numeric: tabular-nums;
-  color: var(--ic-text);
-  overflow-wrap: anywhere;
-}
-
-.ic-acq-section {
+.ic-acq-table {
+  width: 100%;
   margin: 14px 0 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--ic-border);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.ic-acq-section h4 {
-  margin: 0 0 8px;
+.ic-acq-table:first-of-type {
+  margin-top: 0;
+}
+
+.ic-acq-table caption {
+  caption-side: top;
+  text-align: left;
+  padding: 0 2px 8px;
   font-size: 10px;
   font-weight: 650;
   letter-spacing: 0.08em;
@@ -1320,28 +1312,42 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   color: var(--ic-muted);
 }
 
-.ic-acq-results {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.ic-acq-results li {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-  padding: 5px 0;
-  border-top: 1px solid var(--ic-border);
+.ic-acq-table th,
+.ic-acq-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--ic-border);
   font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+  vertical-align: baseline;
 }
 
-.ic-acq-results li span:last-child {
-  flex-shrink: 0;
+.ic-acq-table tbody tr:nth-child(odd) th,
+.ic-acq-table tbody tr:nth-child(odd) td {
+  background: color-mix(in srgb, var(--ic-text) 1.5%, transparent);
+}
+
+.ic-acq-table tbody tr:nth-child(even) th,
+.ic-acq-table tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--ic-text) 4%, transparent);
+}
+
+.ic-acq-table tr:last-child th,
+.ic-acq-table tr:last-child td {
+  border-bottom: none;
+}
+
+.ic-acq-table th {
+  width: 42%;
+  text-align: left;
   color: var(--ic-muted);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+}
+
+.ic-acq-table td {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ic-text);
+  overflow-wrap: anywhere;
 }
 
 .ic-form-grid {
@@ -1983,7 +1989,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   }
 
   .ic-config-body.has-summary {
-    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+    grid-template-columns: minmax(0, 1fr) minmax(13rem, 15.5rem);
   }
 }
 
