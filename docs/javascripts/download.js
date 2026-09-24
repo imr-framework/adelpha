@@ -82,38 +82,46 @@ const ADELPHA_KNOWN_SUMS = {
     "5fca9d41f6344b7ca22de1a1cc23194388c59bdc0b85d45d88ed74b94291b4b8",
   "Adelpha_0.5.2_x64-setup.exe":
     "46ac933141bd9858321f30ecaad9e4a8e15e2f00c9134718606d51011a1ff709",
-  "Adelpha-windows-x86_64-setup.exe":
-    "46ac933141bd9858321f30ecaad9e4a8e15e2f00c9134718606d51011a1ff709",
   "Adelpha_0.5.2_amd64.deb":
     "03f1c35dc6b428320e7e4ee5aeae8086d5076c7b6812a230bb174a99be88a9c7",
+  "Adelpha_0.5.4_aarch64.dmg":
+    "dbb769b6927522775f419b5d92dbbfefcf12d9f1cefc9cc26d9a55301fe1c140",
+  "Adelpha_0.5.4_x86_64.dmg":
+    "33344fb1d131841ff2ac42a82da28488e16c186d3feee3feebdc4c03e6cdf99b",
+  "Adelpha_0.5.4_x64-setup.exe":
+    "61b2d32fe124a199c5e7687cf83b612a05c74346a6a19f0f9d07f80f4de41f84",
+  "Adelpha-windows-x86_64-setup.exe":
+    "61b2d32fe124a199c5e7687cf83b612a05c74346a6a19f0f9d07f80f4de41f84",
+  "Adelpha_0.5.4_amd64.deb":
+    "a0f745d511604e35e9f954303b00b8e4503efabf43a4f721f5ab8811edad722c",
 };
 
 const ADELPHA_DL = "https://github.com/imr-framework/adelpha/releases/download";
 
 /** Public catalog until GitHub latest is this version or newer. */
 const ADELPHA_BUNDLED_RELEASE = {
-  version: "0.5.2",
-  published_at: "2026-08-31T20:53:09Z",
+  version: "0.5.4",
+  published_at: "2026-09-24T21:33:37Z",
   assets: [
     {
-      name: "Adelpha_0.5.2_aarch64.dmg",
-      browser_download_url: `${ADELPHA_DL}/v0.5.2/Adelpha_0.5.2_aarch64.dmg`,
-      size: 121644243,
+      name: "Adelpha_0.5.4_aarch64.dmg",
+      browser_download_url: `${ADELPHA_DL}/v0.5.4/Adelpha_0.5.4_aarch64.dmg`,
+      size: 120919821,
     },
     {
-      name: "Adelpha_0.5.2_x86_64.dmg",
-      browser_download_url: `${ADELPHA_DL}/v0.5.2/Adelpha_0.5.2_x86_64.dmg`,
-      size: 126734170,
+      name: "Adelpha_0.5.4_x86_64.dmg",
+      browser_download_url: `${ADELPHA_DL}/v0.5.4/Adelpha_0.5.4_x86_64.dmg`,
+      size: 126960645,
     },
     {
-      name: "Adelpha_0.5.2_x64-setup.exe",
-      browser_download_url: `${ADELPHA_DL}/v0.5.2/Adelpha_0.5.2_x64-setup.exe`,
-      size: 87223626,
+      name: "Adelpha_0.5.4_x64-setup.exe",
+      browser_download_url: `${ADELPHA_DL}/v0.5.4/Adelpha_0.5.4_x64-setup.exe`,
+      size: 86924585,
     },
     {
-      name: "Adelpha_0.5.2_amd64.deb",
-      browser_download_url: `${ADELPHA_DL}/v0.5.2/Adelpha_0.5.2_amd64.deb`,
-      size: 174831936,
+      name: "Adelpha_0.5.4_amd64.deb",
+      browser_download_url: `${ADELPHA_DL}/v0.5.4/Adelpha_0.5.4_amd64.deb`,
+      size: 174342814,
     },
   ],
 };

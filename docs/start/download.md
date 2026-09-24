@@ -27,7 +27,7 @@ hide:
       <p class="adelpha-dl-card__sub" data-adelpha-sub>Ubuntu 22.04 or later</p>
       <a class="adelpha-dl-card__cta" data-adelpha-href rel="noopener noreferrer" href="https://github.com/imr-framework/adelpha/releases/download/v0.5.4/Adelpha_0.5.4_amd64.deb">Download for Linux</a>
       <span class="adelpha-dl-card__wait" data-adelpha-wait hidden>In packaging</span>
-      <p class="adelpha-dl-card__fine" data-adelpha-fine>Version 0.5.4 · 167 MB</p>
+      <p class="adelpha-dl-card__fine" data-adelpha-fine>Version 0.5.4 · 166 MB</p>
       <p class="adelpha-dl-card__alt" data-adelpha-alt hidden></p>
     </div>
   </article>
@@ -74,7 +74,7 @@ hide:
       </li>
       <li class="adelpha-dl-verify__row">
         <span>SHA-256</span>
-        <code data-adelpha-sha title="03f1c35dc6b428320e7e4ee5aeae8086d5076c7b6812a230bb174a99be88a9c7">03f1c35dc6b42832…</code>
+        <code data-adelpha-sha title="a0f745d511604e35e9f954303b00b8e4503efabf43a4f721f5ab8811edad722c">a0f745d511604e35…</code>
         <button type="button" class="adelpha-copy" data-adelpha-copy="sha">Copy</button>
       </li>
     </ul>
