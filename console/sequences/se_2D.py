@@ -225,10 +225,6 @@ class SequenceSE_2D(PulseqSequence, registry_key=Path(__file__).stem):
             system = self.system,
         )
 
-        if rxd is None or getattr(rxd, "size", 0) == 0:
-            log.info("No raw data (hardware simulation or empty acquisition)")
-            return True
-
         # # Compute the average
         self.param_oversampling = 2
         rxd_rs = np.reshape(rxd, (self.param_oversampling * self.param_Base_Resolution, int(self.param_Base_Resolution), self.param_NSA), order='F')
@@ -249,7 +245,7 @@ class SequenceSE_2D(PulseqSequence, registry_key=Path(__file__).stem):
                 if i % 2 == 0:
                     pe_table[i] = center_index - (i // 2)
                 else:
-                    pe_table[i] = center_index + ((i // 2) + 1)
+                    pe_table[i] = center_index + (i // 2 + 1)
 
             log.info('Maximum phase encode value:', np.max(pe_table))
         # reformat the data according to the phase encoding order
@@ -257,7 +253,6 @@ class SequenceSE_2D(PulseqSequence, registry_key=Path(__file__).stem):
             rxd_avg_ordered = np.zeros_like(rxd_avg)
             for i in range(self.param_Base_Resolution):
                 rxd_avg_ordered[:, pe_table[i]] = rxd_avg[:, i]
-            rxd_avg_ordered[:, 0] = rxd_avg_ordered[:, 1] # TODO: This is a bug, that needs fixing - check the loop - boundary/first phase encode is an overlap
             rxd_avg = rxd_avg_ordered
 
 
@@ -285,7 +280,7 @@ class SequenceSE_2D(PulseqSequence, registry_key=Path(__file__).stem):
                 x = np.linspace(-1, 1, rxd_avg.shape[0])
                 y = np.linspace(-1, 1, rxd_avg.shape[1])
                 xv, yv = np.meshgrid(x, y, indexing='ij')
-                sigma = 0.3  # Standard deviation of the Gaussian
+                sigma = 0.7  # Standard deviation of the Gaussian
                 gaussian_filter = np.exp(-((xv**2 + yv**2) / (2 * sigma**2)))
                 rxd_avg = rxd_avg * gaussian_filter
 

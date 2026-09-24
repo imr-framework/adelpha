@@ -50,7 +50,7 @@ To fetch only that branch:
 git clone -b [branch_name] --single-branch https://github.com/imr-framework/adelpha.git
 ```
 
-If you already have a clone, switch with `git checkout [branch_name]`.
+If you already have a clone, switch with `git checkout [branch_name]`
 
 ## Contribute workshop notebooks
 
