@@ -7,6 +7,7 @@ import { isImportedModelId } from "./importedModels";
 import { usePartInspectorStore } from "./partInspectorStore";
 import { setScannerModel, studioCadForScanner, useScannerModel } from "./scannerModel";
 import { useEngineeringStore } from "./engineeringStore";
+import { StudioHome } from "./studio/StudioHome";
 
 const EngineeringCanvas = lazy(() =>
   import("./EngineeringCanvas").then((m) => ({ default: m.EngineeringCanvas })),
@@ -15,6 +16,8 @@ const EngineeringCanvas = lazy(() =>
 export function EngineeringStudio() {
   const [scannerId] = useScannerModel();
   const navTool = useEngineeringStore((s) => s.navTool);
+  const activeProject = useEngineeringStore((s) => s.activeProject);
+  const openProject = useEngineeringStore((s) => s.openProject);
   const partCount = useEngineeringStore((s) => s.partCount);
   const catalogCount = useEngineeringStore((s) => s.catalogCount);
   const studio = studioCadForScanner(scannerId);
@@ -44,41 +47,47 @@ export function EngineeringStudio() {
   return (
     <section className="engineering-studio" aria-label="Engineering Studio">
       <div className="engineering-stage">
-        <EngineeringViewportControls />
-        {empty ? (
-          <div className="eng-empty" role="status">
-            <strong>Nothing in simulation yet</strong>
-            <p>
-              Engineering Studio shows only parts added to simulation. Open Settings, select a
-              component, and choose Add to simulation.
-            </p>
-          </div>
-        ) : null}
-        {navTool === "inspect" ? (
-          <div className="part-inspect-stack">
-            <PartInspectorCard />
-            <PartVisibilityTray />
-          </div>
-        ) : null}
-        <ErrorBoundary
-          resetKey={studio.cad.url}
-          onError={() => {
-            if (isImportedModelId(scannerId)) setScannerModel("delta-v2");
-          }}
-          fallbackRender={(error) => (
-            <div className="viewport-cad-error">
-              <p>
-                {/webgl/i.test(error.message)
-                  ? "This display could not start a 3D viewport."
-                  : "Could not load the MRI assembly for Engineering Studio."}
-              </p>
-            </div>
-          )}
-        >
-          <Suspense fallback={<div className="engineering-loading">Loading MRI assembly…</div>}>
-            <EngineeringCanvas />
-          </Suspense>
-        </ErrorBoundary>
+        {activeProject ? (
+          <>
+            <EngineeringViewportControls />
+            {empty ? (
+              <div className="eng-empty" role="status">
+                <strong>Nothing in simulation yet</strong>
+                <p>
+                  Engineering Studio shows only parts added to simulation. Open Settings, select a
+                  component, and choose Add to simulation.
+                </p>
+              </div>
+            ) : null}
+            {navTool === "inspect" ? (
+              <div className="part-inspect-stack">
+                <PartInspectorCard />
+                <PartVisibilityTray />
+              </div>
+            ) : null}
+            <ErrorBoundary
+              resetKey={studio.cad.url}
+              onError={() => {
+                if (isImportedModelId(scannerId)) setScannerModel("delta-v2");
+              }}
+              fallbackRender={(error) => (
+                <div className="viewport-cad-error">
+                  <p>
+                    {/webgl/i.test(error.message)
+                      ? "This display could not start a 3D viewport."
+                      : "Could not load the MRI assembly for Engineering Studio."}
+                  </p>
+                </div>
+              )}
+            >
+              <Suspense fallback={<div className="engineering-loading">Loading MRI assembly…</div>}>
+                <EngineeringCanvas />
+              </Suspense>
+            </ErrorBoundary>
+          </>
+        ) : (
+          <StudioHome onOpenProject={openProject} />
+        )}
       </div>
     </section>
   );

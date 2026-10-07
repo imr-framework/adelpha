@@ -9,6 +9,11 @@ export type StudioModelFrame = {
   size: [number, number, number];
 };
 
+export type StudioProjectRef = {
+  id: string;
+  name: string;
+};
+
 type EngineeringStore = {
   navTool: StudioNavTool;
   cameraPreset: StudioCameraPreset;
@@ -19,11 +24,14 @@ type EngineeringStore = {
   frame: StudioModelFrame | null;
   viewNonce: number;
   fitNonce: number;
+  /** Null until the start card opens or creates a project. */
+  activeProject: StudioProjectRef | null;
   setNavTool: (tool: StudioNavTool) => void;
   setCameraPreset: (preset: StudioCameraPreset) => void;
   setModelInfo: (info: { label: string; partCount: number; catalogCount: number; fallback: boolean }) => void;
   setFrame: (frame: StudioModelFrame | null) => void;
   requestFit: () => void;
+  openProject: (project: StudioProjectRef) => void;
 };
 
 export const useEngineeringStore = create<EngineeringStore>((set) => ({
@@ -36,6 +44,7 @@ export const useEngineeringStore = create<EngineeringStore>((set) => ({
   frame: null,
   viewNonce: 0,
   fitNonce: 0,
+  activeProject: null,
   setNavTool: (navTool) => set({ navTool }),
   setCameraPreset: (cameraPreset) => set((state) => ({ cameraPreset, viewNonce: state.viewNonce + 1 })),
   setModelInfo: (info) =>
@@ -47,4 +56,5 @@ export const useEngineeringStore = create<EngineeringStore>((set) => ({
     }),
   setFrame: (frame) => set({ frame }),
   requestFit: () => set((state) => ({ fitNonce: state.fitNonce + 1 })),
+  openProject: (project) => set({ activeProject: project, modelLabel: project.name }),
 }));
