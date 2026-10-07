@@ -1,4 +1,5 @@
 export type StudioProjectKind = "sample" | "user";
+export type StudioApplication = "hardware" | "acquisition" | "reconstruction";
 
 export type StudioProject = {
   id: string;
@@ -7,7 +8,30 @@ export type StudioProject = {
   kind: StudioProjectKind;
   discipline: string;
   parts: number;
+  application: StudioApplication;
 };
+
+export const APPLICATIONS: readonly {
+  id: StudioApplication;
+  label: string;
+  summary: string;
+}[] = [
+  {
+    id: "hardware",
+    label: "Hardware",
+    summary: "Magnet, RF coils, and gradient coils together.",
+  },
+  {
+    id: "acquisition",
+    label: "Data acquisition",
+    summary: "Pulse sequences and the data they collect.",
+  },
+  {
+    id: "reconstruction",
+    label: "Reconstruction",
+    summary: "Images reconstructed from acquired data.",
+  },
+];
 
 export type StudioTutorial = {
   id: string;
@@ -71,6 +95,7 @@ export function seedProjects(now = Date.now()): StudioProject[] {
       kind: "sample",
       discipline: "Magnet",
       parts: 24,
+      application: "hardware",
     },
     {
       id: "sample-gradient",
@@ -79,6 +104,7 @@ export function seedProjects(now = Date.now()): StudioProject[] {
       kind: "sample",
       discipline: "Gradients",
       parts: 11,
+      application: "hardware",
     },
     {
       id: "sample-cryostat",
@@ -87,8 +113,13 @@ export function seedProjects(now = Date.now()): StudioProject[] {
       kind: "sample",
       discipline: "Cryostat",
       parts: 8,
+      application: "hardware",
     },
   ];
+}
+
+function isApplication(value: unknown): value is StudioApplication {
+  return value === "hardware" || value === "acquisition" || value === "reconstruction";
 }
 
 function isStudioProject(value: unknown): value is StudioProject {
@@ -102,6 +133,19 @@ function isStudioProject(value: unknown): value is StudioProject {
     typeof row.parts === "number" &&
     (row.kind === "sample" || row.kind === "user")
   );
+}
+
+function normalizeProject(row: StudioProject): StudioProject {
+  return {
+    ...row,
+    application: isApplication(row.application) ? row.application : "hardware",
+  };
+}
+
+export function disciplineFor(application: StudioApplication): string {
+  if (application === "acquisition") return "Acquisition";
+  if (application === "reconstruction") return "Reconstruction";
+  return "Hardware";
 }
 
 function writeProjects(projects: StudioProject[]) {
@@ -119,7 +163,10 @@ export function readProjects(): StudioProject[] {
     if (raw == null) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isStudioProject).sort((a, b) => b.updatedAt - a.updatedAt);
+    return parsed
+      .filter(isStudioProject)
+      .map(normalizeProject)
+      .sort((a, b) => b.updatedAt - a.updatedAt);
   } catch {
     return [];
   }
@@ -130,14 +177,16 @@ function nextId(): string {
   return `project-${Date.now().toString(36)}`;
 }
 
-export function saveNewProject(name: string): StudioProject {
+export function saveNewProject(name: string, choice: { application: StudioApplication }): StudioProject {
+  const application = choice.application;
   const project: StudioProject = {
     id: nextId(),
     name: name.trim(),
     updatedAt: Date.now(),
     kind: "user",
-    discipline: "Project",
+    discipline: disciplineFor(application),
     parts: 0,
+    application,
   };
   const existing = readProjects();
   writeProjects([project, ...existing.filter((item) => item.id !== project.id)]);

@@ -12,6 +12,7 @@ export type StudioModelFrame = {
 export type StudioProjectRef = {
   id: string;
   name: string;
+  application: "hardware" | "acquisition" | "reconstruction";
 };
 
 type EngineeringStore = {
@@ -32,6 +33,7 @@ type EngineeringStore = {
   setFrame: (frame: StudioModelFrame | null) => void;
   requestFit: () => void;
   openProject: (project: StudioProjectRef) => void;
+  closeProject: () => void;
 };
 
 export const useEngineeringStore = create<EngineeringStore>((set) => ({
@@ -56,5 +58,23 @@ export const useEngineeringStore = create<EngineeringStore>((set) => ({
     }),
   setFrame: (frame) => set({ frame }),
   requestFit: () => set((state) => ({ fitNonce: state.fitNonce + 1 })),
-  openProject: (project) => set({ activeProject: project, modelLabel: project.name }),
+  openProject: (project) =>
+    set({
+      activeProject: {
+        id: project.id,
+        name: project.name,
+        application: project.application ?? "hardware",
+      },
+      modelLabel: project.name,
+    }),
+  closeProject: () =>
+    set({
+      activeProject: null,
+      modelLabel: "MRI assembly",
+      navTool: "orbit",
+      frame: null,
+      partCount: 0,
+      catalogCount: 0,
+      fallback: false,
+    }),
 }));

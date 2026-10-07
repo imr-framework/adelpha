@@ -8,6 +8,8 @@ import { usePartInspectorStore } from "./partInspectorStore";
 import { setScannerModel, studioCadForScanner, useScannerModel } from "./scannerModel";
 import { useEngineeringStore } from "./engineeringStore";
 import { StudioHome } from "./studio/StudioHome";
+import { AcquisitionStudio, ReconstructionStudio } from "./studio/StudioApplication";
+import "./studio/studioWork.css";
 
 const EngineeringCanvas = lazy(() =>
   import("./EngineeringCanvas").then((m) => ({ default: m.EngineeringCanvas })),
@@ -18,6 +20,7 @@ export function EngineeringStudio() {
   const navTool = useEngineeringStore((s) => s.navTool);
   const activeProject = useEngineeringStore((s) => s.activeProject);
   const openProject = useEngineeringStore((s) => s.openProject);
+  const closeProject = useEngineeringStore((s) => s.closeProject);
   const partCount = useEngineeringStore((s) => s.partCount);
   const catalogCount = useEngineeringStore((s) => s.catalogCount);
   const studio = studioCadForScanner(scannerId);
@@ -48,6 +51,15 @@ export function EngineeringStudio() {
     <section className="engineering-studio" aria-label="Engineering Studio">
       <div className="engineering-stage">
         {activeProject ? (
+          <button type="button" className="studio-close-project" onClick={closeProject}>
+            Close project
+          </button>
+        ) : null}
+        {activeProject?.application === "acquisition" ? (
+          <AcquisitionStudio projectName={activeProject.name} />
+        ) : activeProject?.application === "reconstruction" ? (
+          <ReconstructionStudio projectName={activeProject.name} />
+        ) : activeProject ? (
           <>
             <EngineeringViewportControls />
             {empty ? (

@@ -1,0 +1,429 @@
+.studio-work {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  color: var(--inspect-title, #f5f6f8);
+  background: #030303;
+}
+
+.studio-close-project {
+  position: absolute;
+  z-index: 9;
+  top: 14px;
+  right: 16px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(14, 15, 18, 0.92);
+  color: #f4f5f7;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.studio-close-project:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.studio-close-project:focus-visible {
+  outline: 2px solid rgba(159, 223, 255, 0.75);
+  outline-offset: 2px;
+}
+
+.studio-work-bar {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 16px 148px 12px 20px;
+}
+
+.studio-work-kicker {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--inspect-label, rgba(160, 166, 176, 0.82));
+}
+
+.studio-work-bar h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.studio-work-bar p:last-child,
+.studio-work-note,
+.studio-work-main-head p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--inspect-label, rgba(160, 166, 176, 0.82));
+}
+
+.studio-work-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+
+.studio-work-panel {
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--inspect-edge, rgba(255, 255, 255, 0.09));
+  background: var(--inspect-surface, linear-gradient(165deg, #0e0f12 0%, #08090b 58%, #050607 100%));
+  box-shadow: var(--inspect-lift, 0 18px 40px -20px rgba(0, 0, 0, 0.9));
+}
+
+.studio-work-panel h3,
+.studio-work-main-head h3 {
+  margin: 14px 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--inspect-label, rgba(160, 166, 176, 0.82));
+}
+
+.studio-work-panel h3:first-child,
+.studio-work-main-head h3 {
+  margin-top: 0;
+}
+
+.studio-work-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.studio-work-list button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.studio-work-list button strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.studio-work-list button span {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--inspect-label, rgba(160, 166, 176, 0.82));
+}
+
+.studio-work-list button:hover,
+.studio-work-list button[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.studio-work-list button[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 1px rgba(159, 223, 255, 0.55);
+}
+
+.studio-work-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.studio-acq {
+  display: grid;
+  grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+  height: 100%;
+  min-height: 0;
+}
+
+.studio-acq-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.studio-acq-view {
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.studio-acq-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #090a0d;
+  color: var(--inspect-label, rgba(160, 166, 176, 0.82));
+  font-size: 13px;
+}
+
+.studio-sketch {
+  display: block;
+  width: min(520px, 100%);
+  height: auto;
+  border-radius: 12px;
+}
+
+.studio-params {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.studio-param {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 120px;
+  font-size: 12px;
+  color: var(--inspect-label, rgba(160, 166, 176, 0.82));
+}
+
+.studio-param input,
+.studio-param select {
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #16181c;
+  color: #f4f5f7;
+  font: inherit;
+  font-size: 13px;
+}
+
+.studio-param input:disabled {
+  opacity: 0.55;
+}
+
+.studio-work button:focus-visible,
+.studio-work input:focus-visible,
+.studio-work select:focus-visible {
+  outline: 2px solid rgba(159, 223, 255, 0.75);
+  outline-offset: 2px;
+}
+
+.koma-suite {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.koma-suite p,
+.koma-result p {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--inspect-label, rgba(160, 166, 176, 0.82));
+}
+
+.koma-run {
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: #f3f4f6;
+  color: #1c1e22;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.koma-run:hover:not(:disabled) {
+  background: #ffffff;
+}
+
+.koma-run:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.koma-error {
+  color: #f0b4b4;
+}
+
+.koma-viewer {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+}
+
+.koma-stage {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #090a0d;
+}
+
+.koma-switch {
+  position: absolute;
+  z-index: 2;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(9, 10, 13, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.koma-switch button {
+  flex: 1;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #c5cad2;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.koma-switch button:hover {
+  color: #f4f5f7;
+}
+
+.koma-switch button[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4f5f7;
+  box-shadow: inset 0 0 0 1px rgba(159, 223, 255, 0.5);
+}
+
+.engineering-stage .koma-stage canvas,
+.koma-stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  flex: none;
+  min-height: 0;
+  display: block;
+}
+
+.koma-anno {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  color: rgba(244, 245, 247, 0.9);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
+.koma-anno-tl { top: 10px; left: 12px; }
+.koma-anno-tr { top: 10px; right: 12px; align-items: flex-end; }
+.koma-anno-bl { bottom: 10px; left: 12px; }
+.koma-anno-br { bottom: 10px; right: 12px; align-items: flex-end; }
+
+.koma-echo {
+  align-self: stretch;
+  width: 100%;
+  margin: -4px 0 0;
+}
+
+.koma-echo-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.koma-echo figcaption {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--inspect-label, rgba(160, 166, 176, 0.82));
+}
+
+.koma-echo p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: right;
+  color: var(--inspect-label, rgba(160, 166, 176, 0.82));
+}
+
+.koma-plot {
+  display: block;
+  width: 100%;
+  height: 72px;
+  margin-top: 2px;
+}
+
+@media (max-width: 800px) {
+  .studio-work-bar {
+    flex-wrap: wrap;
+  }
+
+  .studio-work-body {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+
+  .studio-work-panel {
+    overflow: visible;
+  }
+
+  .studio-acq {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+  }
+
+  .koma-viewer {
+    min-height: 360px;
+  }
+}

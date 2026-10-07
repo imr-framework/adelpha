@@ -1,6 +1,7 @@
 import { Box, FolderOpen, Layers, Library, Magnet, Plus, Radio, Shield, Thermometer } from "lucide-react";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
+  APPLICATIONS,
   PLUGINS,
   TUTORIALS,
   formatEdited,
@@ -11,6 +12,7 @@ import {
   seedProjects,
   setPluginInstalled,
   touchProject,
+  type StudioApplication,
   type StudioPlugin,
   type StudioProject,
 } from "./library";
@@ -43,7 +45,8 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
   const [installed, setInstalled] = useState(readInstalledPluginIds);
   const [mode, setMode] = useState<"idle" | "create" | "open">("idle");
   const [draft, setDraft] = useState("");
-  const [nameError, setNameError] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [application, setApplication] = useState<StudioApplication | null>(null);
   const [startedTutorialId, setStartedTutorialId] = useState<string | null>(null);
   const [showAllTools, setShowAllTools] = useState(false);
 
@@ -57,18 +60,19 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
 
   function beginCreate() {
     setMode("create");
-    setNameError(false);
+    setFormError(null);
   }
 
   function beginOpen() {
     setMode("open");
-    setNameError(false);
+    setFormError(null);
   }
 
   function closeModes() {
     setMode("idle");
     setDraft("");
-    setNameError(false);
+    setFormError(null);
+    setApplication(null);
   }
 
   function openProject(project: StudioProject) {
@@ -81,10 +85,14 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
     event.preventDefault();
     const name = draft.trim();
     if (!name) {
-      setNameError(true);
+      setFormError("Give the project a name.");
       return;
     }
-    const project = saveNewProject(name);
+    if (!application) {
+      setFormError("Choose an application.");
+      return;
+    }
+    const project = saveNewProject(name, { application });
     setProjects(readProjects());
     closeModes();
     onOpenProject(project);
@@ -125,41 +133,6 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
                 Open project
               </button>
             </div>
-            {mode === "create" ? (
-              <form className="studio-new-form" onSubmit={createProject}>
-                <label className="studio-sr" htmlFor={nameId}>
-                  Project name
-                </label>
-                <input
-                  id={nameId}
-                  value={draft}
-                  autoFocus
-                  maxLength={80}
-                  placeholder="Name this project"
-                  aria-invalid={nameError}
-                  aria-describedby={nameError ? errorId : undefined}
-                  onChange={(event) => {
-                    setDraft(event.target.value);
-                    if (nameError) setNameError(false);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Escape") {
-                      event.preventDefault();
-                      closeModes();
-                    }
-                  }}
-                />
-                <button type="submit">Create</button>
-                <button type="button" className="studio-ghost" onClick={closeModes}>
-                  Cancel
-                </button>
-                {nameError ? (
-                  <p id={errorId} className="studio-name-error" role="alert">
-                    Give the project a name.
-                  </p>
-                ) : null}
-              </form>
-            ) : null}
             {mode === "open" ? (
               <div
                 id={openPanelId}
@@ -192,6 +165,73 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
             ) : null}
           </div>
         </header>
+
+        {mode === "create" ? (
+          <form className="studio-create" onSubmit={createProject}>
+            <div className="studio-create-name">
+              <label htmlFor={nameId}>Project name</label>
+              <input
+                id={nameId}
+                value={draft}
+                autoFocus
+                maxLength={80}
+                placeholder="Name this project"
+                aria-invalid={formError === "Give the project a name."}
+                aria-describedby={formError ? errorId : undefined}
+                onChange={(event) => {
+                  setDraft(event.target.value);
+                  if (formError) setFormError(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    closeModes();
+                  }
+                }}
+              />
+            </div>
+            <fieldset className="studio-choice-set">
+              <legend>Application</legend>
+              <div className="studio-choice-row">
+                {APPLICATIONS.map((item) => (
+                  <label key={item.id} className="studio-choice">
+                    <input
+                      type="radio"
+                      name="studio-application"
+                      value={item.id}
+                      checked={application === item.id}
+                      onChange={() => {
+                        setApplication(item.id);
+                        if (formError) setFormError(null);
+                      }}
+                    />
+                    <span className="studio-choice-copy">
+                      <span className="studio-project-name">{item.label}</span>
+                      <span className="studio-project-meta">{item.summary}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <div className="studio-create-actions">
+              <button type="submit">Create</button>
+              <button type="button" className="studio-ghost" onClick={closeModes}>
+                Cancel
+              </button>
+              {formError ? (
+                <p id={errorId} className="studio-name-error" role="alert">
+                  {formError}
+                </p>
+              ) : (
+                <p className="studio-create-hint">
+                  {!application
+                    ? "Choose hardware, acquisition, or reconstruction."
+                    : "The studio opens for this application."}
+                </p>
+              )}
+            </div>
+          </form>
+        ) : null}
 
         <div className="studio-main">
           <div className="studio-projects">

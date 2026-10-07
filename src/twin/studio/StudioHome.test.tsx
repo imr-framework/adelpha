@@ -54,14 +54,76 @@ describe("StudioHome", () => {
 
     await user.type(screen.getByRole("textbox", { name: "Project name" }), "Shim tray");
     await user.click(screen.getByRole("button", { name: "Create" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Choose an application.");
+
+    await user.click(screen.getByRole("radio", { name: /Hardware/ }));
+    await user.click(screen.getByRole("button", { name: "Create" }));
 
     expect(onOpenProject).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "Shim tray", kind: "user" }),
+      expect.objectContaining({
+        name: "Shim tray",
+        kind: "user",
+        application: "hardware",
+        discipline: "Hardware",
+      }),
     );
   });
 
+  it("opens an acquisition project into the acquisition studio", async () => {
+    const onOpenProject = vi.fn();
+    const user = userEvent.setup();
+    render(<StudioHome onOpenProject={onOpenProject} />);
+
+    await user.click(screen.getAllByRole("button", { name: "New project" })[0]!);
+    await user.type(screen.getByRole("textbox", { name: "Project name" }), "GRE study");
+    await user.click(screen.getByRole("radio", { name: /Data acquisition/ }));
+    await user.click(screen.getByRole("button", { name: "Create" }));
+
+    expect(onOpenProject).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "GRE study", application: "acquisition" }),
+    );
+
+    useEngineeringStore.getState().openProject(onOpenProject.mock.calls[0][0]);
+    render(<EngineeringStudio />);
+    expect(screen.getByRole("region", { name: "Acquisition" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "GRE study" })).toBeInTheDocument();
+    expect(screen.queryByRole("toolbar", { name: "Viewport navigation" })).not.toBeInTheDocument();
+  });
+
+  it("closes the open project and returns to the start page", async () => {
+    const user = userEvent.setup();
+    useEngineeringStore.setState({
+      activeProject: {
+        id: "gre",
+        name: "GRE study",
+        application: "acquisition",
+      },
+    });
+    render(<EngineeringStudio />);
+
+    await user.click(screen.getByRole("button", { name: "Close project" }));
+
+    expect(screen.getByRole("region", { name: "Engineering Studio start" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Acquisition" })).not.toBeInTheDocument();
+    expect(useEngineeringStore.getState().activeProject).toBeNull();
+  });
+
+  it("opens a reconstruction project into the reconstruction studio", () => {
+    useEngineeringStore.setState({
+      activeProject: {
+        id: "recon",
+        name: "SENSE study",
+        application: "reconstruction",
+      },
+    });
+    render(<EngineeringStudio />);
+    expect(screen.getByRole("region", { name: "Reconstruction" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Cartesian FFT/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("toolbar", { name: "Viewport navigation" })).not.toBeInTheDocument();
+  });
+
   it("opens a saved project from the open action", async () => {
-    saveNewProject("Shim tray");
+    saveNewProject("Shim tray", { application: "acquisition" });
     const onOpenProject = vi.fn();
     const user = userEvent.setup();
     render(<StudioHome onOpenProject={onOpenProject} />);

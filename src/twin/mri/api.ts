@@ -76,6 +76,65 @@ export async function fetchSequences(adjustments = false): Promise<SequenceInfo[
   return mriFetch(`/sequences${qs}`);
 }
 
+export type KomaImage = {
+  width: number;
+  height: number;
+  values: number[];
+};
+
+export type KomaSimulation = {
+  ok: true;
+  suite: string;
+  title: string;
+  summary: string;
+  phantom: string;
+  spins: number;
+  profiles: number;
+  samples_per_profile: number;
+  scanner_b0_t: number;
+  gmax_mt_m: number;
+  inhomogeneity_ppm: number;
+  sequence: string;
+  sequence_id: string;
+  tr_ms: number;
+  te_ms: number;
+  flip_deg: number;
+  averages: number;
+  voxel_mm: number;
+  fov_mm: number;
+  matrix: number;
+  bandwidth_hz: number;
+  scan_time_s: number;
+  snr: number;
+  elapsed_s: number;
+  echo: number[];
+  image: KomaImage | null;
+  noisy_image: KomaImage | null;
+  inhomogeneous_image: KomaImage | null;
+  reconstruction_error: string;
+};
+
+export type KomaRequest = {
+  sequence: "gre" | "se" | "fse" | "bssfp";
+  b0_t: number;
+  inhomogeneity_ppm: number;
+  gmax_mt_m: number;
+  tr_ms: number;
+  te_ms: number;
+  flip_deg: number;
+  averages: number;
+  voxel_mm: number;
+  bandwidth_hz: number;
+};
+
+export async function simulateKoma(request: KomaRequest): Promise<KomaSimulation> {
+  return mriFetch("/koma/simulate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ suite: "low-field", ...request }),
+  });
+}
+
 export async function uploadSeqFile(file: File): Promise<{ name: string }> {
   const name = file.name || "sequence.seq";
   return mriFetch(`/sequences/seq-files?filename=${encodeURIComponent(name)}`, {
