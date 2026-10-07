@@ -4,20 +4,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AcquisitionStudio } from "./StudioApplication";
 
-const simulateKoma = vi.fn();
+const simulateMr0 = vi.fn();
 
 vi.mock("../mri/api", () => ({
   fetchSequences: () => Promise.reject(new Error("offline")),
-  simulateKoma: (...args: unknown[]) => simulateKoma(...args),
+  simulateMr0: (...args: unknown[]) => simulateMr0(...args),
 }));
 
-describe("AcquisitionStudio KomaMRI suite", () => {
+describe("AcquisitionStudio MRZero suite", () => {
   beforeEach(() => {
-    simulateKoma.mockReset();
+    simulateMr0.mockReset();
   });
 
-  it("runs the first brain EPI suite and shows the echo", async () => {
-    simulateKoma.mockResolvedValue({
+  it("runs the 2D spin echo through MRZero and shows the echo", async () => {
+    simulateMr0.mockResolvedValue({
       ok: true,
       suite: "low-field",
       title: "Spin echo",
@@ -50,11 +50,24 @@ describe("AcquisitionStudio KomaMRI suite", () => {
     });
 
     render(<AcquisitionStudio projectName="Brain EPI" />);
-    expect(screen.getByRole("button", { name: /Balanced SSFP/ })).toBeInTheDocument();
-    expect(screen.getByLabelText("Field (T)")).toHaveValue(0.5);
+    const listed = screen.getAllByRole("button").map((button) => button.textContent ?? "");
+    const spin = listed.findIndex((text) => text.includes("2D Spin-Echo"));
+    const turbo = listed.findIndex((text) => text.includes("3D Turbo Spin-Echo"));
+    expect(spin).toBeGreaterThanOrEqual(0);
+    expect(turbo).toBeGreaterThan(spin);
+    expect(listed.some((text) => text.includes("RF Spin-Echo"))).toBe(false);
+    expect(listed.some((text) => text.includes("1D Spin-Echo"))).toBe(false);
+    expect(screen.queryByRole("button", { name: /Gradient echo/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "On this scanner" })).not.toBeInTheDocument();
+    expect(screen.getByText(/simulate one brain slice with MRZero/)).toBeInTheDocument();
+    expect(screen.getByLabelText("TE (ms)")).toHaveValue(5);
+    expect(screen.getByLabelText("FOV (mm)")).toHaveValue(64);
+    expect(screen.queryByLabelText("ETL")).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Run simulation" }));
 
-    expect(simulateKoma).toHaveBeenCalledWith(expect.objectContaining({ sequence: "se", b0_t: 0.5, inhomogeneity_ppm: 20 }));
+    expect(simulateMr0).toHaveBeenCalledWith(
+      expect.objectContaining({ sequence: "se_2D", tr_ms: 100, te_ms: 5, averages: 1 }),
+    );
     expect(await screen.findByText(/brain2D_axial/)).toBeInTheDocument();
     expect(screen.getByText(/6,506 spins/)).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Center echo magnitude" })).toBeInTheDocument();
@@ -67,12 +80,17 @@ describe("AcquisitionStudio KomaMRI suite", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Field error" }));
     expect(screen.getByLabelText("Field error")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /3D Turbo Spin-Echo/ }));
+    expect(screen.getByLabelText("ETL")).toHaveValue(8);
+    expect(screen.getByLabelText("Slices")).toHaveValue(8);
+    expect(screen.queryByLabelText("PE Ordering")).not.toBeInTheDocument();
   });
 
-  it("shows a failure when KomaMRI cannot run", async () => {
-    simulateKoma.mockRejectedValue(new Error("Julia is not installed. KomaMRI needs the julia executable."));
+  it("shows a failure when MRZero cannot run", async () => {
+    simulateMr0.mockRejectedValue(new Error("MRZero simulation failed."));
     render(<AcquisitionStudio projectName="Brain EPI" />);
     await userEvent.click(screen.getByRole("button", { name: "Run simulation" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Julia is not installed");
+    expect(await screen.findByRole("alert")).toHaveTextContent("MRZero simulation failed");
   });
 });

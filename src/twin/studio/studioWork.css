@@ -228,6 +228,41 @@
   opacity: 0.55;
 }
 
+.studio-param-check {
+  flex-direction: row;
+  align-items: center;
+  min-height: 36px;
+}
+
+.studio-param-check input {
+  width: 16px;
+  height: 16px;
+}
+
+.studio-param-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.studio-param-tabs button {
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: transparent;
+  color: #c5cad2;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.studio-param-tabs button[aria-selected="true"] {
+  color: #f4f5f7;
+  box-shadow: inset 0 0 0 1px rgba(159, 223, 255, 0.55);
+}
+
 .studio-work button:focus-visible,
 .studio-work input:focus-visible,
 .studio-work select:focus-visible {
@@ -235,7 +270,7 @@
   outline-offset: 2px;
 }
 
-.koma-suite {
+.mr0-suite {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -243,8 +278,8 @@
   padding-top: 4px;
 }
 
-.koma-suite p,
-.koma-result p {
+.mr0-suite p,
+.mr0-result p {
   margin: 0;
   max-width: 62ch;
   font-size: 13px;
@@ -252,7 +287,7 @@
   color: var(--inspect-label, rgba(160, 166, 176, 0.82));
 }
 
-.koma-run {
+.mr0-run {
   height: 36px;
   padding: 0 14px;
   border: 0;
@@ -265,20 +300,20 @@
   cursor: pointer;
 }
 
-.koma-run:hover:not(:disabled) {
+.mr0-run:hover:not(:disabled) {
   background: #ffffff;
 }
 
-.koma-run:disabled {
+.mr0-run:disabled {
   cursor: progress;
   opacity: 0.7;
 }
 
-.koma-error {
+.mr0-error {
   color: #f0b4b4;
 }
 
-.koma-viewer {
+.mr0-viewer {
   position: relative;
   flex: 1;
   width: 100%;
@@ -286,7 +321,7 @@
   min-height: 280px;
 }
 
-.koma-stage {
+.mr0-stage {
   position: absolute;
   inset: 0;
   margin: 0;
@@ -296,7 +331,7 @@
   background: #090a0d;
 }
 
-.koma-switch {
+.mr0-switch {
   position: absolute;
   z-index: 2;
   left: 12px;
@@ -311,7 +346,7 @@
   backdrop-filter: blur(10px);
 }
 
-.koma-switch button {
+.mr0-switch button {
   flex: 1;
   height: 32px;
   border: 0;
@@ -324,18 +359,18 @@
   cursor: pointer;
 }
 
-.koma-switch button:hover {
+.mr0-switch button:hover {
   color: #f4f5f7;
 }
 
-.koma-switch button[aria-pressed="true"] {
+.mr0-switch button[aria-pressed="true"] {
   background: rgba(255, 255, 255, 0.08);
   color: #f4f5f7;
   box-shadow: inset 0 0 0 1px rgba(159, 223, 255, 0.5);
 }
 
-.engineering-stage .koma-stage canvas,
-.koma-stage canvas {
+.engineering-stage .mr0-stage canvas,
+.mr0-stage canvas {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -345,7 +380,7 @@
   display: block;
 }
 
-.koma-anno {
+.mr0-anno {
   position: absolute;
   z-index: 1;
   display: flex;
@@ -361,25 +396,25 @@
   pointer-events: none;
 }
 
-.koma-anno-tl { top: 10px; left: 12px; }
-.koma-anno-tr { top: 10px; right: 12px; align-items: flex-end; }
-.koma-anno-bl { bottom: 10px; left: 12px; }
-.koma-anno-br { bottom: 10px; right: 12px; align-items: flex-end; }
+.mr0-anno-tl { top: 10px; left: 12px; }
+.mr0-anno-tr { top: 10px; right: 12px; align-items: flex-end; }
+.mr0-anno-bl { bottom: 10px; left: 12px; }
+.mr0-anno-br { bottom: 10px; right: 12px; align-items: flex-end; }
 
-.koma-echo {
+.mr0-echo {
   align-self: stretch;
   width: 100%;
   margin: -4px 0 0;
 }
 
-.koma-echo-head {
+.mr0-echo-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
 }
 
-.koma-echo figcaption {
+.mr0-echo figcaption {
   margin: 0;
   font-size: 11px;
   font-weight: 600;
@@ -388,7 +423,7 @@
   color: var(--inspect-label, rgba(160, 166, 176, 0.82));
 }
 
-.koma-echo p {
+.mr0-echo p {
   margin: 0;
   font-size: 12px;
   line-height: 1.4;
@@ -396,11 +431,19 @@
   color: var(--inspect-label, rgba(160, 166, 176, 0.82));
 }
 
-.koma-plot {
+.mr0-plot {
   display: block;
   width: 100%;
   height: 72px;
   margin-top: 2px;
+}
+
+.mr0-plot-fill {
+  position: absolute;
+  inset: 36px 18px 58px;
+  width: auto;
+  height: auto;
+  margin: 0;
 }
 
 @media (max-width: 800px) {
@@ -423,7 +466,7 @@
     height: auto;
   }
 
-  .koma-viewer {
+  .mr0-viewer {
     min-height: 360px;
   }
 }

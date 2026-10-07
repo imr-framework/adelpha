@@ -14,6 +14,7 @@ dependencies = [
     "google-genai>=2.11.0",
     "httpx>=0.28.1",
     "matplotlib>=3.9.0",
+    "MRzeroCore>=1.1.1",
     "numpy>=2.2.6",
     "pandas>=2.3.3",
     "pydantic>=2.13.4",

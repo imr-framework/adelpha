@@ -49,7 +49,7 @@ FALLBACK: List[SequenceInfo] = [
     SequenceInfo(
         id="tse_2D",
         name="2D Turbo Spin-Echo",
-        description="",
+        description="2D turbo spin-echo acquisition with Cartesian sampling",
         defaults={"TE": 70, "TR": 250},
     ),
     SequenceInfo(

@@ -24,6 +24,13 @@ def test_sequence_registry_loads_updated_catalog():
     names = SequenceBase.installed_sequences()
     assert "rf_se" in names
     assert "se_1D" in names
+    assert "se_2D" in names
+    assert "tse_2D" in names
+    se_2d = SequenceBase.get_sequence("se_2D")
+    assert se_2d.get_readable_name() == "2D Spin-Echo"
+    tse_2d = SequenceBase.get_sequence("tse_2D")
+    assert tse_2d.get_readable_name() == "2D Turbo Spin-Echo"
+    assert tse_2d.get_description()
     rf_se = SequenceBase.get_sequence("rf_se")
     schema = rf_se.get_parameter_schema()
     assert schema["properties"]["TE"]["unit"] == "ms"

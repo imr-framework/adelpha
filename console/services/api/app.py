@@ -44,7 +44,7 @@ from services.api.models import (
     ServiceStatusResponse,
     ValidateResponse,
 )
-from services.api.koma_sim import julia_status, list_suites, run_suite
+from services.api.mrzero_sim import run_suite as run_mr0_suite
 from services.api.sequences_api import get_sequence_info, import_seq_file, list_sequences, registry_loaded, validate_parameters
 from services.api.session import session
 from services.ui.control import (
@@ -166,16 +166,11 @@ def sequence_validate(name: str, body: ScanValidateRequest) -> ValidateResponse:
     return validate_parameters(name, body.parameters, dummy)
 
 
-@app.get("/koma/suites")
-def koma_suites():
-    return {"suites": list_suites(), **julia_status()}
-
-
-@app.post("/koma/simulate")
-def koma_simulate(body: Optional[dict] = Body(default=None)):
+@app.post("/mr0/simulate")
+def mr0_simulate(body: Optional[dict] = Body(default=None)):
     suite = str((body or {}).get("suite") or "low-field")
     try:
-        return run_suite(suite, body)
+        return run_mr0_suite(suite, body)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     except Exception as exc:

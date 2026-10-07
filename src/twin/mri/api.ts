@@ -76,13 +76,13 @@ export async function fetchSequences(adjustments = false): Promise<SequenceInfo[
   return mriFetch(`/sequences${qs}`);
 }
 
-export type KomaImage = {
+export type Mr0Image = {
   width: number;
   height: number;
   values: number[];
 };
 
-export type KomaSimulation = {
+export type Mr0Simulation = {
   ok: true;
   suite: string;
   title: string;
@@ -108,14 +108,14 @@ export type KomaSimulation = {
   snr: number;
   elapsed_s: number;
   echo: number[];
-  image: KomaImage | null;
-  noisy_image: KomaImage | null;
-  inhomogeneous_image: KomaImage | null;
+  image: Mr0Image | null;
+  noisy_image: Mr0Image | null;
+  inhomogeneous_image: Mr0Image | null;
   reconstruction_error: string;
 };
 
-export type KomaRequest = {
-  sequence: "gre" | "se" | "fse" | "bssfp";
+export type Mr0Request = {
+  sequence: "se_2D" | "tse_3D";
   b0_t: number;
   inhomogeneity_ppm: number;
   gmax_mt_m: number;
@@ -125,10 +125,11 @@ export type KomaRequest = {
   averages: number;
   voxel_mm: number;
   bandwidth_hz: number;
+  etl: number;
 };
 
-export async function simulateKoma(request: KomaRequest): Promise<KomaSimulation> {
-  return mriFetch("/koma/simulate", {
+export async function simulateMr0(request: Mr0Request): Promise<Mr0Simulation> {
+  return mriFetch("/mr0/simulate", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ suite: "low-field", ...request }),

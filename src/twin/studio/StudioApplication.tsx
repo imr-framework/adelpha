@@ -1,47 +1,107 @@
 import { useEffect, useRef, useState } from "react";
-import { fetchSequences, simulateKoma, type KomaRequest, type KomaSimulation } from "../mri/api";
-import type { SequenceInfo } from "../mri/types";
+import { fetchSequences, simulateMr0, type Mr0Request, type Mr0Simulation } from "../mri/api";
+import type { ParameterProperty, SequenceInfo, SeqTab } from "../mri/types";
 import "./studioWork.css";
 
-const SEQUENCES = [
-  {
-    id: "se",
-    name: "Spin echo",
-    summary: "90° excitation and a 180° refocusing pulse. The low-field workhorse.",
-    tr: 80,
-    te: 16,
-    flip: 90,
-  },
-  {
-    id: "gre",
-    name: "Gradient echo",
-    summary: "Spoiled GRE. Short TR, T1 or T2* contrast.",
-    tr: 30,
-    te: 8,
-    flip: 40,
-  },
-  {
-    id: "fse",
-    name: "Fast spin echo",
-    summary: "Four echoes per shot. TE is the echo spacing.",
-    tr: 160,
-    te: 16,
-    flip: 90,
-  },
-  {
-    id: "bssfp",
-    name: "Balanced SSFP",
-    summary: "Fully balanced readout. TE stays at half of TR.",
-    tr: 12,
-    te: 6,
-    flip: 50,
-  },
-] as const;
+const STUDIO_SEQUENCE_IDS = ["se_2D", "tse_3D"] as const;
+type SequenceId = (typeof STUDIO_SEQUENCE_IDS)[number];
 
-const FOV_MM = 220;
-const MATRIX_MIN = 20;
-const MATRIX_MAX = 28;
-const ECHO_TRAIN = 4;
+const TAB_LABEL: Record<SeqTab, string> = {
+  sequence: "Sequence",
+  adjustments: "Adjustments",
+  system: "System",
+  processing: "Processing",
+  other: "Other",
+};
+
+function field(title: string, value: unknown, extra: Partial<ParameterProperty> = {}): ParameterProperty {
+  const type = typeof value === "boolean" ? "boolean" : typeof value === "number" ? "integer" : "string";
+  return { title, type, default: value, tab: "sequence", ...extra };
+}
+
+const FALLBACK_SEQUENCES: SequenceInfo[] = [
+  {
+    id: "se_2D",
+    name: "2D Spin-Echo",
+    description: "",
+    adjustment: false,
+    defaults: {
+      TE: 5,
+      TR: 100,
+      NSA: 1,
+      FOV: 64,
+      Orientation: "Axial",
+      Base_Resolution: 64,
+      BW: 16000,
+      Trajectory: "Cartesian",
+      PE_Ordering: "Center_out",
+      PF: 1,
+      view_traj: false,
+    },
+    parameter_schema: {
+      type: "object",
+      properties: {
+        TE: field("TE", 5, { unit: "ms", minimum: 0 }),
+        TR: field("TR", 100, { unit: "ms", minimum: 0 }),
+        NSA: field("Averages", 1, { minimum: 1 }),
+        FOV: field("FOV", 64, { unit: "mm", minimum: 1 }),
+        Orientation: field("Orientation", "Axial", { enum: ["Axial", "Sagittal", "Coronal"] }),
+        Base_Resolution: field("Base Resolution", 64, { minimum: 8 }),
+        BW: field("BW", 16000, { unit: "Hz" }),
+        Trajectory: field("Trajectory", "Cartesian", { enum: ["Cartesian", "Radial"] }),
+        PE_Ordering: field("PE Ordering", "Center_out"),
+        PF: field("Partial Fourier", 1, { tab: "processing" }),
+        view_traj: field("View trajectory", false, { tab: "other" }),
+      },
+    },
+  },
+  {
+    id: "tse_3D",
+    name: "3D Turbo Spin-Echo",
+    description: "volumetric 3D TSE acquisition with Cartesian sampling",
+    adjustment: false,
+    defaults: {
+      TE: 15,
+      TR: 1000,
+      ETL: 8,
+      NSA: 1,
+      Orientation: "Axial",
+      FOV: 15,
+      Base_Resolution: 32,
+      Slices: 8,
+      BW: 32000,
+      Trajectory: "Cartesian",
+      Ordering: "center_out",
+      Plot_Timing: false,
+    },
+    parameter_schema: {
+      type: "object",
+      properties: {
+        TE: field("TE", 15, { unit: "ms", minimum: 0 }),
+        TR: field("TR", 1000, { unit: "ms", minimum: 0 }),
+        ETL: field("ETL", 8, { minimum: 1 }),
+        NSA: field("Averages", 1, { minimum: 1 }),
+        Orientation: field("Orientation", "Axial", { enum: ["Axial", "Sagittal", "Coronal"] }),
+        FOV: field("FOV", 15, { unit: "mm", minimum: 1 }),
+        Base_Resolution: field("Base Resolution", 32, { minimum: 8 }),
+        Slices: field("Slices", 8, { minimum: 1 }),
+        BW: field("BW", 32000, { unit: "Hz" }),
+        Trajectory: field("Trajectory", "Cartesian", { enum: ["Cartesian", "Radial"] }),
+        Ordering: field("Ordering", "center_out", { enum: ["center_out", "linear_up", "linear_down"] }),
+        Plot_Timing: field("Plot Sequence Timing", false),
+      },
+    },
+  },
+];
+
+function draftsFrom(list: SequenceInfo[]) {
+  return Object.fromEntries(list.map((item) => [item.id, { ...item.defaults }]));
+}
+
+function asNumber(value: unknown, fallback: number) {
+  const next = Number(value);
+  return Number.isFinite(next) ? next : fallback;
+}
 
 const METHODS = [
   {
@@ -66,81 +126,75 @@ const METHODS = [
   },
 ] as const;
 
-type SequenceId = (typeof SEQUENCES)[number]["id"];
-
-function matrixSize(voxelMm: number) {
-  return Math.min(MATRIX_MAX, Math.max(MATRIX_MIN, Math.round(FOV_MM / voxelMm)));
-}
-
-function scanSeconds(sequence: SequenceId, trMs: number, voxelMm: number, averages: number) {
-  const matrix = matrixSize(voxelMm);
-  const shots = sequence === "fse" ? Math.ceil(matrix / ECHO_TRAIN) : matrix;
-  return (trMs / 1000) * shots * averages;
-}
-
 export function AcquisitionStudio({ projectName }: { projectName: string }) {
-  const [sequenceId, setSequenceId] = useState<SequenceId>("se");
-  const [scanner, setScanner] = useState<SequenceInfo[] | null>(null);
-  const [tr, setTr] = useState(80);
-  const [te, setTe] = useState(16);
-  const [flip, setFlip] = useState(90);
-  const [field, setField] = useState(0.5);
-  const [inhomogeneity, setInhomogeneity] = useState(20);
-  const [gradient, setGradient] = useState(15);
-  const [averages, setAverages] = useState(1);
-  const [voxel, setVoxel] = useState(8);
-  const [bandwidth, setBandwidth] = useState(160);
+  const [catalog, setCatalog] = useState(FALLBACK_SEQUENCES);
+  const [drafts, setDrafts] = useState<Record<string, Record<string, unknown>>>(() => draftsFrom(FALLBACK_SEQUENCES));
+  const [sequenceId, setSequenceId] = useState<SequenceId>("se_2D");
+  const [tab, setTab] = useState<SeqTab>("sequence");
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<KomaSimulation | null>(null);
-  const sequence = SEQUENCES.find((item) => item.id === sequenceId) ?? SEQUENCES[0];
-  const echoTime = sequenceId === "bssfp" ? tr / 2 : Math.min(te, tr);
-  const matrix = matrixSize(voxel);
-  const scan = scanSeconds(sequenceId, tr, voxel, averages);
+  const [result, setResult] = useState<Mr0Simulation | null>(null);
+  const sequence = catalog.find((item) => item.id === sequenceId) ?? catalog[0];
+  const draft = drafts[sequence.id] ?? sequence.defaults;
+  const properties = sequence.parameter_schema?.properties ?? {};
+  const tabs = (Object.keys(TAB_LABEL) as SeqTab[]).filter((item) =>
+    Object.values(properties).some((prop) => (prop.tab || "sequence") === item),
+  );
+  const activeTab = tabs.includes(tab) ? tab : "sequence";
+  const fields = Object.entries(properties).filter(([, prop]) => (prop.tab || "sequence") === activeTab);
 
   useEffect(() => {
     let cancel = false;
     fetchSequences()
       .then((rows) => {
-        if (!cancel) setScanner(rows.filter((row) => !row.adjustment));
+        if (cancel) return;
+        const next = FALLBACK_SEQUENCES.map((item) => rows.find((row) => row.id === item.id) ?? item);
+        setCatalog(next);
+        setDrafts(draftsFrom(next));
       })
-      .catch(() => {
-        if (!cancel) setScanner(null);
-      });
+      .catch(() => undefined);
     return () => {
       cancel = true;
     };
   }, []);
 
   function chooseSequence(next: SequenceId) {
-    const preset = SEQUENCES.find((item) => item.id === next) ?? SEQUENCES[0];
     setSequenceId(next);
-    setTr(preset.tr);
-    setTe(preset.te);
-    setFlip(preset.flip);
+    setTab("sequence");
   }
 
-  const request: KomaRequest = {
-    sequence: sequenceId,
-    b0_t: field,
-    inhomogeneity_ppm: inhomogeneity,
-    gmax_mt_m: gradient,
-    tr_ms: tr,
-    te_ms: echoTime,
-    flip_deg: flip,
-    averages,
-    voxel_mm: voxel,
-    bandwidth_hz: bandwidth,
+  function setParam(key: string, value: unknown) {
+    setDrafts((current) => ({
+      ...current,
+      [sequence.id]: { ...(current[sequence.id] ?? sequence.defaults), [key]: value },
+    }));
+  }
+
+  const fov = asNumber(draft.FOV, 0);
+  const base = asNumber(draft.Base_Resolution, 0);
+  const bandwidthHz = asNumber(draft.BW, 0);
+  const request: Mr0Request = {
+    sequence: sequence.id as Mr0Request["sequence"],
+    b0_t: 0.5,
+    inhomogeneity_ppm: 20,
+    gmax_mt_m: 15,
+    tr_ms: asNumber(draft.TR, 80),
+    te_ms: asNumber(draft.TE, 16),
+    flip_deg: 90,
+    averages: asNumber(draft.NSA, 1),
+    voxel_mm: fov > 0 && base > 0 ? fov / base : 8,
+    bandwidth_hz: bandwidthHz > 0 && base > 0 ? bandwidthHz / base : 160,
+    etl: sequence.id === "tse_3D" ? asNumber(draft.ETL, 8) : 1,
   };
 
   async function run() {
     setRunning(true);
     setError("");
     try {
-      setResult(await simulateKoma(request));
+      setResult(await simulateMr0(request));
     } catch (err) {
       setResult(null);
-      setError(err instanceof Error ? err.message : "KomaMRI simulation failed.");
+      setError(err instanceof Error ? err.message : "MRZero simulation failed.");
     } finally {
       setRunning(false);
     }
@@ -151,89 +205,59 @@ export function AcquisitionStudio({ projectName }: { projectName: string }) {
       <header className="studio-work-bar">
         <p className="studio-work-kicker">Acquisition</p>
         <h2>{projectName}</h2>
-        <p>Design a low-field pulse sequence and simulate one brain slice.</p>
+        <p>Design a low-field pulse sequence and simulate one brain slice with MRZero.</p>
       </header>
       <div className="studio-work-body">
         <div className="studio-work-panel">
           <h3>Pulse sequences</h3>
           <ul className="studio-work-list">
-            {SEQUENCES.map((item) => (
+            {catalog.map((item) => (
               <li key={item.id}>
                 <button
                   type="button"
                   aria-pressed={item.id === sequenceId}
-                  onClick={() => chooseSequence(item.id)}
+                  onClick={() => chooseSequence(item.id as SequenceId)}
                 >
                   <strong>{item.name}</strong>
-                  <span>{item.summary}</span>
+                  <span>{item.description}</span>
                 </button>
               </li>
             ))}
           </ul>
-          <h3>On this scanner</h3>
-          {scanner === null ? (
-            <p className="studio-work-note">Scanner sequences are unavailable.</p>
-          ) : scanner.length === 0 ? (
-            <p className="studio-work-note">The scanner has no sequences loaded.</p>
-          ) : (
-            <ul className="studio-work-list">
-              {scanner.map((item) => (
-                <li key={item.id}>
-                  <button type="button" onClick={() => applyScannerSequence(item, setTr, setTe, setFlip)}>
-                    <strong>{item.name}</strong>
-                    <span>{item.description || item.id}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
         <div className="studio-work-panel studio-work-main studio-acq">
           <div className="studio-acq-controls">
             <div className="studio-work-main-head">
               <h3>{sequence.name}</h3>
-              <p>{sequence.summary}</p>
+              <p>{sequence.description}</p>
             </div>
-            <h3>Scanner</h3>
-            <div className="studio-params">
-              <NumberField label="Field" unit="T" value={field} min={0.05} max={1} step={0.05} onChange={setField} />
-              <NumberField label="Field error" unit="ppm" value={inhomogeneity} min={0} max={80} step={1} onChange={setInhomogeneity} />
-              <NumberField label="Gradient" unit="mT/m" value={gradient} min={5} max={40} step={1} onChange={setGradient} />
+            {tabs.length > 1 ? (
+              <div className="studio-param-tabs" role="tablist" aria-label="Sequence parameters">
+                {tabs.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    role="tab"
+                    aria-selected={item === activeTab}
+                    onClick={() => setTab(item)}
+                  >
+                    {TAB_LABEL[item]}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <div className="studio-params" role="tabpanel">
+              {fields.map(([key, prop]) => (
+                <SchemaField
+                  key={key}
+                  name={key}
+                  prop={prop}
+                  value={draft[key] ?? prop.default}
+                  onChange={setParam}
+                />
+              ))}
             </div>
-            <h3>Contrast</h3>
-            <div className="studio-params">
-              <NumberField
-                label="TR"
-                unit="ms"
-                value={tr}
-                min={4}
-                max={400}
-                onChange={(next) => {
-                  setTr(next);
-                  setTe((current) => Math.min(current, next));
-                }}
-              />
-              <NumberField
-                label={sequenceId === "fse" ? "Echo spacing" : "TE"}
-                unit="ms"
-                value={echoTime}
-                min={1}
-                max={tr}
-                disabled={sequenceId === "bssfp"}
-                onChange={setTe}
-              />
-              <NumberField label="Flip angle" unit="°" value={flip} min={5} max={180} onChange={setFlip} />
-            </div>
-            <h3>Signal</h3>
-            <div className="studio-params">
-              <NumberField label="Averages" unit="" value={averages} min={1} max={8} step={1} onChange={setAverages} />
-              <NumberField label="Voxel size" unit="mm" value={voxel} min={6} max={12} step={0.5} onChange={setVoxel} />
-              <NumberField label="Bandwidth" unit="Hz/px" value={bandwidth} min={40} max={400} step={10} onChange={setBandwidth} />
-            </div>
-            <p className="studio-work-note">
-              {matrix} × {matrix} · {(FOV_MM / matrix).toFixed(1)} mm · {FOV_MM} mm field of view · {scan.toFixed(1)} s
-            </p>
-            <button type="button" className="koma-run" onClick={run} disabled={running}>
+            <button type="button" className="mr0-run" onClick={run} disabled={running}>
               {running ? "Simulating…" : "Run simulation"}
             </button>
             {result ? <CenterEcho result={result} /> : null}
@@ -241,7 +265,7 @@ export function AcquisitionStudio({ projectName }: { projectName: string }) {
               <p role="status">Running the Bloch simulation. A longer TR or a second field-error pass takes longer.</p>
             ) : null}
             {error ? (
-              <p className="koma-error" role="alert">
+              <p className="mr0-error" role="alert">
                 {error}
               </p>
             ) : null}
@@ -262,9 +286,15 @@ export function AcquisitionStudio({ projectName }: { projectName: string }) {
 const SLICE_VIEWS = ["uniform", "noise", "field"] as const;
 type SliceViewId = (typeof SLICE_VIEWS)[number];
 
-function sliceViews(result: KomaSimulation) {
+function sliceViews(result: Mr0Simulation) {
+  const signal = isSignalResult(result);
   return [
-    { id: "uniform" as const, title: "Uniform", detail: `${result.matrix} × ${result.matrix}`, image: result.image },
+    {
+      id: "uniform" as const,
+      title: signal ? "Signal" : "Uniform",
+      detail: signal ? signalDetail(result) : `${result.matrix} × ${result.matrix}`,
+      image: result.image,
+    },
     { id: "noise" as const, title: "Noise", detail: `SNR ${Math.round(result.snr)}`, image: result.noisy_image },
     {
       id: "field" as const,
@@ -275,21 +305,41 @@ function sliceViews(result: KomaSimulation) {
   ];
 }
 
-function SliceViewer({ result }: { result: KomaSimulation }) {
+function isSignalResult(result: Mr0Simulation) {
+  return result.sequence_id === "rf_se" || result.sequence_id === "se_1D" || result.image?.height === 1;
+}
+
+function signalDetail(result: Mr0Simulation) {
+  const samples = result.image?.width ?? result.echo.length;
+  return result.sequence_id === "se_1D" ? `${samples} samples · projection` : `${samples} samples`;
+}
+
+function signalSamples(image: Mr0Simulation["image"]) {
+  if (!image) return [];
+  const count = image.height === 1 ? image.width : image.width === 1 ? image.height : image.values.length;
+  return image.values.slice(0, count);
+}
+
+function SliceViewer({ result }: { result: Mr0Simulation }) {
   const [viewId, setViewId] = useState<SliceViewId>("uniform");
   const range = result.image ? displayWindow(result.image.values) : { lo: 0, hi: 1 };
   const views = sliceViews(result);
   const view = views.find((item) => item.id === viewId) ?? views[0];
+  const signal = isSignalResult(result);
 
   return (
-    <div className="koma-viewer">
-      <figure className="koma-stage">
-        {view.image ? <KomaImage image={view.image} range={range} label={view.title} /> : null}
-        <div className="koma-anno koma-anno-tl">
+    <div className="mr0-viewer">
+      <figure className="mr0-stage">
+        {signal ? (
+          <SignalPlot samples={signalSamples(view.image)} label={view.title} fill />
+        ) : view.image ? (
+          <Mr0Image image={view.image} range={range} label={view.title} />
+        ) : null}
+        <div className="mr0-anno mr0-anno-tl">
           <span>{view.detail}</span>
         </div>
       </figure>
-      <div className="koma-switch" role="group" aria-label="Slice">
+      <div className="mr0-switch" role="group" aria-label={signal ? "Signal" : "Slice"}>
         {views.map((item) => (
           <button key={item.id} type="button" aria-pressed={item.id === view.id} onClick={() => setViewId(item.id)}>
             {item.title}
@@ -300,10 +350,10 @@ function SliceViewer({ result }: { result: KomaSimulation }) {
   );
 }
 
-function CenterEcho({ result }: { result: KomaSimulation }) {
+function CenterEcho({ result }: { result: Mr0Simulation }) {
   return (
-    <figure className="koma-echo">
-      <div className="koma-echo-head">
+    <figure className="mr0-echo">
+      <div className="mr0-echo-head">
         <figcaption>Center echo</figcaption>
         <p>
           {result.phantom} · {result.spins.toLocaleString()} spins · {result.scan_time_s.toFixed(1)} s scan
@@ -324,12 +374,12 @@ function displayWindow(values: number[]) {
   return { lo, hi: Math.max(hi, lo + 1e-6) };
 }
 
-function KomaImage({
+function Mr0Image({
   image,
   range,
   label,
 }: {
-  image: NonNullable<KomaSimulation["image"]>;
+  image: NonNullable<Mr0Simulation["image"]>;
   range: { lo: number; hi: number };
   label: string;
 }) {
@@ -395,12 +445,12 @@ function context2d(node: HTMLCanvasElement) {
   }
 }
 
-function SignalPlot({ samples }: { samples: number[] }) {
+function SignalPlot({ samples, label = "Center echo magnitude", fill = false }: { samples: number[]; label?: string; fill?: boolean }) {
   if (samples.length < 2) return null;
   const width = 480;
-  const height = 84;
+  const height = fill ? 220 : 84;
   const padX = 2;
-  const padY = 8;
+  const padY = fill ? 16 : 8;
   const peak = Math.max(...samples, 1e-12);
   const coords = samples.map((sample, index) => {
     const x = padX + (index / (samples.length - 1)) * (width - padX * 2);
@@ -417,7 +467,13 @@ function SignalPlot({ samples }: { samples: number[] }) {
   });
 
   return (
-    <svg className="koma-plot" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" role="img" aria-label="Center echo magnitude">
+    <svg
+      className={fill ? "mr0-plot mr0-plot-fill" : "mr0-plot"}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      role="img"
+      aria-label={label}
+    >
       {grid.map((y) => (
         <line key={y} x1={padX} x2={width - padX} y1={y} y2={y} stroke="rgba(255,255,255,0.08)" />
       ))}
@@ -427,28 +483,6 @@ function SignalPlot({ samples }: { samples: number[] }) {
       <circle cx={peakPoint.x.toFixed(1)} cy={peakPoint.y.toFixed(1)} r="3" fill="#f4f5f7" />
     </svg>
   );
-}
-
-function applyScannerSequence(
-  sequence: SequenceInfo,
-  setTr: (value: number) => void,
-  setTe: (value: number) => void,
-  setFlip: (value: number) => void,
-) {
-  const tr = numberDefault(sequence.defaults, ["TR", "tr", "RepetitionTime"]);
-  const te = numberDefault(sequence.defaults, ["TE", "te", "EchoTime"]);
-  const flip = numberDefault(sequence.defaults, ["FA", "flip", "FlipAngle"]);
-  if (tr != null) setTr(tr);
-  if (te != null) setTe(te);
-  if (flip != null) setFlip(flip);
-}
-
-function numberDefault(defaults: Record<string, unknown>, keys: string[]): number | null {
-  for (const key of keys) {
-    const value = defaults[key];
-    if (typeof value === "number" && Number.isFinite(value)) return value;
-  }
-  return null;
 }
 
 type MethodId = (typeof METHODS)[number]["id"];
@@ -517,6 +551,63 @@ export function ReconstructionStudio({ projectName }: { projectName: string }) {
         </div>
       </div>
     </section>
+  );
+}
+
+function SchemaField({
+  name,
+  prop,
+  value,
+  onChange,
+}: {
+  name: string;
+  prop: ParameterProperty;
+  value: unknown;
+  onChange: (key: string, value: unknown) => void;
+}) {
+  const label = prop.unit ? `${prop.title || name} (${prop.unit})` : prop.title || name;
+  if (prop.type === "boolean") {
+    return (
+      <label className="studio-param studio-param-check">
+        <input type="checkbox" checked={Boolean(value)} onChange={(event) => onChange(name, event.target.checked)} />
+        <span>{prop.title || name}</span>
+      </label>
+    );
+  }
+  if (prop.enum?.length) {
+    return (
+      <label className="studio-param">
+        <span>{label}</span>
+        <select value={String(value ?? "")} onChange={(event) => onChange(name, event.target.value)}>
+          {prop.enum.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
+  const numeric = prop.type === "integer" || prop.type === "number";
+  return (
+    <label className="studio-param">
+      <span>{label}</span>
+      <input
+        type={numeric ? "number" : "text"}
+        min={prop.minimum}
+        max={prop.maximum}
+        step={prop.step ?? (prop.type === "integer" ? 1 : undefined)}
+        value={value == null ? "" : String(value)}
+        onChange={(event) => {
+          if (!numeric) {
+            onChange(name, event.target.value);
+            return;
+          }
+          const next = Number(event.target.value);
+          if (Number.isFinite(next)) onChange(name, next);
+        }}
+      />
+    </label>
   );
 }
 
