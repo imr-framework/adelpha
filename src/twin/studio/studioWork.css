@@ -30,9 +30,119 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-.studio-close-project:focus-visible {
+.studio-close-project:focus-visible,
+.studio-gradient-open:focus-visible,
+.studio-assembly-back:focus-visible {
   outline: 2px solid rgba(159, 223, 255, 0.75);
   outline-offset: 2px;
+}
+
+.studio-gradient-open,
+.studio-assembly-back {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(14, 15, 18, 0.92);
+  color: #f4f5f7;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.studio-gradient-open {
+  position: absolute;
+  z-index: 9;
+  top: 108px;
+  left: 64px;
+}
+
+.studio-gradient-open:hover,
+.studio-assembly-back:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.studio-assembly-back {
+  margin-left: auto;
+}
+
+.coil-meta {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--inspect-label, rgba(160, 166, 176, 0.82));
+}
+
+.coil-stage {
+  background: #030303;
+}
+
+.coil-stage canvas {
+  display: block;
+}
+
+.coil-scale {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  right: 16px;
+  bottom: 62px;
+  display: grid;
+  grid-template-columns: auto 8px;
+  grid-template-rows: auto 1fr auto;
+  column-gap: 8px;
+  justify-items: end;
+  pointer-events: none;
+  font-size: 10px;
+  line-height: 1;
+  color: rgba(232, 236, 242, 0.82);
+}
+
+.coil-scale span:first-child {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.coil-scale span:last-of-type {
+  grid-column: 1;
+  grid-row: 3;
+  align-self: end;
+}
+
+.coil-scale i {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  width: 8px;
+  border-radius: 4px;
+  background: linear-gradient(#fde725, #5ec962, #21918c, #3b528b, #440154);
+}
+
+.coil-orbit {
+  position: absolute;
+  z-index: 2;
+  left: 16px;
+  bottom: 62px;
+  margin: 0;
+  pointer-events: none;
+  font-size: 11px;
+  color: rgba(197, 202, 210, 0.78);
+}
+
+.coil-figure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  background: #ffffff;
+}
+
+.coil-figure img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 8px 8px 56px;
+  box-sizing: border-box;
 }
 
 .studio-work-bar {

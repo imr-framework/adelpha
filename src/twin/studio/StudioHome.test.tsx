@@ -174,5 +174,13 @@ describe("StudioHome", () => {
     expect(screen.queryByRole("region", { name: "Engineering Studio start" })).not.toBeInTheDocument();
     expect(screen.getByRole("toolbar", { name: "Viewport navigation" })).toBeInTheDocument();
     expect(useEngineeringStore.getState().activeProject?.name).toBe("Halbach 0.5 T");
+
+    await user.click(screen.getByRole("button", { name: "Gradient coils" }));
+    expect(screen.getByRole("region", { name: "Gradient coils" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Y gradient/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("toolbar", { name: "Viewport navigation" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Assembly" }));
+    expect(screen.getByRole("toolbar", { name: "Viewport navigation" })).toBeInTheDocument();
   });
 });

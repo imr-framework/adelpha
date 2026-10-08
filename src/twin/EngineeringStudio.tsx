@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { EngineeringViewportControls } from "./EngineeringViewportControls";
 import { PartInspectorCard } from "./PartInspectorCard";
@@ -9,6 +9,7 @@ import { setScannerModel, studioCadForScanner, useScannerModel } from "./scanner
 import { useEngineeringStore } from "./engineeringStore";
 import { StudioHome } from "./studio/StudioHome";
 import { AcquisitionStudio, ReconstructionStudio } from "./studio/StudioApplication";
+import { GradientCoilStudio } from "./studio/GradientCoilStudio";
 import "./studio/studioWork.css";
 
 const EngineeringCanvas = lazy(() =>
@@ -25,6 +26,11 @@ export function EngineeringStudio() {
   const catalogCount = useEngineeringStore((s) => s.catalogCount);
   const studio = studioCadForScanner(scannerId);
   const empty = catalogCount > 0 && partCount === 0;
+  const [hardwareView, setHardwareView] = useState<"assembly" | "gradients">("assembly");
+
+  useEffect(() => {
+    setHardwareView("assembly");
+  }, [activeProject?.id]);
 
   useEffect(() => {
     const inspector = usePartInspectorStore.getState();
@@ -59,8 +65,13 @@ export function EngineeringStudio() {
           <AcquisitionStudio projectName={activeProject.name} />
         ) : activeProject?.application === "reconstruction" ? (
           <ReconstructionStudio projectName={activeProject.name} />
+        ) : activeProject && hardwareView === "gradients" ? (
+          <GradientCoilStudio projectName={activeProject.name} onAssembly={() => setHardwareView("assembly")} />
         ) : activeProject ? (
           <>
+            <button type="button" className="studio-gradient-open" onClick={() => setHardwareView("gradients")}>
+              Gradient coils
+            </button>
             <EngineeringViewportControls />
             {empty ? (
               <div className="eng-empty" role="status">

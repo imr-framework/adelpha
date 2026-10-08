@@ -128,6 +128,66 @@ export type Mr0Request = {
   etl: number;
 };
 
+export type CoilWire = {
+  group: number;
+  closed: boolean;
+  points: number[][];
+};
+
+export type CoilLayout = {
+  vertices: number[][];
+  faces: number[][];
+  colors: number[][];
+  wires: CoilWire[];
+  wire_radius: number;
+  stream_min: number;
+  stream_max: number;
+};
+
+export type CoilShape = "cylinder" | "planar" | "biplanar" | "circular";
+
+export type CoilSimulation = {
+  ok: true;
+  shape: CoilShape;
+  axis: "x" | "y" | "z";
+  title: string;
+  summary: string;
+  radius_mm: number;
+  length_mm: number;
+  width_mm: number;
+  height_mm: number;
+  gap_mm: number;
+  levels: number;
+  gradient_mt_m: number;
+  achieved_mt_m: number | null;
+  mean_field_error: number | null;
+  layout: CoilLayout;
+  layout_png: string;
+  surface_png: string;
+  loop_count: number;
+  elapsed_s: number;
+};
+
+export type CoilRequest = {
+  shape: CoilShape;
+  axis: "x" | "y" | "z";
+  radius_mm: number;
+  length_mm: number;
+  width_mm: number;
+  height_mm: number;
+  gap_mm: number;
+  levels: number;
+  gradient_mt_m: number;
+};
+
+export async function simulateCoil(request: CoilRequest): Promise<CoilSimulation> {
+  return mriFetch("/coil/simulate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
 export async function simulateMr0(request: Mr0Request): Promise<Mr0Simulation> {
   return mriFetch("/mr0/simulate", {
     method: "POST",
