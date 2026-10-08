@@ -10,6 +10,7 @@ import { useEngineeringStore } from "./engineeringStore";
 import { StudioHome } from "./studio/StudioHome";
 import { AcquisitionStudio, ReconstructionStudio } from "./studio/StudioApplication";
 import { GradientCoilStudio } from "./studio/GradientCoilStudio";
+import { PassiveShimStudio } from "./studio/PassiveShimStudio";
 import "./studio/studioWork.css";
 
 const EngineeringCanvas = lazy(() =>
@@ -26,7 +27,7 @@ export function EngineeringStudio() {
   const catalogCount = useEngineeringStore((s) => s.catalogCount);
   const studio = studioCadForScanner(scannerId);
   const empty = catalogCount > 0 && partCount === 0;
-  const [hardwareView, setHardwareView] = useState<"assembly" | "gradients">("assembly");
+  const [hardwareView, setHardwareView] = useState<"assembly" | "gradients" | "shimming">("assembly");
 
   useEffect(() => {
     setHardwareView("assembly");
@@ -67,10 +68,15 @@ export function EngineeringStudio() {
           <ReconstructionStudio projectName={activeProject.name} />
         ) : activeProject && hardwareView === "gradients" ? (
           <GradientCoilStudio projectName={activeProject.name} onAssembly={() => setHardwareView("assembly")} />
+        ) : activeProject && hardwareView === "shimming" ? (
+          <PassiveShimStudio projectName={activeProject.name} onAssembly={() => setHardwareView("assembly")} />
         ) : activeProject ? (
           <>
             <button type="button" className="studio-gradient-open" onClick={() => setHardwareView("gradients")}>
               Gradient coils
+            </button>
+            <button type="button" className="studio-shim-open" onClick={() => setHardwareView("shimming")}>
+              Passive shimming
             </button>
             <EngineeringViewportControls />
             {empty ? (

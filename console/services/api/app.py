@@ -45,6 +45,7 @@ from services.api.models import (
     ValidateResponse,
 )
 from services.api.coil_sim import run_coil
+from services.api.shim_sim import run_shim
 from services.api.mrzero_sim import run_suite as run_mr0_suite
 from services.api.sequences_api import get_sequence_info, import_seq_file, list_sequences, registry_loaded, validate_parameters
 from services.api.session import session
@@ -171,6 +172,16 @@ def sequence_validate(name: str, body: ScanValidateRequest) -> ValidateResponse:
 def coil_simulate(body: Optional[dict] = Body(default=None)):
     try:
         return run_coil(body)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(503, str(exc)) from exc
+
+
+@app.post("/shim/simulate")
+def shim_simulate(body: Optional[dict] = Body(default=None)):
+    try:
+        return run_shim(body)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
     except Exception as exc:

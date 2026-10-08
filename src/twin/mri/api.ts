@@ -180,6 +180,47 @@ export type CoilRequest = {
   gradient_mt_m: number;
 };
 
+export type ShimMagnetPlacement = {
+  position: number[];
+  polarity: -1 | 1;
+};
+
+export type ShimSimulation = {
+  ok: true;
+  title: string;
+  summary: string;
+  diameter_mm: number;
+  offset_mm: number;
+  dsv_mm: number;
+  candidates: number;
+  steps: number;
+  pre_std_ppm: number;
+  post_std_ppm: number;
+  pre_p2p_mt: number;
+  post_p2p_mt: number;
+  n_positive: number;
+  n_negative: number;
+  magnet_mm: number[];
+  magnets: ShimMagnetPlacement[];
+  elapsed_s: number;
+};
+
+export type ShimRequest = {
+  diameter_mm: number;
+  offset_mm: number;
+  dsv_mm: number;
+  candidates: number;
+  steps: number;
+};
+
+export async function simulateShim(request: ShimRequest): Promise<ShimSimulation> {
+  return mriFetch("/shim/simulate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
 export async function simulateCoil(request: CoilRequest): Promise<CoilSimulation> {
   return mriFetch("/coil/simulate", {
     method: "POST",

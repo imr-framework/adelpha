@@ -182,5 +182,13 @@ describe("StudioHome", () => {
 
     await user.click(screen.getByRole("button", { name: "Assembly" }));
     expect(screen.getByRole("toolbar", { name: "Viewport navigation" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Passive shimming" }));
+    expect(screen.getByRole("region", { name: "Passive shimming" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Diameter (mm)")).toHaveValue(152);
+    expect(screen.queryByRole("toolbar", { name: "Viewport navigation" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Assembly" }));
+    expect(screen.getByRole("toolbar", { name: "Viewport navigation" })).toBeInTheDocument();
   });
 });
