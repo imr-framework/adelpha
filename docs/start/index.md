@@ -54,6 +54,17 @@ make tauri-dev
 
 That starts Vite, the Tauri window, and `python -m adelpha_runtime`. You do not need three extra terminals for Twin, Agents, and MRI unless you are working in the **browser only**.
 
+### Passive shimming
+
+Hardware → **Passive shimming** runs [passive_shimming](https://github.com/imr-framework/passive_shimming/tree/dev_ws_2026) from `shim/.venv`, not from the console environment. That package needs NumPy 2. The venv is gitignored. The solver commit is pinned in `shim/requirements.txt`.
+
+```bash
+uv venv shim/.venv --python 3.10
+uv pip install --python shim/.venv/bin/python -r shim/requirements.txt
+```
+
+Restart Adelpha after the install. The desk loads a measured field map (`.npy`, x, y, z in mm and B in mT) and shows it before shimming; `console/notebooks/passive_shimming/data/Exp_1044_2026831.npy` is one to start with. After a run, **Save trays** writes the top and bottom STLs and Magpylib collections to a folder you choose. Details are in `shim/README.md`.
+
 ### Browser-only (`npm run dev`)
 
 Vite on port **5173** proxies `/api/*` to the classic ports. Start the APIs yourself:

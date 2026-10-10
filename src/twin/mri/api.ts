@@ -185,36 +185,104 @@ export type ShimMagnetPlacement = {
   polarity: -1 | 1;
 };
 
+/** A measured field map as the upstream solver reads it: x, y, z in mm and B in mT. */
+export type ShimFieldMapUpload = {
+  name: string;
+  data_b64: string;
+};
+
+export type ShimFieldSummary = {
+  /** "synthetic" or the attached file name. */
+  source: string;
+  samples: number;
+  mean_mt: number;
+  p2p_mt: number;
+  p2p_khz: number;
+  std_ppm: number;
+  extent_mm: { x: number[]; y: number[]; z: number[] };
+  /** Sample positions in metres, thinned to a few thousand points. */
+  points: number[][];
+  before_mt: number[];
+  after_mt?: number[];
+};
+
+export type ShimFieldInspection = {
+  ok: true;
+  title: string;
+  field: ShimFieldSummary;
+};
+
 export type ShimSimulation = {
   ok: true;
   title: string;
   summary: string;
+  field: ShimFieldSummary;
   diameter_mm: number;
-  offset_mm: number;
-  dsv_mm: number;
-  candidates: number;
-  steps: number;
+  bottom_mm: number;
+  top_mm: number;
+  magnet_mm: number;
+  thickness_mm: number;
+  polarization_t: number;
+  radial_spacing: number;
+  azimuthal_spacing: number;
   pre_std_ppm: number;
   post_std_ppm: number;
   pre_p2p_mt: number;
   post_p2p_mt: number;
   n_positive: number;
   n_negative: number;
-  magnet_mm: number[];
+  magnet_size_mm: number[];
+  states: number[];
   magnets: ShimMagnetPlacement[];
   elapsed_s: number;
 };
 
+export type ShimExportFile = {
+  name: string;
+  data_b64?: string;
+};
+
+export type ShimExport = {
+  ok: true;
+  title: string;
+  folder: string | null;
+  files: ShimExportFile[];
+};
+
 export type ShimRequest = {
   diameter_mm: number;
-  offset_mm: number;
-  dsv_mm: number;
-  candidates: number;
-  steps: number;
+  bottom_mm: number;
+  top_mm: number;
+  magnet_mm: number;
+  thickness_mm: number;
+  polarization_t: number;
+  radial_spacing: number;
+  azimuthal_spacing: number;
+  /** Shift the map so its bounding box is centred between the trays. */
+  center_map: boolean;
+  field_map?: ShimFieldMapUpload;
 };
 
 export async function simulateShim(request: ShimRequest): Promise<ShimSimulation> {
   return mriFetch("/shim/simulate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export async function inspectShimFieldMap(field_map: ShimFieldMapUpload, center_map: boolean): Promise<ShimFieldInspection> {
+  return mriFetch("/shim/fieldmap", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ field_map, center_map }),
+  });
+}
+
+export async function exportShimTrays(
+  request: ShimRequest & { states: number[]; destination?: string },
+): Promise<ShimExport> {
+  return mriFetch("/shim/export", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(request),

@@ -71,7 +71,7 @@ function WireTube({ wire, radius }: { wire: CoilWire; radius: number }) {
   const geometry = useMemo(() => {
     const path = wire.points.map((point) => new THREE.Vector3(point[0], point[1], point[2]));
     if (path.length < 2) return null;
-    const curve = new THREE.CatmullRomCurve3(path, wire.closed, "chord");
+    const curve = new THREE.CatmullRomCurve3(path, wire.closed, "chordal");
     return new THREE.TubeGeometry(curve, Math.max(12, path.length * 2), radius, 6, wire.closed);
   }, [wire, radius]);
   useLayoutEffect(() => () => geometry?.dispose(), [geometry]);

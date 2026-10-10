@@ -1,0 +1,8 @@
+# Engineering Studio passive shimming. Install into shim/.venv, not the console
+# or DTAM environment: this package requires NumPy 2.
+#
+#   uv venv shim/.venv --python 3.10
+#   uv pip install --python shim/.venv/bin/python -r shim/requirements.txt
+#
+# Pin is commit 5669ce4 on branch dev_ws_2026.
+passive-shimming @ git+https://github.com/imr-framework/passive_shimming.git@5669ce4cea7b3ab1547d30cc3be8f2b3bc92941a

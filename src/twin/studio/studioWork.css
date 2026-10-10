@@ -128,6 +128,207 @@
   background: linear-gradient(#fde725, #5ec962, #21918c, #3b528b, #440154);
 }
 
+.shim-scale {
+  grid-template-rows: auto 1fr auto auto;
+  row-gap: 6px;
+}
+
+.shim-scale small {
+  grid-column: 1 / span 2;
+  grid-row: 4;
+  font-size: 10px;
+  color: rgba(197, 202, 210, 0.78);
+}
+
+/* Field map · flush viewport · shimming controls */
+.studio-work-body.shim-body {
+  align-items: stretch;
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(220px, 260px);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 12px;
+  padding: 0 12px 12px;
+}
+
+.shim-panel {
+  align-self: stretch;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.shim-stage {
+  align-self: stretch;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.shim-stage .studio-acq-view,
+.shim-stage .mr0-viewer {
+  flex: 1;
+  min-height: 0;
+}
+
+.shim-stage .mr0-stage,
+.shim-stage .studio-acq-empty {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: #030303;
+}
+
+.shim-stage .coil-scale {
+  top: 16px;
+  right: 8px;
+  bottom: 48px;
+  height: auto;
+}
+
+.shim-stage .has-switch .coil-scale {
+  bottom: 64px;
+}
+
+.shim-stage .coil-orbit {
+  left: 8px;
+  bottom: 10px;
+}
+
+.shim-stage .has-switch .coil-orbit {
+  bottom: 56px;
+}
+
+.shim-stage .mr0-switch {
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+}
+
+.shim-panel > .studio-work-note {
+  margin: 0;
+}
+
+.shim-controls .studio-work-main-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shim-controls .studio-params {
+  gap: 8px;
+}
+
+.shim-controls .studio-param {
+  flex: 1 1 104px;
+  min-width: 104px;
+  gap: 4px;
+}
+
+.shim-controls .studio-param input {
+  height: 32px;
+}
+
+.shim-controls .coil-meta,
+.shim-controls [role="status"],
+.shim-controls .mr0-error {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.shim-save {
+  margin-top: auto;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.shim-save .shim-clear {
+  flex: none;
+}
+
+.shim-toast {
+  position: absolute;
+  z-index: 10;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(420px, calc(100% - 320px));
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(14, 15, 18, 0.94);
+  box-shadow: 0 12px 28px -18px rgba(0, 0, 0, 0.9);
+  color: #f4f5f7;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  pointer-events: none;
+}
+
+.shim-panel h3 {
+  margin: 0;
+}
+
+.shim-panel .studio-work-note code {
+  font-size: 12px;
+  color: #d9dde3;
+}
+
+.shim-file {
+  align-self: flex-start;
+}
+
+.shim-stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 10px;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0b0c0f;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.shim-stats dt {
+  color: var(--inspect-label, rgba(160, 166, 176, 0.82));
+}
+
+.shim-stats dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #e8ebef;
+}
+
+.shim-clear {
+  align-self: flex-start;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: transparent;
+  color: #c5cad2;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.shim-clear:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4f5f7;
+}
+
 .coil-orbit {
   position: absolute;
   z-index: 2;
@@ -584,6 +785,17 @@
     display: flex;
     flex-direction: column;
     height: auto;
+  }
+
+  .studio-work-body.shim-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    align-items: stretch;
+  }
+
+  .shim-stage {
+    order: 3;
+    min-height: 360px;
   }
 
   .mr0-viewer {
