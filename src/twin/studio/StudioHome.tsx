@@ -86,6 +86,7 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [openError, setOpenError] = useState<string | null>(null);
   const [application, setApplication] = useState<StudioApplication | null>(null);
+  const [hardwareChoice, setHardwareChoice] = useState<NonNullable<StudioProject["lastView"]>>("magnet");
   const [startedTutorialId, setStartedTutorialId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | StudioProjectClass>("all");
@@ -155,6 +156,7 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
     setDraft("");
     setFormError(null);
     setApplication(null);
+    setHardwareChoice("magnet");
   }
 
   function openSaved(project: StudioProject, options?: { view?: StudioProject["lastView"]; setup?: boolean }) {
@@ -191,10 +193,11 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
       setFormError("Choose an application.");
       return;
     }
-    const project = saveNewProject(name, { application });
+    const project = saveNewProject(name, { application, ...(application === "hardware" ? { lastView: hardwareChoice } : {}) });
     setProjects(readProjects());
     closeModes();
-    onOpenProject(project);
+    if (application === "hardware") onOpenProject(project, { view: hardwareChoice, setup: hardwareChoice === "magnet" || hardwareChoice === "fem" });
+    else onOpenProject(project);
   }
 
   function goTo(id: NavId) {
@@ -335,6 +338,25 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
                 ))}
               </div>
             </fieldset>
+            {application === "hardware" ? (
+              <fieldset className="studio-choice-set">
+                <legend>Project workspace</legend>
+                <div className="studio-choice-row">
+                  {([
+                    ["assembly", "Assembly"],
+                    ["magnet", "Magnet field"],
+                    ["fem", "Elmer FEM"],
+                    ["gradients", "Gradient coils"],
+                    ["shimming", "Passive shimming"],
+                  ] as const).map(([view, label]) => (
+                    <label key={view} className="studio-choice">
+                      <input type="radio" name="studio-hardware-workspace" value={view} checked={hardwareChoice === view} onChange={() => setHardwareChoice(view)} />
+                      <span className="studio-project-name">{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            ) : null}
             <div className="studio-create-actions">
               <button type="submit">Create</button>
               <button type="button" className="studio-ghost" onClick={closeModes}>

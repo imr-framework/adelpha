@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { fetchSequences, simulateMr0, type Mr0Request, type Mr0Simulation } from "../mri/api";
 import type { ParameterProperty, SequenceInfo, SeqTab } from "../mri/types";
 import "./studioWork.css";
+import "./mrzeroWorkspace.css";
 
 const STUDIO_SEQUENCE_IDS = ["se_2D", "tse_3D"] as const;
 type SequenceId = (typeof STUDIO_SEQUENCE_IDS)[number];
@@ -126,22 +127,22 @@ const METHODS = [
   },
 ] as const;
 
-export function AcquisitionStudio({ projectName }: { projectName: string }) {
+export function AcquisitionStudio({ projectName, onClose }: { projectName: string; onClose?: () => void }) {
   const [catalog, setCatalog] = useState(FALLBACK_SEQUENCES);
   const [drafts, setDrafts] = useState<Record<string, Record<string, unknown>>>(() => draftsFrom(FALLBACK_SEQUENCES));
   const [sequenceId, setSequenceId] = useState<SequenceId>("se_2D");
-  const [tab, setTab] = useState<SeqTab>("sequence");
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<Mr0Simulation | null>(null);
   const sequence = catalog.find((item) => item.id === sequenceId) ?? catalog[0];
   const draft = drafts[sequence.id] ?? sequence.defaults;
   const properties = sequence.parameter_schema?.properties ?? {};
-  const tabs = (Object.keys(TAB_LABEL) as SeqTab[]).filter((item) =>
-    Object.values(properties).some((prop) => (prop.tab || "sequence") === item),
-  );
-  const activeTab = tabs.includes(tab) ? tab : "sequence";
-  const fields = Object.entries(properties).filter(([, prop]) => (prop.tab || "sequence") === activeTab);
+  const timingKeys = ["TE", "TR", "NSA", "ETL"];
+  const samplingKeys = ["FOV", "Base_Resolution", "BW", "Orientation", "Trajectory", "Slices"];
+  const renderFields = (keys: string[]) => keys.filter((key) => properties[key]).map((key) => (
+    <SchemaField key={key} name={key} prop={properties[key]} value={draft[key] ?? properties[key].default} onChange={setParam} />
+  ));
+  const advanced = Object.entries(properties).filter(([key]) => !timingKeys.includes(key) && !samplingKeys.includes(key));
 
   useEffect(() => {
     let cancel = false;
@@ -160,10 +161,13 @@ export function AcquisitionStudio({ projectName }: { projectName: string }) {
 
   function chooseSequence(next: SequenceId) {
     setSequenceId(next);
-    setTab("sequence");
+    setResult(null);
+    setError("");
   }
 
   function setParam(key: string, value: unknown) {
+    setResult(null);
+    setError("");
     setDrafts((current) => ({
       ...current,
       [sequence.id]: { ...(current[sequence.id] ?? sequence.defaults), [key]: value },
@@ -188,7 +192,12 @@ export function AcquisitionStudio({ projectName }: { projectName: string }) {
   };
 
   async function run() {
+    if (request.te_ms <= 0 || request.tr_ms <= request.te_ms || fov <= 0 || base <= 0 || bandwidthHz <= 0) {
+      setError("Use positive timing and sampling values, with TR greater than TE.");
+      return;
+    }
     setRunning(true);
+    setResult(null);
     setError("");
     try {
       setResult(await simulateMr0(request));
@@ -201,83 +210,44 @@ export function AcquisitionStudio({ projectName }: { projectName: string }) {
   }
 
   return (
-    <section className="studio-work" aria-label="Acquisition">
-      <header className="studio-work-bar">
-        <p className="studio-work-kicker">Acquisition</p>
-        <h2>{projectName}</h2>
-        <p>Design a low-field pulse sequence and simulate one brain slice with MRZero.</p>
+    <section className="studio-work mrzero-workspace" aria-label="Acquisition">
+      <header className="mrzero-header">
+        <div className="mrzero-project"><span>Project</span><h2>{projectName}</h2><span>/ MRZero</span></div>
+        <span className="mrzero-status" role="status"><i className={result ? "is-complete" : ""} />{running ? "Simulating…" : error ? "Simulation failed" : result ? "Complete" : "Ready to configure"}</span>
+        {onClose ? <button type="button" className="mrzero-secondary" onClick={onClose}>Close project</button> : null}
       </header>
-      <div className="studio-work-body">
-        <div className="studio-work-panel">
-          <h3>Pulse sequences</h3>
-          <ul className="studio-work-list">
-            {catalog.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  aria-pressed={item.id === sequenceId}
-                  onClick={() => chooseSequence(item.id as SequenceId)}
-                >
-                  <strong>{item.name}</strong>
-                  <span>{item.description}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="studio-work-panel studio-work-main studio-acq">
-          <div className="studio-acq-controls">
-            <div className="studio-work-main-head">
-              <h3>{sequence.name}</h3>
-              <p>{sequence.description}</p>
-            </div>
-            {tabs.length > 1 ? (
-              <div className="studio-param-tabs" role="tablist" aria-label="Sequence parameters">
-                {tabs.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    role="tab"
-                    aria-selected={item === activeTab}
-                    onClick={() => setTab(item)}
-                  >
-                    {TAB_LABEL[item]}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            <div className="studio-params" role="tabpanel">
-              {fields.map(([key, prop]) => (
-                <SchemaField
-                  key={key}
-                  name={key}
-                  prop={prop}
-                  value={draft[key] ?? prop.default}
-                  onChange={setParam}
-                />
-              ))}
-            </div>
-            <button type="button" className="mr0-run" onClick={run} disabled={running}>
-              {running ? "Simulating…" : "Run simulation"}
-            </button>
-            {result ? <CenterEcho result={result} /> : null}
-            {running ? (
-              <p role="status">Running the Bloch simulation. A longer TR or a second field-error pass takes longer.</p>
-            ) : null}
-            {error ? (
-              <p className="mr0-error" role="alert">
-                {error}
-              </p>
-            ) : null}
+      <div className="mrzero-body">
+        <section className="mrzero-imaging" aria-label="Simulation results">
+          <div className="mrzero-image-panel">
+            <h2>Simulated slice</h2>
+            {result ? <SliceViewer result={result} /> : <div className="mrzero-placeholder" aria-busy={running}>
+              <svg viewBox="0 0 120 120" aria-hidden="true"><rect x="15" y="15" width="90" height="90" rx="8"/><ellipse cx="60" cy="60" rx="26" ry="35"/><path d="M60 30v60M30 60h60"/></svg>
+              <h3>{running ? "Simulating your slice" : "Your simulation appears here"}</h3>
+              <p>{running ? "Running the Bloch simulation. Results will appear when it finishes." : "Choose a sequence, adjust its parameters, and run the simulation."}</p>
+            </div>}
+            {result ? <div className="mrzero-image-metrics"><span>SNR {Math.round(result.snr)}</span><span>Matrix {result.matrix} × {result.matrix}</span><span>Scan time {result.scan_time_s.toFixed(1)} s</span></div> : null}
           </div>
-          <div className="studio-acq-view">
-            {result ? (
-              <SliceViewer result={result} />
-            ) : (
-              <p className="studio-acq-empty">{running ? "Simulating the slice…" : "The simulated slice appears here."}</p>
-            )}
+          <div className="mrzero-echo-panel">{result ? <CenterEcho result={result} /> : <><h3>Center echo magnitude</h3><p>The echo signal will appear after simulation.</p><div className="mrzero-empty-echo" aria-hidden="true" /></>}</div>
+        </section>
+        <form className="mrzero-inspector" onSubmit={(event) => { event.preventDefault(); void run(); }}>
+          <div className="mrzero-inspector-content">
+            <h2>Simulation parameters</h2>
+            <p className="mrzero-description">Design a low-field pulse sequence and simulate one brain slice with MRZero.</p>
+            <fieldset disabled={running} className="mrzero-fields">
+              <legend className="mrzero-sr-only">Simulation parameters</legend>
+              <label className="studio-param mrzero-sequence"><span>Sequence</span><select value={sequenceId} onChange={(event) => chooseSequence(event.target.value as SequenceId)}>{catalog.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+              <div className="mrzero-parameters">{renderFields(["TE", "TR", "NSA", "FOV", "Base_Resolution", "BW", "Orientation", "Trajectory", "ETL", "Slices"])}</div>
+              {advanced.length ? <details className="mrzero-advanced"><summary>Advanced parameters</summary>
+                {Object.entries(TAB_LABEL).map(([group, label]) => {
+                  const entries = advanced.filter(([, prop]) => (prop.tab || "sequence") === group);
+                  return entries.length ? <section key={group}><h3>{label}</h3>{entries.map(([key, prop]) => <SchemaField key={key} name={key} prop={prop} value={draft[key] ?? prop.default} onChange={setParam} />)}</section> : null;
+                })}
+              </details> : null}
+            </fieldset>
+            <section className="mrzero-context"><h3>Simulation context <span>(read-only)</span></h3><dl><div><dt>Main field strength</dt><dd>{request.b0_t} T</dd></div><div><dt>Field error</dt><dd>{request.inhomogeneity_ppm} ppm</dd></div><div><dt>Gradient amplitude limit</dt><dd>{request.gmax_mt_m} mT/m</dd></div></dl></section>
           </div>
-        </div>
+          <div className="mrzero-actions">{error ? <p className="mr0-error" role="alert">{error}</p> : null}<button type="submit" className="mr0-run" disabled={running}>{running ? "Simulating…" : "Run simulation"}</button></div>
+        </form>
       </div>
     </section>
   );

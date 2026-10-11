@@ -35,6 +35,7 @@ vi.mock("../mri/api", () => ({
 
 describe("HardwareStudyStudio", () => {
   beforeEach(() => {
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
     simulateMagnetStudy.mockReset();
     useHardwareStudyStore.setState({ projects: {} });
     useAssemblyGeometryStore.setState({ instances: { "halbach-48": [instance] } });
@@ -91,12 +92,12 @@ describe("HardwareStudyStudio", () => {
     });
 
     render(<HardwareStudyStudio projectId="proj-1" projectName="Halbach 0.5 T" study="magnet" />);
-    expect(screen.getByRole("button", { name: "Run study" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Run study" })).not.toBeInTheDocument();
     expect(screen.getByText(/Nothing is added to simulation/)).toBeInTheDocument();
 
     await userEvent.click(screen.getByTitle("Add to simulation"));
     expect(usePartInspectorStore.getState().bindings["halbach-48"]?.magnet.inSimulation).toBe(true);
-    expect(screen.getByRole("button", { name: "Run study" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Run study" })).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /Ring magnet/ }));
     await userEvent.selectOptions(screen.getByLabelText("Engineering role"), "permanent_magnet");
@@ -105,6 +106,9 @@ describe("HardwareStudyStudio", () => {
     await userEvent.clear(screen.getByLabelText("Magnetization direction z"));
     await userEvent.type(screen.getByLabelText("Magnetization direction z"), "1");
 
+    await userEvent.click(screen.getByRole("button", { name: /05 Review & prepare/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Prepare study" }));
+    expect(simulateMagnetStudy).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "Run study" })).toBeEnabled();
     await userEvent.click(screen.getByRole("button", { name: "Run study" }));
     expect(simulateMagnetStudy).toHaveBeenCalledWith(
@@ -153,6 +157,8 @@ describe("HardwareStudyStudio", () => {
       elapsed_s: 0.1,
     });
     render(<HardwareStudyStudio projectId="proj-1" projectName="Halbach 0.5 T" study="magnet" />);
+    await userEvent.click(screen.getByRole("button", { name: /05 Review & prepare/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Prepare study" }));
     await userEvent.click(screen.getByTitle("Hide in viewport"));
     expect(usePartInspectorStore.getState().hidden["halbach-48"]).toContain("magnet");
     await userEvent.click(screen.getByRole("button", { name: "Run study" }));
@@ -162,4 +168,50 @@ describe("HardwareStudyStudio", () => {
       }),
     );
   });
+  it("requires valid preparation, persists it across reopening, and invalidates changed settings", async () => {
+    const view = render(<HardwareStudyStudio projectId="proj-1" projectName="Test" study="fem" />);
+    await userEvent.click(screen.getByRole("button", { name: /05 Review & prepare/ }));
+    expect(screen.getByRole("button", { name: "Prepare study" })).toBeDisabled();
+    await userEvent.click(screen.getByRole("checkbox", { name: /Use labeled example/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Prepare study" }));
+    expect(simulateMagnetStudy).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Run study" })).toBeEnabled();
+    view.unmount();
+    render(<HardwareStudyStudio projectId="proj-1" projectName="Test" study="fem" />);
+    expect(screen.getByRole("button", { name: "Run study" })).toBeEnabled();
+    await userEvent.click(screen.getByRole("tab", { name: "Physics" }));
+    await userEvent.clear(screen.getByLabelText("ROI size (mm) x"));
+    expect(screen.getByRole("button", { name: "Run study" })).toBeDisabled();
+    expect(screen.getByText("Review required")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Edit setup" }));
+    expect(screen.getByRole("button", { name: "Prepare study" })).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: /04 Physics/ }));
+    await userEvent.type(screen.getByLabelText("ROI size (mm) x"), "40");
+    await userEvent.click(screen.getByRole("button", { name: /Continue to review/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Prepare study" }));
+    expect(screen.getByRole("button", { name: "Run study" })).toBeEnabled();
+  });
+
+  it("preserves the selected part through the material step and filters the assembly browser", async () => {
+    render(<HardwareStudyStudio projectId="proj-1" projectName="Test" study="magnet" />);
+    await userEvent.click(screen.getByRole("button", { name: /Ring magnet/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Continue to materials" }));
+    expect(screen.getByLabelText("Engineering role")).toBeInTheDocument();
+    await userEvent.type(screen.getByRole("searchbox", { name: "Search parts" }), "no match");
+    expect(screen.queryByRole("button", { name: /Ring magnet/ })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Engineering role")).toBeInTheDocument();
+  });
+
+  it("opens diagnostics when a prepared study request fails", async () => {
+    simulateMagnetStudy.mockRejectedValue(new Error("Study endpoint unavailable"));
+    render(<HardwareStudyStudio projectId="proj-1" projectName="Test" study="magnet" />);
+    await userEvent.click(screen.getByRole("checkbox", { name: /Use labeled example/ }));
+    await userEvent.click(screen.getByRole("button", { name: /05 Review & prepare/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Prepare study" }));
+    await userEvent.click(screen.getByRole("button", { name: "Run study" }));
+    expect(await screen.findByText("Study endpoint unavailable")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Diagnostics" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("button", { name: "Run study" })).toBeEnabled();
+  });
+
 });

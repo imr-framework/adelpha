@@ -21,7 +21,7 @@ const DEFAULT_AZIMUTH = THREE.MathUtils.degToRad(42);
 /** Same hover height as Digital Twin — no studio floor. */
 const TWIN_HOVER_Y = 0.345;
 /** Model should fill this fraction of the viewport height. */
-const FRAME_FILL = 0.62;
+const FRAME_FILL = 0.56;
 
 function applyNavButtons(controls: CameraControlsImpl, tool: StudioNavTool, shiftPan: boolean) {
   const pan = tool === "pan" || shiftPan;
@@ -52,9 +52,9 @@ function fitRadius(preset: StudioCameraPreset, size: [number, number, number]): 
   }
 }
 
-function distanceForFit(radius: number, fovDeg: number, fill = FRAME_FILL): number {
+function distanceForFit(radius: number, fovDeg: number, aspect = 1, fill = FRAME_FILL): number {
   const fov = THREE.MathUtils.degToRad(fovDeg);
-  return Math.max(radius, 1e-4) / (Math.tan(fov / 2) * fill);
+  return Math.max(radius, 1e-4) / (Math.tan(fov / 2) * Math.min(1, Math.max(aspect, 0.1)) * fill);
 }
 
 function cameraAt(
@@ -93,7 +93,7 @@ function applyView(
   animate: boolean,
 ) {
   const radius = Math.max(fitRadius(preset, size), 1e-4);
-  const distance = distanceForFit(radius, camera.fov || CAMERA_FOV_DEG);
+  const distance = distanceForFit(radius, camera.fov || CAMERA_FOV_DEG, camera.aspect);
   const position = cameraAt(preset, target, distance);
   camera.near = Math.max(0.0008, radius * 0.008);
   camera.far = Math.max(24, radius * 90);
@@ -195,7 +195,9 @@ export function SceneEngineering() {
     if (!activeProject || (hardwareView !== "magnet" && hardwareView !== "fem")) return null;
     return s.projects[activeProject.id]?.[hardwareView] ?? null;
   });
-  const studyRun = studyRecord?.runs.find((run) => run.id === studyRecord.activeRunId) ?? null;
+  const studyRun = studyRecord?.section === "results" && !studyRecord.editingSetup
+    ? studyRecord.runs.find((run) => run.id === studyRecord.activeRunId) ?? null
+    : null;
   const { gl, camera, size } = useThree();
   const controlsRef = useRef<CameraControlsImpl | null>(null);
   const framedKey = useRef("");
@@ -292,7 +294,7 @@ export function SceneEngineering() {
     persp.near = Math.max(0.0008, radius * 0.008);
     persp.far = Math.max(24, radius * 90);
     persp.updateProjectionMatrix();
-    void controls.dollyTo(distanceForFit(radius, persp.fov || CAMERA_FOV_DEG), false);
+    void controls.dollyTo(distanceForFit(radius, persp.fov || CAMERA_FOV_DEG, persp.aspect), false);
   }, [camera, size.height, size.width]);
 
   useEffect(() => {
@@ -310,7 +312,7 @@ export function SceneEngineering() {
 
       <AdelphaSceneEnvironment background={ADELPHA_VOID} variant="twin" />
 
-      <FrameAssembly cadKey={`${cadKey}:${simKey}`}>
+      <FrameAssembly cadKey={`${cadKey}:${simKey}:${studyRecord?.exampleId ?? "assembly"}:${studyRun?.id ?? "live"}`}>
         {studyRecord?.exampleId === "example-halbach-8" ||
         studyRun?.snapshot.parts.some((part) => part.sourceAssetId === "example-halbach-8") ? (
           <group position={[0, TWIN_HOVER_Y, 0]}>
@@ -365,7 +367,7 @@ export function SceneEngineering() {
         <GizmoViewcube
           font="600 18px Geist Variable, Geist, Arial, sans-serif"
           color="#5c6370"
-          hoverColor="#8260fb"
+          hoverColor="#9296a2"
           textColor="#f7f8fa"
           strokeColor="#12141a"
           opacity={1}
@@ -393,7 +395,7 @@ function FieldOverlay({
     const source =
       quantity === "bx" ? field.bx : quantity === "by" ? field.by : quantity === "bz" ? field.bz : field.magnitude;
     const ref = field.magnitude.reduce((sum, value) => sum + value, 0) / Math.max(field.magnitude.length, 1);
-    const values = quantity === "delta" ? source.map((value, index) => field.magnitude[index] - ref) : source;
+    const values = quantity === "delta" ? source.map((_value, index) => field.magnitude[index] - ref) : source;
     const lo = Math.min(...values);
     const hi = Math.max(...values);
     const span = Math.max(hi - lo, 1e-12);
@@ -467,7 +469,7 @@ function ExampleHalbachCubes({
       {parts.map((part) => (
         <mesh key={part.instanceId} position={part.translationM}>
           <boxGeometry args={part.sizeM} />
-          <meshStandardMaterial color="#8260fb" metalness={0.15} roughness={0.4} />
+          <meshStandardMaterial color="#a6a8b2" metalness={0.15} roughness={0.4} />
         </mesh>
       ))}
     </group>

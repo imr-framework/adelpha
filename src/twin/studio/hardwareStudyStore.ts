@@ -4,6 +4,7 @@ import { emptyEngineering } from "./engineering";
 
 export type HardwareStudyKind = "magnet" | "fem";
 export type StudySection = "setup" | "geometry" | "physics" | "results" | "diagnostics";
+export type SetupStep = "parts" | "materials" | "geometry" | "physics" | "review";
 export type RunStatus = "queued" | "running" | "failed" | "completed";
 export type MagnetModel = "dipole" | "cuboid";
 export type FemApproximation = "imported_mesh" | "oriented_box";
@@ -108,6 +109,9 @@ export type HardwareStudyRun = {
 };
 
 export type HardwareStudyRecord = {
+  preparedKey: string | null;
+  editingSetup: boolean;
+  setupStep: SetupStep;
   settings: HardwareStudySettings;
   section: StudySection;
   quantity: FieldQuantity;
@@ -135,6 +139,9 @@ export const DEFAULT_SETTINGS: HardwareStudySettings = {
 
 function defaultRecord(): HardwareStudyRecord {
   return {
+    preparedKey: null,
+    editingSetup: true,
+    setupStep: "parts",
     settings: structuredClone(DEFAULT_SETTINGS),
     section: "setup",
     quantity: "magnitude",
@@ -167,7 +174,16 @@ function writeMap(map: StudyMap) {
 
 function normalizeRecord(value: HardwareStudyRecord | undefined): HardwareStudyRecord {
   if (!value) return defaultRecord();
+  // Older studies have no preparation marker; preserve access to their run history.
+  const previousRun = Array.isArray(value.runs) ? value.runs[0] : undefined;
+  const legacyKey = previousRun?.snapshot
+    ? JSON.stringify([value.exampleId ? `example:${value.exampleId}` : previousRun.snapshot.modelKey, previousRun.snapshot.settings])
+    : null;
+  const preparedKey = value.preparedKey === undefined ? legacyKey : value.preparedKey;
   return {
+    preparedKey,
+    editingSetup: value.editingSetup ?? !preparedKey,
+    setupStep: (["parts", "materials", "geometry", "physics", "review"] as string[]).includes(value.setupStep) ? value.setupStep : "parts",
     settings: {
       ...DEFAULT_SETTINGS,
       ...value.settings,
@@ -185,6 +201,7 @@ function normalizeRecord(value: HardwareStudyRecord | undefined): HardwareStudyR
 type HardwareStudyStore = {
   projects: StudyMap;
   record: (projectId: string, study: HardwareStudyKind) => HardwareStudyRecord;
+  setPreparation: (projectId: string, study: HardwareStudyKind, patch: Partial<Pick<HardwareStudyRecord, "preparedKey" | "editingSetup" | "setupStep">>) => void;
   setSection: (projectId: string, study: HardwareStudyKind, section: StudySection) => void;
   setQuantity: (projectId: string, study: HardwareStudyKind, quantity: FieldQuantity) => void;
   setSettings: (projectId: string, study: HardwareStudyKind, patch: Partial<HardwareStudySettings>) => void;
@@ -215,6 +232,11 @@ function writeProject(
 export const useHardwareStudyStore = create<HardwareStudyStore>((set, get) => ({
   projects: readMap(),
   record: (projectId, study) => normalizeRecord(get().projects[projectId]?.[study]),
+  setPreparation: (projectId, study, patch) =>
+    set((state) => {
+      const current = normalizeRecord(state.projects[projectId]?.[study]);
+      return { projects: writeProject(state.projects, projectId, study, { ...current, ...patch }) };
+    }),
   setSection: (projectId, study, section) =>
     set((state) => {
       const current = normalizeRecord(state.projects[projectId]?.[study]);

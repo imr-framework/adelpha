@@ -105,6 +105,7 @@ describe("PassiveShimStudio", () => {
 
     render(<PassiveShimStudio projectName="Shim trays" />);
     expect(screen.getByLabelText("Diameter (mm)")).toHaveValue(203.3);
+    expect(screen.getByLabelText("Separation (mm)")).toHaveValue(97);
     expect(screen.getByLabelText("Bottom (mm)")).toHaveValue(-48.5);
     expect(screen.getByLabelText("Polarization (T)")).toHaveValue(1.2);
     expect(screen.getByText(/No field map loaded/)).toBeInTheDocument();
@@ -115,8 +116,8 @@ describe("PassiveShimStudio", () => {
     expect(await screen.findByRole("region", { name: "Passive shim trays" })).toBeInTheDocument();
     expect(screen.getByText(/57 magnets/)).toBeInTheDocument();
     expect(screen.getByText(/13 positive/)).toBeInTheDocument();
-    expect(screen.getByText(/1070 ppm after, was 2336/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Save trays" })).toBeInTheDocument();
+    expect(screen.getByText(/1,070 ppm after, was 2,336/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Export trays & report" })).toBeInTheDocument();
   });
 
   it("saves the trays to a chosen folder", async () => {
@@ -131,7 +132,7 @@ describe("PassiveShimStudio", () => {
 
     render(<PassiveShimStudio projectName="Shim trays" />);
     await userEvent.click(screen.getByRole("button", { name: "Run shimming" }));
-    await userEvent.click(screen.getByRole("button", { name: "Save trays" }));
+    await userEvent.click(screen.getByRole("button", { name: "Export trays & report" }));
 
     expect(exportShimTrays).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -151,7 +152,7 @@ describe("PassiveShimStudio", () => {
     pickExportDirectory.mockResolvedValue(null);
     render(<PassiveShimStudio projectName="Shim trays" />);
     await userEvent.click(screen.getByRole("button", { name: "Run shimming" }));
-    await userEvent.click(screen.getByRole("button", { name: "Save trays" }));
+    await userEvent.click(screen.getByRole("button", { name: "Export trays & report" }));
     expect(exportShimTrays).not.toHaveBeenCalled();
   });
 
@@ -176,7 +177,7 @@ describe("PassiveShimStudio", () => {
     expect(stats).toHaveTextContent("2,336 ppm");
     expect(stats).toHaveTextContent("-36.0 to 36.0 mm");
     expect(screen.getByRole("region", { name: "Passive shim trays" })).toBeInTheDocument();
-    expect(screen.queryByRole("group", { name: "Field view" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Compare field" })).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Run shimming" }));
     expect(simulateShim).toHaveBeenCalledWith(
@@ -187,12 +188,13 @@ describe("PassiveShimStudio", () => {
       }),
     );
     expect(await screen.findByText(/57 magnets/)).toBeInTheDocument();
-    const views = screen.getByRole("group", { name: "Field view" });
+    const views = screen.getByRole("group", { name: "Compare field" });
     expect(views).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Shimmed" })).toHaveAttribute("aria-pressed", "true");
-    await userEvent.click(screen.getByRole("button", { name: "Measured" }));
-    expect(screen.getByRole("button", { name: "Measured" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "After" })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(screen.getByRole("button", { name: "Before" }));
+    expect(screen.getByRole("button", { name: "Before" })).toHaveAttribute("aria-pressed", "true");
 
+    await userEvent.click(screen.getByRole("button", { name: "Edit setup" }));
     await userEvent.click(screen.getByRole("button", { name: "Remove field map" }));
     expect(screen.getByText(/No field map loaded/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Load field map" })).toBeInTheDocument();
@@ -230,5 +232,29 @@ describe("PassiveShimStudio", () => {
     render(<PassiveShimStudio projectName="Shim trays" />);
     await userEvent.click(screen.getByRole("button", { name: "Run shimming" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Passive shimming is not installed");
+  });
+
+  it("marks a completed result stale after the draft changes", async () => {
+    simulateShim.mockResolvedValue(simulation("synthetic"));
+    render(<PassiveShimStudio projectName="Shim trays" />);
+    await userEvent.click(screen.getByRole("button", { name: "Run shimming" }));
+    await screen.findByText(/57 magnets/);
+    await userEvent.click(screen.getByRole("button", { name: "Edit setup" }));
+    await userEvent.type(screen.getByLabelText("Diameter (mm)"), "{selectall}180");
+    expect(screen.getByText(/results outdated/)).toBeInTheDocument();
+    expect(screen.getByText(/previous inputs/)).toBeInTheDocument();
+  });
+
+  it("collapses the field metrics overlay to a compact strip", async () => {
+    simulateShim.mockResolvedValue(simulation("synthetic"));
+    render(<PassiveShimStudio projectName="Shim trays" />);
+    await userEvent.click(screen.getByRole("button", { name: "Run shimming" }));
+    await screen.findByRole("region", { name: "Passive shim trays" });
+    expect(screen.getByText("Field variation · standard deviation")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Hide results" }));
+    expect(screen.queryByText("Field variation · standard deviation")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show results" })).toHaveTextContent("1,070 ppm");
+    await userEvent.click(screen.getByRole("button", { name: "Show results" }));
+    expect(screen.getByText("Field variation · standard deviation")).toBeInTheDocument();
   });
 });

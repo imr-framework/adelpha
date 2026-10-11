@@ -1,51 +1,81 @@
 import { OrbitControls } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
-import { useLayoutEffect, useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { ADELPHA_VOID, AdelphaVoidBackground, configureAdelphaRenderer } from "../AdelphaSceneEnvironment";
-import type { CoilLayout, CoilWire } from "../mri/api";
+import { AdelphaVoidBackground, configureAdelphaRenderer } from "../AdelphaSceneEnvironment";
+import type { CoilLayout } from "../mri/api";
+import { coilBounds, displayWireRadius, splitWirePoints, wireKey } from "./coilPaths";
 
-/** Same cycle as pyCoilGen's contour plots. */
-const GROUP_COLORS = ["#0000ff", "#008000", "#ff0000", "#800080", "#ffa500", "#a52a2a", "#ffc0cb", "#808080", "#00ffff", "#ff00ff"];
+const WINDING = "#baa6f7";
+const WINDING_QUIET = "#8f7fbe";
+const FORMER = "#9a94a8";
+const VIEW_DIR = new THREE.Vector3(1, 0.52, 0.82).normalize();
+const BREATHING = 1.15;
 
-export function CoilLayoutView({ layout, label }: { layout: CoilLayout; label: string }) {
+export function CoilLayoutView({
+  layout,
+  label,
+  showFormer = true,
+  resetNonce = 0,
+}: {
+  layout: CoilLayout;
+  label: string;
+  showFormer?: boolean;
+  resetNonce?: number;
+}) {
   return (
     <div className="mr0-stage coil-stage" role="region" aria-label={label}>
       <Canvas
         frameloop="always"
         dpr={[1, 1.5]}
-        style={{ width: "100%", height: "100%", background: ADELPHA_VOID }}
+        style={{ width: "100%", height: "100%", background: "#111216" }}
         onContextMenu={(event) => event.preventDefault()}
-        onCreated={({ gl }) => configureAdelphaRenderer(gl)}
+        onCreated={({ gl }) => {
+          configureAdelphaRenderer(gl);
+          gl.setClearColor("#111216");
+        }}
         camera={{ fov: 32, near: 0.001, far: 20, position: [0.4, 0.28, 0.42] }}
         gl={{ antialias: true, alpha: false, stencil: false, depth: true, powerPreference: "high-performance" }}
       >
-        <CoilScene layout={layout} />
+        <CoilScene layout={layout} showFormer={showFormer} resetNonce={resetNonce} />
       </Canvas>
-      <div className="coil-scale" aria-label="Stream function">
-        <span>{formatStream(layout.stream_max)}</span>
-        <i />
-        <span>{formatStream(layout.stream_min)}</span>
-      </div>
-      <p className="coil-orbit">Drag to orbit</p>
     </div>
   );
 }
 
-function CoilScene({ layout }: { layout: CoilLayout }) {
-  const framed = useMemo(() => frame(layout.vertices), [layout]);
+function CoilScene({ layout, showFormer, resetNonce }: { layout: CoilLayout; showFormer: boolean; resetNonce: number }) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const framed = useMemo(() => coilBounds(layout), [layout]);
+  const paths = useMemo(
+    () =>
+      layout.wires.flatMap((wire, index) =>
+        splitWirePoints(wire.points, wire.closed).map((part, partIndex) => ({
+          key: `${wireKey(wire, index)}-${partIndex}`,
+          points: part.points,
+          closed: part.closed,
+        })),
+      ),
+    [layout.wires],
+  );
   return (
     <>
-      <AdelphaVoidBackground color={ADELPHA_VOID} gradient />
+      <AdelphaVoidBackground color="#111216" />
       <ambientLight intensity={0.72} />
       <hemisphereLight color="#f4f6f8" groundColor="#14161c" intensity={0.42} />
-      <directionalLight position={[1.4, 1.8, 2.1]} intensity={1.2} />
-      <directionalLight position={[-1.6, 0.2, -1.1]} intensity={0.38} />
-      <CoilSurface layout={layout} />
-      {layout.wires.map((wire, index) => (
-        <WireTube key={index} wire={wire} radius={layout.wire_radius} />
+      <directionalLight position={[1.4, 1.8, 2.1]} intensity={1.05} />
+      <directionalLight position={[-1.6, 0.2, -1.1]} intensity={0.32} />
+      {showFormer ? <CoilSurface layout={layout} /> : null}
+      {paths.map((path) => (
+        <WireTube
+          key={path.key}
+          points={path.points}
+          closed={path.closed}
+          radius={displayWireRadius(layout.wire_radius, path.key === selected)}
+          selected={path.key === selected}
+          onSelect={() => setSelected((current) => (current === path.key ? null : path.key))}
+        />
       ))}
-      <Frame center={framed.center} size={framed.size} />
+      <Frame center={framed.center} radius={framed.radius} resetNonce={resetNonce} />
     </>
   );
 }
@@ -54,7 +84,6 @@ function CoilSurface({ layout }: { layout: CoilLayout }) {
   const geometry = useMemo(() => {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.Float32BufferAttribute(layout.vertices.flat(), 3));
-    geo.setAttribute("color", new THREE.Float32BufferAttribute(linearVertexColors(layout.colors), 3));
     geo.setIndex(layout.faces.flat());
     geo.computeVertexNormals();
     return geo;
@@ -62,85 +91,121 @@ function CoilSurface({ layout }: { layout: CoilLayout }) {
   useLayoutEffect(() => () => geometry.dispose(), [geometry]);
   return (
     <mesh geometry={geometry}>
-      <meshStandardMaterial vertexColors roughness={0.58} metalness={0.02} side={THREE.DoubleSide} />
+      <meshStandardMaterial color={FORMER} roughness={0.62} metalness={0.04} transparent opacity={0.16} depthWrite={false} side={THREE.DoubleSide} />
     </mesh>
   );
 }
 
-function WireTube({ wire, radius }: { wire: CoilWire; radius: number }) {
+function WireTube({
+  points,
+  closed,
+  radius,
+  selected,
+  onSelect,
+}: {
+  points: number[][];
+  closed: boolean;
+  radius: number;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   const geometry = useMemo(() => {
-    const path = wire.points.map((point) => new THREE.Vector3(point[0], point[1], point[2]));
-    if (path.length < 2) return null;
-    const curve = new THREE.CatmullRomCurve3(path, wire.closed, "chordal");
-    return new THREE.TubeGeometry(curve, Math.max(12, path.length * 2), radius, 6, wire.closed);
-  }, [wire, radius]);
+    const path = polylineCurve(points, closed);
+    if (!path) return null;
+    const segments = Math.max(8, points.length * 2);
+    return new THREE.TubeGeometry(path, segments, radius, 5, closed);
+  }, [points, closed, radius]);
   useLayoutEffect(() => () => geometry?.dispose(), [geometry]);
   if (!geometry) return null;
-  const color = GROUP_COLORS[wire.group % GROUP_COLORS.length];
+  const color = selected ? WINDING : WINDING_QUIET;
   return (
-    <mesh geometry={geometry}>
-      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.16} roughness={0.4} metalness={0.14} />
+    <mesh
+      geometry={geometry}
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelect();
+      }}
+    >
+      <meshStandardMaterial
+        color={color}
+        emissive={color}
+        emissiveIntensity={selected ? 0.2 : 0.035}
+        roughness={0.52}
+        metalness={0.08}
+        transparent
+        opacity={selected ? 1 : 0.82}
+      />
     </mesh>
   );
 }
 
-function Frame({ center, size }: { center: THREE.Vector3; size: number }) {
+function polylineCurve(points: number[][], closed: boolean) {
+  if (points.length < 2) return null;
+  const path = new THREE.CurvePath<THREE.Vector3>();
+  const last = closed ? points.length : points.length - 1;
+  for (let index = 0; index < last; index += 1) {
+    const a = points[index];
+    const b = points[(index + 1) % points.length];
+    path.add(new THREE.LineCurve3(new THREE.Vector3(a[0], a[1], a[2]), new THREE.Vector3(b[0], b[1], b[2])));
+  }
+  return path;
+}
+
+function Frame({
+  center,
+  radius,
+  resetNonce,
+}: {
+  center: readonly [number, number, number];
+  radius: number;
+  resetNonce: number;
+}) {
   const camera = useThree((state) => state.camera) as THREE.PerspectiveCamera;
+  const size = useThree((state) => state.size);
+  const controls = useRef<{ target: THREE.Vector3; update: () => void } | null>(null);
+  const lastReset = useRef(resetNonce);
+  const viewDir = useRef(VIEW_DIR.clone());
+  const target = useMemo(() => new THREE.Vector3(center[0], center[1], center[2]), [center]);
+
   useLayoutEffect(() => {
-    camera.position.set(center.x + size * 1.05, center.y + size * 0.62, center.z + size * 0.95);
-    camera.near = Math.max(size / 200, 1e-4);
-    camera.far = size * 40;
-    camera.lookAt(center);
+    const reset = lastReset.current !== resetNonce || viewDir.current.lengthSq() < 1e-8;
+    lastReset.current = resetNonce;
+    if (reset) viewDir.current.copy(VIEW_DIR);
+    else {
+      const current = camera.position.clone().sub(target);
+      if (current.lengthSq() > 1e-8) viewDir.current.copy(current.normalize());
+    }
+
+    const width = Math.max(size.width, 1);
+    const height = Math.max(size.height, 1);
+    const fov = ((camera.fov ?? 32) * Math.PI) / 180;
+    const padded = radius * BREATHING;
+    const vertical = padded / Math.tan(fov / 2);
+    const horizontal = padded / (Math.tan(fov / 2) * (width / height));
+    const distance = Math.max(vertical, horizontal);
+
+    camera.position.copy(target).addScaledVector(viewDir.current, distance);
+    camera.near = Math.max(distance / 200, 1e-4);
+    camera.far = Math.max(distance * 20, radius * 40);
+    camera.lookAt(target);
     camera.updateProjectionMatrix();
-  }, [camera, center, size]);
+    if (controls.current) {
+      controls.current.target.copy(target);
+      controls.current.update();
+    }
+  }, [camera, radius, resetNonce, size.height, size.width, target]);
+
   return (
     <OrbitControls
+      ref={(node) => {
+        controls.current = node;
+      }}
       makeDefault
       enableDamping
       enablePan={false}
-      target={center}
-      minDistance={size * 0.4}
-      maxDistance={size * 5.5}
+      target={target}
+      minDistance={radius * 0.45}
+      maxDistance={radius * 8}
     />
   );
-}
-
-function frame(vertices: number[][]) {
-  let minX = Infinity;
-  let minY = Infinity;
-  let minZ = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  let maxZ = -Infinity;
-  for (const [x, y, z] of vertices) {
-    minX = Math.min(minX, x);
-    minY = Math.min(minY, y);
-    minZ = Math.min(minZ, z);
-    maxX = Math.max(maxX, x);
-    maxY = Math.max(maxY, y);
-    maxZ = Math.max(maxZ, z);
-  }
-  return {
-    center: new THREE.Vector3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2),
-    size: Math.max(maxX - minX, maxY - minY, maxZ - minZ, 0.05),
-  };
-}
-
-function linearVertexColors(colors: number[][]) {
-  const out = new Float32Array(colors.length * 3);
-  const color = new THREE.Color();
-  colors.forEach((sample, index) => {
-    color.setRGB(sample[0] ?? 0, sample[1] ?? 0, sample[2] ?? 0, THREE.SRGBColorSpace);
-    out[index * 3] = color.r;
-    out[index * 3 + 1] = color.g;
-    out[index * 3 + 2] = color.b;
-  });
-  return out;
-}
-
-function formatStream(value: number) {
-  const abs = Math.abs(value);
-  if (abs >= 100) return value.toFixed(0);
-  if (abs >= 10) return value.toFixed(1);
-  return value.toFixed(2);
 }

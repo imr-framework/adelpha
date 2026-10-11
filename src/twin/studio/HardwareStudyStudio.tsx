@@ -1,12 +1,12 @@
 import { Eye, EyeOff, FlaskConical } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { simulateMagnetStudy, type MagnetStudyResult } from "../mri/api";
 import {
   listPartsForScanner,
   resolvePartBinding,
   usePartInspectorStore,
 } from "../partInspectorStore";
-import { useEngineeringStore, type HardwareView } from "../engineeringStore";
+import { useEngineeringStore } from "../engineeringStore";
 import { useScannerModel } from "../scannerModel";
 import { useAssemblyGeometryStore } from "./assemblyGeometryStore";
 import { livePhysicalParts } from "./assemblyModel";
@@ -29,25 +29,29 @@ import {
   type HardwareStudyKind,
   type HardwareStudyRun,
   type StudySection,
+  type SetupStep,
 } from "./hardwareStudyStore";
+
+import { preparationKey, settingsIssues } from "./studyPreparation";
+import "./hardwareWorkspace.css";
 
 const NO_IDS: string[] = [];
 const NO_INSTANCES: import("./geometryPrep").AssemblyInstance[] = [];
 
 const SECTIONS: { id: StudySection; label: string }[] = [
   { id: "setup", label: "Setup" },
-  { id: "geometry", label: "Geometry/Mesh" },
+  { id: "geometry", label: "Geometry & mesh" },
   { id: "physics", label: "Physics" },
   { id: "results", label: "Results" },
   { id: "diagnostics", label: "Diagnostics" },
 ];
 
-const STUDY_LINKS: { id: HardwareView; label: string }[] = [
-  { id: "assembly", label: "Assembly" },
-  { id: "magnet", label: "Magnet field" },
-  { id: "fem", label: "Elmer FEM" },
-  { id: "gradients", label: "Gradient coils" },
-  { id: "shimming", label: "Passive shimming" },
+const SETUP_STEPS: { id: SetupStep; label: string }[] = [
+  { id: "parts", label: "Parts & roles" },
+  { id: "materials", label: "Materials" },
+  { id: "geometry", label: "Geometry & mesh" },
+  { id: "physics", label: "Physics" },
+  { id: "review", label: "Review & prepare" },
 ];
 
 const QUANTITIES: { id: FieldQuantity; label: string }[] = [
@@ -62,13 +66,18 @@ export function HardwareStudyStudio({
   projectId,
   projectName,
   study,
+  viewport,
+  onClose,
 }: {
+  viewport?: ReactNode;
+  onClose?: () => void;
   projectId: string;
   projectName: string;
   study: HardwareStudyKind;
 }) {
   const [scannerId] = useScannerModel();
-  const setHardwareView = useEngineeringStore((s) => s.setHardwareView);
+  const modelLabel = useEngineeringStore((s) => s.modelLabel);
+  const [search, setSearch] = useState("");
   const catalog = usePartInspectorStore((s) => s.catalog);
   const bindings = usePartInspectorStore((s) => s.bindings);
   const hidden = usePartInspectorStore((s) => s.hidden[scannerId] ?? NO_IDS);
@@ -95,20 +104,31 @@ export function HardwareStudyStudio({
     [parts, record.settings.mesh.approximation, study],
   );
   const example = record.exampleId === "example-halbach-8";
-  const issues = example ? [] : localIssues;
+  const issues = [...(example ? [] : localIssues), ...settingsIssues(record.settings, study)];
   const blocking = issues.filter((issue) => issue.severity === "error");
   const active = record.runs.find((run) => run.id === record.activeRunId) ?? record.runs[0] ?? null;
-  const running = active?.status === "running";
-  const ready = example || blocking.length === 0;
+  const running = record.runs.some((run) => run.status === "running");
+  const ready = blocking.length === 0;
+  const currentKey = preparationKey(parts, record.settings, record.exampleId);
+  const prepared = record.preparedKey === currentKey && ready;
+  const setup = record.editingSetup || !record.preparedKey;
+  const stepIndex = SETUP_STEPS.findIndex((step) => step.id === record.setupStep);
+  const step = SETUP_STEPS[stepIndex];
+  const setStep = (setupStep: SetupStep) => useHardwareStudyStore.getState().setPreparation(projectId, study, { setupStep });
+  function prepare() {
+    if (!ready || running) return;
+    useHardwareStudyStore.getState().setPreparation(projectId, study, { preparedKey: currentKey, editingSetup: false });
+    useHardwareStudyStore.getState().setSection(projectId, study, "setup");
+  }
   const abort = useRef<AbortController | null>(null);
 
   const settingsKey = JSON.stringify(record.settings);
   useEffect(() => {
-    useHardwareStudyStore.getState().markStale(projectId, study, modelKey);
-  }, [modelKey, projectId, settingsKey, study]);
+    useHardwareStudyStore.getState().markStale(projectId, study, example ? physicalModelKey(exampleHalbachParts()) : modelKey);
+  }, [modelKey, projectId, settingsKey, study, example, active?.status, active?.id]);
 
   async function run() {
-    if (running) return;
+    if (running || !prepared || setup) return;
     const approximations =
       study === "fem"
         ? [
@@ -136,13 +156,15 @@ export function HardwareStudyStudio({
     };
     useHardwareStudyStore.getState().addRun(projectId, study, pending);
     abort.current?.abort();
-    abort.current = new AbortController();
+    const controller = new AbortController();
+    abort.current = controller;
     try {
       const result = (await simulateMagnetStudy({
         ...snapshotRequest(snapshot),
         example_id: example ? "example-halbach-8" : null,
         study,
       })) as MagnetStudyResult;
+      if (controller.signal.aborted) return;
       useHardwareStudyStore.getState().updateRun(projectId, study, runId, {
         status: result.completed ? "completed" : "failed",
         error: result.completed ? null : result.limitation || result.summary,
@@ -159,24 +181,34 @@ export function HardwareStudyStudio({
           slice: result.slice,
           vectors: result.vectors,
           probes: result.probes,
-          homogeneity: result.homogeneity,
+          homogeneity: result.homogeneity ? {
+            ...result.homogeneity,
+            roi: {
+              centerM: [result.homogeneity.roi.centerM[0], result.homogeneity.roi.centerM[1], result.homogeneity.roi.centerM[2]],
+              sizeM: [result.homogeneity.roi.sizeM[0], result.homogeneity.roi.sizeM[1], result.homogeneity.roi.sizeM[2]],
+              samples: [result.homogeneity.roi.samples[0], result.homogeneity.roi.samples[1], result.homogeneity.roi.samples[2]],
+            },
+          } : null,
           mesh: result.mesh,
           elapsed_s: result.elapsed_s,
         },
       });
-      useHardwareStudyStore.getState().setSection(projectId, study, "results");
+      useHardwareStudyStore.getState().setSection(projectId, study, result.completed ? "results" : "diagnostics");
     } catch (err) {
+      if (controller.signal.aborted) return;
       useHardwareStudyStore.getState().updateRun(projectId, study, runId, {
         status: "failed",
         error: err instanceof Error ? err.message : "The study failed.",
       });
+      useHardwareStudyStore.getState().setSection(projectId, study, "diagnostics");
     }
   }
 
   function cancel() {
     abort.current?.abort();
-    if (active && active.status === "running") {
-      useHardwareStudyStore.getState().updateRun(projectId, study, active.id, {
+    const pending = record.runs.find((run) => run.status === "running");
+    if (pending) {
+      useHardwareStudyStore.getState().updateRun(projectId, study, pending.id, {
         status: "failed",
         error: "Cancelled.",
       });
@@ -189,40 +221,29 @@ export function HardwareStudyStudio({
       ? "A run is already in progress."
       : "";
 
-  return (
-    <div className="studio-study" aria-label={study === "fem" ? "Elmer FEM" : "Magnet field"}>
-      <aside className="studio-study-tree" aria-label="Assembly tree">
-        <nav className="studio-study-switch" aria-label="Hardware studies">
-          {STUDY_LINKS.map((link) => (
-            <button
-              key={link.id}
-              type="button"
-              aria-pressed={link.id === study}
-              onClick={() => setHardwareView(link.id)}
-            >
-              {link.label}
-            </button>
-          ))}
-        </nav>
+  const tree = <div className="study-assembly-browser">
         <header className="studio-study-tree-head">
-          <h3>Parts</h3>
+          <h3>Assembly</h3>
           <p>
             {included.length} of {parts.length} in simulation
           </p>
         </header>
+        <input className="study-search" type="search" aria-label="Search parts" placeholder="Search parts…" value={search} onChange={(event) => setSearch(event.target.value)} />
         <ul>
           {parts.length === 0 ? (
             <li className="studio-study-empty">Load a GLB assembly, then add parts to simulation.</li>
           ) : (
-            listPartsForScanner(scannerId, catalog, bindings).map((part) => {
+            listPartsForScanner(scannerId, catalog, bindings).filter((part) => resolvePartBinding({ ...part, scannerId }, bindings).displayName.toLowerCase().includes(search.toLowerCase())).map((part) => {
               const binding = resolvePartBinding({ ...part, scannerId }, bindings);
               const family = parts.filter((row) => row.partId === part.partId);
-              const selected = selection.some((row) => row.partId === part.partId);
+              const selected = selection.some((row) => row.scannerId === scannerId && row.partId === part.partId);
               return (
                 <li key={part.partId}>
                   <button
                     type="button"
                     className={`studio-tree-row${selected ? " is-selected" : ""}`}
+                    aria-pressed={selected}
+                    title={binding.displayName}
                     onClick={() => selectPart({ ...part, scannerId })}
                   >
                     <span className="studio-tree-name">{binding.displayName}</span>
@@ -258,59 +279,67 @@ export function HardwareStudyStudio({
             })
           )}
         </ul>
-      </aside>
+  </div>;
+  const inspector = <PartOrStudyInspector study={study} projectId={projectId} scannerId={scannerId} parts={parts} patchEngineering={patchEngineering} />;
+  const sectionPanel = (section: StudySection) => <StudySectionPanel study={study} section={section} parts={parts} included={included} issues={issues} record={record} active={active} example={example} projectId={projectId} compact={setup && step.id === "parts"} />;
 
+  return (
+    <div className={`studio-study hardware-workspace ${setup ? "is-preparing" : "is-prepared"}`} aria-label={study === "fem" ? "Elmer FEM" : "Magnet field"}>
+      <aside className="studio-study-tree" aria-label={setup ? "Study setup" : "Assembly tree"}>
+        {setup ? <>
+          <h2>Study setup</h2><p className="study-muted">Prepare your study.</p>
+          <nav className="study-steps" aria-label="Study preparation">
+            {SETUP_STEPS.map((item, index) => <button key={item.id} type="button" aria-current={item.id === step.id ? "step" : undefined} onClick={() => setStep(item.id)}>
+              <span className="study-step-number">{String(index + 1).padStart(2, "0")}</span>
+              <span>{item.label}<small>{item.id === step.id ? "In progress" : ""}</small></span>
+            </button>)}
+          </nav>
+          <details className="study-browser-disclosure" open><summary>Assembly browser</summary>{tree}</details>
+        </> : tree}
+      </aside>
       <header className="studio-study-bar">
-        <div>
-          <p className="studio-work-kicker">{study === "fem" ? "Elmer FEM" : "Magnet field"}</p>
-          <h2>{projectName}</h2>
+        <div className="study-project-heading"><span className="study-muted">{modelLabel}</span><span aria-hidden="true"> / </span><h2>{projectName}</h2></div>
+        <div className="study-header-actions">
+          {!setup ? <>
+            <span className="study-badge">{prepared ? "Prepared" : "Review required"}</span>
+            <button type="button" className="studio-ghost" disabled={running} onClick={() => useHardwareStudyStore.getState().setPreparation(projectId, study, { editingSetup: true, setupStep: prepared ? "parts" : "review" })}>Edit setup</button>
+            <button type="button" className="mr0-run" onClick={run} disabled={!prepared || running} title={!prepared ? "Prepare the current settings before running." : disabledReason}>{running ? "Running…" : "Run study"}</button>
+            {running ? <button type="button" className="studio-ghost" onClick={cancel}>Cancel</button> : null}
+          </> : <span className="study-badge">Draft · saved locally</span>}
+          {onClose ? <details className="study-project-menu"><summary>Project ▾</summary><button type="button" onClick={onClose}>Close project</button></details> : null}
         </div>
-        <div className="studio-study-tabs" role="tablist" aria-label="Study sections">
-          {SECTIONS.map((section) => (
-            <button
-              key={section.id}
-              type="button"
-              role="tab"
-              aria-selected={record.section === section.id}
-              onClick={() => useHardwareStudyStore.getState().setSection(projectId, study, section.id)}
-            >
-              {section.label}
-            </button>
-          ))}
-        </div>
-        <div className="studio-study-run">
-          <button type="button" className="mr0-run" onClick={run} disabled={!ready || running} title={disabledReason}>
-            {running ? "Running…" : "Run study"}
-          </button>
-          {running ? (
-            <button type="button" className="studio-ghost" onClick={cancel}>
-              Cancel
-            </button>
-          ) : null}
-        </div>
+        {!setup ? <div className="studio-study-tabs" role="tablist" aria-label="Study sections">
+          {SECTIONS.map((section) => <button key={section.id} type="button" role="tab" aria-selected={record.section === section.id} onClick={() => useHardwareStudyStore.getState().setSection(projectId, study, section.id)}>{section.id === "setup" ? "Overview" : section.label}</button>)}
+        </div> : null}
       </header>
-      <div className="studio-study-viewport" aria-hidden="true" />
-      <StudySectionPanel
-        study={study}
-        section={record.section}
-        parts={parts}
-        included={included}
-        issues={issues}
-        record={record}
-        active={active}
-        example={example}
-        projectId={projectId}
-      />
-
+      <div className="studio-study-viewport">
+        <div className="study-viewport-caption">{setup ? "Assembly preview" : prepared ? "Setup complete · Ready to run" : "Study inputs changed · Review setup before running"}{example ? " · Labeled Halbach example" : ""}</div>
+        {viewport}
+      </div>
       <aside className="studio-study-inspector" aria-label="Inspector">
-        <PartOrStudyInspector
-          study={study}
-          projectId={projectId}
-          scannerId={scannerId}
-          parts={parts}
-          patchEngineering={patchEngineering}
-        />
+        {setup ? <>
+          <div className="study-setup-content">
+            <h2>{step.label}</h2>
+            {step.id === "parts" || step.id === "materials" ? <>
+              <p className="study-muted">{step.id === "parts" ? "Select a part to assign its role and study inclusion." : "Set the physical properties required by each part’s role."}</p>
+              {inspector}
+              {step.id === "materials" ? <p className="study-muted">Permanent magnets require remanence and direction. FEM yokes require permeability; conductors require conductivity.</p> : null}
+            </> : null}
+            {step.id === "parts" || step.id === "review" ? sectionPanel("setup") : null}
+            {step.id === "geometry" || step.id === "physics" ? sectionPanel(step.id) : null}
+          </div>
+          <footer className="study-setup-footer">
+            {step.id === "review" && !ready ? <p role="status">Resolve {blocking.length} requirement{blocking.length === 1 ? "" : "s"} before preparing.</p> : null}
+            <button type="button" className="mr0-run" disabled={step.id === "review" && (!ready || running)} onClick={() => step.id === "review" ? prepare() : setStep(SETUP_STEPS[stepIndex + 1].id)}>{step.id === "review" ? "Prepare study" : `Continue to ${SETUP_STEPS[stepIndex + 1].label.toLowerCase()}`}</button>
+            {stepIndex > 0 ? <button type="button" className="studio-ghost" onClick={() => setStep(SETUP_STEPS[stepIndex - 1].id)}>Back</button> : null}
+            <small className="study-muted">Changes saved automatically</small>
+          </footer>
+        </> : inspector}
       </aside>
+      {!setup ? <div className="study-bottom-panel">
+        {record.section === "setup" ? <details><summary>Contributing parts · {example ? 8 : included.length} included</summary>{sectionPanel("setup")}</details> : sectionPanel(record.section)}
+      </div> : null}
+      <footer className="study-statusbar"><span>{setup ? `Step ${stepIndex + 1} of 5 · ${step.label}` : active ? `Last run: ${active.status}${active.stale ? " · stale" : ""}` : "No runs yet"}</span><span>Units: mm · {example ? "Example study" : `${included.length} of ${parts.length} in simulation`}</span></footer>
     </div>
   );
 }
@@ -325,7 +354,9 @@ function StudySectionPanel({
   active,
   example,
   projectId,
+  compact = false,
 }: {
+  compact?: boolean;
   study: HardwareStudyKind;
   section: StudySection;
   parts: PhysicalPart[];
@@ -340,22 +371,26 @@ function StudySectionPanel({
   if (section === "setup") {
     return (
       <div className="studio-study-panel">
-        <h3>Contributing parts</h3>
+        <details className="study-review-details" open={!compact}>
+        <summary>Contributing parts · {example ? 8 : included.length} included</summary>
         {example ? <p>Using the labeled 8-cube Halbach example. Assembly membership is not required for this example.</p> : null}
         {included.length === 0 && !example ? (
           <p>Nothing is added to simulation. Hiding a part does not add or remove it.</p>
         ) : (
-          <ul className="studio-study-list">
-            {included.map((part) => (
-              <li key={part.instanceId}>
-                <strong>{part.cadName}</strong>
-                <span>
-                  {roleLabel(part.engineering.role)} · {part.sizeM.map((value) => `${(value * 1e3).toFixed(1)} mm`).join(" × ")}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="study-parts-table-scroll">
+            <table className="study-parts-table">
+              <thead><tr><th>Part</th><th>Role</th><th>Size (mm)</th></tr></thead>
+              <tbody>{(example ? exampleHalbachParts() : included).map((part) => (
+                <tr key={part.instanceId}>
+                  <td>{part.cadName}</td>
+                  <td>{roleLabel(part.engineering.role)}</td>
+                  <td>{part.sizeM.map((value) => (value * 1e3).toFixed(1)).join(" × ")}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
         )}
+        </details>
         <h3>Missing requirements</h3>
         {issues.length === 0 ? (
           <p>{example ? "Example assets include remanence and magnetization." : "Ready to run."}</p>
@@ -736,7 +771,7 @@ function PartOrStudyInspector({
       <div>
         <h3>Study</h3>
         <p>
-          {study === "fem" ? "Elmer magnetostatics" : "Analytical magnet field"} · {record.settings.magnetModel}
+          {study === "fem" ? "Elmer magnetostatics" : `Analytical magnet field · ${record.settings.magnetModel}`}
         </p>
         <p>Select a part to assign role, remanence, and magnetization. Visual materials stay separate.</p>
       </div>
@@ -751,6 +786,10 @@ function PartOrStudyInspector({
       <p>
         {family.length} instance{family.length === 1 ? "" : "s"} · {binding.inSimulation ? "in simulation" : "not in simulation"}
       </p>
+      <label className="study-inclusion">
+        <span>Included in study</span>
+        <input type="checkbox" checked={binding.inSimulation} onChange={(event) => usePartInspectorStore.getState().setPartsInSimulation(scannerId, [selected.partId], event.target.checked)} />
+      </label>
       <label className="studio-param">
         <span>Engineering role</span>
         <select

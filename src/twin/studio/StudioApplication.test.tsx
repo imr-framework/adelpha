@@ -50,14 +50,9 @@ describe("AcquisitionStudio MRZero suite", () => {
     });
 
     render(<AcquisitionStudio projectName="Brain EPI" />);
-    const listed = screen.getAllByRole("button").map((button) => button.textContent ?? "");
-    const spin = listed.findIndex((text) => text.includes("2D Spin-Echo"));
-    const turbo = listed.findIndex((text) => text.includes("3D Turbo Spin-Echo"));
-    expect(spin).toBeGreaterThanOrEqual(0);
-    expect(turbo).toBeGreaterThan(spin);
-    expect(listed.some((text) => text.includes("RF Spin-Echo"))).toBe(false);
-    expect(listed.some((text) => text.includes("1D Spin-Echo"))).toBe(false);
-    expect(screen.queryByRole("button", { name: /Gradient echo/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Sequence" })).toHaveValue("se_2D");
+    expect(screen.getByRole("option", { name: "2D Spin-Echo" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "3D Turbo Spin-Echo" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "On this scanner" })).not.toBeInTheDocument();
     expect(screen.getByText(/simulate one brain slice with MRZero/)).toBeInTheDocument();
     expect(screen.getByLabelText("TE (ms)")).toHaveValue(5);
@@ -81,7 +76,7 @@ describe("AcquisitionStudio MRZero suite", () => {
     await userEvent.click(screen.getByRole("button", { name: "Field error" }));
     expect(screen.getByLabelText("Field error")).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: /3D Turbo Spin-Echo/ }));
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Sequence" }), "tse_3D");
     expect(screen.getByLabelText("ETL")).toHaveValue(8);
     expect(screen.getByLabelText("Slices")).toHaveValue(8);
     expect(screen.queryByLabelText("PE Ordering")).not.toBeInTheDocument();

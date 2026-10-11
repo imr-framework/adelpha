@@ -1,3 +1,4 @@
+import { CadSelectionColor } from "./cadSelectionTheme";
 import { Canvas } from "@react-three/fiber";
 import { Suspense } from "react";
 import { SceneEngineering } from "./SceneEngineering";
@@ -24,7 +25,7 @@ export function EngineeringCanvas() {
       }}
     >
       <Suspense fallback={null}>
-        <SceneEngineering />
+        <CadSelectionColor.Provider value="#c9ccd5"><SceneEngineering /></CadSelectionColor.Provider>
       </Suspense>
     </Canvas>
   );

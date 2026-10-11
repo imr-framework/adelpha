@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EngineeringStudio } from "../EngineeringStudio";
 import { useEngineeringStore } from "../engineeringStore";
 import { requestOpenSettings } from "../settingsOpen";
-import { saveNewProject } from "./library";
+import { readProjects, saveNewProject } from "./library";
 import { StudioHome } from "./StudioHome";
 
 vi.mock("../settingsOpen", () => ({
@@ -100,7 +100,30 @@ describe("StudioHome", () => {
         application: "hardware",
         discipline: "Hardware",
       }),
+      { view: "magnet", setup: true },
     );
+  });
+
+  it.each([
+    ["Assembly", "assembly", false],
+    ["Magnet field", "magnet", true],
+    ["Elmer FEM", "fem", true],
+    ["Gradient coils", "gradients", false],
+    ["Passive shimming", "shimming", false],
+  ] as const)("creates and reopens the chosen %s workspace", async (label, view, setup) => {
+    const onOpenProject = vi.fn();
+    const user = userEvent.setup();
+    render(<StudioHome onOpenProject={onOpenProject} />);
+    await user.click(screen.getAllByRole("button", { name: "New project" })[0]!);
+    await user.type(screen.getByRole("textbox", { name: "Project name" }), `${label} project`);
+    await user.click(screen.getByRole("radio", { name: /Hardware/ }));
+    await user.click(screen.getByRole("radio", { name: label }));
+    await user.click(screen.getByRole("button", { name: "Create" }));
+    expect(onOpenProject).toHaveBeenCalledWith(expect.objectContaining({ lastView: view }), { view, setup });
+    const saved = readProjects().find((project) => project.name === `${label} project`)!;
+    expect(saved.lastView).toBe(view);
+    useEngineeringStore.getState().openProject(saved);
+    expect(useEngineeringStore.getState().hardwareView).toBe(view);
   });
 
   it("opens an acquisition project into the acquisition studio", async () => {
@@ -280,22 +303,10 @@ describe("StudioHome", () => {
     expect(useEngineeringStore.getState().activeProject?.name).toBe("Halbach 0.5 T");
     expect(useEngineeringStore.getState().activeProject?.id).not.toBe("sample-halbach");
 
-    await user.click(screen.getByRole("button", { name: "Gradient coils" }));
-    expect(screen.getByRole("region", { name: "Gradient coils" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Y gradient/ })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.queryByRole("toolbar", { name: "Viewport navigation" })).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Assembly" }));
-    expect(screen.getByRole("toolbar", { name: "Viewport navigation" })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Passive shimming" }));
-    expect(screen.getByRole("region", { name: "Passive shimming" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Diameter (mm)")).toHaveValue(203.3);
-    expect(screen.getByLabelText("Bottom (mm)")).toHaveValue(-48.5);
-    expect(screen.getByLabelText("Top (mm)")).toHaveValue(48.5);
-    expect(screen.queryByRole("toolbar", { name: "Viewport navigation" })).not.toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Assembly" }));
-    expect(screen.getByRole("toolbar", { name: "Viewport navigation" })).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Hardware studies" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Gradient coils" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Passive shimming" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Close project" }));
+    expect(screen.getByRole("region", { name: "Engineering Studio start" })).toBeInTheDocument();
   });
 });

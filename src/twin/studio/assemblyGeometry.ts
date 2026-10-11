@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { useAssemblyGeometryStore } from "./assemblyGeometryStore";
 import { convertSize, geometryRevision, instanceIdFor, surfaceTopology, toMeters, type AssemblyInstance, type LengthUnit } from "./geometryPrep";
 
 export { useAssemblyGeometryStore } from "./assemblyGeometryStore";

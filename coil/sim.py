@@ -492,6 +492,7 @@ def simulate(request: dict) -> dict:
     title = NAMES[request["axis"]]
     layout_png = _figure_png(plot_3D_contours_with_sf, solution, title)
     surface = _figure_png(plot_2D_contours_with_sf, solution, title)
+    mean_error = _mean_error(solution)
     return {
         "ok": True,
         "shape": request["shape"],
@@ -506,7 +507,9 @@ def simulate(request: dict) -> dict:
         "levels": int(request["levels"]),
         "gradient_mt_m": request["gradient_mt_m"],
         "achieved_mt_m": _mean_gradient_mt_m(solution),
-        "mean_field_error": _mean_error(solution),
+        "mean_field_error": mean_error,
+        "error_definition": "Mean relative error, layout versus target" if mean_error is not None else None,
+        "target_region_radius_mm": round(_target_radius(request) * 1000.0, 1),
         "layout": _layout(solution),
         "layout_png": layout_png,
         "surface_png": surface,

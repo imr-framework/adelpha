@@ -176,6 +176,8 @@ export type CoilSimulation = {
   gradient_mt_m: number;
   achieved_mt_m: number | null;
   mean_field_error: number | null;
+  error_definition?: string | null;
+  target_region_radius_mm?: number | null;
   layout: CoilLayout;
   layout_png: string;
   surface_png: string;

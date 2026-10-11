@@ -15,6 +15,7 @@ import { PassiveShimStudio } from "./studio/PassiveShimStudio";
 import { useHardwareStudyStore } from "./studio/hardwareStudyStore";
 import { rememberProjectView, syncProjectAssembly } from "./studio/library";
 import "./studio/studioWork.css";
+import "./studio/hardwareWorkspace.css";
 
 const EngineeringCanvas = lazy(() =>
   import("./EngineeringCanvas").then((m) => ({ default: m.EngineeringCanvas })),
@@ -31,7 +32,6 @@ export function EngineeringStudio() {
   const studio = studioCadForScanner(scannerId);
   const empty = catalogCount > 0 && partCount === 0;
   const hardwareView = useEngineeringStore((s) => s.hardwareView);
-  const setHardwareView = useEngineeringStore((s) => s.setHardwareView);
   const setupIntent = useEngineeringStore((s) => s.setupIntent);
   const clearSetupIntent = useEngineeringStore((s) => s.clearSetupIntent);
   const bindings = usePartInspectorStore((s) => s.bindings);
@@ -55,7 +55,7 @@ export function EngineeringStudio() {
       clearSetupIntent();
       return;
     }
-    useHardwareStudyStore.getState().setSection(activeProject.id, hardwareView, "setup");
+    useHardwareStudyStore.getState().setPreparation(activeProject.id, hardwareView, { editingSetup: true, setupStep: "parts" });
     clearSetupIntent();
   }, [activeProject, clearSetupIntent, hardwareView, setupIntent]);
 
@@ -80,61 +80,10 @@ export function EngineeringStudio() {
     };
   }, []);
 
-  return (
-    <section className="engineering-studio" aria-label="Engineering Studio">
-      <div className={`engineering-stage${activeProject && (hardwareView === "magnet" || hardwareView === "fem") ? " is-hardware-study" : ""}`}>
-        {activeProject ? (
-          <button type="button" className="studio-close-project" onClick={closeProject}>
-            Close project
-          </button>
-        ) : null}
-        {activeProject?.application === "acquisition" ? (
-          <AcquisitionStudio projectName={activeProject.name} />
-        ) : activeProject?.application === "reconstruction" ? (
-          <ReconstructionStudio projectName={activeProject.name} />
-        ) : activeProject && hardwareView === "gradients" ? (
-          <GradientCoilStudio projectName={activeProject.name} onAssembly={() => setHardwareView("assembly")} />
-        ) : activeProject && hardwareView === "shimming" ? (
-          <PassiveShimStudio projectName={activeProject.name} onAssembly={() => setHardwareView("assembly")} />
-        ) : activeProject ? (
-          <>
-            {hardwareView === "magnet" || hardwareView === "fem" ? (
-              <HardwareStudyStudio projectId={activeProject.id} projectName={activeProject.name} study={hardwareView} />
-            ) : (
-              <nav className="studio-study-nav" aria-label="Hardware studies">
-                <button type="button" className="studio-gradient-open" aria-pressed={hardwareView === "assembly"} onClick={() => setHardwareView("assembly")}>
-                  Assembly
-                </button>
-                <button type="button" className="studio-gradient-open" aria-pressed={hardwareView === "magnet"} onClick={() => setHardwareView("magnet")}>
-                  Magnet field
-                </button>
-                <button type="button" className="studio-shim-open" aria-pressed={hardwareView === "fem"} onClick={() => setHardwareView("fem")}>
-                  Elmer FEM
-                </button>
-                <button type="button" className="studio-gradient-open" onClick={() => setHardwareView("gradients")}>
-                  Gradient coils
-                </button>
-                <button type="button" className="studio-shim-open" onClick={() => setHardwareView("shimming")}>
-                  Passive shimming
-                </button>
-              </nav>
-            )}
-            <EngineeringViewportControls />
-            {empty && hardwareView === "assembly" ? (
-              <div className="eng-empty" role="status">
-                <strong>Nothing in simulation yet</strong>
-                <p>
-                  Engineering Studio shows only parts added to simulation. Open Settings, select a
-                  component, and choose Add to simulation.
-                </p>
-              </div>
-            ) : null}
-            {navTool === "inspect" && hardwareView === "assembly" ? (
-              <div className="part-inspect-stack">
-                <PartInspectorCard />
-                <PartVisibilityTray />
-              </div>
-            ) : null}
+  const viewport = (
+    <div className="engineering-viewport">
+      <EngineeringViewportControls />
+      <div className="engineering-canvas-region">
             <ErrorBoundary
               resetKey={studio.cad.url}
               onError={() => {
@@ -154,6 +103,53 @@ export function EngineeringStudio() {
                 <EngineeringCanvas />
               </Suspense>
             </ErrorBoundary>
+      </div>
+    </div>
+  );
+
+  return (
+    <section className="engineering-studio" aria-label="Engineering Studio">
+      <div className={`engineering-stage${activeProject && (hardwareView === "magnet" || hardwareView === "fem") ? " is-hardware-study" : ""}`}>
+        {activeProject && activeProject.application !== "acquisition" && hardwareView !== "gradients" && hardwareView !== "shimming" && hardwareView !== "magnet" && hardwareView !== "fem" ? (
+          <button type="button" className="studio-close-project" onClick={closeProject}>
+            Close project
+          </button>
+        ) : null}
+        {activeProject?.application === "acquisition" ? (
+          <AcquisitionStudio key={activeProject.id} projectName={activeProject.name} onClose={closeProject} />
+        ) : activeProject?.application === "reconstruction" ? (
+          <ReconstructionStudio projectName={activeProject.name} />
+        ) : activeProject && hardwareView === "gradients" ? (
+          <GradientCoilStudio
+            projectName={activeProject.name}
+            onClose={closeProject}
+          />
+        ) : activeProject && hardwareView === "shimming" ? (
+          <PassiveShimStudio
+            projectName={activeProject.name}
+            onClose={closeProject}
+          />
+        ) : activeProject ? (
+          <>
+            {hardwareView === "magnet" || hardwareView === "fem" ? (
+              <HardwareStudyStudio key={`${activeProject.id}:${hardwareView}`} projectId={activeProject.id} projectName={activeProject.name} study={hardwareView} viewport={viewport} onClose={closeProject} />
+            ) : viewport}
+            {empty && hardwareView === "assembly" ? (
+              <div className="eng-empty" role="status">
+                <strong>Nothing in simulation yet</strong>
+                <p>
+                  Engineering Studio shows only parts added to simulation. Open Settings, select a
+                  component, and choose Add to simulation.
+                </p>
+              </div>
+            ) : null}
+            {navTool === "inspect" && hardwareView === "assembly" ? (
+              <div className="part-inspect-stack">
+                <PartInspectorCard />
+                <PartVisibilityTray />
+              </div>
+            ) : null}
+
           </>
         ) : (
           <StudioHome onOpenProject={openProject} />
