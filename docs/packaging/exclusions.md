@@ -17,7 +17,7 @@ Do not package the repository wholesale. The following stay out of
 | `release/` | Legacy Electron output |
 | `dist/` | Frontend build input, not a Python resource |
 | `__pycache__/`, `*.pyc` | Generated |
-| `.venv/`, `dtam/.venv/`, `shim/.venv/` | Developer environments. Rebuild passive shimming from `shim/requirements.txt`. |
+| `.venv/`, `dtam/.venv/`, `coil/.venv/`, `shim/.venv/` | Developer environments. Rebuild gradient coils from `coil/README.md` and passive shimming from `shim/requirements.txt`. |
 | `.env`, `.env.local`, `dtam/.env` | Secrets. Never bundle. |
 | `site/`, `.zensical/` | Docs build output |
 | Test fixtures not required at runtime | `dtam/tests`, `console` test trees |

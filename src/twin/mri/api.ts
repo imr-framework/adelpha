@@ -18,6 +18,21 @@ export function mriBaseUrl(): string {
   return `${apiRoot()}/api/mri`;
 }
 
+/** Gradient-coil desk — Adelpha service, not the imaging console. */
+export function coilBaseUrl(): string {
+  return `${apiRoot()}/api/coil`;
+}
+
+/** Passive-shimming desk — Adelpha service, not the imaging console. */
+export function shimBaseUrl(): string {
+  return `${apiRoot()}/api/shim`;
+}
+
+/** Assembly magnet / Elmer desk — Adelpha service, not the imaging console. */
+export function magnetBaseUrl(): string {
+  return `${apiRoot()}/api/magnet`;
+}
+
 async function readError(res: Response): Promise<string> {
   const text = await res.text();
     try {
@@ -263,8 +278,15 @@ export type ShimRequest = {
   field_map?: ShimFieldMapUpload;
 };
 
+async function studioFetch<T>(base: string, path: string, init?: RequestInit): Promise<T> {
+  const res = await runtimeFetch(`${base}${path}`, { cache: "no-store", ...init });
+  if (!res.ok) throw new Error(await readError(res));
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
+}
+
 export async function simulateShim(request: ShimRequest): Promise<ShimSimulation> {
-  return mriFetch("/shim/simulate", {
+  return studioFetch(shimBaseUrl(), "/simulate", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(request),
@@ -272,7 +294,7 @@ export async function simulateShim(request: ShimRequest): Promise<ShimSimulation
 }
 
 export async function inspectShimFieldMap(field_map: ShimFieldMapUpload, center_map: boolean): Promise<ShimFieldInspection> {
-  return mriFetch("/shim/fieldmap", {
+  return studioFetch(shimBaseUrl(), "/fieldmap", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ field_map, center_map }),
@@ -282,7 +304,7 @@ export async function inspectShimFieldMap(field_map: ShimFieldMapUpload, center_
 export async function exportShimTrays(
   request: ShimRequest & { states: number[]; destination?: string },
 ): Promise<ShimExport> {
-  return mriFetch("/shim/export", {
+  return studioFetch(shimBaseUrl(), "/export", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(request),
@@ -290,7 +312,90 @@ export async function exportShimTrays(
 }
 
 export async function simulateCoil(request: CoilRequest): Promise<CoilSimulation> {
-  return mriFetch("/coil/simulate", {
+  return studioFetch(coilBaseUrl(), "/simulate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export type MagnetStudyRequest = {
+  study: "magnet" | "fem";
+  parts?: unknown[];
+  example_id?: string | null;
+  roi: { centerM: number[]; sizeM: number[]; samples: number[] };
+  magnet_model?: "dipole" | "cuboid";
+  mesh?: { approximation: "imported_mesh" | "oriented_box"; airPaddingM: number; grid: number[] };
+  reference_field_t?: number | null;
+};
+
+export type MagnetStudyResult = {
+  ok: boolean;
+  completed: boolean;
+  title: string;
+  summary: string;
+  solver: string;
+  approximations: string[];
+  diagnostics: string[];
+  limitation: string;
+  included: string[];
+  included_part_ids: string[];
+  model_key: string;
+  field: {
+    points: number[][];
+    bx: number[];
+    by: number[];
+    bz: number[];
+    magnitude: number[];
+    units: "T";
+  } | null;
+  slice: {
+    axis: "x" | "y" | "z";
+    index: number;
+    width: number;
+    height: number;
+    values: number[];
+    quantity: string;
+    units: string;
+  } | null;
+  vectors: { points: number[][]; components: number[][]; scale: number } | null;
+  probes: { position: number[]; bT: number[]; magnitudeT: number }[];
+  homogeneity: {
+    roi: { centerM: number[]; sizeM: number[]; samples: number[] };
+    referenceT: number;
+    metric: string;
+    meanT: number;
+    peakToPeakT: number;
+    stdT: number;
+    ppmPeakToPeak: number;
+    ppmRms: number;
+  } | null;
+  mesh: { nodes: number; elements: number; regions: { id: string; body: number; name: string }[] } | null;
+  issues?: { code: string; message: string; correction: string; severity: string }[];
+  elapsed_s: number;
+  versions?: Record<string, string>;
+};
+
+export type MagnetValidation = {
+  ok: boolean;
+  study: string;
+  included: string[];
+  included_part_ids: string[];
+  model_key: string;
+  issues: { instanceId: string; partId: string; severity: string; code: string; message: string; correction: string }[];
+  example_id: string | null;
+};
+
+export async function simulateMagnetStudy(request: MagnetStudyRequest): Promise<MagnetStudyResult> {
+  return studioFetch(magnetBaseUrl(), "/simulate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export async function validateMagnetStudy(request: MagnetStudyRequest): Promise<MagnetValidation> {
+  return studioFetch(magnetBaseUrl(), "/validate", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(request),

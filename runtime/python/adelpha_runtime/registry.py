@@ -269,6 +269,21 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
         env["VIRTUAL_ENV"] = str(venv_bin.parent)
         return spawn_child(args, env, cwd=cwd)
 
+    def coil_factory():
+        from adelpha_runtime.studio import create_coil_app
+
+        return create_coil_app(paths)
+
+    def shim_factory():
+        from adelpha_runtime.studio import create_shim_app
+
+        return create_shim_app(paths)
+
+    def magnet_factory():
+        from adelpha_runtime.studio import create_magnet_app
+
+        return create_magnet_app(paths)
+
     defs = [
         ServiceDef(
             id="twin",
@@ -304,6 +319,39 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
             health_path="/list-apps",
             proxy_prefix="/api/agents",
             wait_for_listen=True,
+        ),
+        ServiceDef(
+            id="coil",
+            title="Gradient coils",
+            required=False,
+            start="always",
+            restart="never",
+            version="0.1.0",
+            description="pyCoilGen windings for the Engineering Studio. Isolated from the imaging console.",
+            mount_factory=coil_factory,
+            health_path="/health",
+        ),
+        ServiceDef(
+            id="shim",
+            title="Passive shimming",
+            required=False,
+            start="always",
+            restart="never",
+            version="0.1.0",
+            description="Passive shim trays for the Engineering Studio. Isolated from the imaging console.",
+            mount_factory=shim_factory,
+            health_path="/health",
+        ),
+        ServiceDef(
+            id="magnet",
+            title="Magnet field",
+            required=False,
+            start="always",
+            restart="never",
+            version="0.1.0",
+            description="Assembly magnetostatics and Elmer FEM for Engineering Studio. Isolated from the imaging console.",
+            mount_factory=magnet_factory,
+            health_path="/health",
         ),
     ]
     return ServiceRegistry(defs)

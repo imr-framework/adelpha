@@ -3,16 +3,15 @@ from pathlib import Path
 
 import pytest
 
-console = Path(__file__).resolve().parents[1]
-
-
 def _module():
-    import sys
+    import importlib.util
 
-    sys.path.insert(0, str(console))
-    from services.api import shim_sim
-
-    return shim_sim
+    path = Path(__file__).resolve().parent / "sim.py"
+    spec = importlib.util.spec_from_file_location("adelpha_shim_sim", path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_request_keeps_the_two_trays():

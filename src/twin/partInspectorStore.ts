@@ -9,6 +9,12 @@ import {
   type MaterialGroup,
   type MriMaterialClassId,
 } from "./mriMaterials";
+import {
+  emptyEngineering,
+  mergeEngineering,
+  normalizeEngineering,
+  type PartEngineering,
+} from "./studio/engineering";
 
 const KEY = "adelpha.partBindings.v1";
 const GROUPS_KEY = "adelpha.partGroups.v1";
@@ -22,6 +28,8 @@ export type PartBinding = {
   colorHex: string | null;
   /** Material group this part belongs to, if classified. */
   groupId: string | null;
+  /** Physical role and properties. Missing on older projects until the user sets them. */
+  engineering: PartEngineering;
 };
 
 export const PART_COLOR_SWATCHES = [
@@ -66,7 +74,25 @@ function readBindings(): BindingsMap {
     const raw = localStorage.getItem(KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as BindingsMap;
-    return parsed && typeof parsed === "object" ? parsed : {};
+    if (!parsed || typeof parsed !== "object") return {};
+    const out: BindingsMap = {};
+    for (const [scannerId, rows] of Object.entries(parsed)) {
+      if (!rows || typeof rows !== "object") continue;
+      const next: Record<string, PartBinding> = {};
+      for (const [partId, row] of Object.entries(rows)) {
+        if (!row || typeof row !== "object") continue;
+        next[partId] = {
+          displayName: typeof row.displayName === "string" ? row.displayName : partId,
+          sensorId: typeof row.sensorId === "string" ? row.sensorId : null,
+          inSimulation: Boolean(row.inSimulation),
+          colorHex: isPartColorHex(row.colorHex) ? row.colorHex.toLowerCase() : null,
+          groupId: typeof row.groupId === "string" ? row.groupId : null,
+          engineering: normalizeEngineering(row.engineering),
+        };
+      }
+      out[scannerId] = next;
+    }
+    return out;
   } catch {
     return {};
   }
@@ -185,6 +211,7 @@ function mergeBinding(
           : null
         : (current?.colorHex ?? null),
     groupId: patch.groupId !== undefined ? patch.groupId : (current?.groupId ?? null),
+    engineering: mergeEngineering(current?.engineering, patch.engineering),
   };
 }
 
@@ -244,6 +271,7 @@ type PartInspectorStore = {
   setPartCatalog: (scannerId: string, parts: CadPartRef[]) => void;
   patchBinding: (scannerId: string, partId: string, patch: Partial<PartBinding>) => void;
   patchBindings: (scannerId: string, partIds: string[], patch: Partial<PartBinding>) => void;
+  patchEngineering: (scannerId: string, partId: string, patch: Partial<PartEngineering>) => void;
   assignMaterial: (args: {
     scannerId: string;
     partIds: string[];
@@ -338,6 +366,15 @@ export const usePartInspectorStore = create<PartInspectorStore>((set, get) => ({
     })),
   patchBinding: (scannerId, partId, patch) => {
     get().patchBindings(scannerId, [partId], patch);
+  },
+  patchEngineering: (scannerId, partId, patch) => {
+    const current = resolvePartBinding(
+      { partId, cadName: partId, scannerId: scannerId as ScannerModelId },
+      get().bindings,
+    );
+    get().patchBindings(scannerId, [partId], {
+      engineering: mergeEngineering(current.engineering, patch),
+    });
   },
   patchBindings: (scannerId, partIds, patch) =>
     set((state) => {
@@ -452,6 +489,7 @@ export function resolvePartBinding(part: SelectedCadPart, bindings: BindingsMap)
     inSimulation: saved?.inSimulation ?? false,
     colorHex: isPartColorHex(saved?.colorHex) ? saved.colorHex.toLowerCase() : null,
     groupId: saved?.groupId ?? null,
+    engineering: saved?.engineering ? normalizeEngineering(saved.engineering) : emptyEngineering(),
   };
 }
 

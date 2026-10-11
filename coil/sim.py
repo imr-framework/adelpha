@@ -86,7 +86,7 @@ def coil_python() -> str:
     override = os.environ.get("COILGEN_PYTHON", "").strip()
     if override:
         return override
-    candidate = Path(__file__).resolve().parents[3] / "coil" / ".venv" / "bin" / "python"
+    candidate = Path(__file__).resolve().parent / ".venv" / "bin" / "python"
     if candidate.is_file():
         return str(candidate)
     return ""

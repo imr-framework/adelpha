@@ -15,6 +15,8 @@ import {
   type CadPartRef,
   type PartBinding,
 } from "./partInspectorStore";
+import { collectAssemblyInstances } from "./studio/assemblyGeometry";
+import { useAssemblyGeometryStore } from "./studio/assemblyGeometryStore";
 import {
   readScannerModel,
   setScannerModel,
@@ -680,6 +682,22 @@ function MagnetMotionGroup({
     const s = scale * (scaleExplode ? 1 + exploded * 0.35 : 1);
     root.current.scale.setScalar(s);
   }, [exploded, scale, scaleExplode]);
+
+  useLayoutEffect(() => {
+    if (!root.current) return;
+    const savedPosition = root.current.position.clone();
+    const savedScale = root.current.scale.clone();
+    const explodedParts = explodeParts && explodeRef ? explodeRef.current : null;
+    if (explodedParts) applyExplode(explodedParts.parts, 0, explodedParts.distance);
+    root.current.position.set(0, 0, 0);
+    root.current.scale.setScalar(scale);
+    root.current.updateWorldMatrix(true, true);
+    useAssemblyGeometryStore.getState().setInstances(scannerId, collectAssemblyInstances(root.current, scannerId));
+    root.current.position.copy(savedPosition);
+    root.current.scale.copy(savedScale);
+    if (explodedParts) applyExplode(explodedParts.parts, exploded, explodedParts.distance);
+    root.current.updateWorldMatrix(true, true);
+  }, [explodeParts, explodeRef, exploded, model, scannerId, scale]);
 
   useFrame(() => {
     if (explodeParts && explodeRef) {

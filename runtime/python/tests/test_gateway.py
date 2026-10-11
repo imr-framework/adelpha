@@ -4,7 +4,7 @@ from adelpha_runtime.gateway import create_gateway_app
 from adelpha_runtime.process import ServiceDef
 from adelpha_runtime.registry import ServiceRegistry
 
-from .conftest import TOKEN, gateway_client, stub_registry
+from .conftest import TOKEN, _stub_app, gateway_client, stub_registry
 
 
 def test_health_requires_token():
@@ -32,6 +32,55 @@ def test_mounted_stub_services():
     assert twin.json()["service"] == "twin"
     assert console.status_code == 200
     assert console.json()["service"] == "console"
+
+
+def test_studio_services_use_their_own_prefix():
+    registry = ServiceRegistry(
+        [
+            ServiceDef(
+                id="coil",
+                title="Coils",
+                required=False,
+                start="always",
+                restart="never",
+                version="0.1.0",
+                description="stub",
+                mount_factory=lambda: _stub_app("coil"),
+            ),
+            ServiceDef(
+                id="shim",
+                title="Shims",
+                required=False,
+                start="always",
+                restart="never",
+                version="0.1.0",
+                description="stub",
+                mount_factory=lambda: _stub_app("shim"),
+            ),
+            ServiceDef(
+                id="magnet",
+                title="Magnet",
+                required=False,
+                start="always",
+                restart="never",
+                version="0.1.0",
+                description="stub",
+                mount_factory=lambda: _stub_app("magnet"),
+            ),
+        ]
+    )
+    registry.start_always()
+    client = gateway_client(registry)
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    coil = client.get("/api/coil/health", headers=headers)
+    shim = client.get("/api/shim/health", headers=headers)
+    magnet = client.get("/api/magnet/health", headers=headers)
+    assert coil.status_code == 200
+    assert coil.json()["service"] == "coil"
+    assert shim.status_code == 200
+    assert shim.json()["service"] == "shim"
+    assert magnet.status_code == 200
+    assert magnet.json()["service"] == "magnet"
 
 
 def test_query_token_accepted():

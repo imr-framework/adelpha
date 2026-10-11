@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 export type StudioNavTool = "orbit" | "pan" | "inspect";
 export type StudioCameraPreset = "iso" | "front" | "back" | "left" | "right" | "top";
+export type HardwareView = "assembly" | "magnet" | "fem" | "gradients" | "shimming";
 
 export type StudioModelFrame = {
   target: [number, number, number];
@@ -13,6 +14,12 @@ export type StudioProjectRef = {
   id: string;
   name: string;
   application: "hardware" | "acquisition" | "reconstruction";
+  lastView?: HardwareView;
+};
+
+export type OpenProjectOptions = {
+  view?: HardwareView;
+  setup?: boolean;
 };
 
 type EngineeringStore = {
@@ -27,13 +34,17 @@ type EngineeringStore = {
   fitNonce: number;
   /** Null until the start card opens or creates a project. */
   activeProject: StudioProjectRef | null;
+  hardwareView: HardwareView;
+  setupIntent: boolean;
   setNavTool: (tool: StudioNavTool) => void;
   setCameraPreset: (preset: StudioCameraPreset) => void;
   setModelInfo: (info: { label: string; partCount: number; catalogCount: number; fallback: boolean }) => void;
   setFrame: (frame: StudioModelFrame | null) => void;
   requestFit: () => void;
-  openProject: (project: StudioProjectRef) => void;
+  openProject: (project: StudioProjectRef, options?: OpenProjectOptions) => void;
   closeProject: () => void;
+  setHardwareView: (view: HardwareView) => void;
+  clearSetupIntent: () => void;
 };
 
 export const useEngineeringStore = create<EngineeringStore>((set) => ({
@@ -47,6 +58,8 @@ export const useEngineeringStore = create<EngineeringStore>((set) => ({
   viewNonce: 0,
   fitNonce: 0,
   activeProject: null,
+  hardwareView: "assembly",
+  setupIntent: false,
   setNavTool: (navTool) => set({ navTool }),
   setCameraPreset: (cameraPreset) => set((state) => ({ cameraPreset, viewNonce: state.viewNonce + 1 })),
   setModelInfo: (info) =>
@@ -58,15 +71,27 @@ export const useEngineeringStore = create<EngineeringStore>((set) => ({
     }),
   setFrame: (frame) => set({ frame }),
   requestFit: () => set((state) => ({ fitNonce: state.fitNonce + 1 })),
-  openProject: (project) =>
+  openProject: (project, options) => {
+    const application = project.application ?? "hardware";
+    const requested = options?.view ?? project.lastView ?? "assembly";
+    const hardwareView =
+      application !== "hardware"
+        ? "assembly"
+        : options?.setup && (requested === "assembly" || requested === "gradients" || requested === "shimming")
+          ? "magnet"
+          : requested;
     set({
       activeProject: {
         id: project.id,
         name: project.name,
-        application: project.application ?? "hardware",
+        application,
+        lastView: hardwareView,
       },
       modelLabel: project.name,
-    }),
+      hardwareView,
+      setupIntent: Boolean(options?.setup) && (hardwareView === "magnet" || hardwareView === "fem"),
+    });
+  },
   closeProject: () =>
     set({
       activeProject: null,
@@ -76,5 +101,9 @@ export const useEngineeringStore = create<EngineeringStore>((set) => ({
       partCount: 0,
       catalogCount: 0,
       fallback: false,
+      hardwareView: "assembly",
+      setupIntent: false,
     }),
+  setHardwareView: (hardwareView) => set({ hardwareView, setupIntent: false }),
+  clearSetupIntent: () => set({ setupIntent: false }),
 }));

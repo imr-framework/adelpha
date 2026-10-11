@@ -11,6 +11,7 @@ import { studioCadForScanner, cadExplodesParts, useScannerCatalog, useScannerMod
 import { scaleForScannerModel, useTwinStore } from "./telemetryStore";
 import { useModelColors, usePolishedFinish } from "./useModelColors";
 import { useEngineeringStore, type StudioCameraPreset, type StudioNavTool } from "./engineeringStore";
+import { exampleHalbachParts, useHardwareStudyStore, type FrozenPart } from "./studio/hardwareStudyStore";
 
 const ACTION = CameraControlsImpl.ACTION;
 const CAMERA_FOV_DEG = 45;
@@ -188,6 +189,13 @@ export function SceneEngineering() {
   const fitNonce = useEngineeringStore((s) => s.fitNonce);
   const frame = useEngineeringStore((s) => s.frame);
   const setModelInfo = useEngineeringStore((s) => s.setModelInfo);
+  const hardwareView = useEngineeringStore((s) => s.hardwareView);
+  const activeProject = useEngineeringStore((s) => s.activeProject);
+  const studyRecord = useHardwareStudyStore((s) => {
+    if (!activeProject || (hardwareView !== "magnet" && hardwareView !== "fem")) return null;
+    return s.projects[activeProject.id]?.[hardwareView] ?? null;
+  });
+  const studyRun = studyRecord?.runs.find((run) => run.id === studyRecord.activeRunId) ?? null;
   const { gl, camera, size } = useThree();
   const controlsRef = useRef<CameraControlsImpl | null>(null);
   const framedKey = useRef("");
@@ -303,27 +311,45 @@ export function SceneEngineering() {
       <AdelphaSceneEnvironment background={ADELPHA_VOID} variant="twin" />
 
       <FrameAssembly cadKey={`${cadKey}:${simKey}`}>
-        <MagnetCADSuspense
-          key={cadKey}
-          url={studio.cad.url}
-          exploded={exploded}
-          b0Ratio={1}
-          magnetTempC={24}
-          userScale={userScale}
-          rotationDeg={studio.cad.rotationDeg}
-          explodeParts={cadExplodesParts(studio.cad)}
-          offsetX={0}
-          offsetY={0}
-          offsetZ={0}
-          wireframe={false}
-          hybridRender={false}
-          showTemperatureMap={false}
-          useModelColors={preserveModelColors}
-          polishedFinish={polishedFinish}
-          refineUnlitMaterials
-          onlyInSimulation
-          fallback={null}
-        />
+        {studyRecord?.exampleId === "example-halbach-8" ||
+        studyRun?.snapshot.parts.some((part) => part.sourceAssetId === "example-halbach-8") ? (
+          <group position={[0, TWIN_HOVER_Y, 0]}>
+            <ExampleHalbachCubes
+              parts={
+                studyRun?.snapshot.parts.some((part) => part.sourceAssetId === "example-halbach-8")
+                  ? studyRun.snapshot.parts
+                  : exampleHalbachParts()
+              }
+            />
+          </group>
+        ) : (
+          <MagnetCADSuspense
+            key={cadKey}
+            url={studio.cad.url}
+            exploded={exploded}
+            b0Ratio={1}
+            magnetTempC={24}
+            userScale={userScale}
+            rotationDeg={studio.cad.rotationDeg}
+            explodeParts={cadExplodesParts(studio.cad)}
+            offsetX={0}
+            offsetY={0}
+            offsetZ={0}
+            wireframe={false}
+            hybridRender={false}
+            showTemperatureMap={false}
+            useModelColors={preserveModelColors}
+            polishedFinish={polishedFinish}
+            refineUnlitMaterials
+            onlyInSimulation={hardwareView === "assembly"}
+            fallback={null}
+          />
+        )}
+        {studyRun?.result?.field ? (
+          <group position={[0, TWIN_HOVER_Y, 0]}>
+            <FieldOverlay result={studyRun.result} quantity={studyRecord?.quantity ?? "magnitude"} />
+          </group>
+        ) : null}
       </FrameAssembly>
 
       <GizmoHelper
@@ -346,5 +372,104 @@ export function SceneEngineering() {
         />
       </GizmoHelper>
     </>
+  );
+}
+
+function FieldOverlay({
+  result,
+  quantity,
+}: {
+  result: NonNullable<import("./studio/hardwareStudyStore").HardwareStudyRun["result"]>;
+  quantity: import("./studio/hardwareStudyStore").FieldQuantity;
+}) {
+  const field = result.field;
+  const vectors = result.vectors;
+  const roi = result.homogeneity?.roi;
+  const points = useMemo(() => {
+    if (!field) return null;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(field.points.length * 3);
+    const colors = new Float32Array(field.points.length * 3);
+    const source =
+      quantity === "bx" ? field.bx : quantity === "by" ? field.by : quantity === "bz" ? field.bz : field.magnitude;
+    const ref = field.magnitude.reduce((sum, value) => sum + value, 0) / Math.max(field.magnitude.length, 1);
+    const values = quantity === "delta" ? source.map((value, index) => field.magnitude[index] - ref) : source;
+    const lo = Math.min(...values);
+    const hi = Math.max(...values);
+    const span = Math.max(hi - lo, 1e-12);
+    const stride = Math.max(1, Math.ceil(field.points.length / 1600));
+    let write = 0;
+    field.points.forEach((point, index) => {
+      if (index % stride !== 0) return;
+      positions[write * 3] = point[0];
+      positions[write * 3 + 1] = point[1];
+      positions[write * 3 + 2] = point[2];
+      const t = (values[index] - lo) / span;
+      colors[write * 3] = 0.08 + 0.8 * t;
+      colors[write * 3 + 1] = 0.35 + 0.4 * (1 - Math.abs(t - 0.5) * 2);
+      colors[write * 3 + 2] = 0.85 - 0.6 * t;
+      write += 1;
+    });
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions.slice(0, write * 3), 3));
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors.slice(0, write * 3), 3));
+    return geometry;
+  }, [field, quantity]);
+  const lines = useMemo(() => {
+    if (!vectors) return null;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(vectors.points.length * 6);
+    const scale = Math.max(vectors.scale, 1e-12);
+    const glyph = 0.01;
+    vectors.points.forEach((point, index) => {
+      const component = vectors.components[index];
+      positions[index * 6] = point[0];
+      positions[index * 6 + 1] = point[1];
+      positions[index * 6 + 2] = point[2];
+      positions[index * 6 + 3] = point[0] + (component[0] / scale) * glyph;
+      positions[index * 6 + 4] = point[1] + (component[1] / scale) * glyph;
+      positions[index * 6 + 5] = point[2] + (component[2] / scale) * glyph;
+    });
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    return geometry;
+  }, [vectors]);
+  if (!field) return null;
+  const label = quantity === "delta" ? "ΔB (T)" : quantity === "magnitude" ? "|B| (T)" : `${quantity.toUpperCase()} (T)`;
+  return (
+    <group>
+      {points ? (
+        <points geometry={points}>
+          <pointsMaterial size={0.003} vertexColors depthWrite={false} />
+        </points>
+      ) : null}
+      {lines ? (
+        <lineSegments geometry={lines}>
+          <lineBasicMaterial color="#9fdfff" />
+        </lineSegments>
+      ) : null}
+      {roi ? (
+        <mesh position={roi.centerM}>
+          <boxGeometry args={roi.sizeM} />
+          <meshBasicMaterial color="#9fdfff" wireframe transparent opacity={0.35} />
+        </mesh>
+      ) : null}
+      <group userData={{ fieldLegend: label }} />
+    </group>
+  );
+}
+
+function ExampleHalbachCubes({
+  parts,
+}: {
+  parts: Array<Pick<FrozenPart, "instanceId" | "translationM" | "sizeM">>;
+}) {
+  return (
+    <group>
+      {parts.map((part) => (
+        <mesh key={part.instanceId} position={part.translationM}>
+          <boxGeometry args={part.sizeM} />
+          <meshStandardMaterial color="#8260fb" metalness={0.15} roughness={0.4} />
+        </mesh>
+      ))}
+    </group>
   );
 }

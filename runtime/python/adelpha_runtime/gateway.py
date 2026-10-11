@@ -93,13 +93,14 @@ def create_gateway_app(
         expose_headers=["Content-Disposition"],
     )
 
+    aliases = {"twin": "/api/dtam", "console": "/api/mri"}
     for state in registry.states.values():
         if state.mount is None:
             continue
-        if state.definition.id == "twin":
-            app.mount("/api/dtam", state.mount)
-        elif state.definition.id == "console":
-            app.mount("/api/mri", state.mount)
+        prefix = state.definition.proxy_prefix or aliases.get(state.definition.id, f"/api/{state.definition.id}")
+        if state.definition.child_factory is not None:
+            continue
+        app.mount(prefix, state.mount)
 
     @app.get("/runtime/health")
     def runtime_health() -> dict[str, Any]:

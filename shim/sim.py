@@ -108,7 +108,7 @@ def shim_python() -> str:
     override = os.environ.get("SHIM_PYTHON", "").strip()
     if override:
         return override
-    candidate = Path(__file__).resolve().parents[3] / "shim" / ".venv" / "bin" / "python"
+    candidate = Path(__file__).resolve().parent / ".venv" / "bin" / "python"
     if candidate.is_file():
         return str(candidate)
     return ""

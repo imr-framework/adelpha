@@ -63,5 +63,6 @@ Full-width CAD stage for the MRI assembly used in simulation.
 
 | Area | Contents |
 | --- | --- |
-| **3D viewport** | Only parts marked **Add to simulation**, floating in the same void as Digital Twin |
+| **3D viewport** | Assembly view shows parts marked **Add to simulation**, in the same void as Digital Twin |
+| **Hardware studies** | Magnet field and Elmer FEM use the included assembly. Gradient coils and passive shimming stay standalone. |
 | **Controls** | Orbit / pan / inspect rail, Front / Right / Top / Iso, view cube, fit (F) |

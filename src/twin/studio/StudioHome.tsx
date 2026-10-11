@@ -1,71 +1,153 @@
-import { Box, FolderOpen, Layers, Library, Magnet, Plus, Radio, Shield, Thermometer } from "lucide-react";
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import {
+  ArrowRight,
+  BookOpen,
+  Box,
+  FileText,
+  FolderOpen,
+  GraduationCap,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Settings,
+  X,
+} from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
+import { requestOpenSettings } from "../settingsOpen";
 import {
   APPLICATIONS,
-  PLUGINS,
+  PROJECT_CLASS_FILTERS,
+  STUDIO_DOCS_URL,
   TUTORIALS,
-  formatEdited,
-  formatParts,
-  readInstalledPluginIds,
+  createFromExample,
+  featuredProject,
+  formatModifiedDate,
+  formatOpened,
+  groupProjects,
+  hasSetupDestination,
+  lastOpenedAt,
+  previewKind,
+  projectClass,
+  projectClassMeta,
+  projectDetail,
+  projectPreviewSrc,
   readProjects,
   saveNewProject,
   seedProjects,
-  setPluginInstalled,
+  setupViewFor,
+  shortcutLabel,
   touchProject,
+  tutorialOpensModelSettings,
+  tutorialPreviewSrc,
+  visibleProjects,
   type StudioApplication,
-  type StudioPlugin,
   type StudioProject,
+  type StudioProjectClass,
+  type StudioSort,
 } from "./library";
 import "./studioHome.css";
 
 type StudioHomeProps = {
-  onOpenProject: (project: StudioProject) => void;
+  onOpenProject: (project: StudioProject, options?: { view?: StudioProject["lastView"]; setup?: boolean }) => void;
 };
 
-const FEATURED_TOOL_COUNT = 3;
-const FEATURED_TUTORIAL = TUTORIALS[0];
-const LESSONS = TUTORIALS.slice(1);
+type NavId = "projects" | "examples" | "tutorials";
 
-const TOOL_ICONS: Record<string, typeof Magnet> = {
-  "field-mapper": Magnet,
-  "shim-optimizer": Layers,
-  "thermal-solver": Thermometer,
-  "rf-budget": Radio,
-  "emi-kit": Shield,
-  "material-library": Library,
+const pageCopy: Record<NavId, { crumb: string; title: string; lede: string }> = {
+  projects: {
+    crumb: "Projects",
+    title: "Your engineering workspace",
+    lede: "Design, simulate, and refine your MRI system.",
+  },
+  examples: {
+    crumb: "Examples",
+    title: "Examples",
+    lede: "Copy a starter into your own project.",
+  },
+  tutorials: {
+    crumb: "Tutorials",
+    title: "Tutorials",
+    lede: "Short lessons for navigating and inspecting the studio.",
+  },
 };
 
 export function StudioHome({ onOpenProject }: StudioHomeProps) {
   const nameId = useId();
   const errorId = useId();
+  const searchId = useId();
   const openPanelId = useId();
+  const sortId = useId();
   const openPanelRef = useRef<HTMLDivElement | null>(null);
-  const [projects, setProjects] = useState(readProjects);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const [projects, setProjects] = useState<StudioProject[]>([]);
+  const [ready, setReady] = useState(false);
   const [examples] = useState(seedProjects);
-  const [installed, setInstalled] = useState(readInstalledPluginIds);
   const [mode, setMode] = useState<"idle" | "create" | "open">("idle");
   const [draft, setDraft] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [openError, setOpenError] = useState<string | null>(null);
   const [application, setApplication] = useState<StudioApplication | null>(null);
   const [startedTutorialId, setStartedTutorialId] = useState<string | null>(null);
-  const [showAllTools, setShowAllTools] = useState(false);
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<"all" | StudioProjectClass>("all");
+  const [sort, setSort] = useState<StudioSort>("modified");
+  const [nav, setNav] = useState<NavId>("projects");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const shortcut = useMemo(shortcutLabel, []);
 
-  const recent = projects.filter((project) => project.kind === "user");
-  const tools = showAllTools ? PLUGINS : PLUGINS.slice(0, FEATURED_TOOL_COUNT);
+  useEffect(() => {
+    setProjects(readProjects());
+    setReady(true);
+  }, []);
+
+  const userProjects = useMemo(() => projects.filter((project) => project.kind === "user"), [projects]);
+  const featured = useMemo(() => featuredProject(userProjects), [userProjects]);
+  const shown = useMemo(() => visibleProjects(projects, query, filter, sort), [filter, projects, query, sort]);
+  const groups = useMemo(() => (sort === "name" ? [] : groupProjects(shown)), [shown, sort]);
 
   useEffect(() => {
     if (mode !== "open") return;
     openPanelRef.current?.querySelector<HTMLElement>("button, [tabindex]")?.focus();
   }, [mode]);
 
+  useEffect(() => {
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "k") return;
+      event.preventDefault();
+      event.stopPropagation();
+      searchRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, []);
+
+  useEffect(() => {
+    if (!openMenuId) return;
+    const onDoc = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("[data-project-menu]")) return;
+      setOpenMenuId(null);
+    };
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") setOpenMenuId(null);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [openMenuId]);
+
   function beginCreate() {
     setMode("create");
     setFormError(null);
+    setOpenError(null);
   }
 
   function beginOpen() {
     setMode("open");
     setFormError(null);
+    setOpenError(null);
   }
 
   function closeModes() {
@@ -75,10 +157,27 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
     setApplication(null);
   }
 
-  function openProject(project: StudioProject) {
-    const next = touchProject(project.id) ?? project;
-    setProjects(readProjects());
-    onOpenProject(next);
+  function openSaved(project: StudioProject, options?: { view?: StudioProject["lastView"]; setup?: boolean }) {
+    setOpenMenuId(null);
+    setOpenError(null);
+    try {
+      const next = touchProject(project.id) ?? project;
+      setProjects(readProjects());
+      onOpenProject(next, options);
+    } catch (error) {
+      setOpenError(error instanceof Error ? error.message : "Could not open that project.");
+    }
+  }
+
+  function openExample(example: StudioProject) {
+    setOpenError(null);
+    try {
+      const project = createFromExample(example);
+      setProjects(readProjects());
+      onOpenProject(project);
+    } catch (error) {
+      setOpenError(error instanceof Error ? error.message : "Could not create a project from that example.");
+    }
   }
 
   function createProject(event: FormEvent) {
@@ -98,19 +197,41 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
     onOpenProject(project);
   }
 
-  function togglePlugin(id: string) {
-    const nextInstalled = !installed.includes(id);
-    setInstalled(setPluginInstalled(id, nextInstalled));
+  function goTo(id: NavId) {
+    setNav(id);
+    setOpenMenuId(null);
+    closeModes();
   }
 
   return (
     <section className="studio-home" aria-label="Engineering Studio start">
-      <div className="studio-home-card">
+      <nav className="studio-nav" aria-label="Workspace">
+        <p className="studio-nav-label">Workspace</p>
+        <div className="studio-nav-list">
+          <NavButton id="projects" label="Projects" active={nav === "projects"} Icon={Box} onClick={() => goTo("projects")} />
+          <NavButton id="examples" label="Examples" active={nav === "examples"} Icon={BookOpen} onClick={() => goTo("examples")} />
+          <NavButton id="tutorials" label="Tutorials" active={nav === "tutorials"} Icon={GraduationCap} onClick={() => goTo("tutorials")} />
+        </div>
+        <div className="studio-nav-foot">
+          <a className="studio-nav-item" href={STUDIO_DOCS_URL} target="_blank" rel="noreferrer">
+            <FileText size={16} strokeWidth={1.75} aria-hidden />
+            Documentation
+          </a>
+          <button type="button" className="studio-nav-item" onClick={() => requestOpenSettings()}>
+            <Settings size={16} strokeWidth={1.75} aria-hidden />
+            Settings
+          </button>
+        </div>
+      </nav>
+
+      <div className="studio-home-main">
         <header className="studio-home-head">
           <div className="studio-home-intro">
-            <h2>Engineering Studio</h2>
-            <p className="studio-lede">Design, simulate, and refine your MRI system.</p>
+            <p className="studio-crumb">Engineering Studio / {pageCopy[nav].crumb}</p>
+            <h2>{pageCopy[nav].title}</h2>
+            <p className="studio-lede">{pageCopy[nav].lede}</p>
           </div>
+          {nav === "projects" ? (
           <div className="studio-actions">
             <div className="studio-action-row">
               <button
@@ -148,13 +269,13 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
                   }
                 }}
               >
-                {recent.length === 0 ? (
+                {userProjects.length === 0 ? (
                   <p>No saved projects to open.</p>
                 ) : (
                   <ul>
-                    {recent.map((project) => (
+                    {userProjects.map((project) => (
                       <li key={project.id}>
-                        <button type="button" onClick={() => openProject(project)}>
+                        <button type="button" onClick={() => openSaved(project)}>
                           {project.name}
                         </button>
                       </li>
@@ -164,9 +285,10 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
               </div>
             ) : null}
           </div>
+          ) : null}
         </header>
 
-        {mode === "create" ? (
+        {nav === "projects" && mode === "create" ? (
           <form className="studio-create" onSubmit={createProject}>
             <div className="studio-create-name">
               <label htmlFor={nameId}>Project name</label>
@@ -233,217 +355,376 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
           </form>
         ) : null}
 
-        <div className="studio-main">
-          <div className="studio-projects">
-            <section aria-labelledby="studio-recent-heading">
-              <h3 id="studio-recent-heading">Recent projects</h3>
-              {recent.length === 0 ? (
-                <div className="studio-empty">
-                  <p>No recent projects.</p>
-                  <div className="studio-action-row">
-                    <button type="button" className="studio-ghost" onClick={beginCreate}>
-                      New project
-                    </button>
-                    <button type="button" className="studio-ghost" onClick={beginOpen}>
-                      Open project
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <ul className="studio-project-list">
-                  {recent.map((project) => (
-                    <li key={project.id}>
-                      <ProjectRow project={project} onOpen={openProject} />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+        {openError ? (
+          <p className="studio-open-error" role="alert">
+            {openError}
+          </p>
+        ) : null}
 
-            <section aria-labelledby="studio-examples-heading">
-              <h3 id="studio-examples-heading">Example projects</h3>
-              <ul className="studio-example-list">
-                {examples.map((project) => (
+        {nav === "projects" && featured ? (
+          <article className="studio-resume" aria-label="Continue working">
+            <span className="studio-resume-icon" aria-hidden>
+              <FolderOpen size={18} strokeWidth={1.75} />
+            </span>
+            <div className="studio-resume-copy">
+              <div className="studio-resume-title">
+                <h3>{featured.name}</h3>
+                <ClassBadge project={featured} />
+              </div>
+              <p className="studio-resume-meta">
+                <span className="studio-resume-kicker">Continue working</span>
+                <span>
+                  {projectDetail(featured)} · {formatOpened(lastOpenedAt(featured))}
+                </span>
+              </p>
+            </div>
+            <div className="studio-resume-actions">
+              <button type="button" className="studio-new-btn" onClick={() => openSaved(featured)}>
+                Resume project
+                <ArrowRight size={16} strokeWidth={2} aria-hidden />
+              </button>
+              <OverflowMenu
+                project={featured}
+                actionLabel={`${featured.name} resume actions`}
+                menuOpen={openMenuId === `resume-${featured.id}`}
+                onOpen={() => openSaved(featured)}
+                onSetup={
+                  hasSetupDestination(featured)
+                    ? () => openSaved(featured, { view: setupViewFor(featured), setup: true })
+                    : undefined
+                }
+                onMenu={() => setOpenMenuId((id) => (id === `resume-${featured.id}` ? null : `resume-${featured.id}`))}
+              />
+            </div>
+          </article>
+        ) : null}
+
+        {nav === "projects" ? (
+        <div className="studio-search">
+          <Search size={16} strokeWidth={1.75} aria-hidden />
+          <input
+            ref={searchRef}
+            id={searchId}
+            type="search"
+            value={query}
+            aria-label="Search projects"
+            placeholder="Search projects by name, class, or description…"
+            autoComplete="off"
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          {query ? (
+            <button type="button" className="studio-search-clear" aria-label="Clear search" onClick={() => setQuery("")}>
+              <X size={14} strokeWidth={2} aria-hidden />
+            </button>
+          ) : null}
+          <kbd className="studio-search-kbd">{shortcut}</kbd>
+        </div>
+        ) : null}
+
+        {nav === "projects" ? (
+        <section className="studio-collection" aria-labelledby="studio-projects-heading">
+          <div className="studio-toolbar">
+            <div className="studio-toolbar-count">
+              <h3 id="studio-projects-heading">Projects</h3>
+              <p>{ready ? `${shown.length} ${shown.length === 1 ? "project" : "projects"}` : "Loading projects…"}</p>
+            </div>
+            <div className="studio-filters" role="tablist" aria-label="Project class">
+              {PROJECT_CLASS_FILTERS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-label={item.label}
+                  aria-selected={filter === item.id}
+                  className={filter === item.id ? "is-active" : undefined}
+                  onClick={() => setFilter(item.id)}
+                >
+                  {item.badge}
+                </button>
+              ))}
+            </div>
+            <div className="studio-toolbar-tools">
+              <label className="studio-sort" htmlFor={sortId}>
+                <span className="studio-sr">Sort projects</span>
+                <select id={sortId} value={sort} onChange={(event) => setSort(event.target.value as StudioSort)}>
+                  <option value="modified">Last modified</option>
+                  <option value="name">Name</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          {!ready ? (
+            <p className="studio-empty-copy" role="status">
+              Loading projects…
+            </p>
+          ) : userProjects.length === 0 ? (
+            <div className="studio-empty">
+              <p>No projects yet. Start a new study, open a saved one, or copy an example from Examples.</p>
+              <div className="studio-action-row">
+                <button type="button" className="studio-new-btn" onClick={beginCreate}>
+                  <Plus size={16} strokeWidth={2} aria-hidden />
+                  New project
+                </button>
+                <button type="button" className="studio-ghost" onClick={beginOpen}>
+                  <FolderOpen size={16} strokeWidth={1.75} aria-hidden />
+                  Open project
+                </button>
+              </div>
+            </div>
+          ) : shown.length === 0 ? (
+            <div className="studio-empty">
+              <p>No projects match that search.</p>
+              <button type="button" className="studio-ghost" onClick={() => setQuery("")}>
+                Show all projects
+              </button>
+            </div>
+          ) : sort === "name" ? (
+            <div className="studio-grouped">
+              <ul className="studio-project-rows">
+                {shown.map((project) => (
                   <li key={project.id}>
-                    <button type="button" className="studio-example" onClick={() => openProject(project)}>
-                      <Box size={16} strokeWidth={1.75} aria-hidden />
-                      <span className="studio-project-copy">
-                        <span className="studio-project-name">{project.name}</span>
-                        <span className="studio-project-meta">
-                          {project.discipline} · {formatParts(project.parts)}
-                        </span>
-                      </span>
-                    </button>
+                    <ProjectRow
+                      project={project}
+                      menuOpen={openMenuId === project.id}
+                      onOpen={() => openSaved(project)}
+                      onSetup={
+                        hasSetupDestination(project)
+                          ? () => openSaved(project, { view: setupViewFor(project), setup: true })
+                          : undefined
+                      }
+                      onMenu={() => setOpenMenuId((id) => (id === project.id ? null : project.id))}
+                    />
                   </li>
                 ))}
               </ul>
-            </section>
-          </div>
+            </div>
+          ) : (
+            <div className="studio-grouped">
+              {groups.map((group) => (
+                <section key={group.id} className="studio-group" aria-labelledby={`studio-group-${group.id}`}>
+                  <h4 id={`studio-group-${group.id}`} className="studio-group-label">
+                    {group.label}
+                  </h4>
+                  <ul className="studio-project-rows">
+                    {group.projects.map((project) => (
+                      <li key={project.id}>
+                        <ProjectRow
+                          project={project}
+                          menuOpen={openMenuId === project.id}
+                          onOpen={() => openSaved(project)}
+                          onSetup={
+                            hasSetupDestination(project)
+                              ? () => openSaved(project, { view: setupViewFor(project), setup: true })
+                              : undefined
+                          }
+                          onMenu={() => setOpenMenuId((id) => (id === project.id ? null : project.id))}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          )}
+        </section>
+        ) : null}
 
-          <section className="studio-learn" aria-labelledby="studio-learn-heading">
-            <h3 id="studio-learn-heading">Getting started</h3>
-            {FEATURED_TUTORIAL ? (
-              <article className="studio-feature">
-                <span className="studio-art-frame">
-                  <TutorialArt id={FEATURED_TUTORIAL.id} />
-                </span>
-                <div className="studio-feature-copy">
-                  <h4>{FEATURED_TUTORIAL.title}</h4>
-                  <p>{FEATURED_TUTORIAL.summary}</p>
-                  <div className="studio-feature-actions">
-                    <span className="studio-project-meta">{FEATURED_TUTORIAL.duration}</span>
-                    <button
-                      type="button"
-                      className="studio-ghost"
-                      aria-pressed={startedTutorialId === FEATURED_TUTORIAL.id}
-                      onClick={() => setStartedTutorialId(FEATURED_TUTORIAL.id)}
-                    >
-                      Start tutorial
+        {nav === "examples" ? (
+          <section className="studio-learn-page" aria-label="Examples">
+            <p className="studio-learn-count">
+              {examples.length} {examples.length === 1 ? "example" : "examples"}
+            </p>
+            <ul className="studio-learn-grid">
+              {examples.map((project) => (
+                <li key={project.id}>
+                  <article className="studio-learn-card">
+                    <button type="button" className="studio-card-open" aria-label={project.name} onClick={() => openExample(project)}>
+                      <ProjectPreview project={project} className="studio-learn-preview" />
+                      <span className="studio-card-copy">
+                        <span className="studio-learn-title">
+                          <span className="studio-project-name">{project.name}</span>
+                          <ClassBadge project={project} />
+                        </span>
+                        <span className="studio-project-meta studio-card-summary">{project.summary ?? projectDetail(project)}</span>
+                      </span>
                     </button>
-                  </div>
-                </div>
-              </article>
-            ) : null}
-            <ul className="studio-lesson-list">
-              {LESSONS.map((lesson) => (
-                <li key={lesson.id}>
-                  <button
-                    type="button"
-                    className="studio-lesson"
-                    aria-pressed={startedTutorialId === lesson.id}
-                    onClick={() => setStartedTutorialId(lesson.id)}
-                  >
-                    <span className="studio-project-name">{lesson.title}</span>
-                    <span className="studio-project-meta">{lesson.duration}</span>
-                    <span className="studio-lesson-summary">{lesson.summary}</span>
-                  </button>
+                  </article>
                 </li>
               ))}
             </ul>
           </section>
-        </div>
+        ) : null}
 
-        <section className="studio-tools" aria-labelledby="studio-tools-heading">
-          <div className="studio-tools-head">
-            <h3 id="studio-tools-heading">Extend your studio</h3>
-            <button
-              type="button"
-              className="studio-text-btn"
-              aria-expanded={showAllTools}
-              onClick={() => setShowAllTools((open) => !open)}
-            >
-              {showAllTools ? "Show fewer tools" : "Browse all tools →"}
-            </button>
-          </div>
-          <ul className="studio-tool-grid">
-            {tools.map((plugin) => (
-              <ToolTile
-                key={plugin.id}
-                plugin={plugin}
-                added={installed.includes(plugin.id)}
-                onToggle={() => togglePlugin(plugin.id)}
-              />
-            ))}
-          </ul>
-        </section>
+        {nav === "tutorials" ? (
+          <section className="studio-learn-page" aria-label="Tutorials">
+            <p className="studio-learn-count">
+              {TUTORIALS.length} {TUTORIALS.length === 1 ? "tutorial" : "tutorials"}
+            </p>
+            <ul className="studio-learn-grid">
+              {TUTORIALS.map((lesson) => (
+                <li key={lesson.id}>
+                  <article className={`studio-learn-card${startedTutorialId === lesson.id ? " is-started" : ""}`}>
+                    <button
+                      type="button"
+                      className="studio-card-open"
+                      aria-pressed={startedTutorialId === lesson.id}
+                      onClick={() => {
+                        setStartedTutorialId(lesson.id);
+                        if (tutorialOpensModelSettings(lesson)) {
+                          requestOpenSettings({ section: "3d-model" });
+                        }
+                      }}
+                    >
+                      <span className="studio-preview studio-learn-preview" data-kind="tutorial">
+                        <img src={tutorialPreviewSrc(lesson)} alt="" />
+                      </span>
+                      <span className="studio-card-copy">
+                        <span className="studio-project-name">{lesson.title}</span>
+                        <span className="studio-project-meta studio-card-summary">{lesson.summary}</span>
+                        {lesson.duration ? <span className="studio-project-meta">{lesson.duration}</span> : null}
+                      </span>
+                    </button>
+                  </article>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
       </div>
     </section>
   );
 }
 
-function ProjectRow({
-  project,
-  onOpen,
+function NavButton({
+  id,
+  label,
+  active,
+  Icon,
+  onClick,
 }: {
-  project: StudioProject;
-  onOpen: (project: StudioProject) => void;
+  id: string;
+  label: string;
+  active: boolean;
+  Icon: typeof Box;
+  onClick: () => void;
 }) {
   return (
-    <button type="button" className="studio-project" onClick={() => onOpen(project)}>
-      <span className="studio-project-mark" aria-hidden>
-        <Box size={16} strokeWidth={1.75} />
-      </span>
-      <span className="studio-project-copy">
-        <span className="studio-project-name">{project.name}</span>
-        <span className="studio-project-meta">
-          {project.discipline} · {formatParts(project.parts)}
-        </span>
-        <span className="studio-project-meta">{formatEdited(project.updatedAt)}</span>
-      </span>
+    <button
+      type="button"
+      className={`studio-nav-item${active ? " is-active" : ""}`}
+      aria-current={active ? "page" : undefined}
+      data-nav={id}
+      onClick={onClick}
+    >
+      <Icon size={16} strokeWidth={1.75} aria-hidden />
+      {label}
     </button>
   );
 }
 
-function ToolTile({
-  plugin,
-  added,
-  onToggle,
-}: {
-  plugin: StudioPlugin;
-  added: boolean;
-  onToggle: () => void;
-}) {
-  const Icon = TOOL_ICONS[plugin.id] ?? Box;
+function ClassBadge({ project }: { project: StudioProject }) {
+  const cls = projectClass(project);
+  const meta = projectClassMeta(project);
+  const expand = meta.badge !== meta.label;
   return (
-    <li className="studio-tool">
-      <span className="studio-project-mark" aria-hidden>
-        <Icon size={16} strokeWidth={1.75} />
-      </span>
-      <span className="studio-project-copy">
-        <span className="studio-project-name">{plugin.name}</span>
-        <span className="studio-plugin-summary">{plugin.summary}</span>
-      </span>
-      <button
-        type="button"
-        className="studio-add-btn"
-        aria-pressed={added}
-        aria-label={added ? `Remove ${plugin.name}` : `Add ${plugin.name}`}
-        onClick={onToggle}
-      >
-        {added ? "Added" : "Add"}
-      </button>
-    </li>
+    <span className={`studio-badge studio-badge-${cls}`} title={meta.label}>
+      {expand ? <span className="studio-sr">{meta.label}</span> : null}
+      <span aria-hidden={expand || undefined}>{meta.badge}</span>
+    </span>
   );
 }
 
-function TutorialArt({ id }: { id: string }) {
-  if (id === "assemble") {
-    return (
-      <svg className="studio-art" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden>
-        <rect width="320" height="180" fill="#2b2e34" />
-        <rect x="78" y="78" width="86" height="54" rx="8" fill="#4a4e57" />
-        <rect x="118" y="48" width="92" height="58" rx="8" fill="#5c616b" />
-        <rect x="154" y="86" width="88" height="50" rx="8" fill="#d7dbe2" />
-      </svg>
-    );
-  }
-  if (id === "materials") {
-    return (
-      <svg className="studio-art" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden>
-        <rect width="320" height="180" fill="#2b2e34" />
-        <rect x="46" y="36" width="228" height="28" rx="6" fill="#8d939e" />
-        <rect x="46" y="72" width="228" height="28" rx="6" fill="#c4a27a" />
-        <rect x="46" y="108" width="228" height="28" rx="6" fill="#d9dde4" />
-      </svg>
-    );
-  }
-  if (id === "field") {
-    return (
-      <svg className="studio-art" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden>
-        <rect width="320" height="180" fill="#2b2e34" />
-        <path d="M24 58c48 0 48 64 96 64s48-64 96-64 48 64 80 64" fill="none" stroke="#9fdfff" strokeWidth="2" />
-        <path d="M24 90c48 0 48 48 96 48s48-48 96-48 48 48 80 48" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" />
-        <path d="M24 122c48 0 48 32 96 32s48-32 96-32 48 32 80 32" fill="none" stroke="rgba(255,255,255,0.22)" strokeWidth="1.5" />
-        <rect x="148" y="28" width="24" height="124" rx="12" fill="none" stroke="#f4f5f7" strokeWidth="2" />
-      </svg>
-    );
-  }
+function ProjectRow({
+  project,
+  menuOpen,
+  onOpen,
+  onSetup,
+  onMenu,
+}: {
+  project: StudioProject;
+  menuOpen: boolean;
+  onOpen: () => void;
+  onSetup?: () => void;
+  onMenu: () => void;
+}) {
+  const detail = projectDetail(project);
   return (
-    <svg className="studio-art" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden>
-      <rect width="320" height="180" fill="#2b2e34" />
-      <ellipse cx="160" cy="92" rx="92" ry="36" fill="none" stroke="rgba(159,223,255,0.85)" strokeWidth="1.5" strokeDasharray="5 6" />
-      <circle cx="160" cy="92" r="40" fill="none" stroke="#f4f5f7" strokeWidth="7" />
-      <circle cx="160" cy="92" r="16" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2" />
-    </svg>
+    <article className="studio-row">
+      <button type="button" className="studio-row-open" aria-label={project.name} onClick={onOpen}>
+        <span className="studio-row-icon" aria-hidden>
+          <Box size={16} strokeWidth={1.75} />
+        </span>
+        <span className="studio-row-main">
+          <span className="studio-project-name">{project.name}</span>
+          <ClassBadge project={project} />
+        </span>
+        <span className="studio-row-detail studio-project-meta">{detail || "—"}</span>
+        <time className="studio-row-date studio-project-meta" dateTime={new Date(project.updatedAt).toISOString()}>
+          {formatModifiedDate(project.updatedAt)}
+        </time>
+      </button>
+      <button type="button" className="studio-icon-btn studio-row-go" aria-label={`Open ${project.name}`} onClick={onOpen}>
+        <ArrowRight size={16} strokeWidth={1.75} aria-hidden />
+      </button>
+      <OverflowMenu project={project} menuOpen={menuOpen} onOpen={onOpen} onSetup={onSetup} onMenu={onMenu} />
+    </article>
   );
 }
+
+function OverflowMenu({
+  project,
+  menuOpen,
+  menuLabel = "Open",
+  actionLabel,
+  onOpen,
+  onSetup,
+  onMenu,
+}: {
+  project: StudioProject;
+  menuOpen: boolean;
+  menuLabel?: string;
+  actionLabel?: string;
+  onOpen: () => void;
+  onSetup?: () => void;
+  onMenu: () => void;
+}) {
+  return (
+    <div className="studio-card-menu" data-project-menu>
+      <button
+        type="button"
+        className="studio-icon-btn"
+        aria-label={actionLabel ?? `${project.name} actions`}
+        aria-expanded={menuOpen}
+        aria-haspopup="menu"
+        onClick={(event) => {
+          event.stopPropagation();
+          onMenu();
+        }}
+      >
+        <MoreHorizontal size={16} strokeWidth={1.75} aria-hidden />
+      </button>
+      {menuOpen ? (
+        <div className="studio-menu" role="menu">
+          <button type="button" role="menuitem" onClick={onOpen}>
+            {menuLabel}
+          </button>
+          {onSetup ? (
+            <button type="button" role="menuitem" onClick={onSetup}>
+              Open setup
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ProjectPreview({ project, className }: { project: StudioProject; className: string }) {
+  return (
+    <span className={`studio-preview ${className}`} data-kind={previewKind(project)}>
+      <img src={projectPreviewSrc(project)} alt="" />
+    </span>
+  );
+}
+

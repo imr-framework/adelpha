@@ -316,6 +316,9 @@ export const useTwinStore = create<TwinStore>((set) => ({
 export function attachDtamTelemetryDriver(pollMs = POLL_MS) {
   let stopped = false;
   let inFlight = false;
+  let timer = 0;
+  let delay = pollMs;
+  const maxDelay = Math.max(pollMs * 8, 12_000);
   let tickCount = 0;
   let wasConnected: boolean | null = null;
   let lastEmiLabel: string | null = null;
@@ -327,6 +330,7 @@ export function attachDtamTelemetryDriver(pollMs = POLL_MS) {
     try {
       const [health, state] = await Promise.all([fetchHealth(), fetchTwinState()]);
       if (stopped) return;
+      delay = pollMs;
       store.setHealth(health);
       store.applySystemState(state);
 
@@ -397,17 +401,18 @@ export function attachDtamTelemetryDriver(pollMs = POLL_MS) {
         pushConsole("ERROR", `Twin API unreachable on :8080 — ${msg}`);
       }
       wasConnected = false;
+      delay = Math.min(Math.max(delay * 2, pollMs), maxDelay);
     } finally {
       inFlight = false;
+      if (!stopped) timer = window.setTimeout(() => void tick(), delay);
     }
   };
 
   pushConsole("INFO", "Polling Twin API (/health + /twin/state)");
   void tick();
-  const id = window.setInterval(() => void tick(), pollMs);
   return () => {
     stopped = true;
-    window.clearInterval(id);
+    window.clearTimeout(timer);
   };
 }
 

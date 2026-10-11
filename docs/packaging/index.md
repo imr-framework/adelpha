@@ -23,6 +23,8 @@ Python supervisor  (one executable)
     ├── gateway  http://127.0.0.1:<dynamic>/
     ├── twin     /api/dtam/*     (always)
     ├── console  /api/mri/*      (always)
+    ├── coil     /api/coil/*     (always; Engineering Studio)
+    ├── shim     /api/shim/*     (always; Engineering Studio)
     └── agents   /api/agents/*   (lazy; needs user API key)
 ```
 
@@ -85,6 +87,9 @@ signed off.
 | --- | --- | --- | --- |
 | `twin` | yes | always | `GET /api/dtam/health` |
 | `console` | yes | always | `GET /api/mri/health` |
+| `magnet` | no | always | `GET /api/magnet/health` |
+| `coil` | no | always | `GET /api/coil/health` |
+| `shim` | no | always | `GET /api/shim/health` |
 | `agents` | no | lazy | `GET /api/agents/list-apps` |
 
 Adding a future Python integration: see

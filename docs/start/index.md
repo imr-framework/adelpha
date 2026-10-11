@@ -56,7 +56,7 @@ That starts Vite, the Tauri window, and `python -m adelpha_runtime`. You do not 
 
 ### Passive shimming
 
-Hardware → **Passive shimming** runs [passive_shimming](https://github.com/imr-framework/passive_shimming/tree/dev_ws_2026) from `shim/.venv`, not from the console environment. That package needs NumPy 2. The venv is gitignored. The solver commit is pinned in `shim/requirements.txt`.
+Hardware → **Passive shimming** is an Adelpha service at `/api/shim`, not part of the imaging console. It runs [passive_shimming](https://github.com/imr-framework/passive_shimming/tree/dev_ws_2026) from `shim/.venv`. That package needs NumPy 2. The venv is gitignored. The solver commit is pinned in `shim/requirements.txt`. Gradient coils are the same idea at `/api/coil` with `coil/.venv`. Magnet field and Elmer FEM are `/api/magnet` and use the parts added to simulation; see `magnet/README.md`.
 
 ```bash
 uv venv shim/.venv --python 3.10

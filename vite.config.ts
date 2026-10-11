@@ -1,4 +1,6 @@
+import { spawn, type ChildProcess } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import net from "node:net";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
@@ -21,8 +23,138 @@ function mediapipeWasm(): Plugin {
   return { name: "mediapipe-wasm", buildStart: copy };
 }
 
+type DevBackend = {
+  prefix: string;
+  port: number;
+  name: string;
+  hint: string;
+};
+
+const DEV_BACKENDS: DevBackend[] = [
+  { prefix: "/api/dtam", port: 8080, name: "Twin API", hint: "cd dtam && make twin-api" },
+  { prefix: "/api/agents", port: 8001, name: "Agents API", hint: "cd dtam && make agents-api" },
+  { prefix: "/api/mri", port: 8002, name: "Imaging Console API", hint: "cd console && python -m services.api" },
+];
+
+function probePort(port: number, host = "127.0.0.1"): Promise<boolean> {
+  return new Promise((resolveUp) => {
+    const sock = net.connect({ port, host }, () => {
+      sock.end();
+      resolveUp(true);
+    });
+    sock.setTimeout(250);
+    sock.on("timeout", () => {
+      sock.destroy();
+      resolveUp(false);
+    });
+    sock.on("error", () => resolveUp(false));
+  });
+}
+
+function watchPort(port: number, host = "127.0.0.1") {
+  let up = false;
+  const probe = () => {
+    const sock = net.connect({ port, host }, () => {
+      up = true;
+      sock.end();
+    });
+    sock.setTimeout(250);
+    sock.on("timeout", () => {
+      up = false;
+      sock.destroy();
+    });
+    sock.on("error", () => {
+      up = false;
+    });
+  };
+  probe();
+  const id = setInterval(probe, 2000);
+  return {
+    get up() {
+      return up;
+    },
+    stop() {
+      clearInterval(id);
+    },
+  };
+}
+
+/** Skip Vite's HTTP proxy when a backend is down so the terminal is not flooded with ECONNREFUSED. */
+function backendProxyGuard(): Plugin {
+  return {
+    name: "backend-proxy-guard",
+    apply: "serve",
+    configureServer(server) {
+      const watches = DEV_BACKENDS.map((backend) => ({ ...backend, watch: watchPort(backend.port) }));
+      server.httpServer?.once("close", () => {
+        for (const item of watches) item.watch.stop();
+      });
+      server.middlewares.use((req, res, next) => {
+        const url = req.url ?? "";
+        const hit = watches.find((item) => url.startsWith(item.prefix));
+        if (!hit || hit.watch.up) {
+          next();
+          return;
+        }
+        res.statusCode = 503;
+        res.setHeader("Content-Type", "application/json");
+        res.end(
+          JSON.stringify({
+            detail: `${hit.name} is not running on :${hit.port}. Start it with: ${hit.hint}`,
+          }),
+        );
+      });
+    },
+  };
+}
+
+/** Browser requests go through Vite → :8080. Start Twin there when `make tauri-dev` did not. */
+function ensureTwinApi(): Plugin {
+  return {
+    name: "ensure-twin-api",
+    apply: "serve",
+    async configureServer(server) {
+      if (await probePort(8080)) {
+        server.config.logger.info("Twin API already listening on :8080");
+        return;
+      }
+      const dtam = resolve(root, "dtam");
+      const venvPython = resolve(dtam, ".venv/bin/python");
+      const command = existsSync(venvPython) ? venvPython : "uv";
+      const args = existsSync(venvPython) ? ["-m", "dtam.api"] : ["run", "python", "-m", "dtam.api"];
+      server.config.logger.info("starting Twin API on :8080 for the Vite proxy");
+      const child: ChildProcess = spawn(command, args, {
+        cwd: dtam,
+        env: {
+          ...process.env,
+          PYTHONUNBUFFERED: "1",
+          DTAM_CONFIG_DIR: resolve(dtam, "configs"),
+        },
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+      const prefix = "[twin-api]";
+      child.stdout?.on("data", (buf: Buffer) => {
+        const text = String(buf).trim();
+        if (text) server.config.logger.info(`${prefix} ${text}`);
+      });
+      child.stderr?.on("data", (buf: Buffer) => {
+        const text = String(buf).trim();
+        if (text) server.config.logger.info(`${prefix} ${text}`);
+      });
+      child.on("exit", (code, signal) => {
+        if (code || signal) {
+          server.config.logger.warn(`${prefix} exited (${signal ?? code}). ${DEV_BACKENDS[0].hint}`);
+        }
+      });
+      server.httpServer?.once("close", () => {
+        child.kill();
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), mediapipeWasm()],
+  plugins: [react(), mediapipeWasm(), backendProxyGuard(), ensureTwinApi()],
   define: {
     __ADELPHA_VERSION__: JSON.stringify(pkg.version),
   },
