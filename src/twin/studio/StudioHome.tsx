@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   BookOpen,
   Box,
   FileText,
@@ -19,12 +18,9 @@ import {
   STUDIO_DOCS_URL,
   TUTORIALS,
   createFromExample,
-  featuredProject,
+  deleteProject,
   formatModifiedDate,
-  formatOpened,
-  groupProjects,
   hasSetupDestination,
-  lastOpenedAt,
   previewKind,
   projectClass,
   projectClassMeta,
@@ -45,6 +41,7 @@ import {
   type StudioSort,
 } from "./library";
 import "./studioHome.css";
+import "./compactLibrary.css";
 
 type StudioHomeProps = {
   onOpenProject: (project: StudioProject, options?: { view?: StudioProject["lastView"]; setup?: boolean }) => void;
@@ -71,7 +68,12 @@ const pageCopy: Record<NavId, { crumb: string; title: string; lede: string }> = 
 };
 
 export function StudioHome({ onOpenProject }: StudioHomeProps) {
+  const [deleting, setDeleting] = useState<StudioProject | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const deleteDialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => { if (deleting) deleteDialog.current?.showModal(); }, [deleting]);
   const nameId = useId();
+  const newProjectRef = useRef<HTMLButtonElement>(null);
   const errorId = useId();
   const searchId = useId();
   const openPanelId = useId();
@@ -101,9 +103,7 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
   }, []);
 
   const userProjects = useMemo(() => projects.filter((project) => project.kind === "user"), [projects]);
-  const featured = useMemo(() => featuredProject(userProjects), [userProjects]);
   const shown = useMemo(() => visibleProjects(projects, query, filter, sort), [filter, projects, query, sort]);
-  const groups = useMemo(() => (sort === "name" ? [] : groupProjects(shown)), [shown, sort]);
 
   useEffect(() => {
     if (mode !== "open") return;
@@ -153,6 +153,7 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
 
   function closeModes() {
     setMode("idle");
+    newProjectRef.current?.focus();
     setDraft("");
     setFormError(null);
     setApplication(null);
@@ -193,11 +194,15 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
       setFormError("Choose an application.");
       return;
     }
+    try {
     const project = saveNewProject(name, { application, ...(application === "hardware" ? { lastView: hardwareChoice } : {}) });
     setProjects(readProjects());
     closeModes();
     if (application === "hardware") onOpenProject(project, { view: hardwareChoice, setup: hardwareChoice === "magnet" || hardwareChoice === "fem" });
     else onOpenProject(project);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Could not create the project.");
+    }
   }
 
   function goTo(id: NavId) {
@@ -208,6 +213,15 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
 
   return (
     <section className="studio-home" aria-label="Engineering Studio start">
+      {deleting ? <dialog ref={deleteDialog} className="studio-delete-dialog" aria-labelledby="delete-project-title" onCancel={() => setDeleting(null)}>
+        <h2 id="delete-project-title">Delete “{deleting.name}”?</h2>
+        <p>This removes the saved project and its study history from this browser. This cannot be undone. Shared scanner models and examples are kept.</p>
+        {deleteError ? <p role="alert">{deleteError}</p> : null}
+        <div><button type="button" autoFocus onClick={() => setDeleting(null)}>Cancel</button><button type="button" className="studio-delete-confirm" onClick={() => {
+          try { deleteProject(deleting.id); setProjects(readProjects()); setDeleting(null); newProjectRef.current?.focus(); }
+          catch { setDeleteError("Could not delete the project. Please try again."); }
+        }}>Delete project</button></div>
+      </dialog> : null}
       <nav className="studio-nav" aria-label="Workspace">
         <p className="studio-nav-label">Workspace</p>
         <div className="studio-nav-list">
@@ -227,19 +241,21 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
         </div>
       </nav>
 
-      <div className="studio-home-main">
+      <div className={`studio-home-main${nav === "projects" ? " compact-library" : ""}${nav === "projects" && mode === "create" ? " is-creating" : ""}`}>
         <header className="studio-home-head">
+          {nav === "projects" ? <div className="compact-title"><h2 id="studio-projects-heading">Projects</h2><span>{ready ? `${shown.length} ${shown.length === 1 ? "project" : "projects"}` : "Loading…"}</span></div> : (
           <div className="studio-home-intro">
             <p className="studio-crumb">Engineering Studio / {pageCopy[nav].crumb}</p>
             <h2>{pageCopy[nav].title}</h2>
             <p className="studio-lede">{pageCopy[nav].lede}</p>
-          </div>
+          </div>)}
           {nav === "projects" ? (
           <div className="studio-actions">
             <div className="studio-action-row">
               <button
                 type="button"
                 className="studio-new-btn"
+                ref={newProjectRef}
                 aria-expanded={mode === "create"}
                 onClick={() => (mode === "create" ? closeModes() : beginCreate())}
               >
@@ -292,7 +308,8 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
         </header>
 
         {nav === "projects" && mode === "create" ? (
-          <form className="studio-create" onSubmit={createProject}>
+          <form className="studio-create" aria-label="New project" onSubmit={createProject} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); closeModes(); } }}>
+            <div className="compact-create-heading"><h3>New project</h3><button type="button" className="studio-icon-btn" aria-label="Close new project" onClick={closeModes}><X size={18} /></button></div>
             <div className="studio-create-name">
               <label htmlFor={nameId}>Project name</label>
               <input
@@ -331,34 +348,19 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
                       }}
                     />
                     <span className="studio-choice-copy">
-                      <span className="studio-project-name">{item.label}</span>
-                      <span className="studio-project-meta">{item.summary}</span>
+                      <span className="studio-project-name">{item.id === "acquisition" ? "Acquisition" : item.label}</span>
                     </span>
                   </label>
                 ))}
               </div>
             </fieldset>
-            {application === "hardware" ? (
-              <fieldset className="studio-choice-set">
-                <legend>Project workspace</legend>
-                <div className="studio-choice-row">
-                  {([
-                    ["assembly", "Assembly"],
-                    ["magnet", "Magnet field"],
-                    ["fem", "Elmer FEM"],
-                    ["gradients", "Gradient coils"],
-                    ["shimming", "Passive shimming"],
-                  ] as const).map(([view, label]) => (
-                    <label key={view} className="studio-choice">
-                      <input type="radio" name="studio-hardware-workspace" value={view} checked={hardwareChoice === view} onChange={() => setHardwareChoice(view)} />
-                      <span className="studio-project-name">{label}</span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-            ) : null}
+            {application === "hardware" ? <label className="compact-workspace">Hardware workspace
+              <select value={hardwareChoice} onChange={(event) => setHardwareChoice(event.target.value as typeof hardwareChoice)}>
+                <option value="assembly">Assembly</option><option value="magnet">Magnet field</option><option value="fem">Elmer FEM</option><option value="gradients">Gradient coils</option><option value="shimming">Passive shimming</option>
+              </select>
+            </label> : null}
             <div className="studio-create-actions">
-              <button type="submit">Create</button>
+              <button type="submit">Create project</button>
               <button type="button" className="studio-ghost" onClick={closeModes}>
                 Cancel
               </button>
@@ -370,7 +372,7 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
                 <p className="studio-create-hint">
                   {!application
                     ? "Choose hardware, acquisition, or reconstruction."
-                    : "The studio opens for this application."}
+                    : application === "hardware" ? `Opens directly in ${{ assembly: "Assembly", magnet: "Magnet field", fem: "Elmer FEM", gradients: "Gradient coils", shimming: "Passive shimming" }[hardwareChoice]}.` : `Opens directly in ${application === "acquisition" ? "Acquisition" : "Reconstruction"}.`}
                 </p>
               )}
             </div>
@@ -383,46 +385,8 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
           </p>
         ) : null}
 
-        {nav === "projects" && featured ? (
-          <article className="studio-resume" aria-label="Continue working">
-            <span className="studio-resume-icon" aria-hidden>
-              <FolderOpen size={18} strokeWidth={1.75} />
-            </span>
-            <div className="studio-resume-copy">
-              <div className="studio-resume-title">
-                <h3>{featured.name}</h3>
-                <ClassBadge project={featured} />
-              </div>
-              <p className="studio-resume-meta">
-                <span className="studio-resume-kicker">Continue working</span>
-                <span>
-                  {projectDetail(featured)} · {formatOpened(lastOpenedAt(featured))}
-                </span>
-              </p>
-            </div>
-            <div className="studio-resume-actions">
-              <button type="button" className="studio-new-btn" onClick={() => openSaved(featured)}>
-                Resume project
-                <ArrowRight size={16} strokeWidth={2} aria-hidden />
-              </button>
-              <OverflowMenu
-                project={featured}
-                actionLabel={`${featured.name} resume actions`}
-                menuOpen={openMenuId === `resume-${featured.id}`}
-                onOpen={() => openSaved(featured)}
-                onSetup={
-                  hasSetupDestination(featured)
-                    ? () => openSaved(featured, { view: setupViewFor(featured), setup: true })
-                    : undefined
-                }
-                onMenu={() => setOpenMenuId((id) => (id === `resume-${featured.id}` ? null : `resume-${featured.id}`))}
-              />
-            </div>
-          </article>
-        ) : null}
-
         {nav === "projects" ? (
-        <div className="studio-search">
+        <div className="compact-toolbar"><div className="studio-search">
           <Search size={16} strokeWidth={1.75} aria-hidden />
           <input
             ref={searchRef}
@@ -430,7 +394,7 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
             type="search"
             value={query}
             aria-label="Search projects"
-            placeholder="Search projects by name, class, or description…"
+            placeholder="Search projects…"
             autoComplete="off"
             onChange={(event) => setQuery(event.target.value)}
           />
@@ -441,41 +405,12 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
           ) : null}
           <kbd className="studio-search-kbd">{shortcut}</kbd>
         </div>
+        <select aria-label="Project type" value={filter} onChange={(event) => setFilter(event.target.value as typeof filter)}>{PROJECT_CLASS_FILTERS.map((item) => <option key={item.id} value={item.id}>{item.id === "all" ? "All types" : item.label}</option>)}</select>
+        <select id={sortId} aria-label="Sort projects" value={sort} onChange={(event) => setSort(event.target.value as StudioSort)}><option value="modified">Last modified</option><option value="name">Name</option></select>
+        </div>
         ) : null}
-
         {nav === "projects" ? (
         <section className="studio-collection" aria-labelledby="studio-projects-heading">
-          <div className="studio-toolbar">
-            <div className="studio-toolbar-count">
-              <h3 id="studio-projects-heading">Projects</h3>
-              <p>{ready ? `${shown.length} ${shown.length === 1 ? "project" : "projects"}` : "Loading projects…"}</p>
-            </div>
-            <div className="studio-filters" role="tablist" aria-label="Project class">
-              {PROJECT_CLASS_FILTERS.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  role="tab"
-                  aria-label={item.label}
-                  aria-selected={filter === item.id}
-                  className={filter === item.id ? "is-active" : undefined}
-                  onClick={() => setFilter(item.id)}
-                >
-                  {item.badge}
-                </button>
-              ))}
-            </div>
-            <div className="studio-toolbar-tools">
-              <label className="studio-sort" htmlFor={sortId}>
-                <span className="studio-sr">Sort projects</span>
-                <select id={sortId} value={sort} onChange={(event) => setSort(event.target.value as StudioSort)}>
-                  <option value="modified">Last modified</option>
-                  <option value="name">Name</option>
-                </select>
-              </label>
-            </div>
-          </div>
-
           {!ready ? (
             <p className="studio-empty-copy" role="status">
               Loading projects…
@@ -497,57 +432,14 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
           ) : shown.length === 0 ? (
             <div className="studio-empty">
               <p>No projects match that search.</p>
-              <button type="button" className="studio-ghost" onClick={() => setQuery("")}>
+              <button type="button" className="studio-ghost" onClick={() => { setQuery(""); setFilter("all"); }}>
                 Show all projects
               </button>
             </div>
-          ) : sort === "name" ? (
-            <div className="studio-grouped">
-              <ul className="studio-project-rows">
-                {shown.map((project) => (
-                  <li key={project.id}>
-                    <ProjectRow
-                      project={project}
-                      menuOpen={openMenuId === project.id}
-                      onOpen={() => openSaved(project)}
-                      onSetup={
-                        hasSetupDestination(project)
-                          ? () => openSaved(project, { view: setupViewFor(project), setup: true })
-                          : undefined
-                      }
-                      onMenu={() => setOpenMenuId((id) => (id === project.id ? null : project.id))}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </div>
           ) : (
-            <div className="studio-grouped">
-              {groups.map((group) => (
-                <section key={group.id} className="studio-group" aria-labelledby={`studio-group-${group.id}`}>
-                  <h4 id={`studio-group-${group.id}`} className="studio-group-label">
-                    {group.label}
-                  </h4>
-                  <ul className="studio-project-rows">
-                    {group.projects.map((project) => (
-                      <li key={project.id}>
-                        <ProjectRow
-                          project={project}
-                          menuOpen={openMenuId === project.id}
-                          onOpen={() => openSaved(project)}
-                          onSetup={
-                            hasSetupDestination(project)
-                              ? () => openSaved(project, { view: setupViewFor(project), setup: true })
-                              : undefined
-                          }
-                          onMenu={() => setOpenMenuId((id) => (id === project.id ? null : project.id))}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </div>
+            <div className="compact-table-wrap"><table className="compact-project-table"><thead><tr><th scope="col">Name</th><th scope="col">Workspace</th><th scope="col">Updated</th><th scope="col"><span className="studio-sr">Actions</span></th></tr></thead><tbody>
+              {shown.map((project) => <ProjectRow key={project.id} onDelete={() => { setOpenMenuId(null); setDeleteError(""); setDeleting(project); }} project={project} menuOpen={openMenuId === project.id} onOpen={() => openSaved(project)} onSetup={hasSetupDestination(project) ? () => openSaved(project, { view: setupViewFor(project), setup: true }) : undefined} onMenu={() => setOpenMenuId((id) => id === project.id ? null : project.id)} />)}
+            </tbody></table></div>
           )}
         </section>
         ) : null}
@@ -663,35 +555,23 @@ function ProjectRow({
   onOpen,
   onSetup,
   onMenu,
+  onDelete,
 }: {
   project: StudioProject;
   menuOpen: boolean;
   onOpen: () => void;
   onSetup?: () => void;
   onMenu: () => void;
+  onDelete: () => void;
 }) {
-  const detail = projectDetail(project);
-  return (
-    <article className="studio-row">
-      <button type="button" className="studio-row-open" aria-label={project.name} onClick={onOpen}>
-        <span className="studio-row-icon" aria-hidden>
-          <Box size={16} strokeWidth={1.75} />
-        </span>
-        <span className="studio-row-main">
-          <span className="studio-project-name">{project.name}</span>
-          <ClassBadge project={project} />
-        </span>
-        <span className="studio-row-detail studio-project-meta">{detail || "—"}</span>
-        <time className="studio-row-date studio-project-meta" dateTime={new Date(project.updatedAt).toISOString()}>
-          {formatModifiedDate(project.updatedAt)}
-        </time>
-      </button>
-      <button type="button" className="studio-icon-btn studio-row-go" aria-label={`Open ${project.name}`} onClick={onOpen}>
-        <ArrowRight size={16} strokeWidth={1.75} aria-hidden />
-      </button>
-      <OverflowMenu project={project} menuOpen={menuOpen} onOpen={onOpen} onSetup={onSetup} onMenu={onMenu} />
-    </article>
-  );
+  const labels: Record<string, string> = { assembly: "Assembly", magnet: "Magnet field", fem: "Elmer FEM", gradients: "Gradient coils", shimming: "Passive shimming" };
+  const workspace = project.application === "acquisition" ? "Acquisition · MRZero" : project.application === "reconstruction" ? "Reconstruction" : labels[project.lastView ?? "assembly"] ?? projectClassMeta(project).label;
+  return <tr>
+    <td><button type="button" className="compact-project-open" aria-label={project.name} onClick={onOpen}><Box size={17} aria-hidden /><span>{project.name}</span></button></td>
+    <td>{workspace}</td>
+    <td><time dateTime={new Date(project.updatedAt).toISOString()} title={new Date(project.updatedAt).toLocaleString()}>{formatModifiedDate(project.updatedAt)}</time></td>
+    <td><OverflowMenu onDelete={onDelete} project={project} menuOpen={menuOpen} onOpen={onOpen} onSetup={onSetup} onMenu={onMenu} /></td>
+  </tr>;
 }
 
 function OverflowMenu({
@@ -702,6 +582,7 @@ function OverflowMenu({
   onOpen,
   onSetup,
   onMenu,
+  onDelete,
 }: {
   project: StudioProject;
   menuOpen: boolean;
@@ -710,6 +591,7 @@ function OverflowMenu({
   onOpen: () => void;
   onSetup?: () => void;
   onMenu: () => void;
+  onDelete: () => void;
 }) {
   return (
     <div className="studio-card-menu" data-project-menu>
@@ -731,6 +613,7 @@ function OverflowMenu({
           <button type="button" role="menuitem" onClick={onOpen}>
             {menuLabel}
           </button>
+          <button type="button" role="menuitem" className="studio-delete-action" onClick={onDelete}>Delete project</button>
           {onSetup ? (
             <button type="button" role="menuitem" onClick={onSetup}>
               Open setup

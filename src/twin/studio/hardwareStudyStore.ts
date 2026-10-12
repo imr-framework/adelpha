@@ -122,7 +122,8 @@ export type HardwareStudyRecord = {
 
 type StudyMap = Record<string, Partial<Record<HardwareStudyKind, HardwareStudyRecord>>>;
 
-const KEY = "adelpha.hardwareStudies.v1";
+export const HARDWARE_STUDIES_KEY = "adelpha.hardwareStudies.v1";
+const KEY = HARDWARE_STUDIES_KEY;
 
 export const DEFAULT_ROI: StudyRoi = {
   centerM: [0, 0, 0],

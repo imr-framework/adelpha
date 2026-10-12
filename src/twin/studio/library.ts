@@ -1,3 +1,5 @@
+import { HARDWARE_STUDIES_KEY, useHardwareStudyStore } from "./hardwareStudyStore";
+
 export type StudioProjectKind = "sample" | "user";
 export type StudioApplication = "hardware" | "acquisition" | "reconstruction";
 export type StudioLastView = "assembly" | "magnet" | "fem" | "gradients" | "shimming";
@@ -705,4 +707,29 @@ export function formatParts(parts: number): string {
 export function shortcutLabel(): string {
   if (typeof navigator === "undefined") return "Ctrl+K";
   return /mac|iphone|ipad/i.test(navigator.platform || navigator.userAgent) ? "⌘K" : "Ctrl+K";
+}
+
+/** Remove only this saved project, its preview, and its project-specific study history. */
+export function deleteProject(id: string): void {
+  const projects = readProjects();
+  if (!projects.some((project) => project.id === id && project.kind === "user")) return;
+  const previews = { ...readPreviewMap() };
+  delete previews[id];
+  const studies = { ...useHardwareStudyStore.getState().projects };
+  delete studies[id];
+  const updates = [
+    [PROJECTS_KEY, JSON.stringify(projects.filter((project) => project.id !== id))],
+    [PREVIEWS_KEY, JSON.stringify(previews)],
+    [HARDWARE_STUDIES_KEY, JSON.stringify(studies)],
+  ];
+  const previous = updates.map(([key]) => [key, localStorage.getItem(key)] as const);
+  try {
+    for (const [key, value] of updates) localStorage.setItem(key, value);
+  } catch (error) {
+    for (const [key, value] of previous) {
+      try { if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); } catch { /* Preserve the original storage error. */ }
+    }
+    throw error;
+  }
+  useHardwareStudyStore.setState({ projects: studies });
 }

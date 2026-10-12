@@ -22,9 +22,6 @@ describe("StudioHome", () => {
     render(<StudioHome onOpenProject={vi.fn()} />);
 
     expect(screen.getByRole("region", { name: "Engineering Studio start" })).toBeInTheDocument();
-    expect(screen.getByText("Engineering Studio / Projects")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Your engineering workspace" })).toBeInTheDocument();
-    expect(screen.getByText("Design, simulate, and refine your MRI system.")).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Workspace" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Projects" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("button", { name: "Examples" })).toBeInTheDocument();
@@ -42,7 +39,7 @@ describe("StudioHome", () => {
     expect(screen.queryByRole("heading", { name: "Explore and learn" })).not.toBeInTheDocument();
     expect(screen.getByRole("searchbox", { name: "Search projects" })).toHaveAttribute(
       "placeholder",
-      "Search projects by name, class, or description…",
+      "Search projects…",
     );
     expect(screen.getAllByRole("button", { name: "New project" }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "Open project" }).length).toBeGreaterThan(0);
@@ -82,16 +79,16 @@ describe("StudioHome", () => {
     render(<StudioHome onOpenProject={onOpenProject} />);
 
     await user.click(screen.getAllByRole("button", { name: "New project" })[0]!);
-    await user.click(screen.getByRole("button", { name: "Create" }));
+    await user.click(screen.getByRole("button", { name: "Create project" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Give the project a name.");
     expect(onOpenProject).not.toHaveBeenCalled();
 
     await user.type(screen.getByRole("textbox", { name: "Project name" }), "Shim tray");
-    await user.click(screen.getByRole("button", { name: "Create" }));
+    await user.click(screen.getByRole("button", { name: "Create project" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Choose an application.");
 
     await user.click(screen.getByRole("radio", { name: /Hardware/ }));
-    await user.click(screen.getByRole("button", { name: "Create" }));
+    await user.click(screen.getByRole("button", { name: "Create project" }));
 
     expect(onOpenProject).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -117,8 +114,8 @@ describe("StudioHome", () => {
     await user.click(screen.getAllByRole("button", { name: "New project" })[0]!);
     await user.type(screen.getByRole("textbox", { name: "Project name" }), `${label} project`);
     await user.click(screen.getByRole("radio", { name: /Hardware/ }));
-    await user.click(screen.getByRole("radio", { name: label }));
-    await user.click(screen.getByRole("button", { name: "Create" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Hardware workspace" }), view);
+    await user.click(screen.getByRole("button", { name: "Create project" }));
     expect(onOpenProject).toHaveBeenCalledWith(expect.objectContaining({ lastView: view }), { view, setup });
     const saved = readProjects().find((project) => project.name === `${label} project`)!;
     expect(saved.lastView).toBe(view);
@@ -133,8 +130,8 @@ describe("StudioHome", () => {
 
     await user.click(screen.getAllByRole("button", { name: "New project" })[0]!);
     await user.type(screen.getByRole("textbox", { name: "Project name" }), "GRE study");
-    await user.click(screen.getByRole("radio", { name: /Data acquisition/ }));
-    await user.click(screen.getByRole("button", { name: "Create" }));
+    await user.click(screen.getByRole("radio", { name: /Acquisition/ }));
+    await user.click(screen.getByRole("button", { name: "Create project" }));
 
     expect(onOpenProject).toHaveBeenCalledWith(
       expect.objectContaining({ name: "GRE study", application: "acquisition" }),
@@ -187,16 +184,9 @@ describe("StudioHome", () => {
     const user = userEvent.setup();
     render(<StudioHome onOpenProject={onOpenProject} />);
 
-    const resume = screen.getByRole("article", { name: "Continue working" });
-    expect(resume).toHaveTextContent("Shim tray");
-    expect(resume).toHaveTextContent("Acq");
-    expect(resume).toHaveTextContent("Acquisition simulation");
-    expect(resume.querySelector("img")).toBeNull();
-    expect(resume).toHaveTextContent("MRzero");
-    expect(screen.queryByText(/No projects yet/)).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Today" })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Resume project" }));
+    expect(screen.queryByRole("article", { name: "Continue working" })).not.toBeInTheDocument();
+    expect(screen.getByRole("table")).toHaveTextContent("Acquisition · MRZero");
+    await user.click(screen.getByRole("button", { name: "Shim tray" }));
     expect(onOpenProject).toHaveBeenCalledWith(expect.objectContaining({ name: "Shim tray" }), undefined);
 
     onOpenProject.mockClear();
@@ -213,15 +203,14 @@ describe("StudioHome", () => {
     render(<StudioHome onOpenProject={vi.fn()} />);
 
     expect(screen.getByText("2 projects")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Today" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Grid view" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Yoke field" }).querySelector("img")).toBeNull();
-    await user.click(screen.getByRole("tab", { name: "Acquisition" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Project type" }), "acq");
     expect(screen.getByRole("button", { name: "Low-field spin echo" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Yoke field" })).not.toBeInTheDocument();
     expect(screen.getByText("1 project")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("tab", { name: "All" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Project type" }), "all");
     await user.type(screen.getByRole("searchbox", { name: "Search projects" }), "yoke");
     expect(screen.getByRole("button", { name: "Yoke field" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Low-field spin echo" })).not.toBeInTheDocument();
@@ -257,6 +246,26 @@ describe("StudioHome", () => {
       view: "magnet",
       setup: true,
     });
+  });
+
+  it("deletes only the confirmed project and preserves it when cancelled", async () => {
+    Object.defineProperty(HTMLDialogElement.prototype, "showModal", { configurable: true, value: function (this: HTMLDialogElement) { this.setAttribute("open", ""); } });
+    saveNewProject("Delete me", { application: "acquisition" });
+    saveNewProject("Keep me", { application: "hardware" });
+    const user = userEvent.setup();
+    render(<StudioHome onOpenProject={vi.fn()} />);
+    await user.click(screen.getByRole("button", { name: "Delete me actions" }));
+    await user.click(screen.getByRole("menuitem", { name: "Delete project" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent("Delete me");
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(readProjects().some((project) => project.name === "Delete me")).toBe(true);
+    await user.click(screen.getByRole("button", { name: "Delete me actions" }));
+    await user.click(screen.getByRole("menuitem", { name: "Delete project" }));
+    await user.click(screen.getByRole("button", { name: "Delete project" }));
+    expect(readProjects().map((project) => project.name)).toEqual(["Keep me"]);
+    expect(screen.queryByRole("button", { name: "Delete me" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Keep me" })).toBeInTheDocument();
+    vi.restoreAllMocks();
   });
 
   it("focuses search with the command shortcut and opens settings", async () => {
