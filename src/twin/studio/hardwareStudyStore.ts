@@ -270,13 +270,14 @@ export const useHardwareStudyStore = create<HardwareStudyStore>((set, get) => ({
       return {
         projects: writeProject(state.projects, projectId, study, {
           ...current,
-          runs: [run, ...current.runs].slice(0, 20),
+          runs: [run, ...current.runs],
           activeRunId: run.id,
         }),
       };
     }),
   updateRun: (projectId, study, runId, patch) =>
     set((state) => {
+      if (!state.projects[projectId]?.[study]?.runs.some(run => run.id === runId)) return {};
       const current = normalizeRecord(state.projects[projectId]?.[study]);
       return {
         projects: writeProject(state.projects, projectId, study, {

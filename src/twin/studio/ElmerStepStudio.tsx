@@ -1,14 +1,14 @@
+import { useProjectState, useProjectRun } from "./ProjectPersistence";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Upload, Play, Download, CheckCircle2, Layers3, Folder, Box, ChevronsLeft, ChevronsRight, LogOut, Settings2 } from "lucide-react";
 import { ErrorBoundary } from "../ErrorBoundary";
-import { uploadFemStep, startFemJob, fetchFemJob, downloadFemJob, type FemUpload, type FemJob, type FemConfig } from "../mri/api";
+import { uploadFemStep, fetchFemStep, startFemJob, fetchFemJob, downloadFemJob, type FemUpload, type FemJob, type FemConfig } from "../mri/api";
 import "./hardwareWorkspace.css";
 import "./elmerStep.css";
 import "./femDesk.css";
 const FieldPreview = lazy(() => import("./FemFieldPreview"));
 const MeshPreview = lazy(() => import("./FemMeshPreview"));
 const StepPreview = lazy(() => import("./FemStepPreview"));
-const previewFiles = new Map<string, File>();
 const steps = ["Parts & roles", "Materials", "Geometry & mesh", "Physics", "Review & prepare"];
 
 type Assignment = { kind: string; mu: number; br: number[] };
@@ -19,19 +19,26 @@ const labels: Record<FemJob["status"], string> = { queued: "Starting simulation"
 
 export function ElmerStepStudio({ projectId, projectName, onClose }: { projectId: string; projectName: string; onClose?: () => void }) {
   const key = `adelpha-fem-step-${projectId}`;
-  const [draft, setDraft] = useState<Draft>(() => {
+  const [draft, setDraft] = useProjectState<Draft>("fem.draft", () => {
     try { const saved = sessionStorage.getItem(key); return saved ? { ...initial, ...JSON.parse(saved) } : initial; } catch { return initial; }
   });
-  const [view, setView] = useState<"geometry" | "mesh" | "fields">(draft.job?.status === "completed" ? "fields" : "geometry");
-  const [pane, setPane] = useState(draft.job?.status === "completed" ? 5 : 0);
-  const [drawerOpen, setDrawerOpen] = useState(() => { try { return sessionStorage.getItem(`fem-drawer-${projectId}`) !== "closed"; } catch { return true; } });
+  const [view, setView] = useProjectState<"geometry" | "mesh" | "fields">("fem.view", draft.job?.status === "completed" ? "fields" : "geometry");
+  const [pane, setPane] = useProjectState("fem.pane", draft.job?.status === "completed" ? 5 : 0);
+  const [drawerOpen, setDrawerOpen] = useProjectState("fem.drawer", () => { try { return sessionStorage.getItem(`fem-drawer-${projectId}`) !== "closed"; } catch { return true; } });
   const [fieldHost, setFieldHost] = useState<HTMLDivElement | null>(null);
   const [meshHost, setMeshHost] = useState<HTMLDivElement | null>(null);
   function toggleDrawer() { setDrawerOpen(open => { try { sessionStorage.setItem(`fem-drawer-${projectId}`, open ? "closed" : "open"); } catch { /* Optional preference. */ } return !open; }); }
   function setup(index: number) { setPane(index); }
-  const [previewFile, setPreviewFile] = useState<File | null>(() => previewFiles.get(projectId) ?? null);
+  const [previewFile, setPreviewFile] = useProjectState<File | null>("fem.file", () => null);
+  useEffect(() => {
+    let stopped = false;
+    if (!previewFile && draft.upload) void fetchFemStep(draft.upload).then(file => {
+      if (!stopped) setPreviewFile(file);
+    }).catch(() => { if (!stopped) setError("Saved STEP preview could not be loaded. The setup and run history are preserved."); });
+    return () => { stopped = true; };
+  }, [draft.upload?.id]);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useProjectState("fem.error", "");
   const [downloading, setDownloading] = useState(false);
   const running = active(draft.job);
   const locked = busy || running;
@@ -65,7 +72,7 @@ export function ElmerStepStudio({ projectId, projectName, onClose }: { projectId
     // beneath the new file's surface preview.
     setDraft(old => ({ ...old, upload: null, assignments: {}, job: null, changed: false }));
     setView("geometry");
-    setPreviewFile(file); previewFiles.set(projectId, file);
+    setPreviewFile(file);
     try {
       const data = await uploadFemStep(file);
       setDraft(old => ({ ...old, upload: data, job: null, changed: false, assignments: Object.fromEntries(data.solids.map(s => [s.index, { kind: "", mu: 1, br: [0, 0, 0] }])) }));
@@ -77,8 +84,10 @@ export function ElmerStepStudio({ projectId, projectName, onClose }: { projectId
     return a?.kind && Number.isFinite(a.mu) && a.mu > 0 && a.br.every(Number.isFinite) && (a.kind !== "magnet" || a.br.some(v => v !== 0));
   });
   const meshValid = [draft.size, draft.air, draft.padding, draft.transition].every(v => Number.isFinite(v) && v > 0) && draft.air >= draft.size;
+  const captureRun = useProjectRun("fem");
   async function run() {
     if (!draft.upload || !assigned || !meshValid || locked) return;
+    const archive = captureRun();
     setBusy(true); setError("");
     const config: FemConfig = {
       materials: Object.fromEntries(draft.upload.solids.map(s => [`solid_${s.index}`, { relative_permeability: draft.assignments[s.index].mu, remanence: draft.assignments[s.index].br }])),
@@ -86,8 +95,8 @@ export function ElmerStepStudio({ projectId, projectName, onClose }: { projectId
       mesh: { size: draft.size / 1000, air_size: draft.air / 1000, air_padding: draft.padding / 1000, transition: draft.transition / 1000 },
       solver: { quadratic: draft.quadratic, tolerance: 1e-9, max_iterations: 5000 },
     };
-    try { const job = await startFemJob(draft.upload.id, config); setDraft(old => ({ ...old, job, changed: false })); setPane(5); setView("geometry"); }
-    catch (err) { setError(message(err)); } finally { setBusy(false); }
+    try { const job = await startFemJob(draft.upload.id, config); setDraft(old => ({ ...old, job, changed: false })); archive("FEM", { "fem.draft": { ...draft, job, changed: false }, "fem.view": "geometry", "fem.pane": 5 }); setPane(5); setView("geometry"); }
+    catch (err) { setError(message(err)); } finally { archive.cancel(); setBusy(false); }
   }
   async function download() {
     if (!draft.job) return;

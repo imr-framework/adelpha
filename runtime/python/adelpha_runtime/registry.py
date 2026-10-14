@@ -212,7 +212,7 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
         if paths.dtam_src is not None:
             _prepend_sys_path(str(paths.dtam_src))
         user_configs = paths.config_dir / "dtam"
-        config_root = user_configs if user_configs.is_dir() else paths.dtam_configs
+        config_root = user_configs if (user_configs / "scanner_profiles" / "simulated_scanner.yaml").is_file() else paths.dtam_configs
         if config_root is not None:
             os.environ.setdefault("DTAM_CONFIG_DIR", str(config_root))
         try:

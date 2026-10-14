@@ -97,6 +97,13 @@ def register_fem_routes(app, root: Path, data_dir: Path):
             shutil.rmtree(path)
             raise HTTPException(503, f"Could not inspect STEP: {exc}") from exc
 
+    @app.get("/fem/uploads/{identifier}/file")
+    def uploaded_step(identifier: str):
+        path = folder("uploads", identifier) / "geometry.step"
+        if not path.is_file():
+            raise HTTPException(404, "Saved STEP file is missing")
+        return FileResponse(path, media_type="application/octet-stream", filename="geometry.step")
+
     @app.post("/fem/jobs", status_code=202)
     def start(body: dict = Body(...)):
         upload_path = folder("uploads", str(body.get("upload_id", "")))

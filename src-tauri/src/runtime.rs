@@ -139,6 +139,7 @@ impl RuntimeManager {
             }
         }
         guard.handshake = None;
+        guard.error = None;
     }
 }
 
@@ -560,11 +561,21 @@ async fn request_shutdown(port: u16, token: &str) -> Result<(), String> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomSystem {
+    pub id: String,
+    pub display_name: String,
+    pub architecture: String,
+    pub field_strength_t: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DtamRuntimePrefs {
     pub scanner_id: String,
     pub environment: String,
     pub agent_model: String,
     pub agent_mode: String,
+    #[serde(default)]
+    pub custom_systems: Vec<CustomSystem>,
 }
 
 impl Default for DtamRuntimePrefs {
@@ -574,6 +585,7 @@ impl Default for DtamRuntimePrefs {
             environment: "development".into(),
             agent_model: "gemini-2.5-flash".into(),
             agent_mode: "observe".into(),
+            custom_systems: Vec::new(),
         }
     }
 }
@@ -598,12 +610,13 @@ fn write_dtam_runtime_prefs(config: &std::path::Path, prefs: &DtamRuntimePrefs) 
 
 fn apply_dtam_runtime_env(cmd: &mut Command, config: &std::path::Path) {
     let prefs = read_dtam_runtime_prefs(config);
+    cmd.env("ADELPHA_DTAM_PREFS", dtam_runtime_path(config));
     cmd.env("DTAM_SCANNER_ID", &prefs.scanner_id);
     cmd.env("DTAM_ENVIRONMENT", &prefs.environment);
     cmd.env("DT_MODEL", &prefs.agent_model);
     cmd.env("DT_DEFAULT_MODE", &prefs.agent_mode);
     let user_configs = config.join("dtam");
-    if user_configs.is_dir() {
+    if user_configs.join("scanner_profiles/simulated_scanner.yaml").is_file() {
         cmd.env("ADELPHA_DTAM_CONFIGS", &user_configs);
     }
 }
@@ -777,16 +790,40 @@ pub async fn set_dtam_runtime_prefs(
     if scanner.is_empty() || environment.is_empty() || model.is_empty() || mode.is_empty() {
         return Err("DTAM settings are incomplete.".into());
     }
+    let mut ids = std::collections::HashSet::new();
+    for system in &prefs.custom_systems {
+        if !system.id.starts_with("custom_") || !system.id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+            || !ids.insert(&system.id) || system.display_name.trim().is_empty()
+            || system.architecture.trim().is_empty() || system.architecture.starts_with("virtual")
+            || !system.field_strength_t.is_finite() || system.field_strength_t <= 0.0 {
+            return Err("Each hardware system needs a unique ID, name, architecture and positive field strength.".into());
+        }
+    }
     let next = DtamRuntimePrefs {
         scanner_id: scanner.to_string(),
         environment: environment.to_string(),
         agent_model: model.to_string(),
         agent_mode: mode.to_string(),
+        custom_systems: prefs.custom_systems.clone(),
     };
     let config = app.path().app_config_dir().map_err(|e| e.to_string())?;
+    let previous = read_dtam_runtime_prefs(&config);
     write_dtam_runtime_prefs(&config, &next)?;
     manager.shutdown().await;
-    manager.start(&app).await?;
+    let startup = match manager.start(&app).await {
+        Ok(()) => {
+            let status = manager.status().await;
+            if status.ok { Ok(()) } else { Err(status.error.unwrap_or_else(|| "Twin service failed to initialize".into())) }
+        }
+        Err(error) => Err(error),
+    };
+    if let Err(error) = startup {
+        write_dtam_runtime_prefs(&config, &previous)?;
+        manager.shutdown().await;
+        let recovery = manager.start(&app).await;
+        return Err(format!("Could not apply Twin settings: {error}. Previous settings restored. Recovery: {}",
+            recovery.err().unwrap_or_else(|| "ready".into())));
+    }
     Ok(next)
 }
 

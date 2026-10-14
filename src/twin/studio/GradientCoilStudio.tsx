@@ -1,3 +1,4 @@
+import { useProjectState, useProjectRun, useProjectBusy } from "./ProjectPersistence";
 import { ArrowRight, ChevronDown, ChevronRight, Play, RotateCcw } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { simulateCoil, type CoilRequest, type CoilSimulation } from "../mri/api";
@@ -5,7 +6,7 @@ import {
   formatFixed,
   Metric,
   NumericField,
-  ProjectMenu,
+  ProjectPanel,
   SegmentedControl,
   WorkspaceShell,
 } from "./workspace";
@@ -104,17 +105,18 @@ export function GradientCoilStudio({
   onAssembly?: () => void;
   onClose?: () => void;
 }) {
-  const [shape, setShape] = useState<ShapeId>("cylinder");
-  const [axis, setAxis] = useState<AxisId>("y");
-  const [draft, setDraft] = useState<Draft>(DEFAULT_DRAFT);
-  const [result, setResult] = useState<CoilSimulation | null>(null);
-  const [resultKey, setResultKey] = useState("");
-  const [view, setView] = useState<CoilView>("3d");
-  const [showFormer, setShowFormer] = useState(true);
+  const [shape, setShape] = useProjectState<ShapeId>("gradient.shape", "cylinder");
+  const [axis, setAxis] = useProjectState<AxisId>("gradient.axis", "y");
+  const [draft, setDraft] = useProjectState<Draft>("gradient.draft", DEFAULT_DRAFT);
+  const [result, setResult] = useProjectState<CoilSimulation | null>("gradient.result", null);
+  const [resultKey, setResultKey] = useProjectState("gradient.resultKey", "");
+  const [view, setView] = useProjectState<CoilView>("gradient.view", "3d");
+  const [showFormer, setShowFormer] = useProjectState("gradient.showFormer", true);
   const [resetNonce, setResetNonce] = useState(0);
-  const [resultsOpen, setResultsOpen] = useState(true);
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState("");
+  const [resultsOpen, setResultsOpen] = useProjectState("gradient.resultsOpen", true);
+  const [locallyRunning, setRunning] = useState(false);
+  const running = useProjectBusy() || locallyRunning;
+  const [error, setError] = useProjectState("gradient.error", "");
 
   const request: CoilRequest = {
     shape,
@@ -137,42 +139,33 @@ export function GradientCoilStudio({
     setDraft((current) => ({ ...current, ...next }));
   }
 
+  const captureRun = useProjectRun("gradient");
   async function run() {
+    const archive = captureRun();
     setRunning(true);
     setError("");
     try {
       const next = await simulateCoil(request);
       setResult(next);
+      archive("Gradient coil", { "gradient.result": next, "gradient.resultKey": currentKey });
       setResultKey(currentKey);
     } catch (err) {
+      archive("Gradient coil · failed", { "gradient.error": err instanceof Error ? err.message : "Simulation failed", "gradient.result": null });
       setResult(null);
       setResultKey("");
       setError(err instanceof Error ? err.message : "Gradient coil simulation failed.");
     } finally {
+      archive.cancel();
       setRunning(false);
     }
   }
 
-  const status = running
-    ? "Running"
-    : error
-      ? "Failed"
-      : result
-        ? stale
-          ? "Draft · results outdated"
-          : reportedError != null
-            ? "Result · review required"
-            : "Result"
-        : "Setup";
 
   return (
     <WorkspaceShell
       kind="gradient"
       label="Gradient coils"
-      projectName={projectName}
-      title="Gradient coil design"
-      status={<span className="ws-pill">{status}</span>}
-      actions={<ProjectMenu onAssembly={onAssembly} onClose={onClose} />}
+
     >
       <div className="ws-body">
         <main className="ws-viewer">
@@ -354,6 +347,7 @@ export function GradientCoilStudio({
           </div>
         </main>
         <aside className="ws-inspector" aria-label="Gradient coil setup">
+          <ProjectPanel status={stale ? <span role="status">Draft · results outdated</span> : undefined} projectName={projectName} title="Gradient coil design" onAssembly={onAssembly} onClose={onClose} />
           <section className="ws-section">
             <h3>Former</h3>
             <div className="ws-former-grid">
@@ -484,9 +478,7 @@ export function GradientCoilStudio({
             <button type="button" className="ws-primary" onClick={() => void run()} disabled={running}>
               <Play aria-hidden="true" /> {running ? "Designing…" : "Run design"}
             </button>
-            <div className="ws-stale" role="status">
-              {stale ? "Setup changed · run to evaluate" : result ? "Showing the completed run" : "No completed run yet"}
-            </div>
+            {stale && <div className="ws-stale" role="status">Setup changed · run to evaluate</div>}
           </div>
         </aside>
       </div>

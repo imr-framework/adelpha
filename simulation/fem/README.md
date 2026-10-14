@@ -181,10 +181,12 @@ For a short walkthrough, see [FEM simulation](../../docs/guide/fem.md).
 Open **Engineering Studio → New project → Hardware → FEM**. Choose a STEP file, assign every solid a permanent magnet, linear magnetic yoke, or nonmagnetic
 material, adjust the mesh controls in millimetres, and select **Run simulation**.
 The screen polls background job status and offers a ZIP with STEP geometry,
-configuration, mesh, B/H/A VTU results, and diagnostic logs. Projects retain their
-STEP setup and current run within the browser session. Select **Results** to inspect computed fields in Adelpha, or open the downloaded VTU
-in ParaView. The original CAD preview is held in memory and may need reimporting
-after a full reload. This is session restoration, not durable project-file storage.
+configuration, mesh, B/H/A VTU results, and diagnostic logs. Projects persist their
+STEP file, setup, and run history locally in IndexedDB. Select **Results** to inspect computed fields in Adelpha, or open the downloaded VTU
+in ParaView. The CAD preview is rebuilt from the saved STEP file after a reload.
+Closing a project retains its work; deleting the project removes its local history.
+Run history restores previous inputs and run references. Runtime solver artifacts
+and exported archives are separate from the local project record.
 
 The runtime exposes `/api/magnet/fem/uploads`, `/api/magnet/fem/jobs`,
 `/api/magnet/fem/jobs/{id}`, and `/api/magnet/fem/jobs/{id}/download`.

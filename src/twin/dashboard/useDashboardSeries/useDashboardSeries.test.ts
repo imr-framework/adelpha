@@ -148,3 +148,19 @@ describe("johnson noise ticking", () => {
     expect(result.current.johnsonNoise).not.toBe(before);
   });
 });
+
+describe("hardware mode", () => {
+  it("never synthesizes EMI or thermal traces for hardware", () => {
+    const { result } = setup({ mode: "hardware", systemState: systemStateFixture({ mode: "hardware", thermal: null, emi: null }) });
+    expect(result.current.simulation).toBe(false);
+    expect(result.current.emiSpectrum).toEqual([]);
+    expect(result.current.johnsonNoise).toEqual([]);
+    expect(result.current.tempHistory).toEqual([]);
+  });
+  it("clears simulated temperature history when switching to hardware", () => {
+    const { result, rerender } = setup();
+    rerender({ telemetry: telemetryFixture(), systemState: systemStateFixture({ mode: "hardware", thermal: null }), showDashboard: true, expandedCard: null });
+    expect(result.current.tempHistory).toEqual([]);
+    expect(result.current.emiSpectrum).toEqual([]);
+  });
+});

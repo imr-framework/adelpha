@@ -68,3 +68,5 @@ Project workspaces for assembly design and simulation.
 | **Assembly controls** | Orbit / pan / inspect rail, Front / Right / Top / Iso, view cube, fit (F) |
 
 [FEM simulation](fem.md) uses a collapsible project drawer, CAD / Mesh / Results views, and a right-hand inspector. The study name stays at the bottom of the drawer.
+
+Projects save automatically on this computer. **Close project** returns to the project list without deleting work. Reopen a project to continue with its latest saved setup and result. Magnet studies keep their existing run selector. **Delete project** explicitly removes the saved project and local history.

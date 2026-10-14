@@ -1,3 +1,5 @@
+import { ProjectPanel } from "./workspace";
+import { useProjectState, useProjectRun, useProjectBusy } from "./ProjectPersistence";
 import { useEffect, useRef, useState } from "react";
 import { fetchSequences, simulateMr0, type Mr0Request, type Mr0Simulation } from "../mri/api";
 import type { ParameterProperty, SequenceInfo, SeqTab } from "../mri/types";
@@ -129,11 +131,12 @@ const METHODS = [
 
 export function AcquisitionStudio({ projectName, onClose }: { projectName: string; onClose?: () => void }) {
   const [catalog, setCatalog] = useState(FALLBACK_SEQUENCES);
-  const [drafts, setDrafts] = useState<Record<string, Record<string, unknown>>>(() => draftsFrom(FALLBACK_SEQUENCES));
-  const [sequenceId, setSequenceId] = useState<SequenceId>("se_2D");
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState("");
-  const [result, setResult] = useState<Mr0Simulation | null>(null);
+  const [drafts, setDrafts] = useProjectState<Record<string, Record<string, unknown>>>("acquisition.drafts", () => draftsFrom(FALLBACK_SEQUENCES));
+  const [sequenceId, setSequenceId] = useProjectState<SequenceId>("acquisition.sequenceId", "se_2D");
+  const [locallyRunning, setRunning] = useState(false);
+  const running = useProjectBusy() || locallyRunning;
+  const [error, setError] = useProjectState("acquisition.error", "");
+  const [result, setResult] = useProjectState<Mr0Simulation | null>("acquisition.result", null);
   const sequence = catalog.find((item) => item.id === sequenceId) ?? catalog[0];
   const draft = drafts[sequence.id] ?? sequence.defaults;
   const properties = sequence.parameter_schema?.properties ?? {};
@@ -151,7 +154,7 @@ export function AcquisitionStudio({ projectName, onClose }: { projectName: strin
         if (cancel) return;
         const next = FALLBACK_SEQUENCES.map((item) => rows.find((row) => row.id === item.id) ?? item);
         setCatalog(next);
-        setDrafts(draftsFrom(next));
+        setDrafts(current => ({ ...draftsFrom(next), ...current }));
       })
       .catch(() => undefined);
     return () => {
@@ -191,45 +194,45 @@ export function AcquisitionStudio({ projectName, onClose }: { projectName: strin
     etl: sequence.id === "tse_3D" ? asNumber(draft.ETL, 8) : 1,
   };
 
+  const captureRun = useProjectRun("acquisition");
   async function run() {
     if (request.te_ms <= 0 || request.tr_ms <= request.te_ms || fov <= 0 || base <= 0 || bandwidthHz <= 0) {
       setError("Use positive timing and sampling values, with TR greater than TE.");
       return;
     }
+    const archive = captureRun();
     setRunning(true);
     setResult(null);
     setError("");
     try {
-      setResult(await simulateMr0(request));
+      const next = await simulateMr0(request);
+      setResult(next);
+      archive("Acquisition", { "acquisition.result": next });
     } catch (err) {
+      archive("Acquisition · failed", { "acquisition.error": err instanceof Error ? err.message : "Simulation failed", "acquisition.result": null });
       setResult(null);
       setError(err instanceof Error ? err.message : "MRZero simulation failed.");
     } finally {
+      archive.cancel();
       setRunning(false);
     }
   }
 
   return (
     <section className="studio-work mrzero-workspace" aria-label="Acquisition">
-      <header className="mrzero-header">
-        <div className="mrzero-project"><span>Project</span><h2>{projectName}</h2><span>/ MRZero</span></div>
-        <span className="mrzero-status" role="status"><i className={result ? "is-complete" : ""} />{running ? "Simulating…" : error ? "Simulation failed" : result ? "Complete" : "Ready to configure"}</span>
-        {onClose ? <button type="button" className="mrzero-secondary" onClick={onClose}>Close project</button> : null}
-      </header>
       <div className="mrzero-body">
         <section className="mrzero-imaging" aria-label="Simulation results">
           <div className="mrzero-image-panel">
             <h2>Simulated slice</h2>
             {result ? <SliceViewer result={result} /> : <div className="mrzero-placeholder" aria-busy={running}>
-              <svg viewBox="0 0 120 120" aria-hidden="true"><rect x="15" y="15" width="90" height="90" rx="8"/><ellipse cx="60" cy="60" rx="26" ry="35"/><path d="M60 30v60M30 60h60"/></svg>
-              <h3>{running ? "Simulating your slice" : "Your simulation appears here"}</h3>
+              <h3>{running ? "Simulating your slice" : "A Bloch simulator"}</h3>
               <p>{running ? "Running the Bloch simulation. Results will appear when it finishes." : "Choose a sequence, adjust its parameters, and run the simulation."}</p>
             </div>}
             {result ? <div className="mrzero-image-metrics"><span>SNR {Math.round(result.snr)}</span><span>Matrix {result.matrix} × {result.matrix}</span><span>Scan time {result.scan_time_s.toFixed(1)} s</span></div> : null}
           </div>
-          <div className="mrzero-echo-panel">{result ? <CenterEcho result={result} /> : <><h3>Center echo magnitude</h3><p>The echo signal will appear after simulation.</p><div className="mrzero-empty-echo" aria-hidden="true" /></>}</div>
         </section>
         <form className="mrzero-inspector" onSubmit={(event) => { event.preventDefault(); void run(); }}>
+          <ProjectPanel projectName={projectName} title="Acquisition · MRZero" status={<span className="mrzero-status" role="status"><i className={result ? "is-complete" : ""} />{running ? "Simulating…" : error ? "Simulation failed" : result ? "Complete" : "Ready to configure"}</span>} onClose={onClose} />
           <div className="mrzero-inspector-content">
             <h2>Simulation parameters</h2>
             <p className="mrzero-description">Design a low-field pulse sequence and simulate one brain slice with MRZero.</p>
@@ -317,21 +320,6 @@ function SliceViewer({ result }: { result: Mr0Simulation }) {
         ))}
       </div>
     </div>
-  );
-}
-
-function CenterEcho({ result }: { result: Mr0Simulation }) {
-  return (
-    <figure className="mr0-echo">
-      <div className="mr0-echo-head">
-        <figcaption>Center echo</figcaption>
-        <p>
-          {result.phantom} · {result.spins.toLocaleString()} spins · {result.scan_time_s.toFixed(1)} s scan
-        </p>
-      </div>
-      {result.reconstruction_error ? <p>Reconstruction did not finish.</p> : null}
-      <SignalPlot samples={result.echo} />
-    </figure>
   );
 }
 
@@ -458,10 +446,10 @@ function SignalPlot({ samples, label = "Center echo magnitude", fill = false }: 
 type MethodId = (typeof METHODS)[number]["id"];
 
 export function ReconstructionStudio({ projectName }: { projectName: string }) {
-  const [methodId, setMethodId] = useState<MethodId>("fft");
-  const [matrix, setMatrix] = useState(128);
-  const [acceleration, setAcceleration] = useState(2);
-  const [trajectory, setTrajectory] = useState<"radial" | "spiral">("radial");
+  const [methodId, setMethodId] = useProjectState<MethodId>("reconstruction.methodId", "fft");
+  const [matrix, setMatrix] = useProjectState("reconstruction.matrix", 128);
+  const [acceleration, setAcceleration] = useProjectState("reconstruction.acceleration", 2);
+  const [trajectory, setTrajectory] = useProjectState<"radial" | "spiral">("reconstruction.trajectory", "radial");
   const method = METHODS.find((item) => item.id === methodId) ?? METHODS[0];
 
   return (

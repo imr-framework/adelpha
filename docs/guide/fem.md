@@ -57,7 +57,11 @@ The workspace follows the app's four [themes](settings.md#appearance). Changing 
 
 **Export image** saves a PNG with the view, field label, and color scale. **Download results & logs** saves the job archive, including configuration, mesh, VTU fields, and diagnostics. Open VTU files in ParaView for further analysis.
 
-Study setup and the current run are restored within the browser session. They are not a portable project file, and the original CAD preview may need reimporting after a full reload. Download the archive to keep your results.
+Projects save automatically on this computer, including STEP geometry, material assignments, mesh settings, and run history. Closing a project or restarting Adelpha does not delete it. Reopening restores the latest saved setup and result.
+
+Only **Delete project** in the project list removes the saved project and its local history. FEM result files remain in the runtime data directory; exported archives remain wherever you saved them. Download an archive for a portable backup. Clearing application/browser storage or removing runtime data can still remove saved work.
+
+If saving fails, Adelpha shows a message and a **Retry save** action. Keep the project open until saving succeeds.
 
 ## Common questions
 

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+from datetime import datetime, timezone
+from dtam.scanner_adapters.halbach_48mt import Halbach48mTAdapter
 
 from dtam.bootstrap import DtamApp, bootstrap
 from dtam.digital_twin.models.thermal import ThermalToB0Params
@@ -17,7 +19,7 @@ class TwinApiSession:
 
     def __init__(self, app: DtamApp) -> None:
         self._app = app
-        if not app.adapter.is_connected:
+        if not app.adapter.is_connected and not isinstance(app.adapter, Halbach48mTAdapter):
             app.adapter.connect()
 
     @classmethod
@@ -32,7 +34,7 @@ class TwinApiSession:
             bootstrap(
                 scanner_id=scanner_id,
                 environment=environment,
-                mode=OperationalMode.SIMULATION,
+                mode=OperationalMode.SIMULATION if scanner_id == "simulated_scanner" else OperationalMode.READ_ONLY,
                 config_root=config_root,
             )
         )
@@ -54,6 +56,9 @@ class TwinApiSession:
             self._app.adapter.disconnect()
 
     def read_batch(self) -> MeasurementBatch:
+        if isinstance(self._app.adapter, Halbach48mTAdapter):
+            now = datetime.now(timezone.utc)
+            return MeasurementBatch(scanner_id=self.scanner_id, window_start=now, window_end=now)
         if not self._app.adapter.is_connected:
             self._app.adapter.connect()
         return self._app.adapter.read_measurements()
@@ -68,6 +73,9 @@ class TwinApiSession:
         use_thermal_pinn: bool = True,
     ) -> SystemState:
         batch = self.read_batch()
+        if not batch.measurements:
+            return SystemState(timestamp=batch.window_end, scanner_id=self.scanner_id, mode=self.mode,
+                               notes=["No sensor measurements received. Hardware transport is not configured."])
         twin = ThermalMagneticTwin(
             TwinConfig(
                 nominal_b0_t=self._app.adapter.identity.field_strength_t,

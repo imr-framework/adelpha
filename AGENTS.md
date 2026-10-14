@@ -79,6 +79,8 @@ Current sizing reference, not a universal requirement for all workspaces:
 
 Use `min-width: 0`, `min-height: 0`, bounded overflow, and flexible grid tracks where needed. Preserve the model's aspect ratio when panels resize. Do not shrink the whole application with CSS transforms to fit a viewport.
 
+Gradient coil, passive shimming, and acquisition workspaces also omit the full-width project header. Their project name, workspace identity, status, and project actions belong in a compact `ProjectPanel` inside the right inspector. Place a direct Close project icon at the far right of the project-name row, without a Project dropdown. Preserve View assembly where supported. Omit routine completed-result badges and duplicate run-button captions; retain actionable failure and stale-result warnings. Gradient and shimming viewport controls and captions float over the scene without full-width gradient scrims; retain the key-results footer. Acquisition uses a clean “A Bloch simulator” empty state and an image-focused result area without a bottom echo plot.
+
 ### Visual hierarchy and interaction
 
 - Reuse Geist / Geist Mono and application font variables; use mono or tabular numerals for numerical readouts where useful.
@@ -171,7 +173,11 @@ The backend uses metres. UI mesh lengths and probe coordinates are presented in 
 
 The UI distinguishes `queued`, `meshing`, `converting`, `prepared`, `solving`, `completed`, and `failed`. Completion must come from the validated backend result, not a timer or a finished animation. Show actionable errors and preserve access to diagnostic downloads.
 
-Current study drafts are stored in `sessionStorage` under `adelpha-fem-step-${projectId}`; the drawer uses `fem-drawer-${projectId}`. Preview `File` objects are held in memory. This is **session restoration, not durable project-file persistence**. Do not claim that the original CAD preview necessarily survives a full application restart.
+Project work is persisted by `ProjectPersistence.tsx` and `projectStorage.ts` in IndexedDB (`adelpha-studio`, `projects` store), keyed by project ID. Use `useProjectState()` for durable input/result state and `useProjectRun()` to capture input snapshots and archive runs without pruning history. Large STEP files and field-map inputs belong here, not localStorage.
+
+The provider hydrates before mounting the workspace, serializes writes, exposes save failures/retry, and flushes pending writes before Close project. Saving happens quietly in the background; do not render routine saving/saved banners or reserve an empty status row. Do not add a shared run-history strip. Retain run records in storage and preserve existing workspace-specific history controls. Show actionable save errors only when needed. Close is not deletion. `library.deleteProject()` removes the durable record only through explicit project deletion. Keep late async callbacks from recreating deleted data. Existing FEM session drafts (`adelpha-fem-step-${projectId}`) and magnet-study records migrate on opening; already lost session data cannot be recovered. STEP preview files persist as Files, and legacy previews can be restored from the runtime upload endpoint.
+
+Gradient, shim, acquisition, and reconstruction settings persist through the shared hooks. Magnet history is bridged from its existing store and retains its own selector. FEM history stores job references; the full solver artifacts remain in the runtime data directory. Browser/app storage is local persistence, not a portable backup. Shared scanner model assets and bindings retain their existing storage conventions.
 
 Changing parameters marks prior results stale. Keep the relationship between inputs, run ID, and displayed results clear. Avoid presenting old results as a fresh solve. Restore/poll active jobs when returning to a study, and stop local polling on unmount. Closing the UI does not imply cancellation of its runtime job.
 
@@ -182,6 +188,7 @@ The runtime currently supervises one solve at a time and uses worker processes. 
 Use typed helpers in `src/twin/mri/api.ts`. Client routes are under `/api/magnet/fem`:
 
 - `POST /uploads`: inspect/store the STEP input.
+- `GET /uploads/{id}/file`: restore a previously imported STEP file.
 - `POST /jobs`: create a job from the validated configuration.
 - `GET /jobs/{id}`: status and available metadata.
 - `GET /jobs/{id}/mesh`: bounded mesh preview.
@@ -232,6 +239,16 @@ The included assembly uses two 10 × 10 × 10 mm magnets. Use it as a dimensiona
 Current FEM supports 3D linear magnetostatics with constant isotropic relative permeability and prescribed global remanence. It does not currently implement B-H saturation, hysteresis, irreversible demagnetization, coil/current excitation, eddy currents, transient analysis, mechanical stress, or motion. New controls for those features require corresponding solver/configuration support and verification, not just frontend fields.
 
 The outer air boundary is a finite-domain approximation. Mesh refinement and air-domain convergence require separate checks. Refer to `simulation/fem/README.md` for the numerical assumptions and backend contract. Direct SIF generation is intentional; pyelmer is not a required dependency.
+
+### Hardware system profiles
+
+Desktop Twin setup stores custom systems in `dtam_runtime.json` with the runtime preferences. The Python loader reads them through `ADELPHA_DTAM_PREFS`. Custom profiles define identity, architecture, and nominal field strength; they do not implement device transport. Physical profile sessions remain read-only and return an empty state until acquisition is implemented. Never force a physical profile into simulation or make missing hardware fatal to API startup. Failed preference changes restore the previous configuration, and the frontend refreshes its runtime endpoint after recovery.
+
+### Dashboard sensor states
+
+Keep the real header, floating viewport navigation, and Logging / Terminal strip. In non-simulation mode with no recent measured sensor values, use `dashboard/SensorWaiting.tsx` for dashboard and telemetry empty states. Do not add a lower sensor-summary bar. Settings actions open Digital Twin settings; the guide is inline. `sensorAvailability.ts` checks measured provenance, finite values, and a 30-second freshness window. Nominal values, estimates alone, and API health do not prove sensor reception.
+
+The EMI dashboard is an environmental sensor spectrum, not an MRI phantom signal. Simulation uses a white-noise floor plus narrow interference peaks, labeled simulated and in arbitrary units. Hardware summaries do not contain spectral arrays; never synthesize a measured spectrum from RMS/peak values. Keep hardware unavailable states honest, including partial connections and mode transitions.
 
 ## 7. Failure containment and performance
 

@@ -1,3 +1,5 @@
+import { HardwareProjectPersistence } from "./studio/HardwareProjectPersistence";
+import { ProjectPersistence, flushProject } from "./studio/ProjectPersistence";
 import { lazy, Suspense, useEffect } from "react";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { EngineeringViewportControls } from "./EngineeringViewportControls";
@@ -27,7 +29,8 @@ export function EngineeringStudio() {
   const navTool = useEngineeringStore((s) => s.navTool);
   const activeProject = useEngineeringStore((s) => s.activeProject);
   const openProject = useEngineeringStore((s) => s.openProject);
-  const closeProject = useEngineeringStore((s) => s.closeProject);
+  const close = useEngineeringStore((s) => s.closeProject);
+  const closeProject = () => { if (activeProject) void flushProject(activeProject.id).then(close).catch(() => undefined); };
   const partCount = useEngineeringStore((s) => s.partCount);
   const catalogCount = useEngineeringStore((s) => s.catalogCount);
   const studio = studioCadForScanner(scannerId);
@@ -108,7 +111,7 @@ export function EngineeringStudio() {
     </div>
   );
 
-  return (
+  const contents = (
     <section className="engineering-studio" aria-label="Engineering Studio">
       <div className={`engineering-stage${activeProject && (hardwareView === "magnet" || hardwareView === "fem") ? " is-hardware-study" : ""}`}>
         {activeProject && activeProject.application !== "acquisition" && hardwareView !== "gradients" && hardwareView !== "shimming" && hardwareView !== "magnet" && hardwareView !== "fem" ? (
@@ -160,4 +163,5 @@ export function EngineeringStudio() {
       </div>
     </section>
   );
+  return activeProject ? <ProjectPersistence key={activeProject.id} id={activeProject.id}><HardwareProjectPersistence id={activeProject.id}>{contents}</HardwareProjectPersistence></ProjectPersistence> : contents;
 }

@@ -1,5 +1,6 @@
 import { Suspense, useEffect, useRef, useState, type CSSProperties } from "react";
 
+import { hasSensorMeasurements } from "./twin/dashboard/sensorAvailability";
 import { useDashboardSeries } from "./twin/dashboard/useDashboardSeries";
 import type { DashboardCard } from "./twin/dashboard/types";
 import { usePanelLayout } from "./twin/panel/usePanelLayout";
@@ -102,7 +103,10 @@ export default function App() {
   }, [motionShareRequestId]);
 
   useEffect(() => attachDtamTelemetryDriver(1500), []);
+  const sensorMode = health?.mode ?? systemState?.mode ?? "unknown";
+  const waitingForSensors = sensorMode !== "simulation" && (!hasSensorMeasurements(systemState) || systemState?.mode !== sensorMode || connection !== "connected");
   const series = useDashboardSeries({
+    mode: sensorMode,
     telemetry,
     systemState,
     showDashboard,
@@ -166,6 +170,8 @@ export default function App() {
           setExpandedCard={setExpandedCard}
           cameraPreviewStream={cameraPreviewStream}
           setCameraPreviewStream={setCameraPreviewStream}
+          waitingForSensors={waitingForSensors}
+          sensorMode={sensorMode}
           series={series}
           telemetry={telemetry}
           scannerId={scannerId}
@@ -185,6 +191,8 @@ export default function App() {
           onResizeDoubleClick={onResizeDoubleClick}
         >
           <TelemetryPanel
+            waitingForSensors={waitingForSensors}
+            sensorMode={sensorMode}
             systemState={systemState}
             lastError={lastError}
             connected={connected}

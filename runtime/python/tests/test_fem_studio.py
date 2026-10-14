@@ -91,3 +91,18 @@ def test_legacy_assembly_fem_is_rejected(isolated_data):
     response = client.post('/simulate', json={"study": "fem", "example_id": "example-halbach-8"})
     assert response.status_code == 400
     assert 'imported STEP file' in response.json()['detail']
+
+
+def test_saved_step_can_be_reopened_after_runtime_restart(tmp_path):
+    identifier = "b" * 32
+    upload = tmp_path / "fem" / "uploads" / identifier
+    upload.mkdir(parents=True)
+    (upload / "geometry.step").write_bytes(b"ISO-10303-21; saved fixture")
+    app = FastAPI()
+    register_fem_routes(app, ROOT, tmp_path)
+    client = TestClient(app)
+    response = client.get(f"/fem/uploads/{identifier}/file")
+    assert response.status_code == 200
+    assert response.content == b"ISO-10303-21; saved fixture"
+    assert client.get("/fem/uploads/not-an-id/file").status_code == 404
+    assert client.get("/fem/uploads/" + "c" * 32 + "/file").status_code == 404

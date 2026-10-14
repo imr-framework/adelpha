@@ -1,15 +1,15 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ElmerStepStudio } from "./ElmerStepStudio";
-import { uploadFemStep, startFemJob, fetchFemJob, downloadFemJob } from "../mri/api";
+import { fetchFemStep, uploadFemStep, startFemJob, fetchFemJob, downloadFemJob } from "../mri/api";
 vi.mock("./FemMeshPreview", () => ({ default: ({ jobId }: { jobId: string }) => <div>Generated mesh {jobId}</div> }));
 vi.mock("./FemFieldPreview", () => ({ default: ({ jobId }: { jobId: string }) => <div>Computed fields {jobId}</div> }));
 const preview = vi.hoisted(() => ({ fail: false }));
 vi.mock("./FemStepPreview", () => ({ default: () => { if (preview.fail) throw new Error("Preview module failed to load"); return <div>STEP preview</div>; } }));
-vi.mock("../mri/api", () => ({ uploadFemStep: vi.fn(), startFemJob: vi.fn(), fetchFemJob: vi.fn(), downloadFemJob: vi.fn() }));
+vi.mock("../mri/api", () => ({ fetchFemStep: vi.fn().mockResolvedValue(new File(["STEP"], "magnet.step")), uploadFemStep: vi.fn(), startFemJob: vi.fn(), fetchFemJob: vi.fn(), downloadFemJob: vi.fn() }));
 const uploaded = { id: "upload1", filename: "magnet.step", units: "m" as const, solids: [{ index: 1, label: "Magnet cube", bounds_m: [0, 0, 0, .01, .01, .01], center_m: [.005, .005, .005], volume_m3: .000001 }] };
 async function upload() { fireEvent.change(screen.getByLabelText("STEP file"), { target: { files: [new File(["STEP"], "magnet.step")] } }); await screen.findByText("Magnet cube"); }
-beforeEach(() => { vi.resetAllMocks(); preview.fail = false; sessionStorage.clear(); vi.mocked(uploadFemStep).mockResolvedValue(uploaded); });
+beforeEach(() => { vi.resetAllMocks(); vi.mocked(fetchFemStep).mockResolvedValue(new File(["STEP"], "magnet.step")); preview.fail = false; sessionStorage.clear(); vi.mocked(uploadFemStep).mockResolvedValue(uploaded); });
 describe("Elmer STEP workflow", () => {
   it("requires materials, converts mm to metres, runs and downloads results", async () => {
     vi.mocked(startFemJob).mockResolvedValue({ id: "job1", status: "queued" });

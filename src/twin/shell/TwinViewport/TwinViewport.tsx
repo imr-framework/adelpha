@@ -23,6 +23,8 @@ const CameraFeed = lazy(() =>
 );
 
 export function TwinViewport({
+  waitingForSensors = false,
+  sensorMode = "hardware",
   viewportTool,
   onViewportToolChange,
   stageMode,
@@ -37,6 +39,8 @@ export function TwinViewport({
   scannerId,
   workspace,
 }: {
+  waitingForSensors?: boolean;
+  sensorMode?: string;
   viewportTool: ViewportToolId;
   onViewportToolChange: (id: ViewportToolId) => void;
   stageMode: "magnet" | "camera";
@@ -98,6 +102,8 @@ export function TwinViewport({
     )}
     {showDashboard ? (
       <LiveDashboard
+        waitingForSensors={waitingForSensors}
+        sensorMode={sensorMode}
         series={series}
         stageMode={stageMode}
         cameraPreviewStream={cameraPreviewStream}
@@ -105,7 +111,7 @@ export function TwinViewport({
         onExpand={setExpandedCard}
       />
     ) : null}
-    {expandedCard ? (
+    {expandedCard && (stageMode === "camera" || (!waitingForSensors && (series.simulation || expandedCard === "temp"))) ? (
       <ExpandedChartModal
         expandedCard={expandedCard}
         series={series}

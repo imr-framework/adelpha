@@ -65,3 +65,9 @@ describe("TelemetryPanel", () => {
     expect(screen.getByRole("status")).toHaveTextContent("twin offline");
   });
 });
+
+it("shows the waiting state instead of default telemetry for missing hardware sensors", () => {
+  renderPanel({ waitingForSensors: true, sensorMode: "hardware" });
+  expect(screen.getByText("Waiting for sensor data")).toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: "Thermal" })).not.toBeInTheDocument();
+});

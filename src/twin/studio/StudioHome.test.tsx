@@ -8,6 +8,13 @@ import { requestOpenSettings } from "../settingsOpen";
 import { readProjects, saveNewProject } from "./library";
 import { StudioHome } from "./StudioHome";
 
+
+vi.mock("./projectStorage", () => ({
+  loadProjectState: vi.fn(async () => ({ version: 1, values: {}, runs: [] })),
+  saveProjectState: vi.fn(async () => {}),
+  removeProjectState: vi.fn(async () => {}),
+}));
+
 vi.mock("../settingsOpen", () => ({
   requestOpenSettings: vi.fn(),
 }));
@@ -140,7 +147,7 @@ describe("StudioHome", () => {
     view.unmount();
     useEngineeringStore.getState().openProject(onOpenProject.mock.calls[0][0]);
     render(<EngineeringStudio />);
-    const acquisition = screen.getByRole("region", { name: "Acquisition" });
+    const acquisition = await screen.findByRole("region", { name: "Acquisition" });
     expect(acquisition).toBeInTheDocument();
     expect(within(acquisition).getByRole("heading", { name: "GRE study" })).toBeInTheDocument();
     expect(screen.queryByRole("toolbar", { name: "Viewport navigation" })).not.toBeInTheDocument();
@@ -157,14 +164,14 @@ describe("StudioHome", () => {
     });
     render(<EngineeringStudio />);
 
-    await user.click(screen.getByRole("button", { name: "Close project" }));
+    await user.click(await screen.findByRole("button", { name: "Close project" }));
 
     expect(screen.getByRole("region", { name: "Engineering Studio start" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Acquisition" })).not.toBeInTheDocument();
     expect(useEngineeringStore.getState().activeProject).toBeNull();
   });
 
-  it("opens a reconstruction project into the reconstruction studio", () => {
+  it("opens a reconstruction project into the reconstruction studio", async () => {
     useEngineeringStore.setState({
       activeProject: {
         id: "recon",
@@ -173,7 +180,7 @@ describe("StudioHome", () => {
       },
     });
     render(<EngineeringStudio />);
-    expect(screen.getByRole("region", { name: "Reconstruction" })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "Reconstruction" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Cartesian FFT/ })).toHaveAttribute("aria-pressed", "true");
     expect(screen.queryByRole("toolbar", { name: "Viewport navigation" })).not.toBeInTheDocument();
   });
@@ -308,14 +315,14 @@ describe("StudioHome", () => {
     );
 
     expect(screen.queryByRole("region", { name: "Engineering Studio start" })).not.toBeInTheDocument();
-    expect(screen.getByRole("toolbar", { name: "Viewport navigation" })).toBeInTheDocument();
+    expect(await screen.findByRole("toolbar", { name: "Viewport navigation" })).toBeInTheDocument();
     expect(useEngineeringStore.getState().activeProject?.name).toBe("Halbach 0.5 T");
     expect(useEngineeringStore.getState().activeProject?.id).not.toBe("sample-halbach");
 
     expect(screen.queryByRole("navigation", { name: "Hardware studies" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Gradient coils" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Passive shimming" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Close project" }));
+    await user.click(await screen.findByRole("button", { name: "Close project" }));
     expect(screen.getByRole("region", { name: "Engineering Studio start" })).toBeInTheDocument();
   });
 });

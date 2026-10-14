@@ -1,39 +1,30 @@
 import type { ReactNode } from "react";
+import { LogOut } from "lucide-react";
 import "./workspace.css";
 
-export function WorkspaceShell({
-  kind,
-  label,
-  projectName,
-  title,
-  status,
-  actions,
-  children,
-}: {
+export function WorkspaceShell({ kind, label, children }: {
   kind: "shim" | "gradient";
   label: string;
+  children: ReactNode;
+}) {
+  return <section className={`studio-work adelpha-simulation-workspace is-${kind}`} aria-label={label}>{children}</section>;
+}
+
+export function ProjectPanel({ projectName, title, status, onClose, onAssembly }: {
   projectName: string;
   title: string;
   status?: ReactNode;
-  actions?: ReactNode;
-  children: ReactNode;
+  onClose?: () => void;
+  onAssembly?: () => void;
 }) {
-  return (
-    <section className={`studio-work adelpha-simulation-workspace is-${kind}`} aria-label={label}>
-      <header className="ws-project">
-        <div>
-          <span className="ws-muted">{projectName}</span>
-          <span className="ws-slash">/</span>
-          <strong>{title}</strong>
-        </div>
-        <div className="ws-row">
-          {status}
-          {actions}
-        </div>
-      </header>
-      {children}
-    </section>
-  );
+  return <section className="ws-project-panel" aria-label="Current project">
+    <div className="ws-project-name-row">
+      <h2>{projectName}</h2>
+      {onClose && <button type="button" className="ws-project-exit" onClick={onClose} aria-label="Close project" title="Close project"><LogOut size={17} aria-hidden="true" /></button>}
+    </div>
+    <span className="ws-project-kind">{title}</span>
+    {(status || onAssembly) && <div className="ws-project-panel-actions">{status}{onAssembly && <button type="button" className="ws-quiet" onClick={onAssembly}>View assembly</button>}</div>}
+  </section>;
 }
 
 export function ProjectMenu({

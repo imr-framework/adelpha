@@ -896,3 +896,9 @@ export type FemFields = {
 export async function fetchFemFields(id: string): Promise<FemFields> {
   return studioFetch(magnetBaseUrl(), `/fem/jobs/${encodeURIComponent(id)}/fields`);
 }
+
+export async function fetchFemStep(upload: FemUpload): Promise<File> {
+  const response = await runtimeFetch(`${magnetBaseUrl()}/fem/uploads/${encodeURIComponent(upload.id)}/file`);
+  if (!response.ok) throw new Error(await readError(response));
+  return new File([await response.blob()], upload.filename, { type: "application/octet-stream" });
+}

@@ -66,7 +66,11 @@ See [Settings](settings.md#camera) if permission is denied.
 
 ## Live dashboard
 
-**Open live dashboard** overlays temperature and RF-noise history. These are operator aids, not calibrated spectrum analyzers.
+**Open live dashboard** overlays temperature, thermal noise, and the **EMI sensor spectrum**. In simulation mode, the EMI plot shows narrow interference spikes over a white-noise floor in arbitrary units, with a logarithmic 1–100 kHz axis. It is an illustrative sensor display, not a phantom signal or calibrated spectrum analyzer.
+
+In hardware mode, the dashboard and Telemetry panel show a connection view until recent measured sensor data arrives. **Configure sensors** and **Check connections** open Digital Twin settings; **Connection guide** shows setup steps. The existing header, floating navigation, and terminal remain in place.
+
+Partial connections show available telemetry. The current API supplies EMI summary values, not waveform or spectrum arrays, so hardware spectrum cards remain unavailable rather than drawing simulated readings. Sensor reception currently uses a 30-second freshness window; API connectivity alone does not count as sensor data.
 
 ## Agents
 

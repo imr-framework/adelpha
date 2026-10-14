@@ -1,3 +1,4 @@
+import { useProjectState, useProjectRun, useProjectBusy } from "./ProjectPersistence";
 import { ChevronDown, ChevronRight, FileCheck2, Focus, Play } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { pickExportDirectory } from "../../desktop/pickExportDirectory";
@@ -20,7 +21,7 @@ import {
   formatFixed,
   Metric,
   NumericField,
-  ProjectMenu,
+  ProjectPanel,
   SegmentedControl,
   WorkspaceShell,
 } from "./workspace";
@@ -120,26 +121,27 @@ export function PassiveShimStudio({
   onAssembly?: () => void;
   onClose?: () => void;
 }) {
-  const [draft, setDraft] = useState<Draft>(DEFAULT_DRAFT);
-  const [symmetric, setSymmetric] = useState(true);
-  const [centerMap, setCenterMap] = useState(true);
-  const [upload, setUpload] = useState<ShimFieldMapUpload | null>(null);
-  const [fieldMap, setFieldMap] = useState<ShimFieldSummary | null>(null);
+  const [draft, setDraft] = useProjectState<Draft>("shim.draft", DEFAULT_DRAFT);
+  const [symmetric, setSymmetric] = useProjectState("shim.symmetric", true);
+  const [centerMap, setCenterMap] = useProjectState("shim.centerMap", true);
+  const [upload, setUpload] = useProjectState<ShimFieldMapUpload | null>("shim.upload", null);
+  const [fieldMap, setFieldMap] = useProjectState<ShimFieldSummary | null>("shim.fieldMap", null);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<ShimSimulation | null>(null);
-  const [resultKey, setResultKey] = useState("");
-  const [panel, setPanel] = useState<"setup" | "results">("setup");
-  const [view, setView] = useState<ShimFieldView>("before");
-  const [mode, setMode] = useState<ShimSceneMode>("3d");
-  const [showTrays, setShowTrays] = useState(true);
-  const [framing, setFraming] = useState<ShimFraming>("field");
+  const [result, setResult] = useProjectState<ShimSimulation | null>("shim.result", null);
+  const [resultKey, setResultKey] = useProjectState("shim.resultKey", "");
+  const [panel, setPanel] = useProjectState<"setup" | "results">("shim.panel", "setup");
+  const [view, setView] = useProjectState<ShimFieldView>("shim.view", "before");
+  const [mode, setMode] = useProjectState<ShimSceneMode>("shim.mode", "3d");
+  const [showTrays, setShowTrays] = useProjectState("shim.showTrays", true);
+  const [framing, setFraming] = useProjectState<ShimFraming>("shim.framing", "field");
   const [fitNonce, setFitNonce] = useState(0);
-  const [resultsOpen, setResultsOpen] = useState(true);
-  const [trayFocus, setTrayFocus] = useState<ShimTrayFocus>("both");
-  const [running, setRunning] = useState(false);
+  const [resultsOpen, setResultsOpen] = useProjectState("shim.resultsOpen", true);
+  const [trayFocus, setTrayFocus] = useProjectState<ShimTrayFocus>("shim.trayFocus", "both");
+  const [locallyRunning, setRunning] = useState(false);
+  const running = useProjectBusy() || locallyRunning;
   const [exporting, setExporting] = useState(false);
   const [savedTo, setSavedTo] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useProjectState("shim.error", "");
 
   const request: ShimRequest = { ...draft, center_map: centerMap, ...(upload ? { field_map: upload } : {}) };
   const currentKey = setupKey(draft, centerMap, upload?.name ?? null);
@@ -229,26 +231,31 @@ export function PassiveShimStudio({
     if (upload) await inspect(upload, next);
   }
 
+  const captureRun = useProjectRun("shim");
   async function run() {
     if (draft.top_mm <= draft.bottom_mm) {
       setError("Set a valid tray separation before running.");
       return;
     }
+    const archive = captureRun();
     setRunning(true);
     setError("");
     try {
       const next = await simulateShim(request);
       setResult(next);
+      archive("Passive shimming", { "shim.result": next, "shim.resultKey": setupKey(draft, centerMap, upload?.name ?? null) });
       setResultKey(setupKey(draft, centerMap, upload?.name ?? null));
       setSavedTo("");
       setView("after");
       setPanel("results");
       setTrayFocus("both");
     } catch (err) {
+      archive("Passive shimming · failed", { "shim.error": err instanceof Error ? err.message : "Simulation failed", "shim.result": null });
       setResult(null);
       setResultKey("");
       setError(err instanceof Error ? err.message : "Passive shimming failed.");
     } finally {
+      archive.cancel();
       setRunning(false);
     }
   }
@@ -281,17 +288,13 @@ export function PassiveShimStudio({
     }
   }
 
-  const status = running ? "Running" : result ? (stale ? "Draft · results outdated" : panel === "results" ? "Run 01" : "Setup") : "Setup";
   const badge = result && panel === "results" ? "Review" : fieldMap ? "Measured field" : "Synthetic field";
 
   return (
     <WorkspaceShell
       kind="shim"
       label="Passive shimming"
-      projectName={projectName}
-      title="Passive shimming"
-      status={<span className="ws-muted ws-small">{status}</span>}
-      actions={<ProjectMenu onAssembly={onAssembly} onClose={onClose} />}
+
     >
       {savedTo ? (
         <p className="ws-toast shim-toast" role="status" aria-label={`Saved to ${folderName(savedTo)}`} title={savedTo}>
@@ -433,6 +436,7 @@ export function PassiveShimStudio({
           </div>
         </main>
         <aside className="ws-inspector" aria-label="Shimming setup and results">
+          <ProjectPanel status={stale ? <span role="status">Draft · results outdated</span> : undefined} projectName={projectName} title="Passive shimming" onAssembly={onAssembly} onClose={onClose} />
           <div className="ws-panel-head">
             <span>{panel === "results" ? "Results" : "Setup"}</span>
             <span className="ws-pill">{badge}</span>

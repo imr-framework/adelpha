@@ -1,3 +1,4 @@
+import { useProjectState } from "./ProjectPersistence";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Canvas, useThree, type ThreeEvent } from "@react-three/fiber";
@@ -80,9 +81,9 @@ export default function FemFieldPreview({ jobId, controlsHost }: { jobId: string
   const [data, setData] = useState<FemFields | null>(null), [error, setError] = useState("");
   const [exportError, setExportError] = useState("");
   const [attempt, setAttempt] = useState(0);
-  const [field, setField] = useState<"B" | "H" | "A">("B"), [component, setComponent] = useState<Component>("magnitude");
-  const [mode, setMode] = useState<"surface" | "slice">("surface"), [axis, setAxis] = useState(1), [position, setPosition] = useState(50);
-  const [showLines, setShowLines] = useState(false);
+  const [field, setField] = useProjectState<"B" | "H" | "A">(`fem.field.${jobId}.field`, "B"), [component, setComponent] = useProjectState<Component>(`fem.field.${jobId}.component`, "magnitude");
+  const [mode, setMode] = useProjectState<"surface" | "slice">(`fem.field.${jobId}.mode`, "surface"), [axis, setAxis] = useProjectState(`fem.field.${jobId}.axis`, 1), [position, setPosition] = useProjectState(`fem.field.${jobId}.position`, 50);
+  const [showLines, setShowLines] = useProjectState(`fem.field.${jobId}.showLines`, false);
   const [lines, setLines] = useState<number[][]>([]), [lineError, setLineError] = useState("");
   const [linesBusy, setLinesBusy] = useState(false);
   useEffect(() => {
@@ -94,9 +95,9 @@ export default function FemFieldPreview({ jobId, controlsHost }: { jobId: string
     worker.postMessage(data);
     return () => worker.terminate();
   }, [data, showLines]);
-  const [focus, setFocus] = useState(true);
-  const [air, setAir] = useState(false), [wireframe, setWireframe] = useState(true), [camera, setCamera] = useState(0);
-  const [manual, setManual] = useState(false), [low, setLow] = useState("0"), [high, setHigh] = useState("1");
+  const [focus, setFocus] = useProjectState(`fem.field.${jobId}.focus`, true);
+  const [air, setAir] = useProjectState(`fem.field.${jobId}.air`, false), [wireframe, setWireframe] = useProjectState(`fem.field.${jobId}.wireframe`, true), [camera, setCamera] = useState(0);
+  const [manual, setManual] = useProjectState(`fem.field.${jobId}.manual`, false), [low, setLow] = useProjectState(`fem.field.${jobId}.low`, "0"), [high, setHigh] = useProjectState(`fem.field.${jobId}.high`, "1");
   const [probe, setProbe] = useState<Probe | null>(null), [capture, setCapture] = useState<CaptureRequest | null>(null);
   useEffect(() => {
     let cancelled = false; setData(null); setError("");

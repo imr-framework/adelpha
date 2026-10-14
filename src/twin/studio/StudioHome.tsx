@@ -71,6 +71,7 @@ const pageCopy: Record<Exclude<NavId, "agent">, { crumb: string; title: string; 
 
 export function StudioHome({ onOpenProject }: StudioHomeProps) {
   const [deleting, setDeleting] = useState<StudioProject | null>(null);
+  const [deletingBusy, setDeletingBusy] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const deleteDialog = useRef<HTMLDialogElement>(null);
   useEffect(() => { if (deleting) deleteDialog.current?.showModal(); }, [deleting]);
@@ -215,13 +216,15 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
 
   return (
     <section className="studio-home" aria-label="Engineering Studio start">
-      {deleting ? <dialog ref={deleteDialog} className="studio-delete-dialog" aria-labelledby="delete-project-title" onCancel={() => setDeleting(null)}>
+      {deleting ? <dialog ref={deleteDialog} className="studio-delete-dialog" aria-labelledby="delete-project-title" onCancel={event => { if (deletingBusy) event.preventDefault(); else setDeleting(null); }}>
         <h2 id="delete-project-title">Delete “{deleting.name}”?</h2>
         <p>This removes the saved project and its study history from this browser. This cannot be undone. Shared scanner models and examples are kept.</p>
         {deleteError ? <p role="alert">{deleteError}</p> : null}
-        <div><button type="button" autoFocus onClick={() => setDeleting(null)}>Cancel</button><button type="button" className="studio-delete-confirm" onClick={() => {
-          try { deleteProject(deleting.id); setProjects(readProjects()); setDeleting(null); newProjectRef.current?.focus(); }
+        <div><button type="button" autoFocus disabled={deletingBusy} onClick={() => setDeleting(null)}>Cancel</button><button type="button" className="studio-delete-confirm" disabled={deletingBusy} onClick={async () => {
+          setDeletingBusy(true);
+          try { await deleteProject(deleting.id); setProjects(readProjects()); setDeleting(null); newProjectRef.current?.focus(); }
           catch { setDeleteError("Could not delete the project. Please try again."); }
+          finally { setDeletingBusy(false); }
         }}>Delete project</button></div>
       </dialog> : null}
       <nav className="studio-nav" aria-label="Workspace">

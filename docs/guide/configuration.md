@@ -107,7 +107,7 @@ Ping always probes the network. Sequences talk to hardware only when simulation 
 | `twin_adk_model_id` | Agents model (legacy picker) |
 | `twin_face_mask_style` / `twin_camera_bg_mode` | Camera overlay |
 
-FEM setup and the current job are kept in session storage under `adelpha-fem-step-${projectId}`; drawer state uses `fem-drawer-${projectId}`. This is session restoration, not a saved project file. Download results and logs to keep a portable copy.
+Engineering Studio stores project work in IndexedDB (`adelpha-studio`, `projects` store), keyed by project ID. This includes FEM STEP files, setup, and run references; standalone workspace settings/results; and study history. Existing FEM session drafts and magnet-study records are migrated when opened. The project catalog remains in local storage. Closing a project retains it; **Delete project** removes its saved work. FEM solver artifacts remain in the runtime data directory.
 
 Software version in About and Status comes from `src/twin/adelphaVersion.ts`. The installer version is `src-tauri/tauri.conf.json`.
 
@@ -118,3 +118,9 @@ Software version in About and Status comes from `src/twin/adelphaVersion.ts`. Th
 | `DTAM_API_HOST` / `DTAM_API_PORT` | `127.0.0.1` / `8080` |
 | `DTAM_SCANNER_ID` | `simulated_scanner` |
 | `GOOGLE_API_KEY` | Agents API only |
+
+### Custom hardware systems
+
+In **Settings → Digital Twin → Twin setup**, choose **Define new system**. Enter a name, architecture, and nominal field strength in tesla, then select **Save and use system**. Profiles are saved locally and remain available in the scanner selector. This does not change the viewport's CAD model.
+
+Hardware profiles use read-only mode and can open without connected sensors. Until a compatible acquisition driver is configured, the dashboard shows its sensor waiting screen. A profile alone does not provide device connectivity. Select **Simulated scanner** to return to simulated telemetry; environment selection controls configuration overlays, not hardware connectivity.

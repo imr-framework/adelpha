@@ -2,7 +2,7 @@ export type DashboardCard =
   | "temp"
   | "noiseTime"
   | "noiseSpec"
-  | "mriSpec"
+  | "emiSpec"
   | "camPreview"
   | "yaw"
   | "pitch"

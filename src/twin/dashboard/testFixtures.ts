@@ -24,6 +24,7 @@ export function telemetryFixture(over: Partial<TwinTelemetry> = {}): TwinTelemet
 
 export function systemStateFixture(over: Partial<SystemState> = {}): SystemState {
   return {
+    mode: "simulation",
     emi: {
       peak_frequency_hz: { value: 50_000, source: "measured", timestamp: 0 },
       rms_v: { value: 0.01, source: "measured", timestamp: 0 },

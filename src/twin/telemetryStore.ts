@@ -345,7 +345,7 @@ export function attachDtamTelemetryDriver(pollMs = POLL_MS) {
 
       if (!health.connected) {
         store.setConnection("disconnected");
-        store.setLastError("API reports scanner not connected");
+        store.setLastError(null);
       }
 
       tickCount += 1;
@@ -394,6 +394,7 @@ export function attachDtamTelemetryDriver(pollMs = POLL_MS) {
       lastEmiLabel = emiLabel;
     } catch (err) {
       if (stopped) return;
+      useTwinStore.setState({ health: null, systemState: null, sensorsBatch: null });
       store.setConnection("disconnected");
       const msg = err instanceof Error ? err.message : String(err);
       store.setLastError(msg);

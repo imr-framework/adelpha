@@ -36,3 +36,16 @@ export function dftMagnitudeSpectrum(samples: number[]): number[] {
   }
   return out;
 }
+
+/** Illustrative EMI magnitude: flat white-noise floor with narrow interference peaks.
+ * Arbitrary units, not a measured or calibrated PSD. The strongest spike marks peakBin.
+ */
+export function sampleEmiSpectrum(bins: number, peakBin: number, rms: number): number[] {
+  const amplitude = Math.max(0.15, Math.min(1.5, rms / 0.01));
+  return Array.from({ length: bins }, (_, i) => {
+    const floor = 0.035 + 0.025 * Math.abs(gaussianSample());
+    const peak = i === peakBin ? 0.75 * amplitude : 0;
+    const secondary = i === Math.round((bins - 1) * 0.23) || i === Math.round((bins - 1) * 0.61) ? 0.23 * amplitude : 0;
+    return floor + peak + secondary;
+  });
+}

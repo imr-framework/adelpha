@@ -28,7 +28,7 @@ def create_scanner_adapter(
     if profile.id == "simulated_scanner" or profile.architecture.startswith("virtual"):
         return create_simulated_scanner(profile, mode=effective_mode)
 
-    if profile.id == "halbach_48mt":
+    if profile.id == "halbach_48mt" or profile.metadata.get("adapter") == "profile_hardware":
         return Halbach48mTAdapter(profile)
 
     raise ConfigurationError(

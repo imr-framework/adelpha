@@ -16,7 +16,7 @@ describe("AcquisitionStudio MRZero suite", () => {
     simulateMr0.mockReset();
   });
 
-  it("runs the 2D spin echo through MRZero and shows the echo", async () => {
+  it("runs the 2D spin echo through MRZero and shows the image", async () => {
     simulateMr0.mockResolvedValue({
       ok: true,
       suite: "low-field",
@@ -63,9 +63,8 @@ describe("AcquisitionStudio MRZero suite", () => {
     expect(simulateMr0).toHaveBeenCalledWith(
       expect.objectContaining({ sequence: "se_2D", tr_ms: 100, te_ms: 5, averages: 1 }),
     );
-    expect(await screen.findByText(/brain2D_axial/)).toBeInTheDocument();
-    expect(screen.getByText(/6,506 spins/)).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Center echo magnitude" })).toBeInTheDocument();
+    expect(await screen.findByLabelText("Uniform")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Center echo magnitude" })).not.toBeInTheDocument();
     expect(screen.getByLabelText("Uniform")).toBeInTheDocument();
     expect(screen.queryByLabelText("Noise")).not.toBeInTheDocument();
 

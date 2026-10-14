@@ -1,3 +1,5 @@
+import { removeProjectState } from "./projectStorage";
+import { prepareProjectDeletion, finishProjectDeletion } from "./ProjectPersistence";
 import { HARDWARE_STUDIES_KEY, useHardwareStudyStore } from "./hardwareStudyStore";
 
 export type StudioProjectKind = "sample" | "user";
@@ -715,26 +717,36 @@ export function shortcutLabel(): string {
 }
 
 /** Remove only this saved project, its preview, and its project-specific study history. */
-export function deleteProject(id: string): void {
+export async function deleteProject(id: string): Promise<void> {
   const projects = readProjects();
   if (!projects.some((project) => project.id === id && project.kind === "user")) return;
-  const previews = { ...readPreviewMap() };
-  delete previews[id];
-  const studies = { ...useHardwareStudyStore.getState().projects };
-  delete studies[id];
-  const updates = [
-    [PROJECTS_KEY, JSON.stringify(projects.filter((project) => project.id !== id))],
-    [PREVIEWS_KEY, JSON.stringify(previews)],
-    [HARDWARE_STUDIES_KEY, JSON.stringify(studies)],
-  ];
-  const previous = updates.map(([key]) => [key, localStorage.getItem(key)] as const);
+  await prepareProjectDeletion(id);
+  const previous: [string, string | null][] = [];
+  let studies;
   try {
+    const previews = { ...readPreviewMap() };
+    delete previews[id];
+    studies = { ...useHardwareStudyStore.getState().projects };
+    delete studies[id];
+    const updates = [
+      [PROJECTS_KEY, JSON.stringify(projects.filter(project => project.id !== id))],
+      [PREVIEWS_KEY, JSON.stringify(previews)],
+      [HARDWARE_STUDIES_KEY, JSON.stringify(studies)],
+    ];
+    for (const [key] of updates) previous.push([key, localStorage.getItem(key)]);
     for (const [key, value] of updates) localStorage.setItem(key, value);
+    // Commit durable deletion last: a failed metadata write must never erase history.
+    await removeProjectState(id);
   } catch (error) {
     for (const [key, value] of previous) {
-      try { if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); } catch { /* Preserve the original storage error. */ }
+      try { if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value); } catch { /* Preserve original error. */ }
     }
+    finishProjectDeletion(id, false);
     throw error;
   }
+  for (const key of [`adelpha-fem-step-${id}`, `fem-drawer-${id}`]) {
+    try { sessionStorage.removeItem(key); } catch { /* Legacy session cache only. */ }
+  }
+  finishProjectDeletion(id, true);
   useHardwareStudyStore.setState({ projects: studies });
 }

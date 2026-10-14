@@ -293,7 +293,7 @@
   flex-wrap: wrap;
   padding: 14px 18px 28px;
   border-bottom: 0;
-  background: linear-gradient(180deg, var(--theme-surface, rgba(17, 18, 22, 0.72)) 0%, var(--theme-hover, rgba(17, 18, 22, 0)) 100%);
+  background: transparent;
 }
 
 .ws-seg {
@@ -420,11 +420,11 @@
   bottom: 0;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(0deg, var(--theme-surface, rgba(17, 18, 22, 0.88)) 36%, var(--theme-scrim, rgba(17, 18, 22, 0)) 100%);
+  background: transparent;
 }
 
 .adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-overlay-bottom.is-collapsed {
-  background: linear-gradient(0deg, var(--theme-scrim, rgba(17, 18, 22, 0.62)) 18%, var(--theme-scrim, rgba(17, 18, 22, 0)) 100%);
+  background: transparent;
 }
 
 .studio-work.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-overlay-toggle {
@@ -896,3 +896,29 @@
     min-height: 44px;
   }
 }
+
+/* Project identity lives in the inspector, leaving the viewport uninterrupted. */
+.ws-project-panel { flex: none; padding: 18px; border-bottom: 1px solid var(--theme-border, var(--border)); color: var(--m4-text); }
+.ws-project-caption { display: block; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--m4-muted); }
+.ws-project-panel h2, .mrzero-workspace .ws-project-panel h2 { margin: 5px 0 3px; font-size: 16px; overflow-wrap: anywhere; }
+.ws-project-kind { font-size: 12px; color: var(--m4-muted); }
+.ws-project-panel-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 12px; font-size: 12px; }
+.ws-project-panel-actions .mrzero-status { margin-left: 0; }
+.mrzero-workspace .ws-project-menu summary { cursor: pointer; color: var(--m4-text); }
+.mrzero-workspace .ws-project-menu[open] .ws-menu { background: var(--m4-panel); border: 1px solid var(--theme-border, var(--border)); }
+
+.mrzero-workspace .ws-menu button { padding: 7px 10px; text-align: left; color: var(--m4-text); background: var(--m4-input); border: 1px solid var(--theme-border, var(--border)); border-radius: 4px; cursor: pointer; }
+
+.ws-project-name-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ws-project-name-row h2 { min-width: 0; }
+.ws-project-name-row .ws-project-exit, .studio-work.adelpha-simulation-workspace .ws-project-name-row .ws-project-exit { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; background: transparent; border: 0; color: var(--m4-muted); cursor: pointer; }
+.ws-project-name-row .ws-project-exit:hover { background: var(--m4-accent-soft); color: var(--m4-text); }
+.adelpha-simulation-workspace.is-gradient .ws-runbar { border-top: 0; }
+
+/* Overlay chrome has no full-width scrim; the scene remains visible underneath. */
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-viewbar .ws-seg { background: transparent; border-color: transparent; }
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-viewbar button:not([aria-pressed="true"]) { background: transparent; }
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim) :is(.ws-caption, .ws-scenefoot, .ws-legend, .ws-scene-tools, .ws-scene-tools .ws-muted, .ws-overlay-toggle) { color: var(--workspace-text); }
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-viewbar .ws-quiet { color: var(--workspace-text); }
+
+.ws-project-exit svg { width: 17px; height: 17px; flex-shrink: 0; }

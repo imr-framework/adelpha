@@ -1,3 +1,4 @@
+import { useProjectState } from "./ProjectPersistence";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Canvas } from "@react-three/fiber";
@@ -28,8 +29,8 @@ function MeshBodies({ data, air, wireframe }: { data: Extract<FemMeshPreview, { 
 export default function FemMeshPreview({ jobId, controlsHost }: { jobId: string; controlsHost?: HTMLElement | null }) {
   const [data, setData] = useState<FemMeshPreview | null>(null);
   const [error, setError] = useState("");
-  const [air, setAir] = useState(false);
-  const [wireframe, setWireframe] = useState(true);
+  const [air, setAir] = useProjectState(`fem.mesh.${jobId}.air`, false);
+  const [wireframe, setWireframe] = useProjectState(`fem.mesh.${jobId}.wireframe`, true);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let cancelled = false;

@@ -29,9 +29,9 @@ export function ExpandedChartModal({
     johnsonSpectrum,
     johnsonSpecMax,
     emiBin,
-    mriSpectrum,
-    mriSpecMin,
-    mriSpecMax,
+    emiSpectrum,
+    emiSpecMin,
+    emiSpecMax,
     yawHistory,
     yawMin,
     yawMax,
@@ -50,8 +50,8 @@ export function ExpandedChartModal({
         ? "Johnson noise spectrum (DFT magnitude)"
         : expandedCard === "noiseSpec"
           ? "Johnson / thermal noise (time domain)"
-          : expandedCard === "mriSpec"
-            ? "MRI Signal Frequency Spectrum (EMI Highlighted)"
+          : expandedCard === "emiSpec"
+            ? "EMI Sensor Spectrum (simulated)"
             : expandedCard === "camPreview"
               ? "Camera preview"
               : expandedCard === "yaw"
@@ -142,15 +142,15 @@ export function ExpandedChartModal({
               t
             </text>
           </svg>
-        ) : expandedCard === "mriSpec" ? (
+        ) : expandedCard === "emiSpec" ? (
           <svg viewBox="0 0 780 420" className="chart-modal-svg">
             <line x1="64" y1="30" x2="64" y2="360" className="axis-line" />
             <line x1="64" y1="360" x2="740" y2="360" className="axis-line" />
             <text x="402" y="398" className="axis-label">
-              Frequency
+              Frequency (log scale)
             </text>
             <text x="18" y="200" className="axis-label" transform="rotate(-90, 18, 200)">
-              Magnitude
+              Magnitude (a.u., simulated)
             </text>
             <line
               x1={64 + (emiBin / Math.max(FFT_BINS - 1, 1)) * 676}
@@ -160,20 +160,21 @@ export function ExpandedChartModal({
               className="dash-emi-marker"
             />
             <path
-              d={linePathOffset(mriSpectrum, mriSpecMin, mriSpecMax, 676, 330, 64, 30)}
+              d={linePathOffset(emiSpectrum, emiSpecMin, emiSpecMax, 676, 330, 64, 30)}
               className="dash-line dash-line-spectrum dash-line-mri"
             />
             <text x="64" y="380" className="axis-tick">
               1 kHz
             </text>
             <text
-              x={64 + (emiBin / Math.max(FFT_BINS - 1, 1)) * 676 - 20}
-              y="380"
+              x={Math.max(100, Math.min(700, 64 + (emiBin / Math.max(FFT_BINS - 1, 1)) * 676))}
+              y="20"
+              textAnchor="middle"
               className="axis-tick"
             >
               {formatHz(peakHz)}
             </text>
-            <text x="640" y="380" className="axis-tick">
+            <text x="740" y="380" textAnchor="end" className="axis-tick">
               100 kHz
             </text>
           </svg>
