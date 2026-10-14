@@ -21,7 +21,7 @@ The public site is [imr-framework.github.io/adelpha](https://imr-framework.githu
 | --- | --- |
 | [Digital Twin](../guide/dashboard.md) | 3D magnet, thermal / \(B_0\) / EMI / RF telemetry, Agents, terminal |
 | [Imaging Console](../guide/imaging-console.md) | Exam registration, sequence queue, Red Pitaya ping, study review |
-| [Engineering Studio](../guide/workspaces.md) | CAD parts tagged for simulation, in the same void as the twin |
+| [Engineering Studio](../guide/workspaces.md) | Assembly design, magnet fields, STEP-based FEM, coils, and shimming |
 
 The GUI is an observer and operator client. Closed-loop hardware I/O stays in Python (FLOCRA / MaRCoS). See [Architecture](../guide/architecture.md).
 

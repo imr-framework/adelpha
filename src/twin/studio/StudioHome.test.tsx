@@ -104,7 +104,7 @@ describe("StudioHome", () => {
   it.each([
     ["Assembly", "assembly", false],
     ["Magnet field", "magnet", true],
-    ["Elmer FEM", "fem", true],
+    ["FEM", "fem", true],
     ["Gradient coils", "gradients", false],
     ["Passive shimming", "shimming", false],
   ] as const)("creates and reopens the chosen %s workspace", async (label, view, setup) => {

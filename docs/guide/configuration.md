@@ -97,7 +97,7 @@ Ping always probes the network. Sequences talk to hardware only when simulation 
 | --- | --- |
 | `adelpha.workspacePrefs` | Startup workspace, restore layout, panel width |
 | `adelpha_workspace_id` | Last workspace |
-| `adelpha.consoleTheme` | `adelpha` or `mri4all` |
+| `adelpha.consoleTheme` | `adelpha`, `mri4all`, `porcelain`, or `glacier` |
 | `adelpha.scannerModel` | Active model id (bundled or `imported-…`) |
 | `adelpha.importedModels` | Catalog of imported CAD (blobs are in IndexedDB `adelpha-cad`) |
 | `adelpha.devicePreviews` | Optional device pictures |
@@ -106,6 +106,8 @@ Ping always probes the network. Sequences talk to hardware only when simulation 
 | `twin_view_tool_rail_pos_v2` | Tool rail position |
 | `twin_adk_model_id` | Agents model (legacy picker) |
 | `twin_face_mask_style` / `twin_camera_bg_mode` | Camera overlay |
+
+FEM setup and the current job are kept in session storage under `adelpha-fem-step-${projectId}`; drawer state uses `fem-drawer-${projectId}`. This is session restoration, not a saved project file. Download results and logs to keep a portable copy.
 
 Software version in About and Status comes from `src/twin/adelphaVersion.ts`. The installer version is `src-tauri/tauri.conf.json`.
 

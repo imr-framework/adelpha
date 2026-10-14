@@ -2,6 +2,7 @@ pyproject.toml
 adelpha_runtime/__init__.py
 adelpha_runtime/__main__.py
 adelpha_runtime/auth.py
+adelpha_runtime/fem.py
 adelpha_runtime/first_run.py
 adelpha_runtime/gateway.py
 adelpha_runtime/lock.py
@@ -16,6 +17,7 @@ adelpha_runtime.egg-info/SOURCES.txt
 adelpha_runtime.egg-info/dependency_links.txt
 adelpha_runtime.egg-info/requires.txt
 adelpha_runtime.egg-info/top_level.txt
+tests/test_fem_studio.py
 tests/test_gateway.py
 tests/test_handshake.py
 tests/test_lifecycle.py

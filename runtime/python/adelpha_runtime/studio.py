@@ -8,6 +8,7 @@ the runtime NumPy stack and optional ElmerSolver.
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 from typing import Any, Callable
 
@@ -32,7 +33,7 @@ def _feature_sim(paths: RuntimePaths, name: str) -> Path:
     Tauri sets ``ADELPHA_RESOURCE_DIR`` to the app resource folder, which does
     not contain these feature trees. Fall back to the checkout root.
     """
-    roots = [paths.resource_dir, default_repo_root(), Path.cwd(), Path.cwd().parent, Path.cwd().parent.parent]
+    roots = [paths.resource_dir, Path(getattr(sys, "_MEIPASS", paths.resource_dir)), default_repo_root(), Path.cwd(), Path.cwd().parent, Path.cwd().parent.parent]
     seen: set[str] = set()
     for root in roots:
         try:
@@ -80,6 +81,12 @@ def _studio_app(service: str, routes: list[tuple[str, Callable[..., Any]]]) -> F
     return app
 
 
+def create_dev_magnet_app() -> FastAPI:
+    """Standalone service used by Vite's /api/magnet proxy."""
+    from adelpha_runtime.paths import resolve_paths
+    return create_magnet_app(resolve_paths())
+
+
 def create_coil_app(paths: RuntimePaths) -> FastAPI:
     sim = _load("adelpha_coil_sim", _feature_sim(paths, "coil"))
     return _studio_app("coil", [("/simulate", sim.run_coil)])
@@ -99,10 +106,20 @@ def create_shim_app(paths: RuntimePaths) -> FastAPI:
 
 def create_magnet_app(paths: RuntimePaths) -> FastAPI:
     sim = _load("adelpha_magnet_sim", _feature_sim(paths, "magnet"))
-    return _studio_app(
+
+    def simulate(body):
+        if isinstance(body, dict) and body.get("study") == "fem":
+            raise ValueError("FEM requires an imported STEP file. Upload geometry and start a FEM job from the FEM workspace.")
+        return sim.run_study(body)
+
+    app = _studio_app(
         "magnet",
         [
-            ("/simulate", sim.run_study),
+            ("/simulate", simulate),
             ("/validate", sim.run_validate),
         ],
     )
+
+    from adelpha_runtime.fem import register_fem_routes
+    register_fem_routes(app, _feature_sim(paths, "magnet").parent.parent, paths.data_dir)
+    return app

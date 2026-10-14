@@ -8,6 +8,19 @@ icon: lucide/settings
 
 Open **Settings** from the gear in the top-right. Changes that matter to the live app are listed here. A few older rows are still a local draft and do not drive the twin.
 
+## Appearance
+
+Choose a theme in **Settings → Appearance**. The selection applies across the app, including FEM.
+
+| Theme | Colors |
+| --- | --- |
+| **Adelpha** | Dark with violet accents |
+| **MRI4ALL** | Navy with gold accents |
+| **Porcelain** | Light with cobalt accents |
+| **Glacier** | Light with petrol-blue accents |
+
+Scientific field colors and result values stay unchanged when you switch themes.
+
 ## Scanner models
 
 **Settings → 3D Model → General** chooses the magnet you see in the Digital Twin viewport and on Imaging Console → System Status.
@@ -25,7 +38,7 @@ You can also assign a **device picture** so the Devices list and System Status s
 
 ## Import a CAD model
 
-Use **Settings → 3D Model → Files**.
+Use **Settings → 3D Model → Files** for scanner models. To simulate a STEP file, import it inside an [FEM project](fem.md) instead.
 
 1. Click **Choose file**.
 2. Pick a **glTF binary (`.glb`)**, up to 2 GB.

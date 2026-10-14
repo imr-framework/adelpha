@@ -10,6 +10,7 @@ import { useEngineeringStore } from "./engineeringStore";
 import { StudioHome } from "./studio/StudioHome";
 import { AcquisitionStudio, ReconstructionStudio } from "./studio/StudioApplication";
 import { GradientCoilStudio } from "./studio/GradientCoilStudio";
+import { FemStudio } from "./studio/FemStudio";
 import { HardwareStudyStudio } from "./studio/HardwareStudyStudio";
 import { PassiveShimStudio } from "./studio/PassiveShimStudio";
 import { useHardwareStudyStore } from "./studio/hardwareStudyStore";
@@ -129,9 +130,11 @@ export function EngineeringStudio() {
             projectName={activeProject.name}
             onClose={closeProject}
           />
+        ) : activeProject && hardwareView === "fem" ? (
+          <FemStudio key={activeProject.id} projectId={activeProject.id} projectName={activeProject.name} onClose={closeProject} />
         ) : activeProject ? (
           <>
-            {hardwareView === "magnet" || hardwareView === "fem" ? (
+            {hardwareView === "magnet" ? (
               <HardwareStudyStudio key={`${activeProject.id}:${hardwareView}`} projectId={activeProject.id} projectName={activeProject.name} study={hardwareView} viewport={viewport} onClose={closeProject} />
             ) : viewport}
             {empty && hardwareView === "assembly" ? (

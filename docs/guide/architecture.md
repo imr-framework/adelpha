@@ -22,7 +22,7 @@ In the **desktop app** those three APIs are one supervisor process (dynamic port
 | --- | --- |
 | `digital-twin` | Viewport + resizable side panel + bottom console |
 | `imaging-console` | Full-width `ImagingConsole` |
-| `engineering-studio` | Full-width Engineering Studio viewport (simulation parts in the same void as Digital Twin) |
+| `engineering-studio` | Project workspaces for assemblies, magnet fields, STEP-based FEM, coils, and shimming |
 
 Alt workspaces keep the Digital Twin WebGL canvas mounted (hidden and paused) so orbit and CAD view survive a switch. The telemetry panel is hidden.
 
@@ -35,8 +35,12 @@ Alt workspaces keep the Digital Twin WebGL canvas mounted (hidden and paused) so
 | `src/twin/ImagingConsole.tsx` | Imaging Console shell (viewers + sequence editor) |
 | `src/twin/EngineeringStudio.tsx` | Engineering Studio shell, CAD viewport, and view controls |
 | `src/twin/Mri4allWindows.tsx` | Status, Log, Config, Study Viewer, Flex |
-| `src/twin/mri/api.ts` | MRI console REST + WebSocket client |
-| `src/twin/consoleTheme.ts` | Adelpha vs MRI4ALL console colors |
+| `src/twin/mri/api.ts` | Console and engineering API clients |
+| `src/twin/studio/ElmerStepStudio.tsx` | STEP-based FEM setup, jobs, and viewer navigation |
+| `src/twin/studio/FemFieldPreview.tsx` | In-app field surfaces, sections, probes, and exports |
+| `runtime/python/adelpha_runtime/fem.py` | FEM uploads, background jobs, and result routes |
+| `simulation/fem/` | Gmsh meshing, Elmer solving, and preview data |
+| `src/twin/consoleTheme.ts` | Shared Adelpha, MRI4ALL, Porcelain, and Glacier themes |
 | `src/twin/scannerModel.ts` | Bundled + imported scanner profiles |
 | `src/twin/importedModels.ts` | GLB import (IndexedDB) |
 | `src/twin/settings/DtamSetupSection.tsx` | Twin scanner, environment, Agents key |
@@ -56,6 +60,10 @@ Alt workspaces keep the Digital Twin WebGL canvas mounted (hidden and paused) so
 | `src/twin/dashboard/` | Live dashboard grid, expanded charts, noise/DFT maths, series hook |
 | `src/twin/panel/` | Side panel shell, panel layout hook, telemetry cards |
 | `console/services/api/app.py` | MRI FastAPI façade |
+
+## FEM simulation
+
+[FEM projects](fem.md) use their own imported STEP solids. The client submits jobs through `/api/magnet/fem`; worker processes run Gmsh and Elmer. Mesh and field previews are served separately from the downloadable result archive. The UI polls job status and opens Results after a successful solve.
 
 ## Polling vs forecast
 

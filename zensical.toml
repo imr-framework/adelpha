@@ -33,6 +33,7 @@ nav = [
   { Guide = [
       { Architecture = "guide/architecture.md" },
       { Workspaces = "guide/workspaces.md" },
+      { "FEM simulation" = "guide/fem.md" },
       { Settings = "guide/settings.md" },
       { Dashboard = "guide/dashboard.md" },
       { "Imaging Console" = "guide/imaging-console.md" },

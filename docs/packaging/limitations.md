@@ -6,6 +6,8 @@ icon: lucide/alert-triangle
 
 # Known limitations
 
+- **FEM** requires an external Python interpreter with the Gmsh API and `ElmerGrid` / `ElmerSolver`. The sidecar includes FEM Python sources but does not bundle Elmer or that interpreter. Set `ADELPHA_FEM_PYTHON` if needed; see [FEM simulation](../guide/fem.md).
+
 - **DTAM** is MIT (`dtam/LICENSE`). A public installer that also bundles the
   imaging console is still a GPL-3 distribution of that runtime.
 - **GPL-3 console** in the sidecar: corresponding source must ship with any

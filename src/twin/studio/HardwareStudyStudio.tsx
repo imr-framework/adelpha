@@ -284,7 +284,7 @@ export function HardwareStudyStudio({
   const sectionPanel = (section: StudySection) => <StudySectionPanel study={study} section={section} parts={parts} included={included} issues={issues} record={record} active={active} example={example} projectId={projectId} compact={setup && step.id === "parts"} />;
 
   return (
-    <div className={`studio-study hardware-workspace ${setup ? "is-preparing" : "is-prepared"}`} aria-label={study === "fem" ? "Elmer FEM" : "Magnet field"}>
+    <div className={`studio-study hardware-workspace ${setup ? "is-preparing" : "is-prepared"}`} aria-label={study === "fem" ? "FEM" : "Magnet field"}>
       <aside className="studio-study-tree" aria-label={setup ? "Study setup" : "Assembly tree"}>
         {setup ? <>
           <h2>Study setup</h2><p className="study-muted">Prepare your study.</p>

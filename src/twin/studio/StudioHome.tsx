@@ -360,7 +360,7 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
             </fieldset>
             {application === "hardware" ? <label className="compact-workspace">Hardware workspace
               <select value={hardwareChoice} onChange={(event) => setHardwareChoice(event.target.value as typeof hardwareChoice)}>
-                <option value="assembly">Assembly</option><option value="magnet">Magnet field</option><option value="fem">Elmer FEM</option><option value="gradients">Gradient coils</option><option value="shimming">Passive shimming</option>
+                <option value="assembly">Assembly</option><option value="magnet">Magnet field</option><option value="fem">FEM</option><option value="gradients">Gradient coils</option><option value="shimming">Passive shimming</option>
               </select>
             </label> : null}
             <div className="studio-create-actions">
@@ -376,7 +376,7 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
                 <p className="studio-create-hint">
                   {!application
                     ? "Choose hardware, acquisition, or reconstruction."
-                    : application === "hardware" ? `Opens directly in ${{ assembly: "Assembly", magnet: "Magnet field", fem: "Elmer FEM", gradients: "Gradient coils", shimming: "Passive shimming" }[hardwareChoice]}.` : `Opens directly in ${application === "acquisition" ? "Acquisition" : "Reconstruction"}.`}
+                    : application === "hardware" ? `Opens directly in ${{ assembly: "Assembly", magnet: "Magnet field", fem: "FEM", gradients: "Gradient coils", shimming: "Passive shimming" }[hardwareChoice]}.` : `Opens directly in ${application === "acquisition" ? "Acquisition" : "Reconstruction"}.`}
                 </p>
               )}
             </div>
@@ -568,7 +568,7 @@ function ProjectRow({
   onMenu: () => void;
   onDelete: () => void;
 }) {
-  const labels: Record<string, string> = { assembly: "Assembly", magnet: "Magnet field", fem: "Elmer FEM", gradients: "Gradient coils", shimming: "Passive shimming" };
+  const labels: Record<string, string> = { assembly: "Assembly", magnet: "Magnet field", fem: "FEM", gradients: "Gradient coils", shimming: "Passive shimming" };
   const workspace = project.application === "acquisition" ? "Acquisition · MRZero" : project.application === "reconstruction" ? "Reconstruction" : labels[project.lastView ?? "assembly"] ?? projectClassMeta(project).label;
   return <tr>
     <td><button type="button" className="compact-project-open" aria-label={project.name} onClick={onOpen}><Box size={17} aria-hidden /><span>{project.name}</span></button></td>

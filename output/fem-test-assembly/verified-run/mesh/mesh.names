@@ -1,0 +1,6 @@
+! ----- names for bodies -----
+$ air = 1
+$ lower_magnet = 2
+$ upper_magnet = 3
+! ----- names for boundaries -----
+$ far_field = 1

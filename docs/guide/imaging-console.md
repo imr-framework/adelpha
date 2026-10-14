@@ -75,7 +75,7 @@ Name, serial, and picture follow **Settings → 3D Model**.
 
 ## Theme
 
-**Settings → Appearance** (or Imaging Console): **Adelpha** (violet) or **MRI4ALL** (navy and gold).
+**Settings → Appearance** offers **Adelpha**, **MRI4ALL**, **Porcelain**, and **Glacier**. MRI4ALL keeps the classic navy-and-gold appearance.
 
 ## What stays in Python
 

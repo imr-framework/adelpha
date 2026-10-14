@@ -44,7 +44,9 @@ describe("studio project library", () => {
     expect(projectClass(project({ application: "acquisition" }))).toBe("acq");
     expect(projectClass(project({ application: "reconstruction" }))).toBe("recon");
     expect(projectClass(project({ lastView: "magnet" }))).toBe("magnet");
-    expect(projectClass(project({ lastView: "fem" }))).toBe("magnet");
+    expect(projectClass(project({ lastView: "fem" }))).toBe("fem");
+    expect(projectClass(project({ lastView: "fem", primaryClass: "magnet" }))).toBe("fem");
+    expect(matchesProjectClass(project({ lastView: "fem" }), "fem")).toBe(true);
     expect(projectClass(project({ lastView: "gradients" }))).toBe("gradient");
     expect(projectClass(project({ discipline: "Gradients" }))).toBe("gradient");
     expect(projectClass(project({ lastView: "shimming" }))).toBe("shimming");
@@ -64,7 +66,7 @@ describe("studio project library", () => {
     expect(projectDetail(project({ lastView: "gradients" }))).toBe("Standalone design · PyCoilGen");
     expect(projectDetail(project({ application: "acquisition" }))).toBe("Acquisition simulation · MRzero");
     expect(projectDetail(project({ lastView: "shimming" }))).toBe("Optimization study");
-    expect(projectDetail(project({ lastView: "fem" }))).toBe("Magnet field study · Elmer");
+    expect(projectDetail(project({ lastView: "fem" }))).toBe("FEM study · Elmer");
     expect(projectDetail(project({ parts: 0, lastView: "assembly" }))).toBe("Assembly study");
   });
 

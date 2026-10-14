@@ -3,7 +3,7 @@ import { HARDWARE_STUDIES_KEY, useHardwareStudyStore } from "./hardwareStudyStor
 export type StudioProjectKind = "sample" | "user";
 export type StudioApplication = "hardware" | "acquisition" | "reconstruction";
 export type StudioLastView = "assembly" | "magnet" | "fem" | "gradients" | "shimming";
-export type StudioProjectClass = "acq" | "magnet" | "gradient" | "rf" | "shimming" | "assembly" | "recon";
+export type StudioProjectClass = "acq" | "fem" | "magnet" | "gradient" | "rf" | "shimming" | "assembly" | "recon";
 export type StudioSort = "modified" | "name";
 export type StudioRecencyGroup = "today" | "yesterday" | "week" | "older";
 
@@ -29,6 +29,7 @@ export const PROJECT_CLASS_META: Record<
   { badge: string; label: string }
 > = {
   acq: { badge: "Acq", label: "Acquisition" },
+  fem: { badge: "FEM", label: "FEM" },
   magnet: { badge: "Magnet", label: "Magnet" },
   gradient: { badge: "Gradient", label: "Gradient" },
   rf: { badge: "RF", label: "RF" },
@@ -40,6 +41,7 @@ export const PROJECT_CLASS_META: Record<
 export const PROJECT_CLASS_FILTERS: readonly { id: "all" | StudioProjectClass; badge: string; label: string }[] = [
   { id: "all", badge: "All", label: "All" },
   { id: "acq", badge: "Acq", label: "Acquisition" },
+  { id: "fem", badge: "FEM", label: "FEM" },
   { id: "magnet", badge: "Magnet", label: "Magnet" },
   { id: "gradient", badge: "Gradient", label: "Gradient" },
   { id: "rf", badge: "RF", label: "RF" },
@@ -214,6 +216,7 @@ function isLastView(value: unknown): value is StudioLastView {
 export function isProjectClass(value: unknown): value is StudioProjectClass {
   return (
     value === "acq" ||
+    value === "fem" ||
     value === "magnet" ||
     value === "gradient" ||
     value === "rf" ||
@@ -420,13 +423,15 @@ export function deriveProjectClass(
   if (application === "reconstruction") return "recon";
   if (lastView === "gradients" || discipline === "Gradients") return "gradient";
   if (lastView === "shimming" || discipline === "Shimming") return "shimming";
-  if (lastView === "magnet" || lastView === "fem") return "magnet";
+  if (lastView === "fem") return "fem";
+  if (lastView === "magnet") return "magnet";
   if (discipline === "RF") return "rf";
   if (discipline === "Magnet") return "magnet";
   return "assembly";
 }
 
 export function projectClass(project: StudioProject): StudioProjectClass {
+  if (project.application === "hardware" && inferLastView(project) === "fem") return "fem";
   if (isProjectClass(project.primaryClass)) return project.primaryClass;
   return deriveProjectClass(project.application, inferLastView(project), project.discipline);
 }
@@ -450,7 +455,7 @@ export function engineLabel(project: StudioProject): string | undefined {
 }
 
 export function studyTypeLabel(project: StudioProject): string {
-  return engineLabel(project) ?? projectClassMeta(project).label;
+  return projectClass(project) === "fem" ? "FEM" : engineLabel(project) ?? projectClassMeta(project).label;
 }
 
 export function isStandaloneProject(project: StudioProject): boolean {
@@ -485,7 +490,7 @@ export function projectDetail(project: StudioProject): string {
   if (included != null && included > 0) return withEngine(`${included} included`);
   if (catalog != null && catalog > 0) return withEngine(formatParts(catalog));
   if (project.parts > 0) return withEngine(formatParts(project.parts));
-  return withEngine(project.summary ?? (projectClass(project) === "magnet" ? "Magnet field study" : "Assembly study"));
+  return withEngine(project.summary ?? (projectClass(project) === "fem" ? "FEM study" : projectClass(project) === "magnet" ? "Magnet field study" : "Assembly study"));
 }
 
 export function matchesQuery(project: StudioProject, query: string): boolean {

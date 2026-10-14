@@ -840,3 +840,59 @@ export function emptyPatient(): PatientInformation {
     age: 0,
   };
 }
+
+export type FemUpload = {
+  id: string;
+  filename: string;
+  units: "m";
+  solids: { index: number; label: string; bounds_m: number[]; center_m: number[]; volume_m3: number }[];
+};
+export type FemJob = {
+  mesh_available?: boolean;
+  id: string;
+  status: "queued" | "meshing" | "converting" | "prepared" | "solving" | "completed" | "failed";
+  error?: string;
+  mesh?: { nodes: number; tetrahedra: number; quality: { minimum: number; mean: number } };
+  results?: string[];
+};
+export type FemConfig = {
+  materials: Record<string, { relative_permeability: number; remanence: number[] }>;
+  regions: { name: string; solids: number[]; material: string }[];
+  mesh: { size: number; air_size: number; air_padding: number; transition: number };
+  solver: { quadratic: boolean; tolerance: number; max_iterations: number };
+};
+export async function uploadFemStep(file: File): Promise<FemUpload> {
+  return studioFetch(magnetBaseUrl(), `/fem/uploads?filename=${encodeURIComponent(file.name)}`, {
+    method: "POST", headers: { "content-type": "application/octet-stream" }, body: file,
+  });
+}
+export async function startFemJob(uploadId: string, config: FemConfig): Promise<FemJob> {
+  return studioFetch(magnetBaseUrl(), "/fem/jobs", {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ upload_id: uploadId, config }),
+  });
+}
+export async function fetchFemJob(id: string): Promise<FemJob> {
+  return studioFetch(magnetBaseUrl(), `/fem/jobs/${encodeURIComponent(id)}`);
+}
+
+export type FemMeshPreview = { available: false; reason: string } | {
+  available: true; units: "m"; vertices: number[]; triangles: number;
+  groups: { id: number; name: string; triangles: number[] }[];
+};
+export async function fetchFemMesh(id: string): Promise<FemMeshPreview> {
+  return studioFetch(magnetBaseUrl(), `/fem/jobs/${encodeURIComponent(id)}/mesh`);
+}
+export async function downloadFemJob(id: string): Promise<void> {
+  const response = await runtimeFetch(`${magnetBaseUrl()}/fem/jobs/${encodeURIComponent(id)}/download`);
+  if (!response.ok) throw new Error(await readError(response));
+  await saveBlob(`elmer-${id.slice(0, 8)}.zip`, await response.blob());
+}
+
+export type FemFields = {
+  units: "m"; source: string; points: number[];
+  fields: Record<"B" | "H" | "A", { name: string; unit: string; values: number[] }>;
+  groups: { id: number; name: string; triangles: number[]; tetrahedra: number[] }[];
+};
+export async function fetchFemFields(id: string): Promise<FemFields> {
+  return studioFetch(magnetBaseUrl(), `/fem/jobs/${encodeURIComponent(id)}/fields`);
+}

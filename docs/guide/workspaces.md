@@ -53,16 +53,18 @@ See [Dashboard](dashboard.md).
 
 ## Imaging Console
 
-Full-width operator layout: register a patient, build a queue, open studies, ping the scanner. Theme can be Adelpha violet or classic MRI4ALL navy and gold.
+Full-width operator layout: register a patient, build a queue, open studies, ping the scanner. Appearance follows the selected [theme](settings.md#appearance).
 
 See [Imaging Console](imaging-console.md).
 
 ## Engineering Studio
 
-Full-width CAD stage for the MRI assembly used in simulation.
+Project workspaces for assembly design and simulation.
 
 | Area | Contents |
 | --- | --- |
 | **3D viewport** | Assembly view shows parts marked **Add to simulation**, in the same void as Digital Twin |
-| **Hardware studies** | Magnet field and Elmer FEM use the included assembly. Gradient coils and passive shimming stay standalone. |
-| **Controls** | Orbit / pan / inspect rail, Front / Right / Top / Iso, view cube, fit (F) |
+| **Hardware studies** | Magnet field uses the simulation assembly. FEM imports its own STEP file. Gradient coils and passive shimming have separate workspaces. |
+| **Assembly controls** | Orbit / pan / inspect rail, Front / Right / Top / Iso, view cube, fit (F) |
+
+[FEM simulation](fem.md) uses a collapsible project drawer, CAD / Mesh / Results views, and a right-hand inspector. The study name stays at the bottom of the drawer.

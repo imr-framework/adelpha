@@ -31,6 +31,7 @@ type DevBackend = {
 };
 
 const DEV_BACKENDS: DevBackend[] = [
+  { prefix: "/api/magnet", port: 8005, name: "Magnet / Elmer API", hint: "Start the Adelpha magnet service with runtime/python/.venv/bin/python -m uvicorn adelpha_runtime.studio:create_dev_magnet_app --factory --app-dir runtime/python --port 8005" },
   { prefix: "/api/dtam", port: 8080, name: "Twin API", hint: "cd dtam && make twin-api" },
   { prefix: "/api/agents", port: 8001, name: "Agents API", hint: "cd dtam && make agents-api" },
   { prefix: "/api/mri", port: 8002, name: "Imaging Console API", hint: "cd console && python -m services.api" },
@@ -113,54 +114,79 @@ function ensureTwinApi(): Plugin {
   return {
     name: "ensure-twin-api",
     apply: "serve",
-    async configureServer(server) {
-      if (await probePort(8080)) {
-        server.config.logger.info("Twin API already listening on :8080");
-        return;
-      }
-      const dtam = resolve(root, "dtam");
-      const venvPython = resolve(dtam, ".venv/bin/python");
-      const command = existsSync(venvPython) ? venvPython : "uv";
-      const args = existsSync(venvPython) ? ["-m", "dtam.api"] : ["run", "python", "-m", "dtam.api"];
-      server.config.logger.info("starting Twin API on :8080 for the Vite proxy");
-      const child: ChildProcess = spawn(command, args, {
-        cwd: dtam,
-        env: {
-          ...process.env,
-          PYTHONUNBUFFERED: "1",
-          DTAM_CONFIG_DIR: resolve(dtam, "configs"),
-        },
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      const prefix = "[twin-api]";
-      child.stdout?.on("data", (buf: Buffer) => {
-        const text = String(buf).trim();
-        if (text) server.config.logger.info(`${prefix} ${text}`);
-      });
-      child.stderr?.on("data", (buf: Buffer) => {
-        const text = String(buf).trim();
-        if (text) server.config.logger.info(`${prefix} ${text}`);
-      });
-      child.on("exit", (code, signal) => {
-        if (code || signal) {
-          server.config.logger.warn(`${prefix} exited (${signal ?? code}). ${DEV_BACKENDS[0].hint}`);
+    configureServer(server) {
+      server.httpServer?.once("listening", async () => {
+        if (await probePort(8080)) {
+          server.config.logger.info("Twin API already listening on :8080");
+          return;
         }
-      });
-      server.httpServer?.once("close", () => {
-        child.kill();
+        const dtam = resolve(root, "dtam");
+        const venvPython = resolve(dtam, ".venv/bin/python");
+        const command = existsSync(venvPython) ? venvPython : "uv";
+        const args = existsSync(venvPython) ? ["-m", "dtam.api"] : ["run", "python", "-m", "dtam.api"];
+        server.config.logger.info("starting Twin API on :8080 for the Vite proxy");
+        const child: ChildProcess = spawn(command, args, {
+          cwd: dtam,
+          env: {
+            ...process.env,
+            PYTHONUNBUFFERED: "1",
+            DTAM_CONFIG_DIR: resolve(dtam, "configs"),
+          },
+          stdio: ["ignore", "pipe", "pipe"],
+        });
+        const prefix = "[twin-api]";
+        child.stdout?.on("data", (buf: Buffer) => {
+          const text = String(buf).trim();
+          if (text) server.config.logger.info(`${prefix} ${text}`);
+        });
+        child.stderr?.on("data", (buf: Buffer) => {
+          const text = String(buf).trim();
+          if (text) server.config.logger.info(`${prefix} ${text}`);
+        });
+        child.on("exit", (code, signal) => {
+          if (code || signal) {
+            server.config.logger.warn(`${prefix} exited (${signal ?? code}). ${DEV_BACKENDS.find(backend => backend.prefix === "/api/dtam")?.hint}`);
+          }
+        });
+        server.httpServer?.once("close", () => {
+          child.kill();
+        });
       });
     },
   };
 }
 
+function ensureMagnetApi(): Plugin {
+  return {
+    name: "ensure-magnet-api",
+    apply: "serve",
+    configureServer(server) {
+      // Wait until a Vite restart has closed the previous server and its worker.
+      server.httpServer?.once("listening", async () => {
+        if (await probePort(8005)) return;
+        const python = resolve(root, "runtime/python/.venv/bin/python");
+        const windowsPython = resolve(root, "runtime/python/.venv/Scripts/python.exe");
+        const command = existsSync(python) ? python : existsSync(windowsPython) ? windowsPython : "python3";
+        const child = spawn(command, ["-m", "uvicorn", "adelpha_runtime.studio:create_dev_magnet_app", "--factory", "--app-dir", "runtime/python", "--host", "127.0.0.1", "--port", "8005"], {
+          cwd: root, env: process.env, stdio: ["ignore", "pipe", "pipe"],
+        });
+        child.stderr?.on("data", (data: Buffer) => server.config.logger.info(`[magnet-api] ${String(data).trim()}`));
+        child.on("error", error => server.config.logger.warn(`Could not start magnet API: ${error.message}`));
+        server.httpServer?.once("close", () => child.kill());
+      });
+    },
+  };
+}
 export default defineConfig({
-  plugins: [react(), mediapipeWasm(), backendProxyGuard(), ensureTwinApi()],
+  plugins: [react(), mediapipeWasm(), backendProxyGuard(), ensureTwinApi(), ensureMagnetApi()],
   define: {
     __ADELPHA_VERSION__: JSON.stringify(pkg.version),
   },
   assetsInclude: ["**/*.wasm"],
   optimizeDeps: {
-    exclude: ["occt-import-js"],
+    // OCCT ships CommonJS/UMD, not native ESM. Prebundle it so WebKit can
+    // resolve the default import used by the STEP converter in development.
+    include: ["occt-import-js"],
   },
   clearScreen: false,
   envPrefix: ["VITE_", "TAURI_ENV_"],
@@ -192,6 +218,11 @@ export default defineConfig({
       ignored: ["**/src-tauri/**", "**/packaging/**", "**/.venv/**", "**/site/**"],
     },
     proxy: {
+      "/api/magnet": {
+        target: "http://127.0.0.1:8005",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/magnet/, ""),
+      },
       // Twin HTTP API (make twin-api → :8080)
       "/api/dtam": {
         target: "http://127.0.0.1:8080",
