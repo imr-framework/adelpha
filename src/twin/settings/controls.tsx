@@ -1,10 +1,10 @@
 import { useId, type ReactNode } from "react";
 import { Check, ChevronDown } from "lucide-react";
 
-import { useConsoleTheme } from "../consoleTheme";
+import { CONSOLE_THEMES, useConsoleTheme } from "../consoleTheme";
 import { useModelColors, usePolishedFinish } from "../useModelColors";
 import { useOrbitMode } from "../orbitMode";
-import { VIEWPORT_BG_PRESETS, useViewportBg } from "../viewportBg";
+import { VIEWPORT_BG_PRESETS, resetViewportBg, useViewportBg } from "../viewportBg";
 
 /**
  * Shared settings primitives. Every settings panel renders through these so
@@ -414,6 +414,7 @@ export function ViewportBgRow() {
           />
         </label>
         <Mono>{color}</Mono>
+        <button type="button" className="settings-btn" onClick={resetViewportBg}>Use theme background</button>
       </div>
     </SettingsRow>
   );
@@ -423,18 +424,31 @@ export function ConsoleThemeRow() {
   const [consoleTheme, setTheme] = useConsoleTheme();
   return (
     <SettingsRow
-      title="Console theme"
-      description="Adelpha violet, or the legacy MRI4ALL navy and gold."
+      title="Application theme"
+      description="Choose a look for the workspace, settings, and Imaging Console. Changes apply immediately."
+      layout="stack"
     >
-      <Segmented
-        label="Console theme"
-        value={consoleTheme}
-        onChange={setTheme}
-        options={[
-          { value: "adelpha", label: "Adelpha" },
-          { value: "mri4all", label: "MRI4ALL" },
-        ]}
-      />
+      <div className="settings-theme-grid" role="group" aria-label="Application theme">
+        {CONSOLE_THEMES.map((theme) => (
+          <button
+            key={theme.id}
+            type="button"
+            className="settings-theme-choice"
+            aria-pressed={consoleTheme === theme.id}
+            onClick={() => setTheme(theme.id)}
+          >
+            <span className="settings-theme-preview" aria-hidden="true" style={{ background: theme.canvas }}>
+              <span style={{ background: theme.surface }} />
+              <span style={{ background: theme.surface }}>
+                <i style={{ background: theme.accent }} />
+                <i style={{ background: theme.accent }} />
+              </span>
+            </span>
+            <span className="settings-theme-name">{theme.name}<span aria-hidden="true">{consoleTheme === theme.id ? "✓" : ""}</span></span>
+            <span className="settings-theme-description">{theme.description}</span>
+          </button>
+        ))}
+      </div>
     </SettingsRow>
   );
 }

@@ -5,6 +5,7 @@ import {
   FolderOpen,
   GraduationCap,
   MoreHorizontal,
+  MessageSquare,
   Plus,
   Search,
   Settings,
@@ -40,6 +41,7 @@ import {
   type StudioProjectClass,
   type StudioSort,
 } from "./library";
+import { StudioAgent } from "./StudioAgent";
 import "./studioHome.css";
 import "./compactLibrary.css";
 
@@ -47,9 +49,9 @@ type StudioHomeProps = {
   onOpenProject: (project: StudioProject, options?: { view?: StudioProject["lastView"]; setup?: boolean }) => void;
 };
 
-type NavId = "projects" | "examples" | "tutorials";
+type NavId = "projects" | "examples" | "tutorials" | "agent";
 
-const pageCopy: Record<NavId, { crumb: string; title: string; lede: string }> = {
+const pageCopy: Record<Exclude<NavId, "agent">, { crumb: string; title: string; lede: string }> = {
   projects: {
     crumb: "Projects",
     title: "Your engineering workspace",
@@ -228,6 +230,7 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
           <NavButton id="projects" label="Projects" active={nav === "projects"} Icon={Box} onClick={() => goTo("projects")} />
           <NavButton id="examples" label="Examples" active={nav === "examples"} Icon={BookOpen} onClick={() => goTo("examples")} />
           <NavButton id="tutorials" label="Tutorials" active={nav === "tutorials"} Icon={GraduationCap} onClick={() => goTo("tutorials")} />
+          <NavButton id="agent" label="Agent" active={nav === "agent"} Icon={MessageSquare} onClick={() => goTo("agent")} />
         </div>
         <div className="studio-nav-foot">
           <a className="studio-nav-item" href={STUDIO_DOCS_URL} target="_blank" rel="noreferrer">
@@ -241,7 +244,8 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
         </div>
       </nav>
 
-      <div className={`studio-home-main${nav === "projects" ? " compact-library" : ""}${nav === "projects" && mode === "create" ? " is-creating" : ""}`}>
+      <div hidden={nav !== "agent"} className="studio-agent-host"><StudioAgent /></div>
+      {nav !== "agent" && <div className={`studio-home-main${nav === "projects" ? " compact-library" : ""}${nav === "projects" && mode === "create" ? " is-creating" : ""}`}>
         <header className="studio-home-head">
           {nav === "projects" ? <div className="compact-title"><h2 id="studio-projects-heading">Projects</h2><span>{ready ? `${shown.length} ${shown.length === 1 ? "project" : "projects"}` : "Loading…"}</span></div> : (
           <div className="studio-home-intro">
@@ -505,7 +509,7 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
             </ul>
           </section>
         ) : null}
-      </div>
+      </div>}
     </section>
   );
 }

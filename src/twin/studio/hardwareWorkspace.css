@@ -1,77 +1,77 @@
 /* Scoped to engineering content: the application header retains its existing theme. */
-.engineering-viewport { position: relative; flex: 1; width: 100%; height: 100%; min-height: 0; overflow: hidden; background: #030303; }
+.engineering-viewport { position: relative; flex: 1; width: 100%; height: 100%; min-height: 0; overflow: hidden; background: var(--theme-bg, #030303); }
 .hardware-workspace.studio-study {
   position: relative; flex: 1; width: 100%; min-height: 0; box-sizing: border-box;
   grid-template-columns: clamp(205px, 19vw, 270px) minmax(240px, 1fr) clamp(265px, 24vw, 350px);
   grid-template-rows: auto minmax(0, 1fr) auto 26px;
-  gap: 10px; padding: 12px 14px 0; background: #030303; pointer-events: auto;
-  --inspect-label: #a4a4af; --inspect-accent: #777982; font-size: 13px;
+  gap: 10px; padding: 12px 14px 0; background: var(--theme-bg, #030303); pointer-events: auto;
+  --inspect-label: var(--theme-muted, #a4a4af); --inspect-accent: var(--theme-accent, #777982); font-size: 13px;
 }
-.hardware-workspace :is(button,input,select,summary):focus-visible { outline: 2px solid #e0d5f6; outline-offset: 3px; }
+.hardware-workspace :is(button,input,select,summary):focus-visible { outline: 2px solid var(--theme-border, #e0d5f6); outline-offset: 3px; }
 .hardware-workspace h2 { margin: 0 0 10px; font-size: 16px; font-weight: 600; }
 .hardware-workspace .studio-study-tree { grid-row: 1 / 4; padding: 18px 12px; }
 .hardware-workspace :is(.studio-study-tree,.studio-study-inspector,.studio-study-bar,.studio-study-panel) {
-  background: #09090b; border-color: #242428; border-radius: 10px; box-shadow: none;
+  background: var(--theme-bg, #09090b); border-color: var(--theme-border, #242428); border-radius: 10px; box-shadow: none;
 }
 .hardware-workspace .studio-study-bar { grid-column: 2 / 4; grid-row: 1; padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 12px; }
 .study-project-heading { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
 .study-project-heading h2 { margin: 0; overflow-wrap: anywhere; }
 .study-header-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.study-badge { border: 1px solid #35363d; border-radius: 6px; padding: 6px 9px; font-size: 11px; color: #c0bec9; }
-.hardware-workspace .studio-study-tabs { width: 100%; border-top: 1px solid #232329; padding-top: 10px; }
-.hardware-workspace .studio-study-viewport { grid-column: 2; grid-row: 2; position: relative; min-height: 240px; pointer-events: auto; overflow: hidden; border: 1px solid #1f1f23; border-radius: 10px; background: #030303; }
-.study-viewport-caption { position: absolute; top: 14px; left: 16px; max-width: calc(100% - 125px); z-index: 2; color: #a4a4af; pointer-events: none; font-size: 11px; }
+.study-badge { border: 1px solid var(--theme-border, #35363d); border-radius: 6px; padding: 6px 9px; font-size: 11px; color: var(--theme-muted, #c0bec9); }
+.hardware-workspace .studio-study-tabs { width: 100%; border-top: 1px solid var(--theme-border, #232329); padding-top: 10px; }
+.hardware-workspace .studio-study-viewport { grid-column: 2; grid-row: 2; position: relative; min-height: 240px; pointer-events: auto; overflow: hidden; border: 1px solid var(--theme-border, #1f1f23); border-radius: 10px; background: var(--theme-bg, #030303); }
+.study-viewport-caption { position: absolute; top: 14px; left: 16px; max-width: calc(100% - 125px); z-index: 2; color: var(--theme-muted, #a4a4af); pointer-events: none; font-size: 11px; }
 .hardware-workspace .studio-study-inspector { grid-row: 2; grid-column: 3; padding: 18px; align-self: start; max-height: 100%; }
 .hardware-workspace.is-preparing .studio-study-inspector { grid-row: 2 / 4; align-self: stretch; display: flex; flex-direction: column; overflow: hidden; padding: 0; }
 .hardware-workspace.is-preparing .studio-study-viewport { grid-row: 2 / 4; }
 .study-setup-content { flex: 1; min-height: 0; overflow: auto; padding: 20px 18px; }
-.study-setup-content > h2 { padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #28282e; }
-.study-setup-footer { display: grid; gap: 10px; padding: 16px 18px; border-top: 1px solid #28282e; }
-.study-setup-footer p { color: #e7bc8e; }
+.study-setup-content > h2 { padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--theme-border, #28282e); }
+.study-setup-footer { display: grid; gap: 10px; padding: 16px 18px; border-top: 1px solid var(--theme-border, #28282e); }
+.study-setup-footer p { color: var(--theme-warning, #e7bc8e); }
 .study-setup-footer small { text-align: center; }
-.study-muted { color: #a4a4af; font-size: 12px; line-height: 1.6; }
+.study-muted { color: var(--theme-muted, #a4a4af); font-size: 12px; line-height: 1.6; }
 .study-steps { display: grid; gap: 4px; margin: 22px 0; }
-.study-steps button { display: flex; align-items: center; gap: 12px; border: 1px solid transparent; border-radius: 8px; padding: 15px 10px; text-align: left; background: transparent; color: #e6e5eb; font: inherit; cursor: pointer; }
-.study-steps button[aria-current="step"] { background: #202127; border-color: #35363e; }
-.study-steps small { display: block; margin-top: 5px; color: #a4a4af; font-size: 11px; }
-.study-step-number { flex: 0 0 32px; height: 32px; display: grid; place-items: center; border: 1px solid #464751; border-radius: 50%; font-size: 12px; }
-.study-steps button[aria-current="step"] .study-step-number { background: #50535f; }
-.study-browser-disclosure { border-top: 1px solid #28282e; padding-top: 15px; }
+.study-steps button { display: flex; align-items: center; gap: 12px; border: 1px solid transparent; border-radius: 8px; padding: 15px 10px; text-align: left; background: transparent; color: var(--theme-text, #e6e5eb); font: inherit; cursor: pointer; }
+.study-steps button[aria-current="step"] { background: var(--theme-raised, #202127); border-color: var(--theme-border, #35363e); }
+.study-steps small { display: block; margin-top: 5px; color: var(--theme-muted, #a4a4af); font-size: 11px; }
+.study-step-number { flex: 0 0 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--theme-border, #464751); border-radius: 50%; font-size: 12px; }
+.study-steps button[aria-current="step"] .study-step-number { background: var(--theme-raised, #50535f); }
+.study-browser-disclosure { border-top: 1px solid var(--theme-border, #28282e); padding-top: 15px; }
 .study-browser-disclosure summary { cursor: pointer; padding: 6px 0 16px; font-weight: 600; }
-.study-search { width: 100%; box-sizing: border-box; margin: 6px 0 15px; padding: 10px; border: 1px solid #303139; border-radius: 6px; background: #0c0c0f; color: #ecebf1; }
+.study-search { width: 100%; box-sizing: border-box; margin: 6px 0 15px; padding: 10px; border: 1px solid var(--theme-border, #303139); border-radius: 6px; background: var(--theme-surface, #0c0c0f); color: var(--theme-text, #ecebf1); }
 .hardware-workspace .studio-study-tree ul { gap: 0; }
-.hardware-workspace .studio-study-tree li { border-bottom: 1px solid #1d1d22; gap: 4px; padding: 4px 0; }
+.hardware-workspace .studio-study-tree li { border-bottom: 1px solid var(--theme-border, #1d1d22); gap: 4px; padding: 4px 0; }
 .hardware-workspace .studio-tree-row { min-width: 0; background: transparent; padding: 9px 6px; border-radius: 6px; }
-.hardware-workspace .studio-tree-row.is-selected { background: #272931; box-shadow: inset 2px 0 #c3c5cf; }
+.hardware-workspace .studio-tree-row.is-selected { background: var(--theme-raised, #272931); box-shadow: inset 2px 0 var(--theme-shadow, #c3c5cf); }
 .hardware-workspace .studio-tree-actions { gap: 3px; }
 .hardware-workspace .studio-tree-actions button { width: 24px; height: 27px; padding: 0; display: grid; place-items: center; border-radius: 5px; }
-.hardware-workspace .studio-tree-actions button[aria-pressed="true"] { border-color: #595b65; color: #e2e2e9; }
-.hardware-workspace .studio-tree-actions button[aria-pressed="false"] { color: #797984; }
+.hardware-workspace .studio-tree-actions button[aria-pressed="true"] { border-color: var(--theme-border, #595b65); color: var(--theme-text, #e2e2e9); }
+.hardware-workspace .studio-tree-actions button[aria-pressed="false"] { color: var(--theme-muted, #797984); }
 .hardware-workspace .studio-study-tabs button[aria-selected="true"],
-.hardware-workspace .studio-study-tabs button[aria-pressed="true"] { background: #2a2b33; }
-.hardware-workspace .mr0-run { margin: 0; min-height: 38px; height: auto; padding: 10px 15px; background: #d5c4fa; color: #24212e; border: 1px solid #d5c4fa; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.hardware-workspace .mr0-run:hover:not(:disabled) { background: #e1d4fb; }
+.hardware-workspace .studio-study-tabs button[aria-pressed="true"] { background: var(--theme-raised, #2a2b33); }
+.hardware-workspace .mr0-run { margin: 0; min-height: 38px; height: auto; padding: 10px 15px; background: var(--theme-accent, #d5c4fa); color: var(--theme-on-accent, #24212e); border: 1px solid var(--theme-accent, #d5c4fa); border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.hardware-workspace .mr0-run:hover:not(:disabled) { background: var(--theme-accent, #e1d4fb); }
 .hardware-workspace button:disabled { opacity: .45; cursor: not-allowed; }
-.hardware-workspace .studio-ghost { border: 1px solid #36363e; border-radius: 6px; background: #111114; color: #dddce5; padding: 9px 12px; cursor: pointer; }
-.hardware-workspace input[type="checkbox"] { accent-color: #c4c5ce; }
+.hardware-workspace .studio-ghost { border: 1px solid var(--theme-border, #36363e); border-radius: 6px; background: var(--theme-surface, #111114); color: var(--theme-text, #dddce5); padding: 9px 12px; cursor: pointer; }
+.hardware-workspace input[type="checkbox"] { accent-color: var(--theme-muted, #c4c5ce); }
 .study-inclusion { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin: 20px 0; }
 .hardware-workspace .studio-param { margin: 14px 0; }
-.hardware-workspace .studio-param :is(input,select) { min-width: 0; width: 100%; box-sizing: border-box; background: #111114; border: 1px solid #383841; border-radius: 6px; color: #eae9ee; padding: 9px 8px; }
+.hardware-workspace .studio-param :is(input,select) { min-width: 0; width: 100%; box-sizing: border-box; background: var(--theme-surface, #111114); border: 1px solid var(--theme-border, #383841); border-radius: 6px; color: var(--theme-text, #eae9ee); padding: 9px 8px; }
 .hardware-workspace .studio-study-inspector h3 { overflow-wrap: anywhere; }
-.hardware-workspace .studio-study-inspector .studio-study-panel { max-height: none; padding: 16px 0 0; margin-top: 18px; border: 0; border-top: 1px solid #28282e; border-radius: 0; background: transparent; overflow: visible; }
-.hardware-workspace .studio-study-list li { display: grid; gap: 4px; padding: 9px 0; border-bottom: 1px solid #222228; overflow-wrap: anywhere; }
+.hardware-workspace .studio-study-inspector .studio-study-panel { max-height: none; padding: 16px 0 0; margin-top: 18px; border: 0; border-top: 1px solid var(--theme-border, #28282e); border-radius: 0; background: transparent; overflow: visible; }
+.hardware-workspace .studio-study-list li { display: grid; gap: 4px; padding: 9px 0; border-bottom: 1px solid var(--theme-border, #222228); overflow-wrap: anywhere; }
 .hardware-workspace .studio-study-issues { margin-bottom: 16px; }
 .hardware-workspace .studio-study-issues li { padding: 8px 0; }
-.study-bottom-panel { grid-column: 2 / 4; grid-row: 3; min-height: 0; max-height: 32vh; overflow: auto; border: 1px solid #242428; border-radius: 8px; background: #09090b; }
+.study-bottom-panel { grid-column: 2 / 4; grid-row: 3; min-height: 0; max-height: 32vh; overflow: auto; border: 1px solid var(--theme-border, #242428); border-radius: 8px; background: var(--theme-bg, #09090b); }
 .study-bottom-panel summary { padding: 13px 16px; cursor: pointer; }
 .hardware-workspace .study-bottom-panel .studio-study-panel { max-height: none; border: 0; border-radius: 0; padding: 16px; }
-.study-statusbar { grid-column: 1 / 4; grid-row: 4; display: flex; justify-content: space-between; gap: 12px; font-size: 11px; color: #a4a4af; }
+.study-statusbar { grid-column: 1 / 4; grid-row: 4; display: flex; justify-content: space-between; gap: 12px; font-size: 11px; color: var(--theme-muted, #a4a4af); }
 .study-project-menu { position: relative; font-size: 12px; }
-.study-project-menu summary { cursor: pointer; padding: 9px; border: 1px solid #36363e; border-radius: 6px; list-style: none; }
-.study-project-menu button { position: absolute; z-index: 20; right: 0; top: 40px; white-space: nowrap; padding: 12px 20px; background: #19191d; border: 1px solid #45454f; border-radius: 6px; color: #eee; cursor: pointer; }
+.study-project-menu summary { cursor: pointer; padding: 9px; border: 1px solid var(--theme-border, #36363e); border-radius: 6px; list-style: none; }
+.study-project-menu button { position: absolute; z-index: 20; right: 0; top: 40px; white-space: nowrap; padding: 12px 20px; background: var(--theme-surface, #19191d); border: 1px solid var(--theme-border, #45454f); border-radius: 6px; color: var(--theme-text, #eee); cursor: pointer; }
 .engineering-stage.is-hardware-study .engineering-viewport .eng-nav-rail { left: 12px; top: 48%; }
 .engineering-stage.is-hardware-study .engineering-viewport .eng-view-bar { bottom: 18px; max-width: calc(100% - 20px); }
-.engineering-stage .eng-nav-btn.is-active,.engineering-stage .eng-view-btn.is-active { background: #2b2d36; border-color: #666975; color: #eeeef4; }
+.engineering-stage .eng-nav-btn.is-active,.engineering-stage .eng-view-btn.is-active { background: var(--theme-raised, #2b2d36); border-color: var(--theme-border, #666975); color: var(--theme-text, #eeeef4); }
 @media (max-width: 1100px) {
   .hardware-workspace.studio-study { grid-template-columns: 185px minmax(200px, 1fr) 265px; gap: 7px; padding: 8px 8px 0; }
   .hardware-workspace .studio-study-tree { padding: 14px 8px; }
@@ -94,20 +94,20 @@
 .main.main-alt-workspace:has(> .engineering-studio) { grid-template-rows: minmax(0, 1fr); }
 .study-parts-table-scroll { max-width: 100%; overflow-x: auto; margin-bottom: 18px; }
 .study-parts-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
-.study-parts-table th { font-weight: 500; color: #a4a4af; }
-.study-parts-table :is(th,td) { padding: 10px 12px 10px 0; border-bottom: 1px solid #242428; vertical-align: top; }
+.study-parts-table th { font-weight: 500; color: var(--theme-muted, #a4a4af); }
+.study-parts-table :is(th,td) { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--theme-border, #242428); vertical-align: top; }
 .study-parts-table td { min-width: 80px; overflow-wrap: anywhere; }
 /* Keep project context light and frame CAD inside the space above its camera dock. */
 .engineering-canvas-region { position: absolute; inset: 0; }
 .hardware-workspace .engineering-canvas-region { bottom: 66px; }
-.hardware-workspace .studio-study-bar { min-height: 40px; padding: 2px 4px 8px; border: 0; border-bottom: 1px solid #222228; border-radius: 0; background: transparent; }
+.hardware-workspace .studio-study-bar { min-height: 40px; padding: 2px 4px 8px; border: 0; border-bottom: 1px solid var(--theme-border, #222228); border-radius: 0; background: transparent; }
 .hardware-workspace .study-badge { border: 0; padding: 4px; }
 .hardware-workspace.is-preparing .studio-study-tree { display: flex; flex-direction: column; overflow: hidden; }
 .hardware-workspace.is-preparing .study-steps { flex-shrink: 0; margin: 14px 0 20px; }
 .hardware-workspace.is-preparing .study-steps button { padding-top: 12px; padding-bottom: 12px; }
 .hardware-workspace.is-preparing .study-browser-disclosure { min-height: 0; overflow: auto; }
 .study-review-details { margin-bottom: 20px; }
-.study-review-details > summary { padding: 8px 0 12px; font-size: 12px; font-weight: 600; cursor: pointer; color: #d4d3dd; }
+.study-review-details > summary { padding: 8px 0 12px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--theme-text, #d4d3dd); }
 @media (max-width: 800px) {
   .hardware-workspace.is-preparing .studio-study-tree { overflow: visible; }
   .hardware-workspace.is-preparing .study-browser-disclosure { overflow: visible; }

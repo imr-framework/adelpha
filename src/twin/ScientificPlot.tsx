@@ -1,3 +1,4 @@
+import { useConsoleTheme } from "./consoleTheme";
 import { useEffect, useRef } from "react";
 import { init, use } from "echarts/core";
 import { LineChart } from "echarts/charts";
@@ -44,6 +45,7 @@ export function ScientificPlot({
   compact?: boolean;
   fullY?: boolean;
 }) {
+  const [theme] = useConsoleTheme();
   const hostRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ECharts | null>(null);
   const axesRef = useRef(axes);
@@ -82,8 +84,8 @@ export function ScientificPlot({
     const chart = chartRef.current;
     const el = hostRef.current;
     if (!chart || !el) return;
-    chart.setOption(buildScientificPlotOption(axes, compact, !compact, fullY), { notMerge: true });
+    chart.setOption(buildScientificPlotOption(axes, compact, !compact, fullY, theme), { notMerge: true });
     fitChart(chart, el);
-  }, [axes, compact, fullY]);
+  }, [axes, compact, fullY, theme]);
   return <div ref={hostRef} className={`ic-scientific-plot${compact ? " is-compact" : ""}`} />;
 }

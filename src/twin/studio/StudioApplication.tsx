@@ -445,12 +445,12 @@ function SignalPlot({ samples, label = "Center echo magnitude", fill = false }: 
       aria-label={label}
     >
       {grid.map((y) => (
-        <line key={y} x1={padX} x2={width - padX} y1={y} y2={y} stroke="rgba(255,255,255,0.08)" />
+        <line key={y} x1={padX} x2={width - padX} y1={y} y2={y} stroke="var(--theme-border, rgba(255,255,255,0.08))" />
       ))}
-      <line x1={padX} x2={width - padX} y1={height - padY} y2={height - padY} stroke="rgba(255,255,255,0.2)" />
-      <polygon points={area} fill="rgba(159,223,255,0.16)" />
-      <polyline points={line} fill="none" stroke="#9fdfff" strokeWidth="1.6" strokeLinejoin="round" />
-      <circle cx={peakPoint.x.toFixed(1)} cy={peakPoint.y.toFixed(1)} r="3" fill="#f4f5f7" />
+      <line x1={padX} x2={width - padX} y1={height - padY} y2={height - padY} stroke="var(--theme-border, rgba(255,255,255,0.2))" />
+      <polygon points={area} fill="var(--theme-accent-soft, rgba(159,223,255,0.16))" />
+      <polyline points={line} fill="none" stroke="var(--theme-accent, #9fdfff)" strokeWidth="1.6" strokeLinejoin="round" />
+      <circle cx={peakPoint.x.toFixed(1)} cy={peakPoint.y.toFixed(1)} r="3" fill="var(--theme-accent, #f4f5f7)" />
     </svg>
   );
 }
@@ -633,12 +633,12 @@ function ReconSketch({
   const lines = Math.max(4, Math.min(10, Math.round(matrix / 64)));
   return (
     <svg className="studio-sketch" viewBox="0 0 320 160" role="img" aria-label="Reconstruction layout">
-      <rect width="320" height="160" fill="#2b2e34" />
+      <rect width="320" height="160" fill="var(--theme-raised, #2b2e34)" />
       {methodId === "grid" && trajectory === "spiral" ? (
         <path
           d="M160 80 m0 -6 a6 6 0 1 1 -0.1 0 M160 80 m0 -16 a16 16 0 1 1 -0.2 0 M160 80 m0 -28 a28 28 0 1 1 -0.3 0 M160 80 m0 -42 a42 42 0 1 1 -0.4 0"
           fill="none"
-          stroke="#9fdfff"
+          stroke="var(--theme-accent, #9fdfff)"
           strokeWidth="1.4"
         />
       ) : methodId === "grid" ? (
@@ -648,7 +648,7 @@ function ReconSketch({
           const y2 = 80 + Math.sin(angle) * 52;
           const x1 = 160 - Math.cos(angle) * 52;
           const y1 = 80 - Math.sin(angle) * 52;
-          return <line key={index} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#9fdfff" strokeWidth="1.2" />;
+          return <line key={index} x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--theme-accent, #9fdfff)" strokeWidth="1.2" />;
         })
       ) : (
         Array.from({ length: lines }, (_, index) => {
@@ -661,7 +661,7 @@ function ReconSketch({
               y1={y}
               x2={250 - gap}
               y2={y}
-              stroke={index % 2 === 0 || methodId === "fft" ? "#f4f5f7" : "rgba(159,223,255,0.35)"}
+              stroke={index % 2 === 0 || methodId === "fft" ? "var(--theme-text, #f4f5f7)" : "var(--theme-accent, rgba(159,223,255,0.35))"}
               strokeWidth="1.4"
             />
           );

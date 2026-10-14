@@ -1,3 +1,4 @@
+import { useThemeStageBackground } from "../consoleTheme";
 import { OrbitControls } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -28,11 +29,11 @@ export function CoilLayoutView({
       <Canvas
         frameloop="always"
         dpr={[1, 1.5]}
-        style={{ width: "100%", height: "100%", background: "#111216" }}
+        style={{ width: "100%", height: "100%", background: "var(--theme-stage, #111216)" }}
         onContextMenu={(event) => event.preventDefault()}
         onCreated={({ gl }) => {
           configureAdelphaRenderer(gl);
-          gl.setClearColor("#111216");
+          // The scene background follows the application theme.
         }}
         camera={{ fov: 32, near: 0.001, far: 20, position: [0.4, 0.28, 0.42] }}
         gl={{ antialias: true, alpha: false, stencil: false, depth: true, powerPreference: "high-performance" }}
@@ -44,6 +45,7 @@ export function CoilLayoutView({
 }
 
 function CoilScene({ layout, showFormer, resetNonce }: { layout: CoilLayout; showFormer: boolean; resetNonce: number }) {
+  const background = useThemeStageBackground("#111216");
   const [selected, setSelected] = useState<string | null>(null);
   const framed = useMemo(() => coilBounds(layout), [layout]);
   const paths = useMemo(
@@ -59,7 +61,7 @@ function CoilScene({ layout, showFormer, resetNonce }: { layout: CoilLayout; sho
   );
   return (
     <>
-      <AdelphaVoidBackground color="#111216" />
+      <AdelphaVoidBackground color={background} />
       <ambientLight intensity={0.72} />
       <hemisphereLight color="#f4f6f8" groundColor="#14161c" intensity={0.42} />
       <directionalLight position={[1.4, 1.8, 2.1]} intensity={1.05} />

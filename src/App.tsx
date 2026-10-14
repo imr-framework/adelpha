@@ -26,6 +26,7 @@ import { resolveLaunchWorkspace, useWorkspacePrefs } from "./twin/workspacePrefs
 import { scheduleAutoUpdateCheck } from "./desktop/updater";
 import "./styles.css";
 import "./settings.css";
+import "./themes.css";
 
 export default function App() {
   const telemetry = useTwinStore((s) => s.telemetry);

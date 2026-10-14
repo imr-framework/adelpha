@@ -1,9 +1,10 @@
+import { useThemeStageBackground } from "./consoleTheme";
 import { CameraControls, GizmoHelper, GizmoViewcube, PerspectiveCamera, useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import CameraControlsImpl from "camera-controls";
 import * as THREE from "three";
-import { AdelphaSceneEnvironment, ADELPHA_VOID } from "./AdelphaSceneEnvironment";
+import { AdelphaSceneEnvironment } from "./AdelphaSceneEnvironment";
 import { MagnetCADSuspense } from "./MagnetCAD";
 import { CadInteractionInvalidate } from "./CadInteractionInvalidate";
 import { listSimulationPartIds, usePartInspectorStore } from "./partInspectorStore";
@@ -174,6 +175,7 @@ function FrameAssembly({
 }
 
 export function SceneEngineering() {
+  const background = useThemeStageBackground();
   const [scannerId] = useScannerModel();
   useScannerCatalog();
   const studio = studioCadForScanner(scannerId);
@@ -310,7 +312,7 @@ export function SceneEngineering() {
       <CameraControls makeDefault ref={bindControls} />
       <CadInteractionInvalidate />
 
-      <AdelphaSceneEnvironment background={ADELPHA_VOID} variant="twin" />
+      <AdelphaSceneEnvironment background={background} variant="twin" />
 
       <FrameAssembly cadKey={`${cadKey}:${simKey}:${studyRecord?.exampleId ?? "assembly"}:${studyRun?.id ?? "live"}`}>
         {studyRecord?.exampleId === "example-halbach-8" ||

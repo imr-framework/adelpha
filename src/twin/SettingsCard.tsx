@@ -355,18 +355,6 @@ function GenericPanel({
       return (
         <SettingsSection title="Theme">
           <ConsoleThemeRow />
-          <SettingsRow title="Color mode">
-            <Segmented
-              label="Color mode"
-              value={draft.theme}
-              onChange={(v) => patch("theme", v)}
-              options={[
-                { value: "dark", label: "Dark" },
-                { value: "system", label: "System" },
-                { value: "light", label: "Light" },
-              ]}
-            />
-          </SettingsRow>
           <SettingsRow title="Density">
             <Segmented
               label="Density"

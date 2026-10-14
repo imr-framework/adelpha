@@ -1,0 +1,7 @@
+/* Adelpha Light Collection — semantic tokens, scoped for safe adoption. */
+[data-adelpha-theme="porcelain"]{--page:#f3f5f7;--surface:#ffffff;--subtle:#f8f9fb;--ink:#202b3b;--muted:#637084;--line:#dce2e9;--accent:#315ccc;--tint:#eaf0ff;--stage:#edf1f6;--metal:#b1bdcc;--radius:12px;--shadow:0 12px 32px #25334c08}
+[data-adelpha-theme="limestone"]{--page:#f2efe9;--surface:#fffcf7;--subtle:#f8f5ee;--ink:#39352f;--muted:#716759;--line:#e1dacf;--accent:#855e34;--tint:#f2e6d5;--stage:#ece6db;--metal:#bfb19b;--radius:6px;--shadow:0 10px 28px #53432b07}
+[data-adelpha-theme="glacier"]{--page:#edf3f6;--surface:#fcfeff;--subtle:#f4f8fb;--ink:#203744;--muted:#586f7d;--line:#d5e2e9;--accent:#086b8a;--tint:#dff0f6;--stage:#e3edf3;--metal:#9cb8c8;--radius:8px;--shadow:0 12px 30px #18445c08}
+[data-adelpha-theme="celadon"]{--page:#eff3ef;--surface:#fcfdfa;--subtle:#f5f8f2;--ink:#283d34;--muted:#5b6f62;--line:#d9e2d7;--accent:#366b50;--tint:#e4efe3;--stage:#e5ece2;--metal:#a8b8a4;--radius:16px;--shadow:0 12px 36px #304d3508}
+[data-adelpha-theme="iris"]{--page:#f3f1f8;--surface:#fefcff;--subtle:#f8f6fc;--ink:#383147;--muted:#706680;--line:#e1dbea;--accent:#7552ab;--tint:#eee7f8;--stage:#ece7f4;--metal:#b7accb;--radius:14px;--shadow:0 12px 34px #49326409}
+[data-adelpha-theme]{color-scheme:light;--success:#28704d;--success-bg:#e9f4ed;--warning:#865718;--warning-bg:#faf0db;--danger:#b13e49;--danger-bg:#fbecef;--focus:var(--accent);--on-accent:#fff;--font-ui:'Geist',system-ui,sans-serif;--font-data:'Geist Mono',monospace}

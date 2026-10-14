@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1080" viewBox="0 0 1600 1080" role="img" aria-labelledby="title desc"><title id="title">Adelpha Engineering Studio architecture</title><desc id="desc">The React studio interface exchanges study inputs and results with a local Python runtime. Engineering modules support magnet studies, gradient coils, passive shimming and MRzero sequence simulation. Project metadata and CAD are stored locally. Optional ADK agents provide AI assistance.</desc><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#627789"/></marker></defs><rect width="1600" height="1080" fill="#f8fafb"/>
+<text x="64" y="62" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#526d81">ADELPHA  /  SYSTEM ARCHITECTURE</text>
+<text x="64" y="118" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="700" fill="#182f42">Engineering Studio</text>
+<text x="64" y="156" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="400" fill="#536879">A unified workspace to design, simulate, and refine MRI systems.</text>
+<rect x="64" y="199" width="1472" height="570" rx="24" fill="#f0f4f7" stroke="#dbe4ea" stroke-width="1.5"/>
+<text x="90" y="235" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#526d81">LOCAL DESKTOP APPLICATION</text>
+<rect x="88" y="263" width="400" height="474" rx="18" fill="#fff" stroke="#d9e2e9" stroke-width="1.5"/>
+<text x="114" y="303" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" fill="#182f42">Studio interface</text>
+<text x="114" y="333" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="400" fill="#5a6f80">React + TypeScript · 3D visualization</text>
+<rect x="110" y="361" width="356" height="83" rx="12" fill="#f2f7fb" stroke="#e1eaf0" stroke-width="1.5"/>
+<text x="130" y="392" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" fill="#182f42">Projects &amp; examples</text>
+<text x="130" y="419" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#566e80">Create, organize, and reopen studies</text>
+<rect x="110" y="462" width="356" height="83" rx="12" fill="#f2f7fb" stroke="#e1eaf0" stroke-width="1.5"/>
+<text x="130" y="493" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" fill="#182f42">CAD &amp; study setup</text>
+<text x="130" y="520" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#566e80">Geometry, materials, and parameters</text>
+<rect x="110" y="563" width="356" height="83" rx="12" fill="#f2f7fb" stroke="#e1eaf0" stroke-width="1.5"/>
+<text x="130" y="594" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="700" fill="#182f42">Results &amp; inspection</text>
+<text x="130" y="621" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#566e80">Fields, coil layouts, and images</text>
+<text x="114" y="704" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#5a6f80">Engineer configures and reviews each study</text>
+<rect x="746" y="263" width="766" height="474" rx="18" fill="#fff" stroke="#d9e2e9" stroke-width="1.5"/>
+<text x="772" y="303" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" fill="#182f42">Local Python runtime</text>
+<text x="772" y="333" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="400" fill="#5a6f80">Supervised services · FastAPI</text>
+<rect x="772" y="366" width="178" height="308" rx="14" fill="#edf5f6" stroke="#c9dde0" stroke-width="1.5"/>
+<text x="794" y="411" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" fill="#182f42">Local API</text>
+<text x="794" y="449" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="400" fill="#506b76">Session-token</text>
+<text x="794" y="474" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="400" fill="#506b76">authentication</text>
+<text x="794" y="528" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="400" fill="#506b76">Routes study</text>
+<text x="794" y="553" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="400" fill="#506b76">requests to</text>
+<text x="794" y="578" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="400" fill="#506b76">Python modules</text>
+<text x="794" y="644" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#506b76">HTTP / JSON</text>
+<rect x="1012" y="366" width="474" height="65" rx="11" fill="#f4f8f5" stroke="#dae7dd" stroke-width="1.5"/>
+<text x="1032" y="392" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#182f42">Magnet &amp; assembly studies</text>
+<text x="1032" y="415" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#526f60">Field calculations · optional Elmer FEM</text>
+<rect x="1012" y="447" width="474" height="65" rx="11" fill="#f4f8f5" stroke="#dae7dd" stroke-width="1.5"/>
+<text x="1032" y="473" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#182f42">Gradient coil design</text>
+<text x="1032" y="496" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#526f60">pyCoilGen winding optimization</text>
+<rect x="1012" y="528" width="474" height="65" rx="11" fill="#f4f8f5" stroke="#dae7dd" stroke-width="1.5"/>
+<text x="1032" y="554" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#182f42">Passive shimming</text>
+<text x="1032" y="577" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#526f60">Field-map analysis and shim layouts</text>
+<rect x="1012" y="609" width="474" height="65" rx="11" fill="#f4f8f5" stroke="#dae7dd" stroke-width="1.5"/>
+<text x="1032" y="635" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#182f42">Sequence simulation</text>
+<text x="1032" y="658" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#526f60">MRzero through the MRI console API</text>
+<path d="M950 520 H979 M979 398 V641" stroke="#627789" stroke-width="2" fill="none"/>
+<path d="M979 398 H1012" fill="none" stroke="#627789" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M979 479 H1012" fill="none" stroke="#627789" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M979 560 H1012" fill="none" stroke="#627789" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M979 641 H1012" fill="none" stroke="#627789" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M488 493 H772" fill="none" stroke="#627789" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<text x="517" y="451" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#425e74">Study inputs</text>
+<text x="517" y="474" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="400" fill="#647988">Geometry + parameters</text>
+<text x="517" y="527" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#425e74">Simulation results</text>
+<text x="517" y="551" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="400" fill="#647988">Fields + layouts + images</text>
+<text x="910" y="708" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#5a6f80">Shared local runtime</text>
+<path d="M288 737 V828" fill="none" stroke="#627789" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<text x="307" y="801" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#536c80">Save / load</text>
+<rect x="88" y="828" width="400" height="152" rx="16" fill="#fff" stroke="#d9e2e9" stroke-width="1.5"/>
+<text x="114" y="864" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#182f42">Local project data</text>
+<text x="114" y="900" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#5a6f80">Project metadata &amp; settings · localStorage</text>
+<text x="114" y="929" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#5a6f80">Imported CAD assets · IndexedDB</text>
+<text x="114" y="957" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="400" fill="#728390">Stored on the user’s machine</text>
+<path d="M861 674 V828" fill="none" stroke="#627789" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="7 6"/>
+<rect x="746" y="828" width="766" height="152" rx="16" fill="#faf8fd" stroke="#c9bddc" stroke-width="1.5" stroke-dasharray="7 5"/>
+<text x="772" y="864" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#182f42">AI assistance</text>
+<text x="1335" y="864" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#78658b">OPTIONAL</text>
+<text x="772" y="901" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="400" fill="#5e526e">Studio chat → local agent API → Google ADK agents</text>
+<text x="772" y="933" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="400" fill="#756982">Model-backed help for engineering questions and design proposals.</text>
+<text x="772" y="958" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="400" fill="#756982">Requires agent service configuration and model access.</text>
+<text x="64" y="1033" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#687e8e">Simplified component view · Based on the current Adelpha implementation</text>
+<text x="1130" y="1033" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#687e8e">Dashed = optional capability</text>
+</svg>

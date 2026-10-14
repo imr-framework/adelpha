@@ -1,30 +1,30 @@
 /* Projects only; Examples, Tutorials, and the shared navigation retain their styles. */
-.studio-home-main.compact-library {display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);align-content:start;gap:20px;padding:28px;background:#08080a;position:relative;}
+.studio-home-main.compact-library {display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr);align-content:start;gap:20px;padding:28px;background:var(--theme-bg, #08080a);position:relative;}
 .compact-library .studio-home-head {grid-column:1;grid-row:1;margin:0;align-items:center;gap:16px;}
 .compact-title {display:flex;align-items:baseline;gap:12px;}
 .compact-title h2 {margin:0;font-size:23px;letter-spacing:-.02em;}
-.compact-title span {font-size:12px;color:#9e9eaa;white-space:nowrap;}
-.compact-library .studio-new-btn,.compact-library .studio-create-actions button[type=submit] {background:#d5c4fa;color:#24212e;border-color:#d5c4fa;box-shadow:none;}
-.compact-library .studio-new-btn:hover,.compact-library .studio-create-actions button[type=submit]:hover {background:#e1d4fb;}
+.compact-title span {font-size:12px;color:var(--theme-muted, #9e9eaa);white-space:nowrap;}
+.compact-library .studio-new-btn,.compact-library .studio-create-actions button[type=submit] {background:var(--theme-accent, #d5c4fa);color:var(--theme-on-accent, #24212e);border-color:var(--theme-accent, #d5c4fa);box-shadow:none;}
+.compact-library .studio-new-btn:hover,.compact-library .studio-create-actions button[type=submit]:hover {background:var(--theme-accent, #e1d4fb);}
 .compact-toolbar {grid-column:1;grid-row:2;display:flex;gap:10px;align-items:center;min-width:0;}
 .compact-toolbar .studio-search {flex:1;min-width:100px;margin:0;height:40px;border-radius:7px;padding:0 12px;}
-.compact-toolbar select,.compact-workspace select {height:40px;background:#111114;color:#d8d7e0;border:1px solid #34343d;border-radius:7px;padding:0 12px;font-size:12px;}
+.compact-toolbar select,.compact-workspace select {height:40px;background:var(--theme-surface, #111114);color:var(--theme-text, #d8d7e0);border:1px solid var(--theme-border, #34343d);border-radius:7px;padding:0 12px;font-size:12px;}
 .compact-library .studio-collection {grid-column:1;grid-row:3;min-width:0;overflow:visible;}
-.compact-table-wrap {border:1px solid #28282e;border-radius:8px;}
+.compact-table-wrap {border:1px solid var(--theme-border, #28282e);border-radius:8px;}
 .compact-project-table {width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
-.compact-project-table th {text-align:left;color:#a6a5b1;font-size:11px;font-weight:500;padding:11px 16px;background:#101013;}
+.compact-project-table th {text-align:left;color:var(--theme-muted, #a6a5b1);font-size:11px;font-weight:500;padding:11px 16px;background:var(--theme-surface, #101013);}
 .compact-project-table th:first-child {width:35%;border-radius:8px 0 0 0;}
 .compact-project-table th:nth-child(2) {width:32%;}
 .compact-project-table th:last-child {width:72px;border-radius:0 8px 0 0;}
-.compact-project-table td {border-top:1px solid #222228;padding:9px 16px;color:#a6a5b1;overflow-wrap:anywhere;}
-.compact-project-table tr:hover td {background:#101013;}
-.compact-project-open {display:flex;gap:12px;align-items:center;background:none;border:0;color:#ededf2;font:inherit;font-weight:550;text-align:left;padding:7px 0;cursor:pointer;width:100%;}
-.compact-project-open svg {flex-shrink:0;color:#a7a7b2;}
+.compact-project-table td {border-top:1px solid var(--theme-border, #222228);padding:9px 16px;color:var(--theme-muted, #a6a5b1);overflow-wrap:anywhere;}
+.compact-project-table tr:hover td {background:var(--theme-surface, #101013);}
+.compact-project-open {display:flex;gap:12px;align-items:center;background:none;border:0;color:var(--theme-text, #ededf2);font:inherit;font-weight:550;text-align:left;padding:7px 0;cursor:pointer;width:100%;}
+.compact-project-open svg {flex-shrink:0;color:var(--theme-muted, #a7a7b2);}
 .compact-project-open span {overflow-wrap:anywhere;min-width:0;}
 .compact-project-table .studio-icon-btn {border:0;background:transparent;}
 .compact-library .studio-open-error {grid-column:1;}
 .compact-library.is-creating {grid-template-columns:minmax(0,1fr) 330px;column-gap:24px;}
-.compact-library .studio-create {grid-column:2;grid-row:1 / 4;display:flex;flex-direction:column;align-self:stretch;gap:24px;margin:-28px -28px -28px 0;padding:26px 22px;background:#0d0d10;border:0;border-left:1px solid #303038;border-radius:0;min-width:0;box-shadow:none;}
+.compact-library .studio-create {grid-column:2;grid-row:1 / 4;display:flex;flex-direction:column;align-self:stretch;gap:24px;margin:-28px -28px -28px 0;padding:26px 22px;background:var(--theme-surface, #0d0d10);border:0;border-left:1px solid var(--theme-border, #303038);border-radius:0;min-width:0;box-shadow:none;}
 .compact-create-heading {display:flex;justify-content:space-between;align-items:center;}
 .compact-create-heading h3 {margin:0;font-size:18px;}
 .compact-library .studio-create-name {width:100%;min-width:0;}
@@ -33,30 +33,30 @@
 .compact-library .studio-choice {flex:1;min-width:0;padding:10px 5px;gap:5px;border-radius:6px;}
 .compact-library .studio-choice .studio-project-name {font-size:10px;}
 .compact-library .studio-choice input {width:12px;height:12px;flex-shrink:0;}
-.compact-library .studio-choice:has(input:checked) {background:#24242c;border-color:#8b899b;}
-.compact-workspace {display:grid;gap:9px;font-size:12px;color:#bdbcc8;}
+.compact-library .studio-choice:has(input:checked) {background:var(--theme-raised, #24242c);border-color:var(--theme-border, #8b899b);}
+.compact-workspace {display:grid;gap:9px;font-size:12px;color:var(--theme-muted, #bdbcc8);}
 .compact-library .studio-create-actions {display:flex;flex-wrap:wrap;margin-top:auto;gap:10px;}
 .compact-library .studio-create-actions button[type=submit] {order:3;flex:1;white-space:nowrap;}
 .compact-library .studio-create-actions .studio-ghost {order:2;}
 .compact-library .studio-create-actions p {order:0;width:100%;font-size:12px;}
 .compact-library .studio-menu {z-index:30;}
 @media(max-width:1150px) { .compact-library.is-creating {grid-template-columns:minmax(0,1fr) 300px;} .compact-toolbar {flex-wrap:wrap;} .compact-toolbar .studio-search {flex-basis:100%;} .compact-project-table th,.compact-project-table td {padding:9px;} .compact-library .studio-home-head {flex-wrap:wrap;} }
-@media(max-width:800px) { .studio-home-main.compact-library {padding:18px;overflow:auto;display:flex;flex-direction:column;} .compact-library .studio-create {position:fixed;right:0;top:80px;bottom:0;width:min(360px,100%);box-sizing:border-box;margin:0;z-index:35;overflow:auto;box-shadow:-12px 0 40px #0009;} .compact-project-table th:first-child {width:32%;} .compact-project-table th:nth-child(2) {width:28%;} .compact-project-table {font-size:11px;} }
+@media(max-width:800px) { .studio-home-main.compact-library {padding:18px;overflow:auto;display:flex;flex-direction:column;} .compact-library .studio-create {position:fixed;right:0;top:80px;bottom:0;width:min(360px,100%);box-sizing:border-box;margin:0;z-index:35;overflow:auto;box-shadow:-12px 0 40px var(--theme-shadow, #0009);} .compact-project-table th:first-child {width:32%;} .compact-project-table th:nth-child(2) {width:28%;} .compact-project-table {font-size:11px;} }
 .compact-library .studio-choice {display:flex;align-items:center;}
 .compact-library .studio-choice .studio-project-name {white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:normal;font-size:10px;}
-.compact-library .studio-choice:has(input:checked) {box-shadow:inset 0 0 0 1px #888598;}
-.compact-library .studio-choice input {accent-color:#c9c3dc;}
+.compact-library .studio-choice:has(input:checked) {box-shadow:inset 0 0 0 1px var(--theme-shadow, #888598);}
+.compact-library .studio-choice input {accent-color:var(--theme-muted, #c9c3dc);}
 
 /* Reserve the button width plus an inset on both sides of the action column. */
 .compact-project-table :is(th,td):last-child {box-sizing:border-box;padding-left:20px;padding-right:20px;}
 .compact-project-table td:last-child .studio-card-menu {width:32px;}
 /* Legends sit outside a fieldset's flex gap, so give the choices an explicit inset. */
 .compact-library .studio-choice-set legend {padding:0;margin-bottom:12px;}
-.studio-menu .studio-delete-action {color:#f0a4ab;}
-.studio-delete-dialog {color:#ededf2;background:#111114;border:1px solid #3b3b44;border-radius:12px;padding:26px;max-width:440px;width:calc(100% - 48px);box-sizing:border-box;}
-.studio-delete-dialog::backdrop {background:#0009;}
+.studio-menu .studio-delete-action {color:var(--theme-danger, #f0a4ab);}
+.studio-delete-dialog {color:var(--theme-text, #ededf2);background:var(--theme-surface, #111114);border:1px solid var(--theme-border, #3b3b44);border-radius:12px;padding:26px;max-width:440px;width:calc(100% - 48px);box-sizing:border-box;}
+.studio-delete-dialog::backdrop {background:var(--theme-scrim, #0009);}
 .studio-delete-dialog h2 {font-size:18px;margin:0 0 14px;overflow-wrap:anywhere;}
-.studio-delete-dialog p {font-size:13px;line-height:1.6;color:#b4b3c0;}
+.studio-delete-dialog p {font-size:13px;line-height:1.6;color:var(--theme-muted, #b4b3c0);}
 .studio-delete-dialog > div {display:flex;justify-content:flex-end;gap:10px;margin-top:24px;}
-.studio-delete-dialog button {padding:10px 16px;background:#24242c;border:1px solid #484853;border-radius:7px;color:#ededf2;cursor:pointer;}
-.studio-delete-dialog .studio-delete-confirm {background:#9d3645;border-color:#b64c5b;}
+.studio-delete-dialog button {padding:10px 16px;background:var(--theme-raised, #24242c);border:1px solid var(--theme-border, #484853);border-radius:7px;color:var(--theme-text, #ededf2);cursor:pointer;}
+.studio-delete-dialog .studio-delete-confirm {background:var(--theme-accent, #9d3645);border-color:var(--theme-danger, #b64c5b);}
