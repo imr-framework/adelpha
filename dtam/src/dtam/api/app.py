@@ -58,6 +58,9 @@ def create_app(
             config_root=config_root,
         )
         app.state.session = session
+        app.state.reconfigure = lambda scanner_id, environment: session.reconfigure(
+            scanner_id=scanner_id, environment=environment, config_root=config_root
+        )
         try:
             yield
         finally:

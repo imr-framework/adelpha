@@ -36,6 +36,7 @@ function serviceLabel(id: string, status: string | undefined): string {
 export function DtamRuntimeStatus() {
   const desktop = isTauri();
   const [runtime, setRuntime] = useState<RuntimeStatus | null>(desktop ? getRuntime() : null);
+  const [revision, setRevision] = useState(0);
   const [health, setHealth] = useState<{ scanner_id: string; mode: string; connected: boolean } | null>(
     null,
   );
@@ -58,10 +59,10 @@ export function DtamRuntimeStatus() {
     return () => {
       cancelled = true;
     };
-  }, [runtime?.session]);
+  }, [runtime?.session, revision]);
 
   useEffect(() => {
-    const refresh = () => setRuntime(getRuntime());
+    const refresh = () => { setRuntime(getRuntime()); setRevision((value) => value + 1); };
     window.addEventListener("adelpha:runtime-changed", refresh);
     return () => window.removeEventListener("adelpha:runtime-changed", refresh);
   }, []);
@@ -73,14 +74,15 @@ export function DtamRuntimeStatus() {
       title="Runtime"
       description="DTAM runs inside Adelpha. Twin and Imaging Console start automatically. Agents start after you save a Google API key."
     >
-      <div className="settings-key-actions" style={{ marginBottom: 12 }}>
-        <StatusBadge tone={serviceTone(services.twin?.status)}>{serviceLabel("twin", services.twin?.status)}</StatusBadge>
-        <StatusBadge tone={serviceTone(services.agents?.status)}>
-          {serviceLabel("agents", services.agents?.status)}
-        </StatusBadge>
-        <StatusBadge tone={serviceTone(services.console?.status)}>
-          {serviceLabel("console", services.console?.status)}
-        </StatusBadge>
+      <div className="settings-runtime-services" aria-label="Runtime services">
+        {(["twin", "agents", "console"] as const).map((id) => {
+          const label = serviceLabel(id, services[id]?.status);
+          const [name, ...state] = label.split(" ");
+          return <StatusBadge key={id} tone={serviceTone(services[id]?.status)}>
+            <span className="settings-runtime-service-name">{name}</span>
+            <span className="settings-runtime-service-state">{state.join(" ")}</span>
+          </StatusBadge>;
+        })}
       </div>
       {health ? (
         <p className="settings-about">
@@ -122,7 +124,7 @@ export function DtamTwinSetupSection() {
       const saved = await saveDtamRuntimePrefs(next);
       setPrefs(saved);
       setCreating(false);
-      setMessage("Saved. The twin restarted with these settings.");
+      setMessage("Saved. The twin is using these settings.");
     } catch (err) {
       setMessage(err instanceof Error ? err.message : String(err));
     } finally {

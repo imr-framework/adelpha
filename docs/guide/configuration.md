@@ -49,7 +49,7 @@ Saved as `dtam_runtime.json` in the app config directory:
 | `environment` | e.g. `development` |
 | `agent_model` / `agent_mode` | Gemini model and mode |
 
-Saving these restarts the Python runtime. User YAML under the config `dtam/` folder wins over the bundled copies.
+Scanner and environment changes update the Twin session without restarting other services. Agent settings still restart the Python runtime. A complete user configuration under the config `dtam/` folder takes precedence over bundled defaults.
 
 ## MRI working directory
 
@@ -124,3 +124,5 @@ Software version in About and Status comes from `src/twin/adelphaVersion.ts`. Th
 In **Settings → Digital Twin → Twin setup**, choose **Define new system**. Enter a name, architecture, and nominal field strength in tesla, then select **Save and use system**. Profiles are saved locally and remain available in the scanner selector. This does not change the viewport's CAD model.
 
 Hardware profiles use read-only mode and can open without connected sensors. Until a compatible acquisition driver is configured, the dashboard shows its sensor waiting screen. A profile alone does not provide device connectivity. Select **Simulated scanner** to return to simulated telemetry; environment selection controls configuration overlays, not hardware connectivity.
+
+Switching scanner profiles or environments updates only the Twin session; the console and agents stay running. **Restart runtime** remains available for recovery and changes that need a full restart.

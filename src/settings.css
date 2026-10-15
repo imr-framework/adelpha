@@ -2296,3 +2296,37 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Runtime indicators are quiet readouts, not action buttons. */
+.settings-runtime-services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.settings-runtime-services .settings-badge {
+  gap: 9px;
+  min-height: 34px;
+  padding: 7px 12px;
+  box-sizing: border-box;
+  border: 1px solid var(--sw-line);
+  border-radius: 8px;
+  background: var(--sw-raised);
+  color: var(--sw-text);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0;
+}
+.settings-runtime-services .settings-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: var(--runtime-status-color, var(--sw-text-3));
+}
+.settings-runtime-services .is-live { --runtime-status-color: var(--sw-green); }
+.settings-runtime-services .is-ai { --runtime-status-color: var(--sw-violet); }
+.settings-runtime-services .is-fault { --runtime-status-color: var(--sw-red); }
+.settings-runtime-service-state { color: var(--sw-text-3); font-weight: 400; }

@@ -242,7 +242,7 @@ The outer air boundary is a finite-domain approximation. Mesh refinement and air
 
 ### Hardware system profiles
 
-Desktop Twin setup stores custom systems in `dtam_runtime.json` with the runtime preferences. The Python loader reads them through `ADELPHA_DTAM_PREFS`. Custom profiles define identity, architecture, and nominal field strength; they do not implement device transport. Physical profile sessions remain read-only and return an empty state until acquisition is implemented. Never force a physical profile into simulation or make missing hardware fatal to API startup. Failed preference changes restore the previous configuration, and the frontend refreshes its runtime endpoint after recovery.
+Desktop Twin setup stores custom systems in `dtam_runtime.json` with the runtime preferences. The Python loader reads them through `ADELPHA_DTAM_PREFS`. Custom profiles define identity, architecture, and nominal field strength; they do not implement device transport. Physical profile sessions remain read-only and return an empty state until acquisition is implemented. Never force a physical profile into simulation or make missing hardware fatal to API startup. Scanner and environment changes use the authenticated `/runtime/twin/configuration` gateway endpoint to reconfigure the existing Twin session without restarting the console or agents. Validate the replacement before swapping it, serialize switches, and refresh telemetry immediately while rejecting older in-flight poll responses. Failed preference changes restore the previous configuration, and the frontend refreshes its runtime endpoint after recovery.
 
 ### Dashboard sensor states
 

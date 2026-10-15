@@ -319,6 +319,7 @@ export function attachDtamTelemetryDriver(pollMs = POLL_MS) {
   let timer = 0;
   let delay = pollMs;
   const maxDelay = Math.max(pollMs * 8, 12_000);
+  let generation = 0;
   let tickCount = 0;
   let wasConnected: boolean | null = null;
   let lastEmiLabel: string | null = null;
@@ -326,10 +327,11 @@ export function attachDtamTelemetryDriver(pollMs = POLL_MS) {
   const tick = async () => {
     if (stopped || inFlight) return;
     inFlight = true;
+    const requestGeneration = generation;
     const store = useTwinStore.getState();
     try {
       const [health, state] = await Promise.all([fetchHealth(), fetchTwinState()]);
-      if (stopped) return;
+      if (stopped || requestGeneration !== generation) return;
       delay = pollMs;
       store.setHealth(health);
       store.applySystemState(state);
@@ -393,7 +395,7 @@ export function attachDtamTelemetryDriver(pollMs = POLL_MS) {
       }
       lastEmiLabel = emiLabel;
     } catch (err) {
-      if (stopped) return;
+      if (stopped || requestGeneration !== generation) return;
       useTwinStore.setState({ health: null, systemState: null, sensorsBatch: null });
       store.setConnection("disconnected");
       const msg = err instanceof Error ? err.message : String(err);
@@ -405,14 +407,22 @@ export function attachDtamTelemetryDriver(pollMs = POLL_MS) {
       delay = Math.min(Math.max(delay * 2, pollMs), maxDelay);
     } finally {
       inFlight = false;
-      if (!stopped) timer = window.setTimeout(() => void tick(), delay);
+      if (!stopped) timer = window.setTimeout(() => void tick(), requestGeneration !== generation ? 0 : delay);
     }
   };
 
+  const refresh = () => {
+    generation += 1;
+    delay = pollMs;
+    window.clearTimeout(timer);
+    void tick();
+  };
+  window.addEventListener("adelpha:runtime-changed", refresh);
   pushConsole("INFO", "Polling Twin API (/health + /twin/state)");
   void tick();
   return () => {
     stopped = true;
+    window.removeEventListener("adelpha:runtime-changed", refresh);
     window.clearTimeout(timer);
   };
 }

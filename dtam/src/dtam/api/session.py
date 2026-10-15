@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+from threading import RLock
+from functools import wraps
 from datetime import datetime, timezone
 from dtam.scanner_adapters.halbach_48mt import Halbach48mTAdapter
 
@@ -14,10 +16,19 @@ from dtam.domain.measurements import MeasurementBatch
 from dtam.domain.modes import OperationalMode
 
 
+def _session_locked(method):
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        with self._lock:
+            return method(self, *args, **kwargs)
+    return wrapped
+
+
 class TwinApiSession:
     """Holds a bootstrapped adapter and runs twin updates for HTTP handlers."""
 
     def __init__(self, app: DtamApp) -> None:
+        self._lock = RLock()
         self._app = app
         if not app.adapter.is_connected and not isinstance(app.adapter, Halbach48mTAdapter):
             app.adapter.connect()
@@ -39,6 +50,13 @@ class TwinApiSession:
             )
         )
 
+    @_session_locked
+    def reconfigure(self, *, scanner_id: str, environment: str, config_root=None) -> None:
+        # Construct and validate first so a bad profile leaves the live session intact.
+        replacement = self.create(scanner_id=scanner_id, environment=environment, config_root=config_root)
+        self.close()
+        self._app = replacement._app
+
     @property
     def scanner_id(self) -> str:
         return self._app.adapter.scanner_id
@@ -51,10 +69,12 @@ class TwinApiSession:
     def connected(self) -> bool:
         return self._app.adapter.is_connected
 
+    @_session_locked
     def close(self) -> None:
         if self._app.adapter.is_connected:
             self._app.adapter.disconnect()
 
+    @_session_locked
     def read_batch(self) -> MeasurementBatch:
         if isinstance(self._app.adapter, Halbach48mTAdapter):
             now = datetime.now(timezone.utc)
@@ -63,6 +83,7 @@ class TwinApiSession:
             self._app.adapter.connect()
         return self._app.adapter.read_measurements()
 
+    @_session_locked
     def update_twin(
         self,
         *,

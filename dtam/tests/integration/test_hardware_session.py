@@ -43,3 +43,18 @@ def test_hardware_api_starts_and_serves_empty_state(config_root):
         state = client.get("/twin/state")
         assert state.status_code == 200
         assert state.json()["thermal"] is None
+
+
+def test_hot_switch_and_failed_switch_preserves_session(config_root):
+    import pytest
+    session = TwinApiSession.create(config_root=config_root)
+    session.reconfigure(scanner_id="halbach_48mt", environment="development", config_root=config_root)
+    assert session.mode == OperationalMode.READ_ONLY
+    assert not session.read_batch().measurements
+    with pytest.raises(Exception):
+        session.reconfigure(scanner_id="missing_profile", environment="development", config_root=config_root)
+    assert session.scanner_id == "halbach_48mt"
+    session.reconfigure(scanner_id="simulated_scanner", environment="development", config_root=config_root)
+    assert session.mode == OperationalMode.SIMULATION
+    assert session.read_batch().measurements
+    session.close()

@@ -65,6 +65,7 @@ impl RuntimeStatus {
 pub struct RuntimeManager {
     inner: Mutex<Inner>,
     notify: Notify,
+    configuration_lock: Mutex<()>,
 }
 
 struct Inner {
@@ -84,6 +85,7 @@ impl RuntimeManager {
                 token: uuid::Uuid::new_v4().to_string().replace('-', ""),
             }),
             notify: Notify::new(),
+            configuration_lock: Mutex::new(()),
         })
     }
 
@@ -783,6 +785,7 @@ pub async fn set_dtam_runtime_prefs(
     manager: State<'_, Arc<RuntimeManager>>,
     prefs: DtamRuntimePrefs,
 ) -> Result<DtamRuntimePrefs, String> {
+    let _configuration_guard = manager.configuration_lock.lock().await;
     let scanner = prefs.scanner_id.trim();
     let environment = prefs.environment.trim();
     let model = prefs.agent_model.trim();
@@ -809,6 +812,20 @@ pub async fn set_dtam_runtime_prefs(
     let config = app.path().app_config_dir().map_err(|e| e.to_string())?;
     let previous = read_dtam_runtime_prefs(&config);
     write_dtam_runtime_prefs(&config, &next)?;
+    if previous.agent_model == next.agent_model && previous.agent_mode == next.agent_mode {
+        let body = serde_json::json!({"scanner_id": next.scanner_id, "environment": next.environment}).to_string();
+        let response = tokio::time::timeout(Duration::from_secs(15),
+            post_supervisor_json(&manager, "/runtime/twin/configuration", &body)).await;
+        match response {
+            Ok(Ok((status, _))) if (200..300).contains(&status) => return Ok(next),
+            Ok(Ok((404, _))) => {}, // Older sidecar: one full restart loads the new endpoint.
+            Ok(Ok((_, detail))) => {
+                write_dtam_runtime_prefs(&config, &previous)?;
+                return Err(format!("Could not switch Twin profile: {detail}"));
+            }
+            _ => {} // Unreachable runtime: use the existing restart/recovery path.
+        }
+    }
     manager.shutdown().await;
     let startup = match manager.start(&app).await {
         Ok(()) => {
