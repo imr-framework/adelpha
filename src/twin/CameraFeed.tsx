@@ -7,6 +7,7 @@ import {
 } from "@mediapipe/tasks-vision";
 import { type HeadMotionSample } from "./headMotionLog";
 import { useHeadMotionStore } from "./headMotionStore";
+import { MotionRecordingControl } from "./MotionRecordingControl";
 
 export type HeadPose = {
   yaw: number;
@@ -682,7 +683,7 @@ export function CameraFeed({
   onPoseUpdateRef.current = onPoseUpdate;
   onPreviewStreamChangeRef.current = onPreviewStreamChange;
 
-  const [logCount, setLogCount] = useState(0);
+  const logCount = useHeadMotionStore(state => state.sampleCount);
   const [hasReference, setHasReference] = useState(false);
   const [refAgeMs, setRefAgeMs] = useState<number | null>(null);
 
@@ -790,8 +791,7 @@ export function CameraFeed({
 
   function clearMotionLog() {
     useHeadMotionStore.getState().clearLog();
-    setLogCount(0);
-    setStatus("Motion log cleared");
+    setStatus("Motion log cleared — press Track to record");
   }
 
   function downloadMotionJson() {
@@ -1020,6 +1020,7 @@ export function CameraFeed({
                 roll: pose.roll,
                 detected: true,
                 wallMs,
+                monotonicMs: performance.now(),
               });
 
               if (now - lastUiAtRef.current >= UI_INTERVAL_MS) {
@@ -1027,11 +1028,10 @@ export function CameraFeed({
                 setHeadPose(pose);
                 setTracking(true);
                 setStatus("");
-                setLogCount(sample.index + 1);
                 setHasReference(sample.R_rel != null);
                 setRefAgeMs(sample.t_rel_ms);
                 useHeadMotionStore.getState().syncHud({
-                  sampleCount: sample.index + 1,
+                  sampleCount: useHeadMotionStore.getState().sampleCount,
                   hasReference: sample.R_rel != null,
                   refAgeMs: sample.t_rel_ms,
                   latestYaw: pose.yaw,
@@ -1072,6 +1072,7 @@ export function CameraFeed({
 
     return () => {
       cancelled = true;
+      useHeadMotionStore.getState().stopRecording();
       window.removeEventListener("resize", syncCanvasSize);
       ro?.disconnect();
       if (animationRef.current != null) cancelAnimationFrame(animationRef.current);
@@ -1169,6 +1170,7 @@ export function CameraFeed({
                   : "unset"}
               </strong>
             </div>
+            <MotionRecordingControl />
             <button
               type="button"
               className="camera-mask-btn"
@@ -1258,7 +1260,7 @@ export function CameraFeed({
                 type="button"
                 className="camera-mask-btn"
                 onClick={clearMotionLog}
-                title="Clear recorded samples (keeps reference)"
+                title="Clear recorded samples and stop recording (keeps reference)"
                 disabled={logCount === 0}
               >
                 Clear log

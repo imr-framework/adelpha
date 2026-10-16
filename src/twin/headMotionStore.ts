@@ -11,6 +11,10 @@ const recorder = new HeadMotionRecorder();
 
 type HeadMotionState = {
   sampleCount: number;
+  recording: boolean;
+  recordingLimitReached: boolean;
+  startRecording: () => void;
+  stopRecording: () => void;
   hasReference: boolean;
   refAgeMs: number | null;
   tracking: boolean;
@@ -28,6 +32,7 @@ type HeadMotionState = {
     roll: number;
     detected: boolean;
     wallMs?: number;
+    monotonicMs?: number;
   }) => HeadMotionSample;
   syncHud: (patch: {
     sampleCount: number;
@@ -50,6 +55,8 @@ type HeadMotionState = {
 
 export const useHeadMotionStore = create<HeadMotionState>((set, get) => ({
   sampleCount: 0,
+  recording: false,
+  recordingLimitReached: false,
   hasReference: false,
   refAgeMs: null,
   tracking: false,
@@ -59,7 +66,19 @@ export const useHeadMotionStore = create<HeadMotionState>((set, get) => ({
   shareRequestId: 0,
   sharePrompt: null,
 
-  pushSample: (args) => recorder.push(args),
+  startRecording: () => {
+    recorder.startRecording();
+    set({ recording: recorder.isRecording });
+  },
+  stopRecording: () => {
+    recorder.stopRecording();
+    set({ recording: false });
+  },
+  pushSample: (args) => {
+    const sample = recorder.push(args);
+    set({ sampleCount: recorder.sampleCount, recording: recorder.isRecording, recordingLimitReached: recorder.limitReached });
+    return sample;
+  },
 
   setReference: (matrix) => {
     recorder.setReference(matrix);
@@ -73,6 +92,8 @@ export const useHeadMotionStore = create<HeadMotionState>((set, get) => ({
     recorder.clear();
     set({
       sampleCount: 0,
+      recording: false,
+      recordingLimitReached: false,
       refAgeMs: recorder.hasReference ? 0 : null,
     });
   },

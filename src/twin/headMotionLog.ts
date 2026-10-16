@@ -1,10 +1,12 @@
 /** Head-motion log for retrospective correction (camera / MediaPipe demo). */
 
 export type HeadMotionSample = {
-  /** Monotonic sample index within this session. */
+  /** Saved sample index; -1 for a live pose while export recording is paused. */
   index: number;
   /** Wall-clock epoch ms. */
   t_wall_ms: number;
+  /** Monotonic elapsed ms since the first Track click; null for unsaved live poses. */
+  t_recording_ms: number | null;
   /** Ms since reference pose was set; null if no reference yet. */
   t_rel_ms: number | null;
   detected: boolean;
@@ -35,6 +37,15 @@ export type HeadMotionExport = {
   reference: {
     set_at_wall_ms: number | null;
     matrix: number[] | null;
+  };
+  recording: {
+    started_at_wall_ms: number | null;
+    active: boolean;
+    timestamp_basis: "local inference completion, not camera exposure";
+    elapsed_time_basis: "monotonic milliseconds since first Track click; includes pauses";
+    sampling: "new detected poses only; variable interval; no resampling";
+    sample_limit: number;
+    limit_reached: boolean;
   };
   sample_count: number;
   samples: HeadMotionSample[];
@@ -147,6 +158,24 @@ function copy16(matrix: ArrayLike<number>): number[] {
 export class HeadMotionRecorder {
   private samples: HeadMotionSample[] = [];
   private nextIndex = 0;
+  private recording = false;
+  private recordingWallMs: number | null = null;
+  private recordingMonoMs: number | null = null;
+
+  get isRecording() { return this.recording; }
+  get limitReached() { return this.samples.length >= MAX_SAMPLES; }
+
+  startRecording(wallMs = Date.now(), monotonicMs = performance.now()) {
+    if (this.limitReached) return;
+    if (this.recordingMonoMs == null) {
+      this.recordingWallMs = wallMs;
+      this.recordingMonoMs = monotonicMs;
+    }
+    this.recording = true;
+  }
+
+  stopRecording() { this.recording = false; }
+
   private refMatrix: number[] | null = null;
   private refR: number[] | null = null;
   private refT: number[] | null = null;
@@ -182,6 +211,9 @@ export class HeadMotionRecorder {
   clear() {
     this.samples = [];
     this.nextIndex = 0;
+    this.recording = false;
+    this.recordingWallMs = null;
+    this.recordingMonoMs = null;
   }
 
   latest(): HeadMotionSample | null {
@@ -259,6 +291,7 @@ export class HeadMotionRecorder {
     roll: number;
     detected: boolean;
     wallMs?: number;
+    monotonicMs?: number;
   }): HeadMotionSample {
     const t_wall_ms = args.wallMs ?? Date.now();
     const matrix = copy16(args.matrix);
@@ -275,7 +308,10 @@ export class HeadMotionRecorder {
     }
 
     const sample: HeadMotionSample = {
-      index: this.nextIndex++,
+      index: this.recording ? this.nextIndex : -1,
+      t_recording_ms: this.recording && this.recordingMonoMs != null
+        ? Math.max(0, Math.round((args.monotonicMs ?? performance.now()) - this.recordingMonoMs))
+        : null,
       t_wall_ms,
       t_rel_ms,
       detected: args.detected,
@@ -287,9 +323,11 @@ export class HeadMotionRecorder {
       roll: args.roll,
     };
 
-    this.samples.push(sample);
-    if (this.samples.length > MAX_SAMPLES) {
-      this.samples.splice(0, this.samples.length - MAX_SAMPLES);
+    // Always return the live pose for the HUD/dashboard, even when export is paused.
+    if (this.recording && args.detected) {
+      this.samples.push(sample);
+      this.nextIndex++;
+      if (this.limitReached) this.stopRecording();
     }
     return sample;
   }
@@ -308,6 +346,15 @@ export class HeadMotionRecorder {
       reference: {
         set_at_wall_ms: this.refWallMs,
         matrix: this.refMatrix ? [...this.refMatrix] : null,
+      },
+      recording: {
+        started_at_wall_ms: this.recordingWallMs,
+        active: this.recording,
+        timestamp_basis: "local inference completion, not camera exposure",
+        elapsed_time_basis: "monotonic milliseconds since first Track click; includes pauses",
+        sampling: "new detected poses only; variable interval; no resampling",
+        sample_limit: MAX_SAMPLES,
+        limit_reached: this.limitReached,
       },
       sample_count: this.samples.length,
       samples: this.samples.map((s) => ({
@@ -356,6 +403,7 @@ export class HeadMotionRecorder {
       "m13",
       "m14",
       "m15",
+      "t_recording_ms",
     ].join(",");
 
     const lines = this.samples.map((s) => {
@@ -373,6 +421,7 @@ export class HeadMotionRecorder {
         ...Rr.map((v) => v.toFixed(8)),
         ...tr.map((v) => v.toFixed(8)),
         ...s.matrix.map((v) => v.toFixed(8)),
+        s.t_recording_ms ?? "",
       ].join(",");
     });
 
