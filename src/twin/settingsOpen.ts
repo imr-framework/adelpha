@@ -1,5 +1,5 @@
 export type SettingsLaunch = {
-  section?: "3d-model" | "ai-agents" | "digital-twin";
+  section?: "3d-model" | "ai-agents" | "digital-twin" | "devices";
   openModelLibrary?: boolean;
   focusPartId?: string;
 };

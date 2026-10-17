@@ -18,7 +18,7 @@ export function MotionRecordingControl() {
       }}
     >{recording ? "Stop" : "Track"}</button>
     <p className="camera-head-hint" role="status">
-      {limitReached ? "Log full — export, then clear to record again" : recording ? "Recording measurements" : "Export recording paused"}
+      {limitReached ? "Recording limit reached — export, then clear to record again" : recording ? "Recording measurements · 30-minute limit" : "Export recording paused"}
     </p>
   </>;
 }

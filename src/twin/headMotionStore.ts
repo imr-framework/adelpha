@@ -1,6 +1,6 @@
+import { saveBlob } from "../desktop/saveFile";
 import { create } from "zustand";
 import {
-  downloadTextFile,
   formatMotionContextBlock,
   formatMotionSharePrompt,
   HeadMotionRecorder,
@@ -8,6 +8,8 @@ import {
 } from "./headMotionLog";
 
 const recorder = new HeadMotionRecorder();
+let recordingTimer: ReturnType<typeof setTimeout> | undefined;
+function cancelRecordingTimer() { clearTimeout(recordingTimer); recordingTimer = undefined; }
 
 type HeadMotionState = {
   sampleCount: number;
@@ -33,6 +35,7 @@ type HeadMotionState = {
     detected: boolean;
     wallMs?: number;
     monotonicMs?: number;
+    cameraSource?: string;
   }) => HeadMotionSample;
   syncHud: (patch: {
     sampleCount: number;
@@ -44,10 +47,11 @@ type HeadMotionState = {
     tracking: boolean;
   }) => void;
   setReference: (matrix: ArrayLike<number>) => void;
+  clearReference: () => void;
   clearLog: () => void;
   setTracking: (tracking: boolean) => void;
-  downloadJson: () => void;
-  downloadCsv: () => void;
+  downloadJson: () => Promise<string | null>;
+  downloadCsv: () => Promise<string | null>;
   motionContextBlock: () => string;
   requestShareWithAgent: () => void;
   consumeShareRequest: () => string | null;
@@ -68,9 +72,15 @@ export const useHeadMotionStore = create<HeadMotionState>((set, get) => ({
 
   startRecording: () => {
     recorder.startRecording();
-    set({ recording: recorder.isRecording });
+    cancelRecordingTimer();
+    set({ recording: recorder.isRecording, recordingLimitReached: recorder.limitReached });
+    if (recorder.isRecording) recordingTimer = setTimeout(() => {
+      recorder.checkDuration();
+      set({ recording: recorder.isRecording, recordingLimitReached: recorder.limitReached });
+    }, recorder.remainingDurationMs());
   },
   stopRecording: () => {
+    cancelRecordingTimer();
     recorder.stopRecording();
     set({ recording: false });
   },
@@ -88,7 +98,13 @@ export const useHeadMotionStore = create<HeadMotionState>((set, get) => ({
     });
   },
 
+  clearReference: () => {
+    recorder.clearReference();
+    set({ hasReference: false, refAgeMs: null });
+  },
+
   clearLog: () => {
+    cancelRecordingTimer();
     recorder.clear();
     set({
       sampleCount: 0,
@@ -112,19 +128,17 @@ export const useHeadMotionStore = create<HeadMotionState>((set, get) => ({
   downloadJson: () => {
     const payload = recorder.toExport();
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    downloadTextFile(
+    return saveBlob(
       `adelpha-head-motion-${stamp}.json`,
-      `${JSON.stringify(payload, null, 2)}\n`,
-      "application/json",
+      new Blob([`${JSON.stringify(payload, null, 2)}\n`], { type: "application/json" }),
     );
   },
 
   downloadCsv: () => {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    downloadTextFile(
+    return saveBlob(
       `adelpha-head-motion-${stamp}.csv`,
-      `${recorder.toCsv()}\n`,
-      "text/csv",
+      new Blob([`${recorder.toCsv()}\n`], { type: "text/csv;charset=utf-8" }),
     );
   },
 

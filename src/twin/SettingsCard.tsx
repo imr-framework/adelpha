@@ -21,6 +21,7 @@ import { ADELPHA_VERSION } from "./adelphaVersion";
 import { useWorkspacePrefs } from "./workspacePrefs";
 import type { WorkspaceId } from "./TopbarControls";
 import type { SettingsLaunch } from "./settingsOpen";
+import { CameraSettings } from "./CameraInputSelector";
 import { ModelSettingsPanel } from "./settings/ModelSettingsPanel";
 import {
   ConsoleThemeRow,
@@ -496,6 +497,9 @@ function GenericPanel({
     case "devices":
       return (
         <>
+          <SettingsSection title="Motion tracking camera" description="Choose the camera used in the Camera view. Changes take effect immediately and pause export recording.">
+            <CameraSettings />
+          </SettingsSection>
           <ScannerHardwareSection compact />
           <SettingsSection title="Workstation">
             <SettingsRow title="Operator camera">

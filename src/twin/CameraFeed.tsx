@@ -8,6 +8,10 @@ import {
 import { type HeadMotionSample } from "./headMotionLog";
 import { useHeadMotionStore } from "./headMotionStore";
 import { MotionRecordingControl } from "./MotionRecordingControl";
+import { nextInferenceDeadline } from "./cameraTiming";
+import { openCamera } from "./CameraInputSelector";
+import { useCameraInputStore } from "./cameraInputStore";
+import { requestOpenSettings } from "./settingsOpen";
 
 export type HeadPose = {
   yaw: number;
@@ -72,8 +76,6 @@ async function loadVisionFileset() {
 
 const UI_HZ = 12;
 const UI_INTERVAL_MS = 1000 / UI_HZ;
-const INFER_HZ = 15;
-const INFER_INTERVAL_MS = 1000 / INFER_HZ;
 const EMA_ALPHA = 0.32;
 
 const ZERO_POSE: HeadPose = { yaw: 0, pitch: 0, roll: 0 };
@@ -648,18 +650,40 @@ function drawNoseTracker(
   ctx.restore();
 }
 
+type CameraFeedProps = {
+  onPoseUpdate?: (pose: HeadPose, frame?: HeadPoseFrame) => void;
+  onPreviewStreamChange?: (stream: MediaStream | null) => void;
+  sharePreview?: boolean;
+};
+
+export function CameraFeed(props: CameraFeedProps) {
+  const deviceId = useCameraInputStore(state => state.deviceId);
+  const attempt = useCameraInputStore(state => state.attempt);
+  const targetHz = useCameraInputStore(state => state.targetHz);
+  const opened = useCameraInputStore(state => state.opened);
+  return <CameraFeedSession key={`${deviceId}:${attempt}`} {...props} targetHz={targetHz} deviceId={deviceId} onCameraOpened={opened} />;
+}
+
 /** Live webcam feed with MediaPipe Face Landmarker head-pose tracking. */
-export function CameraFeed({
+function CameraFeedSession({
   onPoseUpdate,
   onPreviewStreamChange,
   sharePreview = false,
+  deviceId,
+  targetHz,
+  onCameraOpened,
 }: {
+  deviceId: string;
+  targetHz: number;
+  onCameraOpened: () => void;
   onPoseUpdate?: (pose: HeadPose, frame?: HeadPoseFrame) => void;
   /** Canvas-capture stream of the composited stage (matches main view / BG mode). */
   onPreviewStreamChange?: (stream: MediaStream | null) => void;
   /** When false, skip captureStream (dashboard duplicate). */
   sharePreview?: boolean;
 }) {
+  const onCameraOpenedRef = useRef(onCameraOpened);
+  onCameraOpenedRef.current = onCameraOpened;
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const personCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -670,7 +694,8 @@ export function CameraFeed({
   const animationRef = useRef<number | null>(null);
   const lastVideoTimeRef = useRef(-1);
   const lastUiAtRef = useRef(0);
-  const lastInferAtRef = useRef(0);
+  const nextInferAtRef = useRef(0);
+  const [measuredHz, setMeasuredHz] = useState(0);
   const visionRef = useRef<Awaited<ReturnType<typeof FilesetResolver.forVisionTasks>> | null>(null);
   const smoothedRef = useRef<HeadPose>(ZERO_POSE);
   const faceSeenRef = useRef(false);
@@ -794,12 +819,21 @@ export function CameraFeed({
     setStatus("Motion log cleared — press Track to record");
   }
 
-  function downloadMotionJson() {
-    useHeadMotionStore.getState().downloadJson();
+  async function downloadMotionJson() {
+    await exportMotion("downloadJson");
   }
 
-  function downloadMotionCsv() {
-    useHeadMotionStore.getState().downloadCsv();
+  async function downloadMotionCsv() {
+    await exportMotion("downloadCsv");
+  }
+
+  async function exportMotion(format: "downloadJson" | "downloadCsv") {
+    try {
+      const saved = await useHeadMotionStore.getState()[format]();
+      setStatus(saved ? "Motion log saved" : "Export cancelled");
+    } catch (error) {
+      setStatus(`Could not save motion log: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   function shareMotionWithAgent() {
@@ -810,6 +844,22 @@ export function CameraFeed({
   useEffect(() => {
     let stream: MediaStream | null = null;
     let cancelled = false;
+    let disconnected = false;
+    let rateWindowStart = performance.now();
+    let measuredCount = 0;
+    let cameraLabel = "Local camera";
+    function cameraEnded() {
+      if (cancelled) return;
+      disconnected = true;
+      setMeasuredHz(0);
+      if (animationRef.current != null) cancelAnimationFrame(animationRef.current);
+      useHeadMotionStore.getState().stopRecording();
+      useHeadMotionStore.getState().setTracking(false);
+      setReady(false);
+      setTracking(false);
+      setError("Camera disconnected. Reconnect it, then click Reconnect or choose another camera.");
+      onPreviewStreamChangeRef.current?.(null);
+    }
     workCanvasRef.current = document.createElement("canvas");
     alphaCanvasRef.current = document.createElement("canvas");
 
@@ -840,25 +890,21 @@ export function CameraFeed({
 
       try {
         setStatus("Requesting camera…");
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            frameRate: { ideal: 24, max: 30 },
-            facingMode: "user",
-          },
-          audio: false,
-        });
+        stream = await openCamera(deviceId, targetHz);
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
           return;
         }
 
+        const cameraTrack = stream.getVideoTracks()[0];
+        cameraLabel = cameraTrack?.label || "Local camera";
+        cameraTrack?.addEventListener("ended", cameraEnded);
+        onCameraOpenedRef.current();
         const video = videoRef.current;
         if (!video) return;
         video.srcObject = stream;
         await video.play();
-        if (cancelled) return;
+        if (cancelled || disconnected) return;
 
         syncCanvasSize();
         setReady(true);
@@ -866,7 +912,7 @@ export function CameraFeed({
         track();
 
         const vision = await loadVisionFileset();
-        if (cancelled) return;
+        if (cancelled || disconnected) return;
         visionRef.current = vision;
 
         const landmarkerOpts = {
@@ -886,14 +932,20 @@ export function CameraFeed({
             baseOptions: { modelAssetPath: MODEL_URL, delegate: "CPU" },
           });
         }
-        if (cancelled) return;
+        if (cancelled || disconnected) {
+          landmarkerRef.current?.close();
+          landmarkerRef.current = null;
+          return;
+        }
 
         setStatus("Looking for face…");
       } catch (err) {
-        if (cancelled) return;
+        if (cancelled || disconnected) return;
         const name = err instanceof DOMException ? err.name : "";
         if (name === "NotAllowedError" || name === "PermissionDeniedError") {
           setError("Camera permission denied. Allow access in System Settings → Privacy & Security → Camera.");
+        } else if (name === "OverconstrainedError") {
+          setError("The selected camera is unavailable. Refresh the list and reconnect it, or choose another camera.");
         } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
           setError("No camera was found on this device.");
         } else if (stream && videoRef.current?.srcObject) {
@@ -971,28 +1023,36 @@ export function CameraFeed({
     }
 
     function track() {
-      if (cancelled) return;
+      if (cancelled || disconnected) return;
 
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const landmarker = landmarkerRef.current;
       const now = performance.now();
-      const shouldInfer = now - lastInferAtRef.current >= INFER_INTERVAL_MS;
+      const interval = 1000 / targetHz;
+      const shouldInfer = now >= nextInferAtRef.current - 1;
+      if (now - rateWindowStart >= 1000) {
+        setMeasuredHz(measuredCount * 1000 / (now - rateWindowStart));
+        rateWindowStart = now;
+        measuredCount = 0;
+      }
+      const frameTime = video?.currentTime;
 
       if (
         video &&
         canvas &&
         video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
-        video.currentTime !== lastVideoTimeRef.current
+        frameTime !== lastVideoTimeRef.current
       ) {
-        lastVideoTimeRef.current = video.currentTime;
+        lastVideoTimeRef.current = frameTime!;
         syncCanvasSize();
 
         try {
           renderPersonFrame(video, now);
 
           if (shouldInfer && landmarker) {
-            lastInferAtRef.current = now;
+            // Preserve cadence across frame jitter without catch-up inference bursts.
+            nextInferAtRef.current = nextInferenceDeadline(now, nextInferAtRef.current, interval);
             const result = landmarker.detectForVideo(video, now);
             const landmarks = result.faceLandmarks?.[0];
             const matrix = result.facialTransformationMatrixes?.[0]?.data;
@@ -1013,6 +1073,7 @@ export function CameraFeed({
 
               const wallMs = Date.now();
               const pose = { ...smoothedRef.current };
+              measuredCount += 1;
               const sample = useHeadMotionStore.getState().pushSample({
                 matrix: matrixCopy,
                 yaw: pose.yaw,
@@ -1021,6 +1082,7 @@ export function CameraFeed({
                 detected: true,
                 wallMs,
                 monotonicMs: performance.now(),
+                cameraSource: cameraLabel,
               });
 
               if (now - lastUiAtRef.current >= UI_INTERVAL_MS) {
@@ -1061,6 +1123,9 @@ export function CameraFeed({
         }
       }
 
+      // The source video is hidden behind the composited canvas. Some desktop
+      // WebViews expose video-frame callbacks but stop delivering them for this
+      // hidden element. Keep the render pump independent of those callbacks.
       animationRef.current = requestAnimationFrame(track);
     }
 
@@ -1078,6 +1143,7 @@ export function CameraFeed({
       if (animationRef.current != null) cancelAnimationFrame(animationRef.current);
       const video = videoRef.current;
       if (video) video.srcObject = null;
+      stream?.getVideoTracks().forEach(t => t.removeEventListener("ended", cameraEnded));
       stream?.getTracks().forEach((t) => t.stop());
       landmarkerRef.current?.close();
       landmarkerRef.current = null;
@@ -1170,6 +1236,7 @@ export function CameraFeed({
                   : "unset"}
               </strong>
             </div>
+            <div className="camera-head-row"><span>Measured</span><strong>{measuredHz.toFixed(1)}/s</strong></div>
             <MotionRecordingControl />
             <button
               type="button"
@@ -1212,6 +1279,7 @@ export function CameraFeed({
               aria-label="Motion log"
             >
               <div className="camera-head-hud-title">Motion log</div>
+              {logCount === 0 ? <p className="camera-head-hint">Press Track while a face is detected to record samples before exporting.</p> : null}
               <div className="camera-head-row">
                 <span>Samples</span>
                 <strong>{logCount}</strong>
@@ -1271,7 +1339,7 @@ export function CameraFeed({
       ) : null}
 
       {!ready && !error ? <p className="camera-feed-status">{status || "Starting camera…"}</p> : null}
-      {error ? <p className="camera-feed-status camera-feed-error">{error}</p> : null}
+      {error ? <div className="camera-feed-status camera-feed-error" role="alert">{error}<button type="button" className="camera-mask-btn" onClick={() => requestOpenSettings({ section: "devices" })}>Camera settings</button></div> : null}
     </div>
   );
 }

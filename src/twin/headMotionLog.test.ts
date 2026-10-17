@@ -5,6 +5,19 @@ const matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 12, 23, 34, 1];
 const pose = { matrix, yaw: 1, pitch: 2, roll: 3, detected: true };
 
 describe("export recording", () => {
+  it("preserves the camera source per sample when switching cameras", () => {
+    const recorder = new HeadMotionRecorder();
+    recorder.startRecording(1000, 100);
+    recorder.push({ ...pose, cameraSource: 'Camo, "Phone"', monotonicMs: 110 });
+    recorder.stopRecording();
+    recorder.clearReference();
+    recorder.startRecording(2000, 1100);
+    recorder.push({ ...pose, cameraSource: "MacBook Pro Camera", monotonicMs: 1110 });
+    expect(recorder.toExport().samples.map(s => s.camera_source)).toEqual(['Camo, "Phone"', "MacBook Pro Camera"]);
+    expect(recorder.toExport().samples.map(s => s.t_recording_ms)).toEqual([10, 1010]);
+    expect(recorder.toCsv()).toContain('"Camo, ""Phone"""');
+  });
+
   it("keeps live transforms available but saves nothing before Track or after Stop", () => {
     const recorder = new HeadMotionRecorder();
     recorder.setReference(matrix, 100);
@@ -55,10 +68,36 @@ describe("export recording", () => {
   it("stops at the limit without silently removing the beginning of a recording", () => {
     const recorder = new HeadMotionRecorder();
     recorder.startRecording(0, 0);
-    for (let i = 0; i < 18_001; i++) recorder.push({ ...pose, wallMs: i, monotonicMs: i });
-    expect(recorder.sampleCount).toBe(18_000);
+    for (let i = 0; i < 120_001; i++) recorder.push({ ...pose, wallMs: i, monotonicMs: i });
+    expect(recorder.sampleCount).toBe(120_000);
     expect(recorder.isRecording).toBe(false);
     expect(recorder.toExport().samples[0]?.index).toBe(0);
     expect(recorder.toExport().recording.limit_reached).toBe(true);
   });
+});
+
+it("keeps a 13-minute 60 Hz scan and stops at 30 minutes without dropping its start", () => {
+  const recorder = new HeadMotionRecorder();
+  recorder.startRecording(0, 0);
+  for (let i = 0; i < 108000; i++) recorder.push({ ...pose, monotonicMs: i * 1000 / 60 });
+  expect(recorder.sampleCount).toBe(108000);
+  expect(recorder.isRecording).toBe(true);
+  recorder.push({ ...pose, monotonicMs: 1800000 });
+  expect(recorder.sampleCount).toBe(108000);
+  expect(recorder.isRecording).toBe(false);
+  expect(recorder.limitReached).toBe(true);
+  expect(recorder.toExport().samples[0].index).toBe(0);
+  expect(recorder.toExport().recording.duration_limit_ms).toBe(1800000);
+});
+it("counts pauses toward the duration and resets the limit on Clear", () => {
+  const recorder = new HeadMotionRecorder();
+  recorder.startRecording(0, 0);
+  recorder.stopRecording();
+  recorder.startRecording(1800000, 1800000);
+  expect(recorder.isRecording).toBe(false);
+  expect(recorder.limitReached).toBe(true);
+  recorder.clear();
+  recorder.startRecording(1800000, 1800000);
+  expect(recorder.isRecording).toBe(true);
+  expect(recorder.limitReached).toBe(false);
 });

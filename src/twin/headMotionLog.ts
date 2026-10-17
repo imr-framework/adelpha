@@ -5,6 +5,8 @@ export type HeadMotionSample = {
   index: number;
   /** Wall-clock epoch ms. */
   t_wall_ms: number;
+  /** OS camera label, including USB/virtual cameras such as Camo. */
+  camera_source?: string;
   /** Monotonic elapsed ms since the first Track click; null for unsaved live poses. */
   t_recording_ms: number | null;
   /** Ms since reference pose was set; null if no reference yet. */
@@ -32,7 +34,7 @@ export type HeadMotionExport = {
     R_rel_layout: "row-major-3x3";
     t_rel_layout: "xyz";
     units: "MediaPipe facial transform (camera frame); R_rel = R_ref^T · R";
-    note: "Demo optical log from laptop webcam. Calibrate to scanner RAS/LPS before using for MRI correction.";
+    note: "Demo optical log from the selected camera. Calibrate to scanner RAS/LPS before using for MRI correction.";
   };
   reference: {
     set_at_wall_ms: number | null;
@@ -45,13 +47,16 @@ export type HeadMotionExport = {
     elapsed_time_basis: "monotonic milliseconds since first Track click; includes pauses";
     sampling: "new detected poses only; variable interval; no resampling";
     sample_limit: number;
+    duration_limit_ms: number;
     limit_reached: boolean;
   };
   sample_count: number;
   samples: HeadMotionSample[];
 };
 
-const MAX_SAMPLES = 18_000;
+export const MAX_RECORDING_MS = 30 * 60 * 1000;
+// Headroom above 108,000 measurements at 60 Hz for timing jitter.
+const MAX_SAMPLES = 120_000;
 
 export function extractRotationTranslation(matrix: ArrayLike<number>): {
   R: number[];
@@ -162,10 +167,24 @@ export class HeadMotionRecorder {
   private recordingWallMs: number | null = null;
   private recordingMonoMs: number | null = null;
 
+  private durationLimitReached = false;
+
+  remainingDurationMs(monotonicMs = performance.now()) {
+    return this.recordingMonoMs == null ? MAX_RECORDING_MS : Math.max(0, MAX_RECORDING_MS - (monotonicMs - this.recordingMonoMs));
+  }
+
+  checkDuration(monotonicMs = performance.now()) {
+    if (this.recordingMonoMs != null && this.remainingDurationMs(monotonicMs) === 0) {
+      this.durationLimitReached = true;
+      this.stopRecording();
+    }
+  }
+
   get isRecording() { return this.recording; }
-  get limitReached() { return this.samples.length >= MAX_SAMPLES; }
+  get limitReached() { return this.durationLimitReached || this.samples.length >= MAX_SAMPLES; }
 
   startRecording(wallMs = Date.now(), monotonicMs = performance.now()) {
+    this.checkDuration(monotonicMs);
     if (this.limitReached) return;
     if (this.recordingMonoMs == null) {
       this.recordingWallMs = wallMs;
@@ -214,6 +233,7 @@ export class HeadMotionRecorder {
     this.recording = false;
     this.recordingWallMs = null;
     this.recordingMonoMs = null;
+    this.durationLimitReached = false;
   }
 
   latest(): HeadMotionSample | null {
@@ -292,7 +312,9 @@ export class HeadMotionRecorder {
     detected: boolean;
     wallMs?: number;
     monotonicMs?: number;
+    cameraSource?: string;
   }): HeadMotionSample {
+    this.checkDuration(args.monotonicMs ?? performance.now());
     const t_wall_ms = args.wallMs ?? Date.now();
     const matrix = copy16(args.matrix);
     let R_rel: number[] | null = null;
@@ -313,6 +335,7 @@ export class HeadMotionRecorder {
         ? Math.max(0, Math.round((args.monotonicMs ?? performance.now()) - this.recordingMonoMs))
         : null,
       t_wall_ms,
+      camera_source: args.cameraSource ?? "Local camera",
       t_rel_ms,
       detected: args.detected,
       matrix,
@@ -341,7 +364,7 @@ export class HeadMotionRecorder {
         t_rel_layout: "xyz",
         units:
           "MediaPipe facial transform (camera frame); R_rel = R_ref^T · R",
-        note: "Demo optical log from laptop webcam. Calibrate to scanner RAS/LPS before using for MRI correction.",
+        note: "Demo optical log from the selected camera. Calibrate to scanner RAS/LPS before using for MRI correction.",
       },
       reference: {
         set_at_wall_ms: this.refWallMs,
@@ -354,6 +377,7 @@ export class HeadMotionRecorder {
         elapsed_time_basis: "monotonic milliseconds since first Track click; includes pauses",
         sampling: "new detected poses only; variable interval; no resampling",
         sample_limit: MAX_SAMPLES,
+        duration_limit_ms: MAX_RECORDING_MS,
         limit_reached: this.limitReached,
       },
       sample_count: this.samples.length,
@@ -404,6 +428,7 @@ export class HeadMotionRecorder {
       "m14",
       "m15",
       "t_recording_ms",
+      "camera_source",
     ].join(",");
 
     const lines = this.samples.map((s) => {
@@ -422,6 +447,7 @@ export class HeadMotionRecorder {
         ...tr.map((v) => v.toFixed(8)),
         ...s.matrix.map((v) => v.toFixed(8)),
         s.t_recording_ms ?? "",
+        `"${(s.camera_source ?? "Local camera").replace(/"/g, '""')}"`,
       ].join(",");
     });
 
