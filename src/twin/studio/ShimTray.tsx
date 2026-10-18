@@ -267,7 +267,9 @@ function FieldPoints({ field, values, scale }: { field: ShimFieldSummary; values
     buffer.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     return buffer;
   }, [field.points, values, scale]);
+  useLayoutEffect(() => () => geometry.dispose(), [geometry]);
   const dot = useMemo(makeDotTexture, []);
+  useLayoutEffect(() => () => dot.dispose(), [dot]);
   const pointSize = useMemo(() => {
     const { x, y, z } = field.extent_mm;
     const volume = Math.max(x[1] - x[0], 1) * Math.max(y[1] - y[0], 1) * Math.max(z[1] - z[0], 1);

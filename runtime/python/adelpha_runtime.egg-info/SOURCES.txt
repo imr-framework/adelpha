@@ -7,6 +7,7 @@ adelpha_runtime/first_run.py
 adelpha_runtime/gateway.py
 adelpha_runtime/lock.py
 adelpha_runtime/logconfig.py
+adelpha_runtime/memory.py
 adelpha_runtime/paths.py
 adelpha_runtime/process.py
 adelpha_runtime/registry.py
@@ -21,6 +22,7 @@ tests/test_fem_studio.py
 tests/test_gateway.py
 tests/test_handshake.py
 tests/test_lifecycle.py
+tests/test_memory.py
 tests/test_secrets.py
 tests/test_studio.py
 tests/test_twin_switch.py

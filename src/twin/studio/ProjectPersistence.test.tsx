@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ProjectPersistence, useProjectState, useProjectRun, flushProject, finishProjectDeletion, prepareProjectDeletion } from "./ProjectPersistence";
+import { ProjectPersistence, useProjectState, useProjectRun, flushProject, finishProjectDeletion, prepareProjectDeletion, compactArchivedValue } from "./ProjectPersistence";
 import { loadProjectState, saveProjectState, type SavedProject } from "./projectStorage";
 vi.mock("./projectStorage", () => ({ loadProjectState: vi.fn(), saveProjectState: vi.fn() }));
 const disk = new Map<string, SavedProject>();
@@ -63,6 +63,36 @@ describe("durable project state", () => {
     await act(() => flushProject("deleted"));
     expect(vi.mocked(saveProjectState).mock.calls.length).toBe(count);
   });
+});
+
+it("keeps run history without storing meshes and PNG blobs twice", async () => {
+  function CoilStudy() {
+    const capture = useProjectRun("gradient");
+    return <button onClick={() => {
+      const archive = capture();
+      archive("Gradient coil", {
+        "gradient.result": {
+          loop_count: 4,
+          mean_field_error: 1.2,
+          layout: { wires: [[[0, 0, 0]]] },
+          layout_png: "iVBORw0KGgo",
+          surface_png: "iVBORw0KGgo",
+          echo: [0, 1, 0],
+        },
+      });
+    }}>Run</button>;
+  }
+  render(<ProjectPersistence id="coil-history"><CoilStudy /></ProjectPersistence>);
+  await screen.findByText("Run");
+  fireEvent.click(screen.getByText("Run"));
+  await act(() => flushProject("coil-history"));
+  const stored = disk.get("coil-history")!.runs[0]!.values["gradient.result"] as Record<string, unknown>;
+  expect(stored.loop_count).toBe(4);
+  expect(stored.mean_field_error).toBe(1.2);
+  expect(stored.layout).toBeUndefined();
+  expect(stored.layout_png).toBeUndefined();
+  expect(stored.echo).toBeUndefined();
+  expect(compactArchivedValue({ layout: { wires: [] }, loop_count: 2 })).toEqual({ loop_count: 2 });
 });
 
 it("keeps more than twenty historical runs", async () => {

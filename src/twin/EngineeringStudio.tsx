@@ -12,6 +12,7 @@ import { useEngineeringStore } from "./engineeringStore";
 import { StudioHome } from "./studio/StudioHome";
 import { AcquisitionStudio } from "./studio/StudioApplication";
 import { GradientCoilStudio } from "./studio/GradientCoilStudio";
+import { RfCoilStudio } from "./studio/RfCoilStudio";
 import { FemStudio } from "./studio/FemStudio";
 import { HardwareStudyStudio } from "./studio/HardwareStudyStudio";
 import { PassiveShimStudio } from "./studio/PassiveShimStudio";
@@ -114,7 +115,7 @@ export function EngineeringStudio() {
   const contents = (
     <section className="engineering-studio" aria-label="Engineering Studio">
       <div className={`engineering-stage${activeProject && (hardwareView === "magnet" || hardwareView === "fem") ? " is-hardware-study" : ""}`}>
-        {activeProject && activeProject.application !== "acquisition" && hardwareView !== "gradients" && hardwareView !== "shimming" && hardwareView !== "magnet" && hardwareView !== "fem" ? (
+        {activeProject && activeProject.application !== "acquisition" && hardwareView !== "gradients" && hardwareView !== "rf" && hardwareView !== "shimming" && hardwareView !== "magnet" && hardwareView !== "fem" ? (
           <button type="button" className="studio-close-project" onClick={closeProject}>
             Close project
           </button>
@@ -123,6 +124,11 @@ export function EngineeringStudio() {
           <AcquisitionStudio key={activeProject.id} projectName={activeProject.name} onClose={closeProject} />
         ) : activeProject && hardwareView === "gradients" ? (
           <GradientCoilStudio
+            projectName={activeProject.name}
+            onClose={closeProject}
+          />
+        ) : activeProject && hardwareView === "rf" ? (
+          <RfCoilStudio
             projectName={activeProject.name}
             onClose={closeProject}
           />

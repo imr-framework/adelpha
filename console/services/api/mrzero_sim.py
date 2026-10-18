@@ -89,6 +89,15 @@ def run_suite(suite: str, body: dict | None = None) -> dict:
     if suite != "low-field":
         raise ValueError(f"Unknown suite '{suite}'.")
     request = low_field_request(body)
+    try:
+        return _run_mr0_worker(request)
+    finally:
+        import gc
+
+        gc.collect()
+
+
+def _run_mr0_worker(request: dict) -> dict:
     with tempfile.TemporaryDirectory(prefix="adelpha-mr0-") as tmp:
         params = Path(tmp) / "params.json"
         result = Path(tmp) / "result.json"
@@ -99,14 +108,15 @@ def run_suite(suite: str, body: dict | None = None) -> dict:
         env["MPLCONFIGDIR"] = str(Path(tmp) / "mpl")
         proc = subprocess.run(
             [sys.executable, str(Path(__file__).resolve()), str(params), str(result)],
-            capture_output=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
             text=True,
             env=env,
             timeout=600,
             cwd=tmp,
         )
         if not result.exists():
-            detail = (proc.stderr or proc.stdout or "MRZero simulation failed.").strip()
+            detail = (proc.stderr or "MRZero simulation failed.").strip()
             raise RuntimeError(detail[-800:])
         payload = json.loads(result.read_text(encoding="utf-8"))
     if not payload.get("ok"):
@@ -333,7 +343,7 @@ def simulate(request: dict) -> dict:
     snr = float(np.mean(center) / (sigma or 1e-6))
     shots = math.ceil(samples / int(request["etl"]))
     elapsed = time.perf_counter() - started
-    return {
+    payload = {
         "ok": True,
         "suite": "low-field",
         "title": NAMES[request["sequence"]],
@@ -364,6 +374,15 @@ def simulate(request: dict) -> dict:
         "inhomogeneous_image": _image(inhomogeneous, samples),
         "reconstruction_error": "",
     }
+    del seq, seq0, uniform_phantom, uniform, magnitude, noisy, inhomogeneous
+    try:
+        torch.cuda.empty_cache()
+    except Exception:
+        pass
+    import gc
+
+    gc.collect()
+    return payload
 
 
 def main() -> None:
@@ -376,6 +395,16 @@ def main() -> None:
         payload = simulate(request)
     except Exception as exc:
         payload = {"ok": False, "error": str(exc)}
+    finally:
+        import gc
+
+        try:
+            import torch
+
+            torch.cuda.empty_cache()
+        except Exception:
+            pass
+        gc.collect()
     destination.write_text(json.dumps(payload), encoding="utf-8")
     raise SystemExit(0 if payload.get("ok") else 1)
 

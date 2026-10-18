@@ -114,7 +114,14 @@ def run(config: SimulationConfig, directory):
         output = _execute([config.solver.elmer_solver, "case.sif"], directory, "elmersolver.log", config.solver.timeout)
         if "ALL DONE" not in output:
             raise RuntimeError("Elmer did not report successful completion; see elmersolver.log")
-        status.update(status="completed", results=_validate_results(directory), finished_at=time.time())
+        results = _validate_results(directory)
+        try:
+            from .fieldpreview import write_field_preview
+
+            write_field_preview(directory)
+        except (ValueError, OSError):
+            pass
+        status.update(status="completed", results=results, finished_at=time.time())
         _save(directory / "status.json", status)
         return status
     except Exception as exc:

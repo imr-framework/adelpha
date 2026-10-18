@@ -1,8 +1,8 @@
-"""Engineering Studio HTTP apps: gradient coils, passive shimming, and magnets.
+"""Engineering Studio HTTP apps: gradient coils, RF coils, passive shimming, and magnets.
 
-These are Adelpha features. They are not part of the imaging console. Coil and
-shim workers live next to their isolated venvs. Magnet field and Elmer FEM use
-the runtime NumPy stack and optional ElmerSolver.
+These are Adelpha features. They are not part of the imaging console. Coil, RF,
+and shim workers live next to their isolated venvs. Magnet field and Elmer FEM
+use the runtime NumPy stack and optional ElmerSolver.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from typing import Any, Callable
 from fastapi import Body, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from adelpha_runtime.memory import release_simulation_memory
 from adelpha_runtime.paths import RuntimePaths, cors_origins, default_repo_root
 
 
@@ -28,7 +29,7 @@ def _load(name: str, path: Path):
 
 
 def _feature_sim(paths: RuntimePaths, name: str) -> Path:
-    """Find ``coil/sim.py``, ``shim/sim.py``, or ``magnet/sim.py``.
+    """Find ``coil/sim.py``, ``rfcoil/sim.py``, ``shim/sim.py``, or ``magnet/sim.py``.
 
     Tauri sets ``ADELPHA_RESOURCE_DIR`` to the app resource folder, which does
     not contain these feature trees. Fall back to the checkout root.
@@ -58,6 +59,14 @@ def _studio_app(service: str, routes: list[tuple[str, Callable[..., Any]]]) -> F
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.middleware("http")
+    async def release_after_simulation(request, call_next):
+        try:
+            return await call_next(request)
+        finally:
+            if request.method == "POST":
+                release_simulation_memory()
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -90,6 +99,11 @@ def create_dev_magnet_app() -> FastAPI:
 def create_coil_app(paths: RuntimePaths) -> FastAPI:
     sim = _load("adelpha_coil_sim", _feature_sim(paths, "coil"))
     return _studio_app("coil", [("/simulate", sim.run_coil)])
+
+
+def create_rf_app(paths: RuntimePaths) -> FastAPI:
+    sim = _load("adelpha_rfcoil_sim", _feature_sim(paths, "rfcoil"))
+    return _studio_app("rf", [("/simulate", sim.run_rfcoil)])
 
 
 def create_shim_app(paths: RuntimePaths) -> FastAPI:

@@ -1,7 +1,7 @@
 import json
 import xml.etree.ElementTree as ET
 import pytest
-from simulation.fem.fieldpreview import read_field_preview, FIELDS
+from simulation.fem.fieldpreview import read_field_preview, write_field_preview, FIELDS
 
 
 def fixture_result(tmp_path):
@@ -33,6 +33,14 @@ def test_surface_discards_internal_faces_and_retains_field_values(tmp_path):
     assert len(data['groups'][0]['triangles']) == 6 * 3
     assert data['fields']['H']['unit'] == 'A/m'
     assert len(data['groups'][0]['tetrahedra']) == 8
+
+
+def test_write_field_preview_round_trips_without_reparsing_the_vtu(tmp_path):
+    fixture_result(tmp_path)
+    written = write_field_preview(tmp_path)
+    path = tmp_path / 'field-preview.json'
+    assert path.is_file()
+    assert json.loads(path.read_text())['fields']['B']['values'] == written['fields']['B']['values']
 
 
 def test_rejects_corrupt_indices(tmp_path):

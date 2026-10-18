@@ -49,6 +49,7 @@ describe("studio project library", () => {
     expect(matchesProjectClass(project({ lastView: "fem" }), "fem")).toBe(true);
     expect(projectClass(project({ lastView: "gradients" }))).toBe("gradient");
     expect(projectClass(project({ discipline: "Gradients" }))).toBe("gradient");
+    expect(projectClass(project({ lastView: "rf" }))).toBe("rf");
     expect(projectClass(project({ lastView: "shimming" }))).toBe("shimming");
     expect(projectClass(project({ lastView: "assembly" }))).toBe("assembly");
     expect(projectClass(project({ discipline: "RF" }))).toBe("rf");
@@ -59,11 +60,13 @@ describe("studio project library", () => {
     expect(projectClass(seedProjects()[0]!)).toBe("magnet");
     expect(projectClass(seedProjects()[1]!)).toBe("gradient");
     expect(projectClass(seedProjects()[2]!)).toBe("assembly");
+    expect(projectClass(seedProjects()[3]!)).toBe("rf");
   });
 
   it("keeps assembly and standalone metadata distinct and puts engines in details", () => {
     expect(projectDetail(project({ catalogParts: 12, includedParts: 9 }))).toBe("12 parts · 9 included");
     expect(projectDetail(project({ lastView: "gradients" }))).toBe("Standalone design · PyCoilGen");
+    expect(projectDetail(project({ lastView: "rf" }))).toBe("Standalone design · RFcoilbuilder");
     expect(projectDetail(project({ application: "acquisition" }))).toBe("Acquisition simulation · MRzero");
     expect(projectDetail(project({ lastView: "shimming" }))).toBe("Optimization study");
     expect(projectDetail(project({ lastView: "fem" }))).toBe("FEM study · Elmer");
@@ -117,6 +120,7 @@ describe("studio project library", () => {
     expect(hasSetupDestination(hardware)).toBe(true);
     expect(hasSetupDestination(later)).toBe(false);
     expect(hasSetupDestination(project({ lastView: "gradients" }))).toBe(false);
+    expect(hasSetupDestination(project({ lastView: "rf" }))).toBe(false);
   });
 
   it("copies an example into a separate user project", () => {
@@ -134,6 +138,7 @@ describe("studio project library", () => {
   it("uses the type-specific pictures from project_previews", () => {
     expect(projectPreviewSrc(project({ lastView: "magnet" }))).toBe("/project_previews/magnet.png");
     expect(projectPreviewSrc(project({ lastView: "gradients" }))).toBe("/project_previews/gradient_coil.png");
+    expect(projectPreviewSrc(project({ lastView: "rf" }))).toBe("/project_previews/rf_coil.png");
     expect(projectPreviewSrc(project({ application: "acquisition" }))).toBe("/project_previews/mrzero.png");
     expect(projectPreviewSrc(project({ discipline: "RF" }))).toBe("/project_previews/rf_coil.png");
     expect(projectPreviewSrc(seedProjects()[0]!)).toBe("/project_previews/magnet.png");

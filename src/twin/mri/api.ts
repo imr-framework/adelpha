@@ -33,6 +33,11 @@ export function magnetBaseUrl(): string {
   return `${apiRoot()}/api/magnet`;
 }
 
+/** RF-coil desk — Adelpha service, not the imaging console. */
+export function rfBaseUrl(): string {
+  return `${apiRoot()}/api/rf`;
+}
+
 async function readError(res: Response): Promise<string> {
   const text = await res.text();
     try {
@@ -162,6 +167,8 @@ export type CoilLayout = {
 export type CoilShape = "cylinder" | "planar" | "biplanar" | "circular";
 
 export type CoilSimulation = {
+  generator_version?: number;
+  connected_path_count?: number;
   ok: true;
   shape: CoilShape;
   axis: "x" | "y" | "z";
@@ -175,6 +182,7 @@ export type CoilSimulation = {
   levels: number;
   gradient_mt_m: number;
   achieved_mt_m: number | null;
+  /** Percent, as reported by pyCoilGen (not a fraction). */
   mean_field_error: number | null;
   error_definition?: string | null;
   target_region_radius_mm?: number | null;
@@ -315,6 +323,53 @@ export async function exportShimTrays(
 
 export async function simulateCoil(request: CoilRequest): Promise<CoilSimulation> {
   return studioFetch(coilBaseUrl(), "/simulate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export type RfCoilRequest = {
+  radius_mm: number;
+  length_mm: number;
+  former_mm: number;
+  grooves: number;
+  freq_mhz: number;
+  allow_bucking: boolean;
+  n_max: number;
+};
+
+export type RfCoilSimulation = {
+  ok: true;
+  generator_version?: number;
+  title: string;
+  summary: string;
+  radius_mm: number;
+  length_mm: number;
+  former_mm: number;
+  grooves: number;
+  freq_mhz: number;
+  allow_bucking: boolean;
+  n_max: number;
+  /** Percent, maximum relative on-axis B1 error. */
+  mean_field_error: number | null;
+  error_definition?: string | null;
+  inductance_uh: number | null;
+  q_factor: number | null;
+  tuning_pf: number | null;
+  wire_length_m: number | null;
+  forward_turns: number;
+  bucking_turns: number;
+  layout: CoilLayout;
+  layout_png: string;
+  surface_png: string;
+  field_png?: string;
+  loop_count: number;
+  elapsed_s: number;
+};
+
+export async function simulateRfCoil(request: RfCoilRequest): Promise<RfCoilSimulation> {
+  return studioFetch(rfBaseUrl(), "/simulate", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(request),

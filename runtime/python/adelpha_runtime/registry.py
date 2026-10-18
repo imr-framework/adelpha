@@ -274,6 +274,11 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
 
         return create_coil_app(paths)
 
+    def rf_factory():
+        from adelpha_runtime.studio import create_rf_app
+
+        return create_rf_app(paths)
+
     def shim_factory():
         from adelpha_runtime.studio import create_shim_app
 
@@ -329,6 +334,17 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
             version="0.1.0",
             description="pyCoilGen windings for the Engineering Studio. Isolated from the imaging console.",
             mount_factory=coil_factory,
+            health_path="/health",
+        ),
+        ServiceDef(
+            id="rf",
+            title="RF coils",
+            required=False,
+            start="always",
+            restart="never",
+            version="0.1.0",
+            description="Solenoid RF windings for the Engineering Studio. Isolated from the imaging console.",
+            mount_factory=rf_factory,
             health_path="/health",
         ),
         ServiceDef(

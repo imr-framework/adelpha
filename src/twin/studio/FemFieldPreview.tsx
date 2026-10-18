@@ -16,8 +16,22 @@ type Probe = { point: number[]; vector: number[] };
 function FieldSurface({ samples, component, range, wireframe, onProbe }: { samples: Sample[]; component: Component; range: number[]; wireframe: boolean; onProbe: (p: Probe) => void }) {
   const geometry = useMemo(() => {
     const g = new BufferGeometry();
-    g.setAttribute("position", new Float32BufferAttribute(samples.flatMap(s => s.point), 3));
-    g.setAttribute("color", new Float32BufferAttribute(samples.flatMap(s => { const c = fieldColor(scalar(s.vector, component), range[0], range[1]); return new Color().setRGB(c[0], c[1], c[2], SRGBColorSpace).toArray(); }), 3));
+    const positions = new Float32Array(samples.length * 3);
+    const colors = new Float32Array(samples.length * 3);
+    const tint = new Color();
+    for (let i = 0; i < samples.length; i += 1) {
+      const sample = samples[i]!;
+      positions[i * 3] = sample.point[0];
+      positions[i * 3 + 1] = sample.point[1];
+      positions[i * 3 + 2] = sample.point[2];
+      const c = fieldColor(scalar(sample.vector, component), range[0], range[1]);
+      tint.setRGB(c[0], c[1], c[2], SRGBColorSpace);
+      colors[i * 3] = tint.r;
+      colors[i * 3 + 1] = tint.g;
+      colors[i * 3 + 2] = tint.b;
+    }
+    g.setAttribute("position", new Float32BufferAttribute(positions, 3));
+    g.setAttribute("color", new Float32BufferAttribute(colors, 3));
     return g;
   }, [samples, component, range]);
   useEffect(() => () => geometry.dispose(), [geometry]);

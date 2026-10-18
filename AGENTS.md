@@ -40,6 +40,8 @@ Adelpha is an MRI engineering and digital-twin application. Its UI combines scan
 | FEM configuration, meshing, and solving | `simulation/fem/config.py`, `meshgen.py`, `sifgen.py`, `solver.py` |
 | Mesh and VTU preview serialization | `simulation/fem/meshpreview.py`, `fieldpreview.py` |
 | Desktop/browser export helper | `src/desktop/saveFile.ts` |
+| Gradient coil design | `src/twin/studio/GradientCoilStudio.tsx`, `coil/sim.py` |
+| RF coil design | `src/twin/studio/RfCoilStudio.tsx`, `rfcoil/sim.py`, `RFcoilbuilder/` |
 | Detailed FEM setup and numerical limitations | `simulation/fem/README.md` |
 
 The frontend uses React, TypeScript, Vite, Three.js, React Three Fiber, Drei, and Lucide icons. Use the installed versions and existing conventions. Both Electron and Tauri integration exist: do not assume every browser API behaves identically in every desktop host.
@@ -79,7 +81,7 @@ Current sizing reference, not a universal requirement for all workspaces:
 
 Use `min-width: 0`, `min-height: 0`, bounded overflow, and flexible grid tracks where needed. Preserve the model's aspect ratio when panels resize. Do not shrink the whole application with CSS transforms to fit a viewport.
 
-Gradient coil, passive shimming, and acquisition workspaces also omit the full-width project header. Their project name, workspace identity, status, and project actions belong in a compact `ProjectPanel` inside the right inspector. Place a direct Close project icon at the far right of the project-name row, without a Project dropdown. Preserve View assembly where supported. Omit routine completed-result badges and duplicate run-button captions; retain actionable failure and stale-result warnings. Gradient and shimming viewport controls and captions float over the scene without full-width gradient scrims; retain the key-results footer. Acquisition uses a clean “A Bloch simulator” empty state and an image-focused result area without a bottom echo plot.
+Gradient coil, RF coil, passive shimming, and acquisition workspaces also omit the full-width project header. Their project name, workspace identity, status, and project actions belong in a compact `ProjectPanel` inside the right inspector. Place a direct Close project icon at the far right of the project-name row, without a Project dropdown. Preserve View assembly where supported. Omit routine completed-result badges and duplicate run-button captions; retain actionable failure and stale-result warnings. Gradient and shimming viewport controls and captions float over the scene without full-width gradient scrims; retain the key-results footer. Acquisition uses a clean “A Bloch simulator” empty state and an image-focused result area without a bottom echo plot.
 
 ### Visual hierarchy and interaction
 
@@ -177,7 +179,7 @@ Project work is persisted by `ProjectPersistence.tsx` and `projectStorage.ts` in
 
 The provider hydrates before mounting the workspace, serializes writes, exposes save failures/retry, and flushes pending writes before Close project. Saving happens quietly in the background; do not render routine saving/saved banners or reserve an empty status row. Do not add a shared run-history strip. Retain run records in storage and preserve existing workspace-specific history controls. Show actionable save errors only when needed. Close is not deletion. `library.deleteProject()` removes the durable record only through explicit project deletion. Keep late async callbacks from recreating deleted data. Existing FEM session drafts (`adelpha-fem-step-${projectId}`) and magnet-study records migrate on opening; already lost session data cannot be recovered. STEP preview files persist as Files, and legacy previews can be restored from the runtime upload endpoint.
 
-Gradient, shim, and acquisition settings persist through the shared hooks. Magnet history is bridged from its existing store and retains its own selector. FEM history stores job references; the full solver artifacts remain in the runtime data directory. Browser/app storage is local persistence, not a portable backup. Shared scanner model assets and bindings retain their existing storage conventions.
+Gradient, RF coil, shim, and acquisition settings persist through the shared hooks. Magnet history is bridged from its existing store and retains its own selector. FEM history stores job references; the full solver artifacts remain in the runtime data directory. Browser/app storage is local persistence, not a portable backup. Shared scanner model assets and bindings retain their existing storage conventions.
 
 Changing parameters marks prior results stale. Keep the relationship between inputs, run ID, and displayed results clear. Avoid presenting old results as a fresh solve. Restore/poll active jobs when returning to a study, and stop local polling on unmount. Closing the UI does not imply cancellation of its runtime job.
 
@@ -185,7 +187,7 @@ The runtime currently supervises one solve at a time and uses worker processes. 
 
 ### Integration boundary
 
-Use typed helpers in `src/twin/mri/api.ts`. Client routes are under `/api/magnet/fem`:
+Use typed helpers in `src/twin/mri/api.ts`. Gradient coils use `/api/coil`, RF coils use `/api/rf`, and shimming uses `/api/shim`. FEM client routes are under `/api/magnet/fem`:
 
 - `POST /uploads`: inspect/store the STEP input.
 - `GET /uploads/{id}/file`: restore a previously imported STEP file.

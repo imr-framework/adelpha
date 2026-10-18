@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+
+# Generated CAD / FEM outputs
+*.step
+*.stp
+*.msh
+*.geo
+*.geo.opt
+*.pickle
+*.pos
+*_slices/
+/mri1.scad

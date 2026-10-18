@@ -168,41 +168,51 @@ def inspect_field_map(body: dict | None = None) -> dict:
     return _run_worker(request, upload)
 
 
+def _release_memory() -> None:
+    import gc
+
+    gc.collect()
+
+
 def _run_worker(request: dict, upload: tuple[str, bytes] | None) -> dict:
     python = shim_python()
     if not python:
         raise RuntimeError("Passive shimming is not installed. The shim environment is missing.")
-    with tempfile.TemporaryDirectory(prefix="adelpha-shim-") as tmp:
-        params = Path(tmp) / "params.json"
-        result = Path(tmp) / "result.json"
-        if upload is not None:
-            name, data = upload
-            field_path = Path(tmp) / "field_map.npy"
-            field_path.write_bytes(data)
-            request = {**request, "field_map_path": str(field_path), "field_map_name": name}
-        params.write_text(json.dumps(request), encoding="utf-8")
-        env = os.environ.copy()
-        env["PYTHONPATH"] = ""
-        env["MPLBACKEND"] = "Agg"
-        # Stable cache so matplotlib does not rebuild its font list on every call.
-        mpl_dir = Path(tempfile.gettempdir()) / "adelpha-shim-mpl"
-        mpl_dir.mkdir(parents=True, exist_ok=True)
-        env["MPLCONFIGDIR"] = str(mpl_dir)
-        proc = subprocess.run(
-            [python, str(Path(__file__).resolve()), str(params), str(result)],
-            capture_output=True,
-            text=True,
-            env=env,
-            timeout=180,
-            cwd=tmp,
-        )
-        if not result.exists():
-            detail = (proc.stderr or proc.stdout or "Passive shimming failed.").strip()
-            raise RuntimeError(detail[-800:])
-        payload = json.loads(result.read_text(encoding="utf-8"))
-    if not payload.get("ok"):
-        raise RuntimeError(str(payload.get("error") or "Passive shimming failed."))
-    return payload
+    try:
+        with tempfile.TemporaryDirectory(prefix="adelpha-shim-") as tmp:
+            params = Path(tmp) / "params.json"
+            result = Path(tmp) / "result.json"
+            if upload is not None:
+                name, data = upload
+                field_path = Path(tmp) / "field_map.npy"
+                field_path.write_bytes(data)
+                request = {**request, "field_map_path": str(field_path), "field_map_name": name}
+            params.write_text(json.dumps(request), encoding="utf-8")
+            env = os.environ.copy()
+            env["PYTHONPATH"] = ""
+            env["MPLBACKEND"] = "Agg"
+            # Stable cache so matplotlib does not rebuild its font list on every call.
+            mpl_dir = Path(tempfile.gettempdir()) / "adelpha-shim-mpl"
+            mpl_dir.mkdir(parents=True, exist_ok=True)
+            env["MPLCONFIGDIR"] = str(mpl_dir)
+            proc = subprocess.run(
+                [python, str(Path(__file__).resolve()), str(params), str(result)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                text=True,
+                env=env,
+                timeout=180,
+                cwd=tmp,
+            )
+            if not result.exists():
+                detail = (proc.stderr or "Passive shimming failed.").strip()
+                raise RuntimeError(detail[-800:])
+            payload = json.loads(result.read_text(encoding="utf-8"))
+        if not payload.get("ok"):
+            raise RuntimeError(str(payload.get("error") or "Passive shimming failed."))
+        return payload
+    finally:
+        _release_memory()
 
 
 def _dsv_mm(request: dict) -> float:
@@ -436,7 +446,7 @@ def simulate(request: dict) -> dict:
             }
         )
     counts = after["shim_state"]
-    return {
+    payload = {
         "ok": True,
         "title": "Passive shim trays",
         "summary": (
@@ -463,6 +473,9 @@ def simulate(request: dict) -> dict:
         "magnets": placed,
         "elapsed_s": round(time.perf_counter() - started, 3),
     }
+    del basis, problem, optimizer, field_map, reporter
+    _release_memory()
+    return payload
 
 
 def main() -> None:
@@ -480,6 +493,8 @@ def main() -> None:
             payload = simulate({**shim_request(request), **passthrough})
     except Exception as exc:
         payload = {"ok": False, "error": str(exc)}
+    finally:
+        _release_memory()
     destination.write_text(json.dumps(payload), encoding="utf-8")
     raise SystemExit(0 if payload.get("ok") else 1)
 

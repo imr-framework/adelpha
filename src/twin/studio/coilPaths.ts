@@ -1,33 +1,39 @@
 import type { CoilLayout, CoilWire } from "../mri/api";
 
-/** Split a solver path where consecutive samples jump far beyond typical spacing. */
-export function splitWirePoints(points: number[][], closed: boolean): { points: number[][]; closed: boolean }[] {
-  if (points.length < 2) return [];
-  const edges: number[] = [];
-  for (let index = 1; index < points.length; index += 1) {
-    edges.push(distance(points[index - 1], points[index]));
-  }
-  if (closed) edges.push(distance(points[points.length - 1], points[0]));
-  const sorted = [...edges].sort((a, b) => a - b);
-  const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
-  const limit = Math.max(median * 8, 1e-4);
+/** Opposite-current groups, matching pyCoilGen's contour figures. */
+const GROUP_COLORS = ["#6ea8ff", "#e07070", "#86d4a8", "#e2b340", "#c4b5fd"];
 
-  const groups: number[][][] = [];
-  let current = [points[0]];
-  for (let index = 1; index < points.length; index += 1) {
-    if (distance(points[index - 1], points[index]) > limit) {
-      if (current.length >= 2) groups.push(current);
-      current = [points[index]];
-    } else {
-      current.push(points[index]);
-    }
+export function windingColor(group: number) {
+  return GROUP_COLORS[Math.abs(group) % GROUP_COLORS.length];
+}
+
+/** Copy xyz triplets into one typed buffer so `.flat()` does not double peak memory. */
+export function packTriplets(points: number[][]) {
+  const data = new Float32Array(points.length * 3);
+  let offset = 0;
+  for (const point of points) {
+    data[offset++] = point[0];
+    data[offset++] = point[1];
+    data[offset++] = point[2];
   }
-  const closes = closed && distance(points[points.length - 1], points[0]) <= limit;
-  if (closes && groups.length === 0 && current.length >= 3) {
-    return [{ points: current, closed: true }];
+  return data;
+}
+
+export function packFaces(faces: number[][]) {
+  const data = new Uint32Array(faces.length * 3);
+  let offset = 0;
+  for (const face of faces) {
+    data[offset++] = face[0];
+    data[offset++] = face[1];
+    data[offset++] = face[2];
   }
-  if (current.length >= 2) groups.push(current);
-  return groups.map((group) => ({ points: group, closed: false }));
+  return data;
+}
+
+/** Preserve each closed contour as one path. */
+export function splitWirePoints(points: number[][], closed: boolean): { points: number[][]; closed: boolean }[] {
+  if (points.length < 2 || points.some((p) => p.length !== 3 || p.some((v) => !Number.isFinite(v)))) return [];
+  return [{ points, closed }];
 }
 
 export function coilBounds(layout: CoilLayout) {
@@ -64,17 +70,11 @@ export function coilBounds(layout: CoilLayout) {
 }
 
 export function displayWireRadius(wireRadius: number, selected = false) {
-  const visual = Math.max(wireRadius * 0.32, 1.5e-4);
-  return selected ? visual * 1.7 : visual;
+  const visual = Math.max(wireRadius * 0.55, 2.5e-4);
+  return selected ? visual * 1.45 : visual;
 }
 
 export function wireKey(wire: CoilWire, index: number) {
   return `${wire.group}-${index}-${wire.points.length}`;
 }
 
-function distance(a: number[], b: number[]) {
-  const dx = a[0] - b[0];
-  const dy = a[1] - b[1];
-  const dz = a[2] - b[2];
-  return Math.hypot(dx, dy, dz);
-}

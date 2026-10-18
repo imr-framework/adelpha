@@ -210,20 +210,20 @@
   grid-template-columns: minmax(0, 1fr) 285px;
 }
 
-.adelpha-simulation-workspace.is-gradient .ws-body {
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-body {
   grid-template-columns: minmax(0, 1fr) 280px;
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-project {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-project {
   padding: 10px 16px;
   gap: 10px;
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-project strong {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-project strong {
   font-size: 15px;
 }
 
-.studio-work.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-project-menu summary {
+.studio-work.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-project-menu summary {
   min-height: 30px;
   padding: 5px 10px;
 }
@@ -236,21 +236,21 @@
   background: var(--workspace-viewer);
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-viewer {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-viewer {
   position: relative;
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-stage {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-stage {
   position: absolute;
   inset: 0;
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-stage .ws-scene,
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-stage .mr0-stage,
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-stage .coil-stage,
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-stage .ws-surface,
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-stage .ws-empty,
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-stage .ws-quality {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-stage .ws-scene,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-stage .mr0-stage,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-stage .coil-stage,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-stage .ws-surface,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-stage .ws-empty,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-stage .ws-quality {
   position: absolute;
   inset: 0;
   min-height: 0;
@@ -260,8 +260,8 @@
   box-shadow: none;
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-viewbar,
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-overlay-bottom {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-viewbar,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-overlay-bottom {
   position: absolute;
   z-index: 2;
   left: 0;
@@ -269,11 +269,11 @@
   pointer-events: none;
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-viewbar .ws-seg,
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-viewbar .ws-scene-tools,
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-overlay-bottom button,
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-overlay-bottom label,
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-overlay-bottom input {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-viewbar .ws-seg,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-viewbar .ws-scene-tools,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-overlay-bottom button,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-overlay-bottom label,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-overlay-bottom input {
   pointer-events: auto;
 }
 
@@ -286,7 +286,7 @@
   padding: 16px;
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-viewbar {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-viewbar {
   top: 0;
   justify-content: space-between;
   align-items: center;
@@ -319,7 +319,7 @@
   border-radius: 0;
 }
 
-.adelpha-simulation-workspace.is-gradient .ws-seg-ghost button {
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-seg-ghost button {
   min-height: 32px;
   padding: 6px 10px;
 }
@@ -335,7 +335,7 @@
   min-width: 0;
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-scene-tools {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-scene-tools {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -407,8 +407,8 @@
   font-size: 11px;
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-caption,
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-scenefoot {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-caption,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-scenefoot {
   padding: 8px 22px 10px;
 }
 
@@ -416,18 +416,18 @@
   margin: 8px 18px 0;
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-overlay-bottom {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-overlay-bottom {
   bottom: 0;
   display: flex;
   flex-direction: column;
   background: transparent;
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-overlay-bottom.is-collapsed {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-overlay-bottom.is-collapsed {
   background: transparent;
 }
 
-.studio-work.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-overlay-toggle {
+.studio-work.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-overlay-toggle {
   align-self: flex-end;
   min-height: 28px;
   margin: 0 14px 2px;
@@ -436,29 +436,29 @@
   color: var(--workspace-muted);
 }
 
-.studio-work.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-overlay-bottom.is-collapsed .ws-overlay-toggle {
+.studio-work.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-overlay-bottom.is-collapsed .ws-overlay-toggle {
   align-self: stretch;
   justify-content: space-between;
   margin: 0;
   padding: 10px 18px 12px;
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-overlay-toggle svg {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-overlay-toggle svg {
   transition: transform 0.15s ease;
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-overlay-bottom.is-collapsed .ws-overlay-toggle svg {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-overlay-bottom.is-collapsed .ws-overlay-toggle svg {
   transform: rotate(180deg);
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-overlay-compact {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-overlay-compact {
   display: flex;
   align-items: center;
   color: var(--workspace-muted);
   font-size: 11px;
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-overlay-sep {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-overlay-sep {
   margin: 0 8px;
   color: var(--theme-muted, #686875);
 }
@@ -471,28 +471,28 @@
   background: var(--workspace-metrics);
 }
 
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-metrics {
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-metrics {
   margin-top: 0;
   border-top-color: var(--theme-border, rgba(43, 45, 52, 0.55));
   background: var(--theme-surface, rgba(21, 22, 27, 0.58));
   backdrop-filter: blur(12px);
 }
 
-.adelpha-simulation-workspace.is-gradient .ws-metrics {
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-metrics {
   grid-template-columns: repeat(3, 1fr);
 }
 
-.adelpha-simulation-workspace.is-gradient .ws-metric-note {
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-metric-note {
   background: var(--theme-surface, rgba(21, 22, 27, 0.58));
 }
 
-.adelpha-simulation-workspace.is-gradient .ws-notice {
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-notice {
   border-top-color: var(--theme-border, rgba(43, 45, 52, 0.55));
   background: var(--theme-surface, rgba(23, 24, 28, 0.68));
   backdrop-filter: blur(12px);
 }
 
-.adelpha-simulation-workspace.is-gradient .ws-quality {
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-quality {
   overflow: auto;
   padding: 76px 25px 168px;
 }
@@ -517,7 +517,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-.adelpha-simulation-workspace.is-gradient .ws-metric-value {
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-metric-value {
   font-size: 25px;
   margin-top: 4px;
 }
@@ -574,7 +574,7 @@
   border-top: 1px solid var(--workspace-border);
 }
 
-.adelpha-simulation-workspace.is-gradient .ws-section {
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-section {
   padding: 18px;
   border-top: 0;
   border-bottom: 1px solid var(--workspace-border);
@@ -609,11 +609,11 @@
   margin-top: 0;
 }
 
-.adelpha-simulation-workspace.is-gradient .ws-formrow {
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-formrow {
   margin: 11px 0;
 }
 
-.adelpha-simulation-workspace.is-gradient .ws-formrow input[type="number"] {
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-formrow input[type="number"] {
   width: 91px;
 }
 
@@ -685,8 +685,16 @@
   border-top: 1px solid var(--workspace-border);
 }
 
-.adelpha-simulation-workspace.is-gradient .ws-runbar {
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-runbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 17px 18px;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-runbar .ws-primary,
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-runbar .ws-quiet {
+  width: 100%;
 }
 
 .ws-run-note,
@@ -859,32 +867,32 @@
 }
 
 @media (max-width: 720px) {
-  .adelpha-simulation-workspace.is-gradient .ws-body {
+  .adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-body {
     grid-template-columns: 1fr;
   }
 
-  .adelpha-simulation-workspace.is-gradient .ws-inspector {
+  .adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-inspector {
     border-left: 0;
     border-top: 1px solid var(--workspace-border);
   }
 
-  .adelpha-simulation-workspace.is-gradient .ws-viewer {
+  .adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-viewer {
     min-height: 420px;
   }
 
-  .adelpha-simulation-workspace.is-gradient .ws-metric {
+  .adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-metric {
     padding: 13px 10px;
   }
 
-  .adelpha-simulation-workspace.is-gradient .ws-metric-value {
+  .adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-metric-value {
     font-size: 20px;
   }
 
-  .adelpha-simulation-workspace.is-gradient .ws-project {
+  .adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-project {
     padding: 10px 14px;
   }
 
-  .adelpha-simulation-workspace.is-gradient input[type="number"] {
+  .adelpha-simulation-workspace:is(.is-gradient, .is-rf) input[type="number"] {
     font-size: 16px;
   }
 }
@@ -913,12 +921,12 @@
 .ws-project-name-row h2 { min-width: 0; }
 .ws-project-name-row .ws-project-exit, .studio-work.adelpha-simulation-workspace .ws-project-name-row .ws-project-exit { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; background: transparent; border: 0; color: var(--m4-muted); cursor: pointer; }
 .ws-project-name-row .ws-project-exit:hover { background: var(--m4-accent-soft); color: var(--m4-text); }
-.adelpha-simulation-workspace.is-gradient .ws-runbar { border-top: 0; }
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf) .ws-runbar { border-top: 0; }
 
 /* Overlay chrome has no full-width scrim; the scene remains visible underneath. */
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-viewbar .ws-seg { background: transparent; border-color: transparent; }
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-viewbar button:not([aria-pressed="true"]) { background: transparent; }
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) :is(.ws-caption, .ws-scenefoot, .ws-legend, .ws-scene-tools, .ws-scene-tools .ws-muted, .ws-overlay-toggle) { color: var(--workspace-text); }
-.adelpha-simulation-workspace:is(.is-gradient, .is-shim) .ws-viewbar .ws-quiet { color: var(--workspace-text); }
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-viewbar .ws-seg { background: transparent; border-color: transparent; }
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-viewbar button:not([aria-pressed="true"]) { background: transparent; }
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) :is(.ws-caption, .ws-scenefoot, .ws-legend, .ws-scene-tools, .ws-scene-tools .ws-muted, .ws-overlay-toggle) { color: var(--workspace-text); }
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf) .ws-viewbar .ws-quiet { color: var(--workspace-text); }
 
 .ws-project-exit svg { width: 17px; height: 17px; flex-shrink: 0; }

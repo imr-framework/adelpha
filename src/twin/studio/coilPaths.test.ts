@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { coilBounds, displayWireRadius, splitWirePoints } from "./coilPaths";
+import { coilBounds, displayWireRadius, packFaces, packTriplets, splitWirePoints, windingColor } from "./coilPaths";
 
 describe("splitWirePoints", () => {
   it("keeps a dense closed loop intact", () => {
@@ -14,7 +14,7 @@ describe("splitWirePoints", () => {
     expect(splitWirePoints(points, true)).toEqual([{ points, closed: true }]);
   });
 
-  it("splits a jump that is far beyond typical spacing", () => {
+  it("preserves long solver interconnections despite nonuniform sampling", () => {
     const points = [
       [0, 0, 0],
       [0.01, 0, 0],
@@ -23,9 +23,14 @@ describe("splitWirePoints", () => {
       [0.41, 0, 0.3],
     ];
     const parts = splitWirePoints(points, false);
-    expect(parts).toHaveLength(2);
-    expect(parts[0].points).toHaveLength(3);
-    expect(parts[1].points).toHaveLength(2);
+    expect(parts).toEqual([{ points, closed: false }]);
+  });
+});
+
+describe("packTriplets", () => {
+  it("writes xyz values into one typed buffer", () => {
+    expect(Array.from(packTriplets([[1, 2, 3], [4, 5, 6]]))).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(Array.from(packFaces([[0, 1, 2], [2, 3, 0]]))).toEqual([0, 1, 2, 2, 3, 0]);
   });
 });
 
@@ -46,6 +51,13 @@ describe("coilBounds", () => {
     });
     expect(bounds.center[2]).toBeCloseTo(0.2);
     expect(bounds.size).toBeGreaterThan(0.39);
+  });
+});
+
+describe("windingColor", () => {
+  it("uses opposite colours for neighbouring current groups", () => {
+    expect(windingColor(0)).not.toBe(windingColor(1));
+    expect(windingColor(5)).toBe(windingColor(0));
   });
 });
 

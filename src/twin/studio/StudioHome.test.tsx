@@ -62,13 +62,15 @@ describe("StudioHome", () => {
     expect(screen.getByRole("heading", { name: "Examples" })).toBeInTheDocument();
     expect(screen.queryByRole("searchbox", { name: "Search projects" })).not.toBeInTheDocument();
     const examples = screen.getByRole("region", { name: "Examples" });
-    expect(within(examples).getByText("3 examples")).toBeInTheDocument();
+    expect(within(examples).getByText("4 examples")).toBeInTheDocument();
     expect(within(examples).getByRole("button", { name: /Halbach 0\.5 T/ })).toBeInTheDocument();
     expect(within(examples).getByText("Magnet")).toBeInTheDocument();
     expect(within(examples).getByRole("button", { name: /Gradient coil stack/ })).toBeInTheDocument();
     expect(within(examples).getByText("Gradient")).toBeInTheDocument();
     expect(within(examples).getByRole("button", { name: /Cryostat envelope/ })).toBeInTheDocument();
     expect(within(examples).getByText("Assembly")).toBeInTheDocument();
+    expect(within(examples).getByRole("button", { name: /Solenoid RF coil/ })).toBeInTheDocument();
+    expect(within(examples).getByText("RF")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Tutorials" }));
     expect(screen.getByRole("button", { name: "Tutorials" })).toHaveAttribute("aria-current", "page");
@@ -113,6 +115,7 @@ describe("StudioHome", () => {
     ["Magnet field", "magnet", true],
     ["FEM", "fem", true],
     ["Gradient coils", "gradients", false],
+    ["RF coils", "rf", false],
     ["Passive shimming", "shimming", false],
   ] as const)("creates and reopens the chosen %s workspace", async (label, view, setup) => {
     const onOpenProject = vi.fn();

@@ -246,3 +246,22 @@ def test_validate_reports_included_ids():
     report = sim.run_validate({"study": "magnet", "parts": [a]})
     assert report["ok"] is True
     assert report["included"] == ["keep"]
+
+
+def test_run_study_worker_rejects_empty_assembly():
+    with pytest.raises(ValueError, match="No assembly parts"):
+        sim.run_study({"study": "magnet", "parts": []})
+
+
+def test_run_study_worker_returns_field_from_a_child_process():
+    part = _cube("worker", [0, 0, 0], 0.02, 1.2, [0, 0, 1])
+    result = sim.run_study(
+        {
+            "parts": [part],
+            "magnet_model": "dipole",
+            "roi": {"centerM": [0, 0, 0.4], "sizeM": [0.002, 0.002, 0.002], "samples": [3, 3, 3]},
+        }
+    )
+    assert result["ok"] is True
+    assert result["field"]["units"] == "T"
+    assert len(result["field"]["bx"]) == 27

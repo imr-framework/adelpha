@@ -3,7 +3,7 @@ import { LogOut } from "lucide-react";
 import "./workspace.css";
 
 export function WorkspaceShell({ kind, label, children }: {
-  kind: "shim" | "gradient";
+  kind: "shim" | "gradient" | "rf";
   label: string;
   children: ReactNode;
 }) {

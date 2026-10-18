@@ -5,10 +5,9 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { AdelphaVoidBackground, configureAdelphaRenderer } from "../AdelphaSceneEnvironment";
 import type { CoilLayout } from "../mri/api";
-import { coilBounds, displayWireRadius, splitWirePoints, wireKey } from "./coilPaths";
+import { coilBounds, displayWireRadius, packFaces, packTriplets, splitWirePoints, windingColor, wireKey } from "./coilPaths";
+import { fabricableLoop, wireTubeMesh } from "./coilTube";
 
-const WINDING = "#baa6f7";
-const WINDING_QUIET = "#8f7fbe";
 const FORMER = "#9a94a8";
 const VIEW_DIR = new THREE.Vector3(1, 0.52, 0.82).normalize();
 const BREATHING = 1.15;
@@ -51,11 +50,14 @@ function CoilScene({ layout, showFormer, resetNonce }: { layout: CoilLayout; sho
   const paths = useMemo(
     () =>
       layout.wires.flatMap((wire, index) =>
-        splitWirePoints(wire.points, wire.closed).map((part, partIndex) => ({
-          key: `${wireKey(wire, index)}-${partIndex}`,
-          points: part.points,
-          closed: part.closed,
-        })),
+        splitWirePoints(wire.points, wire.closed)
+          .filter((part) => fabricableLoop(part.points))
+          .map((part, partIndex) => ({
+            key: `${wireKey(wire, index)}-${partIndex}`,
+            points: part.points,
+            closed: part.closed,
+            color: windingColor(wire.group),
+          })),
       ),
     [layout.wires],
   );
@@ -72,6 +74,7 @@ function CoilScene({ layout, showFormer, resetNonce }: { layout: CoilLayout; sho
           key={path.key}
           points={path.points}
           closed={path.closed}
+          color={path.color}
           radius={displayWireRadius(layout.wire_radius, path.key === selected)}
           selected={path.key === selected}
           onSelect={() => setSelected((current) => (current === path.key ? null : path.key))}
@@ -85,8 +88,8 @@ function CoilScene({ layout, showFormer, resetNonce }: { layout: CoilLayout; sho
 function CoilSurface({ layout }: { layout: CoilLayout }) {
   const geometry = useMemo(() => {
     const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.Float32BufferAttribute(layout.vertices.flat(), 3));
-    geo.setIndex(layout.faces.flat());
+    geo.setAttribute("position", new THREE.BufferAttribute(packTriplets(layout.vertices), 3));
+    geo.setIndex(new THREE.BufferAttribute(packFaces(layout.faces), 1));
     geo.computeVertexNormals();
     return geo;
   }, [layout]);
@@ -101,25 +104,29 @@ function CoilSurface({ layout }: { layout: CoilLayout }) {
 function WireTube({
   points,
   closed,
+  color,
   radius,
   selected,
   onSelect,
 }: {
   points: number[][];
   closed: boolean;
+  color: string;
   radius: number;
   selected: boolean;
   onSelect: () => void;
 }) {
   const geometry = useMemo(() => {
-    const path = polylineCurve(points, closed);
-    if (!path) return null;
-    const segments = Math.max(8, points.length * 2);
-    return new THREE.TubeGeometry(path, segments, radius, 5, closed);
+    const mesh = wireTubeMesh(points, radius, closed, 8);
+    if (!mesh) return null;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(mesh.positions, 3));
+    geo.setAttribute("normal", new THREE.Float32BufferAttribute(mesh.normals, 3));
+    geo.setIndex(mesh.indices);
+    return geo;
   }, [points, closed, radius]);
   useLayoutEffect(() => () => geometry?.dispose(), [geometry]);
   if (!geometry) return null;
-  const color = selected ? WINDING : WINDING_QUIET;
   return (
     <mesh
       geometry={geometry}
@@ -139,18 +146,6 @@ function WireTube({
       />
     </mesh>
   );
-}
-
-function polylineCurve(points: number[][], closed: boolean) {
-  if (points.length < 2) return null;
-  const path = new THREE.CurvePath<THREE.Vector3>();
-  const last = closed ? points.length : points.length - 1;
-  for (let index = 0; index < last; index += 1) {
-    const a = points[index];
-    const b = points[(index + 1) % points.length];
-    path.add(new THREE.LineCurve3(new THREE.Vector3(a[0], a[1], a[2]), new THREE.Vector3(b[0], b[1], b[2])));
-  }
-  return path;
 }
 
 function Frame({

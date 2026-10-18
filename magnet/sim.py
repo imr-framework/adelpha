@@ -12,6 +12,7 @@ import math
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -960,9 +961,72 @@ def run_fem(body: dict | None = None) -> dict:
         }
 
 
+def _release_memory() -> None:
+    import gc
+
+    gc.collect()
+
+
+def _run_magnet_worker(payload: dict) -> dict:
+    """Run the analytical magnet study in a child process so NumPy arrays do not stay in the API."""
+    with tempfile.TemporaryDirectory(prefix="adelpha-magnet-") as tmp:
+        params = Path(tmp) / "params.json"
+        result = Path(tmp) / "result.json"
+        params.write_text(json.dumps(payload), encoding="utf-8")
+        env = os.environ.copy()
+        env.setdefault("OPENBLAS_NUM_THREADS", "1")
+        env.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+        env.setdefault("OMP_NUM_THREADS", "1")
+        proc = subprocess.run(
+            [sys.executable, str(Path(__file__).resolve()), str(params), str(result)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=env,
+            timeout=180,
+            cwd=tmp,
+        )
+        if not result.exists():
+            detail = (proc.stderr or "Magnet simulation failed.").strip()
+            raise RuntimeError(detail[-800:])
+        response = json.loads(result.read_text(encoding="utf-8"))
+    if response.get("code") == "invalid":
+        raise ValueError(str(response.get("error") or "Invalid magnet study."))
+    if not response.get("ok"):
+        raise RuntimeError(str(response.get("error") or "Magnet simulation failed."))
+    return response
+
+
 def run_study(body: dict | None = None) -> dict:
     payload = body or {}
     study = str(payload.get("study") or "magnet")
-    if study == "fem":
-        return run_fem(payload)
-    return run_magnet(payload)
+    try:
+        if study == "fem":
+            return run_fem(payload)
+        return _run_magnet_worker(payload)
+    finally:
+        _release_memory()
+
+
+def main() -> None:
+    if len(sys.argv) != 3:
+        raise SystemExit("usage: magnet_sim.py params.json result.json")
+    destination = Path(sys.argv[2])
+    try:
+        request = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+        if str(request.get("study") or "magnet") == "fem":
+            payload = run_fem(request)
+        else:
+            payload = run_magnet(request)
+    except ValueError as exc:
+        payload = {"ok": False, "code": "invalid", "error": str(exc)}
+    except Exception as exc:
+        payload = {"ok": False, "error": str(exc)}
+    finally:
+        _release_memory()
+    destination.write_text(json.dumps(payload), encoding="utf-8")
+    raise SystemExit(0 if payload.get("ok") else 1)
+
+
+if __name__ == "__main__":
+    main()

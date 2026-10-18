@@ -104,18 +104,63 @@ export function useProjectState<T>(key: string, initial: T | (() => T)): [T, (ne
   }];
 }
 
+const HEAVY_RESULT_KEYS = new Set([
+  "layout",
+  "layout_png",
+  "surface_png",
+  "field_png",
+  "field",
+  "slice",
+  "vectors",
+  "magnets",
+  "image",
+  "noisy_image",
+  "inhomogeneous_image",
+  "echo",
+]);
+
+function isHeavyArchiveKey(key: string) {
+  return HEAVY_RESULT_KEYS.has(key) || key.endsWith("_png") || key.endsWith("_b64");
+}
+
+/** Keep run records, but drop meshes, images, and PNG blobs from history copies. */
+export function compactArchivedValue(value: unknown): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const compacted: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+    if (isHeavyArchiveKey(key)) continue;
+    compacted[key] = compactArchivedValue(item);
+  }
+  return compacted;
+}
+
+function snapshotRunInputs(values: Record<string, unknown>, prefix: string) {
+  const stem = `${prefix}.`;
+  const snapshot: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(values)) {
+    if (!key.startsWith(stem) || key.endsWith(".result") || key.endsWith(".error")) continue;
+    snapshot[key] = structuredClone(compactArchivedValue(value));
+  }
+  return snapshot;
+}
+
 /** Capture inputs at submission, then archive the result without pruning older runs. */
 export function useProjectRun(prefix: string) {
   const context = useContext(Context);
   return () => {
-    const values = context ? structuredClone(Object.fromEntries(Object.entries(context.session.data.values).filter(([key]) => key.startsWith(prefix + ".")))) : {};
+    const values = context ? snapshotRunInputs(context.session.data.values, prefix) : {};
     if (context) { context.session.activeRuns += 1; notify(context.session); }
     let ended = false;
     const done = () => { if (context && !ended) { ended = true; context.session.activeRuns -= 1; notify(context.session); } };
     const archive = (label: string, resultValues: Record<string, unknown>) => {
       done();
       if (!context || context.session.deleted) return;
-      context.session.data.runs.unshift({ id: crypto.randomUUID(), createdAt: Date.now(), label, values: { ...values, [prefix + ".error"]: "", ...resultValues } });
+      context.session.data.runs.unshift({
+        id: crypto.randomUUID(),
+        createdAt: Date.now(),
+        label,
+        values: compactArchivedValue({ ...values, [prefix + ".error"]: "", ...resultValues }) as Record<string, unknown>,
+      });
       context.save(); notify(context.session);
     };
     archive.cancel = done;

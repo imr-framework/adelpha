@@ -153,12 +153,17 @@ def register_fem_routes(app, root: Path, data_dir: Path):
                     process.kill()
                 process.wait()
                 error = "FEM job exceeded the two-hour limit."
-            if error:
-                existing = path / "output/status.json"
-                if existing.is_file():
-                    error = json.loads(existing.read_text()).get("error", error)
-                with lock:
-                    jobs[identifier]["error"] = error
+            with lock:
+                state = jobs.get(identifier) or {}
+                state.pop("process", None)
+                if error:
+                    existing = path / "output/status.json"
+                    if existing.is_file():
+                        error = json.loads(existing.read_text()).get("error", error)
+                    state["error"] = error
+                    jobs[identifier] = state
+                else:
+                    jobs.pop(identifier, None)
         threading.Thread(target=monitor, daemon=True).start()
         return {"id": identifier, "status": "queued"}
 
@@ -177,13 +182,20 @@ def register_fem_routes(app, root: Path, data_dir: Path):
     def field_preview(identifier: str):
         if status(identifier)["status"] != "completed":
             raise HTTPException(409, "Field results are available after the simulation completes.")
+        path = folder("jobs", identifier) / "output"
+        preview = path / "field-preview.json"
+        if preview.is_file():
+            return FileResponse(preview, media_type="application/json")
         if str(root) not in sys.path:
             sys.path.insert(0, str(root))
+        from adelpha_runtime.memory import release_simulation_memory
         from simulation.fem.fieldpreview import read_field_preview
         try:
-            return read_field_preview(folder("jobs", identifier) / "output")
+            return read_field_preview(path)
         except (ValueError, OSError) as exc:
             raise HTTPException(422, str(exc)) from exc
+        finally:
+            release_simulation_memory()
 
     @app.get("/fem/jobs/{identifier}/download")
     def download(identifier: str):

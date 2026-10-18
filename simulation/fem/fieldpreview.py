@@ -88,3 +88,14 @@ def read_field_preview(directory):
             raise ValueError('Missing result body')
     return {'units': 'm', 'source': path.name, 'points': points, 'fields': fields,
             'groups': list(groups.values())}
+
+
+def write_field_preview(directory):
+    """Serialize the viewer payload in the FEM worker so the API process does not reparse the VTU."""
+    directory = Path(directory)
+    data = read_field_preview(directory)
+    path = directory / 'field-preview.json'
+    temporary = path.with_suffix('.json.tmp')
+    temporary.write_text(json.dumps(data, separators=(',', ':')))
+    temporary.replace(path)
+    return data

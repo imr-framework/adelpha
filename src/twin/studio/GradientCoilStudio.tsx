@@ -1,7 +1,9 @@
 import { useProjectState, useProjectRun, useProjectBusy } from "./ProjectPersistence";
-import { ArrowRight, ChevronDown, ChevronRight, Play, RotateCcw } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronRight, Download, Play, RotateCcw } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
+import { saveBlob } from "../../desktop/saveFile";
 import { simulateCoil, type CoilRequest, type CoilSimulation } from "../mri/api";
+import { windingStl, windingStlName } from "./coilStl";
 import {
   formatFixed,
   Metric,
@@ -62,7 +64,7 @@ function dimensionNote(shape: ShapeId) {
 
 function errorPercent(value: number | null | undefined) {
   if (value == null || !Number.isFinite(value)) return null;
-  return Math.round(value * 100);
+  return Math.round(value * 100) / 100;
 }
 
 function errorDefinition(result: CoilSimulation) {
@@ -115,6 +117,7 @@ export function GradientCoilStudio({
   const [resetNonce, setResetNonce] = useState(0);
   const [resultsOpen, setResultsOpen] = useProjectState("gradient.resultsOpen", true);
   const [locallyRunning, setRunning] = useState(false);
+  const [savingStl, setSavingStl] = useState(false);
   const running = useProjectBusy() || locallyRunning;
   const [error, setError] = useProjectState("gradient.error", "");
 
@@ -130,9 +133,10 @@ export function GradientCoilStudio({
     gradient_mt_m: draft.gradient_mt_m,
   };
   const currentKey = requestKey(shape, axis, draft);
-  const stale = Boolean(result && resultKey && resultKey !== currentKey);
-  const coil = AXES.find((item) => item.id === axis) ?? AXES[1];
-  const former = SHAPES.find((item) => item.id === shape) ?? SHAPES[0];
+  const legacy = Boolean(result && result.generator_version !== 5);
+  const stale = legacy || Boolean(result && resultKey && resultKey !== currentKey);
+  const coil = AXES.find((item) => item.id === (result?.axis ?? axis)) ?? AXES[1];
+  const former = SHAPES.find((item) => item.id === (result?.shape ?? shape)) ?? SHAPES[0];
   const reportedError = result ? errorPercent(result.mean_field_error) : null;
 
   function patch(next: Partial<Draft>) {
@@ -157,6 +161,23 @@ export function GradientCoilStudio({
     } finally {
       archive.cancel();
       setRunning(false);
+    }
+  }
+
+  async function saveStl() {
+    if (!result?.layout?.wires?.length) return;
+    setSavingStl(true);
+    setError("");
+    try {
+      const saved = await saveBlob(
+        windingStlName(result.shape, result.axis),
+        new Blob([windingStl(result.layout)], { type: "model/stl" }),
+      );
+      if (saved == null) return;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "The winding STL could not be saved.");
+    } finally {
+      setSavingStl(false);
     }
   }
 
@@ -198,9 +219,9 @@ export function GradientCoilStudio({
                       <span>Acceptance threshold</span>
                       <span className="ws-muted">Not specified</span>
                     </div>
-                    {result.achieved_mt_m != null ? (
+                    {!legacy && result.achieved_mt_m != null ? (
                       <p>
-                        Achieved efficiency {result.achieved_mt_m} mT/m/A against a target of {result.gradient_mt_m} mT/m.
+                        Efficiency {result.achieved_mt_m} mT/m/A at 1 A. Design target {result.gradient_mt_m} mT/m; required drive current depends on the winding.
                       </p>
                     ) : (
                       <p>A target-versus-achieved field comparison is unavailable for this run.</p>
@@ -263,9 +284,9 @@ export function GradientCoilStudio({
           <div className={`ws-overlay-bottom${resultsOpen ? "" : " is-collapsed"}`}>
             {view === "3d" ? (
               <div className="ws-caption">
-                <span>{result ? "Drag to rotate · winding paths" : "Former and windings appear after a completed run"}</span>
+                <span>{result ? "Drag to rotate · closed conductor loops" : "Former and windings appear after a completed run"}</span>
                 <span>
-                  Windings <span style={{ color: "#baa6f7" }}>━</span> · former in translucent grey
+                  Current groups <span style={{ color: "#6ea8ff" }}>━</span> <span style={{ color: "#e07070" }}>━</span> · former in translucent grey
                 </span>
               </div>
             ) : null}
@@ -276,7 +297,7 @@ export function GradientCoilStudio({
                     ? "Unwrapped support · solver surface parameterization"
                     : "Face-on support · solver surface parameterization"}
                 </span>
-                <span>Not a fabrication-ready wire path</span>
+                <span>Closed winding loops · millimetre STL after a completed run</span>
               </div>
             ) : null}
             <button
@@ -294,7 +315,7 @@ export function GradientCoilStudio({
                     <span className="ws-overlay-sep" aria-hidden="true">
                       ·
                     </span>
-                    {result?.achieved_mt_m != null ? `${result.achieved_mt_m} mT/m/A` : "—"}
+                    {!legacy && result?.achieved_mt_m != null ? `${result.achieved_mt_m} mT/m/A` : "—"}
                     <span className="ws-overlay-sep" aria-hidden="true">
                       ·
                     </span>
@@ -323,7 +344,7 @@ export function GradientCoilStudio({
                   <Metric label="Generated loops" value={result ? result.loop_count : "—"} />
                   <div className="ws-metric">
                     <div className="ws-metric-label">Efficiency</div>
-                    <div className="ws-metric-value">{result?.achieved_mt_m != null ? result.achieved_mt_m : "—"}</div>
+                    <div className="ws-metric-value">{!legacy && result?.achieved_mt_m != null ? result.achieved_mt_m : "—"}</div>
                     <div className="ws-metric-label">mT/m/A</div>
                   </div>
                   <Metric
@@ -335,7 +356,9 @@ export function GradientCoilStudio({
                 </div>
                 <div className="ws-metric-note">
                   {result
-                    ? stale
+                    ? legacy
+                      ? "Legacy winding preview · rerun to generate closed conductor loops"
+                      : stale
                       ? "Previous result · does not evaluate the current draft"
                       : `${result.shape}, ${result.axis.toUpperCase()}, target ${result.gradient_mt_m} mT/m, ${result.levels} levels`
                     : running
@@ -477,6 +500,14 @@ export function GradientCoilStudio({
           <div className="ws-runbar">
             <button type="button" className="ws-primary" onClick={() => void run()} disabled={running}>
               <Play aria-hidden="true" /> {running ? "Designing…" : "Run design"}
+            </button>
+            <button
+              type="button"
+              className="ws-quiet"
+              onClick={() => void saveStl()}
+              disabled={running || savingStl || stale || !(result?.layout?.wires?.length)}
+            >
+              <Download aria-hidden="true" /> {savingStl ? "Saving…" : "Save STL"}
             </button>
             {stale && <div className="ws-stale" role="status">Setup changed · run to evaluate</div>}
           </div>

@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 export type StudioNavTool = "orbit" | "pan" | "inspect";
 export type StudioCameraPreset = "iso" | "front" | "back" | "left" | "right" | "top";
-export type HardwareView = "assembly" | "magnet" | "fem" | "gradients" | "shimming";
+export type HardwareView = "assembly" | "magnet" | "fem" | "gradients" | "rf" | "shimming";
 
 export type StudioModelFrame = {
   target: [number, number, number];

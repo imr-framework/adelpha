@@ -58,6 +58,16 @@ def test_studio_services_use_their_own_prefix():
                 mount_factory=lambda: _stub_app("shim"),
             ),
             ServiceDef(
+                id="rf",
+                title="RF coils",
+                required=False,
+                start="always",
+                restart="never",
+                version="0.1.0",
+                description="stub",
+                mount_factory=lambda: _stub_app("rf"),
+            ),
+            ServiceDef(
                 id="magnet",
                 title="Magnet",
                 required=False,
@@ -73,10 +83,13 @@ def test_studio_services_use_their_own_prefix():
     client = gateway_client(registry)
     headers = {"Authorization": f"Bearer {TOKEN}"}
     coil = client.get("/api/coil/health", headers=headers)
+    rfcoil = client.get("/api/rf/health", headers=headers)
     shim = client.get("/api/shim/health", headers=headers)
     magnet = client.get("/api/magnet/health", headers=headers)
     assert coil.status_code == 200
     assert coil.json()["service"] == "coil"
+    assert rfcoil.status_code == 200
+    assert rfcoil.json()["service"] == "rf"
     assert shim.status_code == 200
     assert shim.json()["service"] == "shim"
     assert magnet.status_code == 200

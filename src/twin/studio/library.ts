@@ -4,7 +4,7 @@ import { HARDWARE_STUDIES_KEY, useHardwareStudyStore } from "./hardwareStudyStor
 
 export type StudioProjectKind = "sample" | "user";
 export type StudioApplication = "hardware" | "acquisition" | "reconstruction";
-export type StudioLastView = "assembly" | "magnet" | "fem" | "gradients" | "shimming";
+export type StudioLastView = "assembly" | "magnet" | "fem" | "gradients" | "rf" | "shimming";
 export type StudioProjectClass = "acq" | "fem" | "magnet" | "gradient" | "rf" | "shimming" | "assembly" | "recon";
 export type StudioSort = "modified" | "name";
 export type StudioRecencyGroup = "today" | "yesterday" | "week" | "older";
@@ -198,6 +198,18 @@ export function seedProjects(now = Date.now()): StudioProject[] {
       includedParts: 8,
       summary: "Vacuum vessel and cooling",
     },
+    {
+      id: "sample-rf",
+      name: "Solenoid RF coil",
+      updatedAt: now - 4 * DAY,
+      kind: "sample",
+      discipline: "RF",
+      parts: 1,
+      application: "hardware",
+      lastView: "rf",
+      primaryClass: "rf",
+      summary: "Standalone RF coil design",
+    },
   ];
 }
 
@@ -206,7 +218,14 @@ function isApplication(value: unknown): value is StudioApplication {
 }
 
 function isLastView(value: unknown): value is StudioLastView {
-  return value === "assembly" || value === "magnet" || value === "fem" || value === "gradients" || value === "shimming";
+  return (
+    value === "assembly" ||
+    value === "magnet" ||
+    value === "fem" ||
+    value === "gradients" ||
+    value === "rf" ||
+    value === "shimming"
+  );
 }
 
 export function isProjectClass(value: unknown): value is StudioProjectClass {
@@ -407,6 +426,7 @@ export function inferLastView(project: StudioProject): StudioLastView | undefine
   if (isLastView(project.lastView)) return project.lastView;
   if (project.application !== "hardware") return undefined;
   if (project.discipline === "Gradients") return "gradients";
+  if (project.discipline === "RF") return "rf";
   return "assembly";
 }
 
@@ -418,10 +438,10 @@ export function deriveProjectClass(
   if (application === "acquisition") return "acq";
   if (application === "reconstruction") return "recon";
   if (lastView === "gradients" || discipline === "Gradients") return "gradient";
+  if (lastView === "rf" || discipline === "RF") return "rf";
   if (lastView === "shimming" || discipline === "Shimming") return "shimming";
   if (lastView === "fem") return "fem";
   if (lastView === "magnet") return "magnet";
-  if (discipline === "RF") return "rf";
   if (discipline === "Magnet") return "magnet";
   return "assembly";
 }
@@ -446,6 +466,7 @@ export function engineLabel(project: StudioProject): string | undefined {
   if (project.application === "reconstruction") return "MRzero";
   const view = inferLastView(project);
   if (view === "gradients" || project.discipline === "Gradients") return "PyCoilGen";
+  if (view === "rf" || project.discipline === "RF") return "RFcoilbuilder";
   if (view === "fem") return "Elmer";
   return undefined;
 }
@@ -457,7 +478,7 @@ export function studyTypeLabel(project: StudioProject): string {
 export function isStandaloneProject(project: StudioProject): boolean {
   if (project.application !== "hardware") return true;
   const view = inferLastView(project);
-  return view === "gradients" || view === "shimming";
+  return view === "gradients" || view === "rf" || view === "shimming";
 }
 
 export function hasSetupDestination(project: StudioProject): boolean {
@@ -477,6 +498,7 @@ export function projectDetail(project: StudioProject): string {
   if (project.application === "reconstruction") return withEngine("Reconstruction study");
   const view = inferLastView(project);
   if (view === "gradients") return withEngine(project.summary ?? "Standalone design");
+  if (view === "rf") return withEngine(project.summary ?? "Standalone design");
   if (view === "shimming") return withEngine(project.summary ?? "Optimization study");
   const catalog = project.catalogParts ?? (project.includedParts == null ? undefined : project.parts);
   const included = project.includedParts ?? (project.catalogParts == null ? project.parts : undefined);

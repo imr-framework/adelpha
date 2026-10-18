@@ -1,0 +1,156 @@
+import numpy as np
+from HalbachRing import HalbachRing
+from CubeMagnet import CubeMagnet
+from HalbachSlice import HalbachSlice
+import json
+import copy
+import gmsh
+import solid
+from shutil import copyfile
+import os
+
+class HalbachCylinder:
+    def __init__(self):
+        self.slices = []
+        self.params = []
+        gmsh.initialize()
+
+
+    def addSlice(self, sliceObj):
+        self.slices.append(sliceObj)
+
+    def calculateB(self, grid):
+        B = np.zeros((grid[0].size, 3))
+        for sliceObj in self.slices:
+            for ring in sliceObj.rings:
+                B += ring.calculateB(grid)
+        return B
+
+    def sliceAtPosition(self, position):
+        for sliceObj in self.slices:
+            if sliceObj.position == position:
+                return sliceObj
+        return []
+
+    def ringsAtPosition(self, position):
+        returnRings = []
+        for sliceObj in self.slices:
+            for ring in sliceObj.rings:
+                if ring.position == position:
+                    returnRings.append(ring)
+        return returnRings
+
+    def generateSCADObject(self):
+        for index, sliceObj in enumerate(self.slices):
+            if index == 0:
+                cylinderSCADObject = sliceObj.generateSCADObject()
+            else:
+                cylinderSCADObject += sliceObj.generateSCADObject()
+        return cylinderSCADObject
+
+    def generateSCADFile(self, filename):        
+        solid.scad_render_to_file(self.generateSCADObject(), filename)
+
+    def generateSTEPFile(self, filename):
+        """Write a multi-solid STEP assembly plus one STEP file per slice."""
+        if not filename.lower().endswith(('.step', '.stp')):
+            filename = filename + '.step'
+        base, ext = os.path.splitext(filename)
+        slice_dir = base + '_slices'
+        os.makedirs(slice_dir, exist_ok=True)
+
+        if not gmsh.isInitialized():
+            gmsh.initialize()
+
+        assembly_name = 'halbach_assembly'
+        gmsh.model.add(assembly_name)
+
+        for index, slice_obj in enumerate(self.slices):
+            model_name = f'halbach_slice_{index}'
+            print(f"building STEP slice {index + 1}/{len(self.slices)} "
+                  f"(z={slice_obj.position * 1e3:.1f} mm)")
+            gmsh.model.add(model_name)
+            gmsh.model.setCurrent(model_name)
+            volumes = slice_obj.generateOCCVolume()
+            if not volumes:
+                raise RuntimeError(f"slice {index} produced no STEP solid")
+            gmsh.model.occ.synchronize()
+            slice_path = os.path.join(
+                slice_dir,
+                f"slice_{index:02d}_z{slice_obj.position * 1e3:.0f}mm{ext}")
+            gmsh.write(slice_path)
+            gmsh.model.setCurrent(assembly_name)
+            gmsh.model.occ.importShapes(slice_path)
+
+        gmsh.model.setCurrent(assembly_name)
+        gmsh.model.occ.synchronize()
+        gmsh.write(filename)
+        return filename
+
+    def generateRingRadii(self, magnetSpacing, startRadius, radiusIncrement, numRadii):
+        numMagnets = []
+        for _ in np.arange(numRadii):
+            numMagnets.append()
+
+    def loadJSON(self, filename):
+        f = open(filename)
+        params = json.load(f)
+        self.params = params
+        mirrorSlices = params['mirrorSlices']
+        if 'standHeight' in params:
+            standHeightGlobal = float(params['standHeight'])/1e3
+        else:
+            standHeightGlobal = 0
+        if 'standWidth' in params:
+            standWidthGlobal = float(params['standWidth'])/1e3
+        else:
+            standWidthGlobal = 0
+        numConnectionRods = int(params['numConnectionRods'])
+        connectionRodsDiameter = float(params['connectionRodsDiameter'])/1e3
+        connectionRodsArcRadius = float(params['connectionRodsArcRadius'])/1e3
+        magnetTypes = []
+        for magnet in params['magnets']:
+            if magnet['shape'] == "cube":
+                dimension = float(magnet['dimension'])*1e-3
+                BR = float(magnet['BR'])
+                mur = float(magnet['mur'])
+                cubeMagnet = CubeMagnet(dimension, BR, mur)
+                magnetTypes.append(cubeMagnet)
+            else:
+                print("Magnet shape \"" + magnet['shape'] + "\" is not supported!")
+        defaultMagnetType = params['defaultMagnetType']
+        rings = []
+        for ring in params['rings']:
+            rings.append(HalbachRing(int(ring['id']), 0, float(ring['radius'])/1e3, ring['numMagnets'], magnetTypes[defaultMagnetType]))
+        for index, slice in enumerate(params['slices']):
+            if 'standHeight' in slice:
+                standHeight = float(slice['standHeight'])/1e3
+            else:
+                standHeight = standHeightGlobal
+            if 'standWidth' in slice:
+                standWidth = float(slice['standWidth'])/1e3
+            else:
+                standWidth = standWidthGlobal
+            halbachSlice = HalbachSlice(float(slice['position'])/1e3, float(slice['innerRadius'])/1e3,
+                float(slice['outerRadius'])/1e3, numConnectionRods, connectionRodsArcRadius, connectionRodsDiameter,
+                standHeight, standWidth)
+            for ring in slice['rings']:
+                ringId = None
+                for ringIndex, ringObject in enumerate(rings):
+                    if ringObject.ringId == ring['id']:
+                        ringId = ringIndex
+                assert ringId is not None, "invalid json file"
+                halbachSlice.addRing(copy.deepcopy(rings[ringId]), float(slice['position'])/1e3)
+            halbachSlice.setParams(params)
+            halbachSlice.setId(index)
+            self.addSlice(halbachSlice)
+            if mirrorSlices and float(slice['position']) != 0:
+                halbachSlice = HalbachSlice(-float(slice['position'])/1e3, float(slice['innerRadius'])/1e3,
+                    float(slice['outerRadius'])/1e3, numConnectionRods, connectionRodsArcRadius, connectionRodsDiameter,
+                    standHeight, standWidth)
+                for ring in slice['rings']:
+                    halbachSlice.addRing(copy.deepcopy(rings[ring['id']]), -float(slice['position'])/1e3)
+                halbachSlice.setParams(params)
+                halbachSlice.setId(index)
+                self.addSlice(halbachSlice)
+        f.close()

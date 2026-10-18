@@ -1,5 +1,6 @@
 """JSON CLI for worker processes and future UI integration."""
 import argparse
+import gc
 import json
 import sys
 
@@ -28,6 +29,8 @@ def main():
     except Exception as exc:
         print(json.dumps({"status": "failed", "error": str(exc)}), file=sys.stderr)
         return 1
+    finally:
+        gc.collect()
 
 
 if __name__ == "__main__":

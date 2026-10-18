@@ -1,0 +1,5 @@
+gmsh
+numpy
+matplotlib
+setuptools<81
+git+https://github.com/catkira/SolidPython@master#egg=SolidPython

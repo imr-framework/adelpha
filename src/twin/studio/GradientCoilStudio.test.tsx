@@ -5,9 +5,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GradientCoilStudio } from "./GradientCoilStudio";
 
 const simulateCoil = vi.fn();
+const saveBlob = vi.fn();
 
 vi.mock("../mri/api", () => ({
   simulateCoil: (...args: unknown[]) => simulateCoil(...args),
+}));
+
+vi.mock("../../desktop/saveFile", () => ({
+  saveBlob: (...args: unknown[]) => saveBlob(...args),
 }));
 
 vi.mock("@react-three/fiber", () => ({
@@ -22,11 +27,13 @@ vi.mock("@react-three/drei", () => ({
 describe("GradientCoilStudio", () => {
   beforeEach(() => {
     simulateCoil.mockReset();
+    saveBlob.mockReset();
   });
 
   it("runs a Y gradient and shows pyCoilGen's layout", async () => {
     simulateCoil.mockResolvedValue({
       ok: true,
+      generator_version: 5,
       shape: "cylinder",
       axis: "y",
       title: "Y gradient",
@@ -79,14 +86,15 @@ describe("GradientCoilStudio", () => {
     expect(screen.getByRole("region", { name: "Y gradient layout" })).toBeInTheDocument();
     expect(screen.getByText("1")).toBeInTheDocument();
     expect(screen.getByText("0.34")).toBeInTheDocument();
-    expect(screen.getByText("120", { selector: ".ws-metric-value" })).toBeInTheDocument();
-    expect(screen.getByText(/Review the reported 120% mean error/)).toBeInTheDocument();
+    expect(screen.getByText("1.2", { selector: ".ws-metric-value" })).toBeInTheDocument();
+    expect(screen.getByText(/Review the reported 1.2% mean error/)).toBeInTheDocument();
     expect(screen.getByText(/Evaluation region · radius/)).toBeInTheDocument();
   });
 
   it("switches the former to a planar plate", async () => {
     simulateCoil.mockResolvedValue({
       ok: true,
+      generator_version: 5,
       shape: "planar",
       axis: "y",
       title: "Y gradient",
@@ -151,6 +159,7 @@ describe("GradientCoilStudio", () => {
   it("marks the completed result stale after the draft changes", async () => {
     simulateCoil.mockResolvedValue({
       ok: true,
+      generator_version: 5,
       axis: "y",
       title: "Y gradient",
       summary: "cylinder",
@@ -185,6 +194,7 @@ describe("GradientCoilStudio", () => {
   it("collapses the run results overlay to a compact strip", async () => {
     simulateCoil.mockResolvedValue({
       ok: true,
+      generator_version: 5,
       shape: "cylinder",
       axis: "y",
       title: "Y gradient",
@@ -212,11 +222,48 @@ describe("GradientCoilStudio", () => {
     render(<GradientCoilStudio projectName="Gradient coil stack" />);
     await userEvent.click(screen.getByRole("button", { name: "Run design" }));
     await screen.findByRole("region", { name: "Y gradient layout" });
-    expect(screen.getByText(/Review the reported 120% mean error/)).toBeInTheDocument();
+    expect(screen.getByText(/Review the reported 1.2% mean error/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Hide results" }));
-    expect(screen.queryByText(/Review the reported 120% mean error/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Review the reported 1.2% mean error/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Show results" })).toHaveTextContent("1 loops");
     await userEvent.click(screen.getByRole("button", { name: "Show results" }));
-    expect(screen.getByText(/Review the reported 120% mean error/)).toBeInTheDocument();
+    expect(screen.getByText(/Review the reported 1.2% mean error/)).toBeInTheDocument();
+  });
+
+  it("saves the winding STL after a completed design", async () => {
+    saveBlob.mockResolvedValue("/tmp/cylinder-y-gradient.stl");
+    simulateCoil.mockResolvedValue({
+      ok: true,
+      generator_version: 5,
+      shape: "cylinder",
+      axis: "y",
+      title: "Y gradient",
+      summary: "cylinder",
+      radius_mm: 140,
+      length_mm: 280,
+      levels: 10,
+      gradient_mt_m: 10,
+      achieved_mt_m: 0.34,
+      mean_field_error: 1.2,
+      layout: {
+        vertices: [[0, 0, 0], [0.1, 0, 0], [0, 0.1, 0]],
+        faces: [[0, 1, 2]],
+        colors: [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+        wires: [{ group: 0, closed: true, points: [[0, 0, 0], [0.1, 0, 0], [0.1, 0.1, 0], [0, 0.1, 0]] }],
+        wire_radius: 0.002,
+        stream_min: -1,
+        stream_max: 1,
+      },
+      layout_png: "layout-figure",
+      surface_png: "surface",
+      loop_count: 1,
+      elapsed_s: 0.4,
+    });
+    render(<GradientCoilStudio projectName="Gradient coil stack" />);
+    expect(screen.getByRole("button", { name: "Save STL" })).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Run design" }));
+    await screen.findByRole("region", { name: "Y gradient layout" });
+    await userEvent.click(screen.getByRole("button", { name: "Save STL" }));
+    expect(saveBlob).toHaveBeenCalledWith("cylinder-y-gradient.stl", expect.any(Blob));
   });
 });
