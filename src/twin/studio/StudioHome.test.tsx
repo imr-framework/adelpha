@@ -49,7 +49,7 @@ describe("StudioHome", () => {
       "Search projects…",
     );
     expect(screen.getAllByRole("button", { name: "New project" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: "Open project" }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: "Open project" })).not.toBeInTheDocument();
   });
 
   it("opens Examples and Tutorials from the workspace nav", async () => {
@@ -171,21 +171,23 @@ describe("StudioHome", () => {
     expect(useEngineeringStore.getState().activeProject).toBeNull();
   });
 
-  it("opens a reconstruction project into the reconstruction studio", async () => {
-    useEngineeringStore.setState({
-      activeProject: {
-        id: "recon",
-        name: "SENSE study",
-        application: "reconstruction",
-      },
+  it("does not offer a reconstruction workspace", async () => {
+    const user = userEvent.setup();
+    render(<StudioHome onOpenProject={vi.fn()} />);
+    await user.click(screen.getAllByRole("button", { name: "New project" })[0]!);
+    expect(screen.getByRole("radio", { name: /Hardware/ })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Acquisition/ })).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: /Reconstruction/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Project type" })).not.toHaveTextContent("Reconstruction");
+    useEngineeringStore.getState().openProject({
+      id: "recon",
+      name: "SENSE study",
+      application: "reconstruction",
     });
-    render(<EngineeringStudio />);
-    expect(await screen.findByRole("region", { name: "Reconstruction" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Cartesian FFT/ })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.queryByRole("toolbar", { name: "Viewport navigation" })).not.toBeInTheDocument();
+    expect(useEngineeringStore.getState().activeProject).toBeNull();
   });
 
-  it("opens a saved project from the open action and resume banner", async () => {
+  it("opens a saved project from the project list", async () => {
     saveNewProject("Shim tray", { application: "acquisition" });
     const onOpenProject = vi.fn();
     const user = userEvent.setup();
@@ -194,12 +196,6 @@ describe("StudioHome", () => {
     expect(screen.queryByRole("article", { name: "Continue working" })).not.toBeInTheDocument();
     expect(screen.getByRole("table")).toHaveTextContent("Acquisition · MRZero");
     await user.click(screen.getByRole("button", { name: "Shim tray" }));
-    expect(onOpenProject).toHaveBeenCalledWith(expect.objectContaining({ name: "Shim tray" }), undefined);
-
-    onOpenProject.mockClear();
-    await user.click(screen.getAllByRole("button", { name: "Open project" })[0]!);
-    const panel = screen.getByRole("region", { name: "Saved projects" });
-    await user.click(within(panel).getByRole("button", { name: "Shim tray" }));
     expect(onOpenProject).toHaveBeenCalledWith(expect.objectContaining({ name: "Shim tray" }), undefined);
   });
 

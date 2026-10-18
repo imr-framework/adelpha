@@ -2,7 +2,6 @@ import {
   BookOpen,
   Box,
   FileText,
-  FolderOpen,
   GraduationCap,
   MoreHorizontal,
   MessageSquare,
@@ -79,14 +78,12 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
   const newProjectRef = useRef<HTMLButtonElement>(null);
   const errorId = useId();
   const searchId = useId();
-  const openPanelId = useId();
   const sortId = useId();
-  const openPanelRef = useRef<HTMLDivElement | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const [projects, setProjects] = useState<StudioProject[]>([]);
   const [ready, setReady] = useState(false);
   const [examples] = useState(seedProjects);
-  const [mode, setMode] = useState<"idle" | "create" | "open">("idle");
+  const [mode, setMode] = useState<"idle" | "create">("idle");
   const [draft, setDraft] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [openError, setOpenError] = useState<string | null>(null);
@@ -107,11 +104,6 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
 
   const userProjects = useMemo(() => projects.filter((project) => project.kind === "user"), [projects]);
   const shown = useMemo(() => visibleProjects(projects, query, filter, sort), [filter, projects, query, sort]);
-
-  useEffect(() => {
-    if (mode !== "open") return;
-    openPanelRef.current?.querySelector<HTMLElement>("button, [tabindex]")?.focus();
-  }, [mode]);
 
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent) => {
@@ -144,12 +136,6 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
 
   function beginCreate() {
     setMode("create");
-    setFormError(null);
-    setOpenError(null);
-  }
-
-  function beginOpen() {
-    setMode("open");
     setFormError(null);
     setOpenError(null);
   }
@@ -269,47 +255,7 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
                 <Plus size={16} strokeWidth={2} aria-hidden />
                 New project
               </button>
-              <button
-                type="button"
-                className="studio-ghost"
-                aria-expanded={mode === "open"}
-                aria-controls={openPanelId}
-                onClick={() => (mode === "open" ? closeModes() : beginOpen())}
-              >
-                <FolderOpen size={16} strokeWidth={1.75} aria-hidden />
-                Open project
-              </button>
             </div>
-            {mode === "open" ? (
-              <div
-                id={openPanelId}
-                ref={openPanelRef}
-                className="studio-open-panel"
-                role="region"
-                aria-label="Saved projects"
-                tabIndex={-1}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    event.preventDefault();
-                    closeModes();
-                  }
-                }}
-              >
-                {userProjects.length === 0 ? (
-                  <p>No saved projects to open.</p>
-                ) : (
-                  <ul>
-                    {userProjects.map((project) => (
-                      <li key={project.id}>
-                        <button type="button" onClick={() => openSaved(project)}>
-                          {project.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ) : null}
           </div>
           ) : null}
         </header>
@@ -378,8 +324,8 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
               ) : (
                 <p className="studio-create-hint">
                   {!application
-                    ? "Choose hardware, acquisition, or reconstruction."
-                    : application === "hardware" ? `Opens directly in ${{ assembly: "Assembly", magnet: "Magnet field", fem: "FEM", gradients: "Gradient coils", shimming: "Passive shimming" }[hardwareChoice]}.` : `Opens directly in ${application === "acquisition" ? "Acquisition" : "Reconstruction"}.`}
+                    ? "Choose hardware or acquisition."
+                    : application === "hardware" ? `Opens directly in ${{ assembly: "Assembly", magnet: "Magnet field", fem: "FEM", gradients: "Gradient coils", shimming: "Passive shimming" }[hardwareChoice]}.` : "Opens directly in Acquisition."}
                 </p>
               )}
             </div>
@@ -424,15 +370,11 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
             </p>
           ) : userProjects.length === 0 ? (
             <div className="studio-empty">
-              <p>No projects yet. Start a new study, open a saved one, or copy an example from Examples.</p>
+              <p>No projects yet. Start a new study or copy an example from Examples.</p>
               <div className="studio-action-row">
                 <button type="button" className="studio-new-btn" onClick={beginCreate}>
                   <Plus size={16} strokeWidth={2} aria-hidden />
                   New project
-                </button>
-                <button type="button" className="studio-ghost" onClick={beginOpen}>
-                  <FolderOpen size={16} strokeWidth={1.75} aria-hidden />
-                  Open project
                 </button>
               </div>
             </div>

@@ -73,6 +73,7 @@ export const useEngineeringStore = create<EngineeringStore>((set) => ({
   requestFit: () => set((state) => ({ fitNonce: state.fitNonce + 1 })),
   openProject: (project, options) => {
     const application = project.application ?? "hardware";
+    if (application === "reconstruction") return;
     const requested = options?.view ?? project.lastView ?? "assembly";
     const hardwareView =
       application !== "hardware"

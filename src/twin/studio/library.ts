@@ -49,7 +49,6 @@ export const PROJECT_CLASS_FILTERS: readonly { id: "all" | StudioProjectClass; b
   { id: "rf", badge: "RF", label: "RF" },
   { id: "shimming", badge: "Shimming", label: "Shimming" },
   { id: "assembly", badge: "Assembly", label: "Assembly" },
-  { id: "recon", badge: "Recon", label: "Reconstruction" },
 ];
 
 export const RECENCY_GROUPS: readonly { id: StudioRecencyGroup; label: string }[] = [
@@ -73,11 +72,6 @@ export const APPLICATIONS: readonly {
     id: "acquisition",
     label: "Data acquisition",
     summary: "Pulse sequences and the data they collect.",
-  },
-  {
-    id: "reconstruction",
-    label: "Reconstruction",
-    summary: "Images reconstructed from acquired data.",
   },
 ];
 

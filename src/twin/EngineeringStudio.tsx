@@ -10,7 +10,7 @@ import { listPartsForScanner, listSimulationPartIds, usePartInspectorStore } fro
 import { setScannerModel, studioCadForScanner, useScannerModel } from "./scannerModel";
 import { useEngineeringStore } from "./engineeringStore";
 import { StudioHome } from "./studio/StudioHome";
-import { AcquisitionStudio, ReconstructionStudio } from "./studio/StudioApplication";
+import { AcquisitionStudio } from "./studio/StudioApplication";
 import { GradientCoilStudio } from "./studio/GradientCoilStudio";
 import { FemStudio } from "./studio/FemStudio";
 import { HardwareStudyStudio } from "./studio/HardwareStudyStudio";
@@ -121,8 +121,6 @@ export function EngineeringStudio() {
         ) : null}
         {activeProject?.application === "acquisition" ? (
           <AcquisitionStudio key={activeProject.id} projectName={activeProject.name} onClose={closeProject} />
-        ) : activeProject?.application === "reconstruction" ? (
-          <ReconstructionStudio projectName={activeProject.name} />
         ) : activeProject && hardwareView === "gradients" ? (
           <GradientCoilStudio
             projectName={activeProject.name}
