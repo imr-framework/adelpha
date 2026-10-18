@@ -92,11 +92,9 @@ Adelpha rejects actuator commands until a hardware scanner profile is selected, 
 | `adelpha.domain` | Measurements, units, scanner identity |
 | `adelpha.scanners` | Simulated and hardware adapters |
 | `adelpha.config` | Profile loading |
-| `adelpha.acquisition` | Sensor readers and drivers |
-| `adelpha.safety` | Limits and pre-action checks |
+| `adelpha.acquisition` | Sensor readers |
 | `adelpha.simulation` | Virtual plant models |
 | `adelpha.agents` | Agent specialists (`pip install adelpha[agents]`) |
-| `adelpha.workflows` | Monitoring and intervention workflows |
 | `adelpha.tools` | Agent tool registry |
 | `adelpha.api` | Twin HTTP `create_app` (`pip install adelpha[twin]`) |
 

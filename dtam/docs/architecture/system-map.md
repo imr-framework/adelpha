@@ -28,8 +28,6 @@ Maps each box in the [architecture diagram](index.md) to packages and status.
 | Orchestrator | `agents/root` with `sub_agents` | **Done** |
 | Prediction (forecast) | thermal PINN + `ThermalForecastService` | **Done** |
 | Twin HTTP API | `dtam.api` (`make twin-api`) | **Done** (GUI / Next.js) |
-| Optimization / control | `control/`, `workflows/` | Scaffold |
-| Action and feedback | `feedback/`, `safety/` | Scaffold |
 
 ## Data flow (current slice)
 

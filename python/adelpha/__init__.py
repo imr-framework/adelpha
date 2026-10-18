@@ -39,10 +39,8 @@ _PUBLIC = {
     "scanners": "adelpha.scanners",
     "config": "adelpha.config",
     "acquisition": "adelpha.acquisition",
-    "safety": "adelpha.safety",
     "simulation": "adelpha.simulation",
     "agents": "adelpha.agents",
-    "workflows": "adelpha.workflows",
     "tools": "adelpha.tools",
     "api": "adelpha.api",
 }

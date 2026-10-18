@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { Canvas, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Bounds, OrbitControls, GizmoHelper, GizmoViewport, useBounds } from "@react-three/drei";
 import { BufferGeometry, Float32BufferAttribute, DoubleSide, Triangle, Vector3, Color, SRGBColorSpace, Box3, LineBasicMaterial, LineSegments } from "three";
-import { Download, RotateCcw, Crosshair, Activity } from "lucide-react";
+import { Download, RotateCcw, Crosshair } from "lucide-react";
 import { useConsoleTheme, lightThemePalette } from "../consoleTheme";
 import { saveBlob } from "../../desktop/saveFile";
 import { fetchFemFields, type FemFields } from "../mri/api";
@@ -132,7 +132,7 @@ export default function FemFieldPreview({ jobId, controlsHost }: { jobId: string
   const range = useMemo(() => manual && validRange ? [+low, +high] : stats, [manual, validRange, low, high, stats]);
   useEffect(() => { setProbe(null); }, [samples]);
   if (error) return <div className="fem-preview-empty" role="alert"><strong>Could not open field results</strong><p>{error}</p><button onClick={() => setAttempt(a => a + 1)}>Retry</button><small>Your downloadable results remain available in the inspector.</small></div>;
-  if (!data) return <div className="fem-preview-empty" role="status"><Activity size={26} />Loading computed fields…</div>;
+  if (!data) return <div className="fem-preview-empty" role="status">Loading computed fields…</div>;
   const unit = data.fields[field].unit;
   const controls = <div className="fem-field-inspector" aria-label="Field explorer">
     <h2>Field Display</h2>

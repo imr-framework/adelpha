@@ -128,10 +128,8 @@ request = coil.coil_request({"axis": "y", "shape": "cylinder"})
 | `adelpha.domain` | Measurements and units |
 | `adelpha.scanners` | Scanner adapters |
 | `adelpha.acquisition` | Hardware readers |
-| `adelpha.safety` | Limits and checks |
 | `adelpha.simulation` | Virtual plant models |
 | `adelpha.agents` | Agent specialists |
-| `adelpha.workflows` | Twin workflows |
 | `adelpha.tools` | Agent tool registry |
 | `adelpha.api` | `create_app()` for the Twin HTTP service |
 

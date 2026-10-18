@@ -15,7 +15,7 @@ Safety is layered. Agent reasoning can discuss risk, but **deterministic validat
 - Safety-oriented defaults in `configs/safety_limits/default.yaml` (thermal and frequency-compensation draft limits; intervention approval defaults)
 - Physical Halbach adapter refuses I/O
 
-The `src/dtam/safety/` package tree is **not implemented yet**. Do not treat empty modules as enforced safety.
+There is no `src/dtam/safety/` package. Device-local interlocks and Twin operational-mode gates remain the enforcement that exists today.
 
 ## Planned layers (from architecture)
 

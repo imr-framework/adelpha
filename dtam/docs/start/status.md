@@ -44,7 +44,6 @@ This page describes the repository as implemented, not the full long-term archit
 ## Scaffolded / deferred
 
 - Gradient / image-quality twin states and acquisition
-- `control/`, `workflows/`, `feedback/`, full `safety/` closed loop
 - Safety / Sequence / Imaging agents beyond thin shells
 - Vendor GPIO / Red Pitaya drivers inside DTAM (boards speak JSON-RPC instead)
 

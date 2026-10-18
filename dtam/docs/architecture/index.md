@@ -40,7 +40,7 @@ See [System map](system-map.md) for package paths, [Why a state system?](why-sta
 2. Scanner-specific logic lives in **adapters**.
 3. Agents must not talk to hardware or define scientific truth — they call tools / twin APIs.
 4. Mutating actions require validated command schemas (future control layer).
-5. Deterministic safety overrides LLM recommendations (future `safety/` package).
+5. Deterministic safety overrides LLM recommendations (device-local interlocks and Twin operational-mode gates today).
 6. Measurements, estimates, and predictions must remain distinguishable (`QuantitySource`).
 7. Simulation and physical hardware share the same adapter contract.
 8. Autonomous control is disabled by default.
