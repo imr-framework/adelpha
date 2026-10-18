@@ -46,7 +46,7 @@ Config, MRI data, and `supervisor.log` live outside the app. An optional Agents 
 | Python 3.10–3.12 | Supervisor and sidecar freeze |
 | [uv](https://docs.astral.sh/uv/) | Optional docs |
 
-DTAM is already in this repository at `dtam/`. The public Python library is `python/adelpha/` (`pip install adelpha`; `from adelpha import telemetry, feedback`). [Python package](../guide/python.md).
+DTAM is already in this repository at `sidecar/dtam/`. The public Python library is `sidecar/python/adelpha/` (`pip install adelpha`; `from adelpha import telemetry, feedback`). [Python package](../guide/python.md).
 
 ```bash
 make install
@@ -57,14 +57,14 @@ That starts Vite, the Tauri window, and `python -m adelpha_runtime`. You do not 
 
 ### Passive shimming
 
-Hardware → **Passive shimming** is an Adelpha service at `/api/shim`, not part of the imaging console. It runs [passive_shimming](https://github.com/imr-framework/passive_shimming/tree/dev_ws_2026) from `shim/.venv`. That package needs NumPy 2. The venv is gitignored. The solver commit is pinned in `shim/requirements.txt`. Gradient coils are the same idea at `/api/coil` with `coil/.venv`. The Magnet workspace designs Halbach arrays through `/api/magnet/halbach`. [FEM](../guide/fem.md) imports its own STEP file and uses `/api/magnet/fem`; it requires Python with Gmsh and Elmer installed.
+Hardware → **Passive shimming** is an Adelpha service at `/api/shim`, not part of the imaging console. It runs [passive_shimming](https://github.com/imr-framework/passive_shimming/tree/dev_ws_2026) from `sidecar/shim/.venv`. That package needs NumPy 2. The venv is gitignored. The solver commit is pinned in `sidecar/shim/requirements.txt`. Gradient coils are the same idea at `/api/coil` with `sidecar/coil/.venv`. The Magnet workspace designs Halbach arrays through `/api/magnet/halbach`. [FEM](../guide/fem.md) imports its own STEP file and uses `/api/magnet/fem`; it requires Python with Gmsh and Elmer installed.
 
 ```bash
-uv venv shim/.venv --python 3.10
-uv pip install --python shim/.venv/bin/python -r shim/requirements.txt
+uv venv sidecar/shim/.venv --python 3.10
+uv pip install --python sidecar/shim/.venv/bin/python -r sidecar/shim/requirements.txt
 ```
 
-Restart Adelpha after the install. The desk loads a measured field map (`.npy`, x, y, z in mm and B in mT) and shows it before shimming; `console/notebooks/passive_shimming/data/Exp_1044_2026831.npy` is one to start with. After a run, **Save trays** writes the top and bottom STLs and Magpylib collections to a folder you choose. Details are in `shim/README.md`.
+Restart Adelpha after the install. The desk loads a measured field map (`.npy`, x, y, z in mm and B in mT) and shows it before shimming; `sidecar/console/notebooks/passive_shimming/data/Exp_1044_2026831.npy` is one to start with. After a run, **Save trays** writes the top and bottom STLs and Magpylib collections to a folder you choose. Details are in `sidecar/shim/README.md`.
 
 ### Browser-only (`npm run dev`)
 
@@ -72,14 +72,14 @@ Vite on port **5173** proxies `/api/*` to the classic ports. Start the APIs your
 
 | Service | Command | URL | Needed for |
 | --- | --- | --- | --- |
-| Twin API | from `dtam/`: `make twin-api` | `http://127.0.0.1:8080` | Digital Twin telemetry |
-| Agents API | from `dtam/`: `make agents-api` | `http://127.0.0.1:8001` | Agents chat |
-| MRI API | from `console/`: `python -m services.api` | `http://127.0.0.1:8002` | Imaging Console |
+| Twin API | from `sidecar/dtam/`: `make twin-api` | `http://127.0.0.1:8080` | Digital Twin telemetry |
+| Agents API | from `sidecar/dtam/`: `make agents-api` | `http://127.0.0.1:8001` | Agents chat |
+| MRI API | from `sidecar/console/`: `python -m services.api` | `http://127.0.0.1:8002` | Imaging Console |
 
 ```bash
-cd dtam && make twin-api
-cd dtam && make agents-api    # needs GOOGLE_API_KEY in dtam/.env or the shell
-cd console && python -m services.api
+cd sidecar/dtam && make twin-api
+cd sidecar/dtam && make agents-api    # needs GOOGLE_API_KEY in sidecar/dtam/.env or the shell
+cd sidecar/console && python -m services.api
 ```
 
 The in-app terminal has **no real shell** in the browser. Use `make tauri-dev` for that.
@@ -92,7 +92,7 @@ curl -s http://127.0.0.1:8002/health
 ```
 
 !!! note "API key"
-    Prefer `GOOGLE_API_KEY` in `dtam/.env` or **Settings → AI & Agents** in the desktop app. Nested agent `.env` files are easy to miss.
+    Prefer `GOOGLE_API_KEY` in `sidecar/dtam/.env` or **Settings → AI & Agents** in the desktop app. Nested agent `.env` files are easy to miss.
 
 ### What “good” looks like
 

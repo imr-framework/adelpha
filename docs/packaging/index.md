@@ -44,7 +44,7 @@ base URL and an ephemeral session token at launch.
 | Clean docs/Vite output | `make clean` |
 | Clean packaging artifacts only | `make clean-packaging` |
 
-Development mode (`tauri dev`) prefers `dtam/.venv` when present, otherwise
+Development mode (`tauri dev`) prefers `sidecar/dtam/.venv` when present, otherwise
 `runtime/python/.venv`, and runs `python -m adelpha_runtime`. Production
 installs use only the PyInstaller onedir copied to `src-tauri/resources/python-runtime/`
 and remapped in the app bundle to `$RESOURCE/python-runtime/`. If the DMG step
@@ -77,8 +77,8 @@ signed off.
 | `marcos_server` C++ | Scanner/server runtime | Excluded |
 | `marcos_client` | Used by acq workers | Available to lazy acq; not a public HTTP service |
 | HalbachMRIDesigner | GPL-3 vendor clone | Not bundled |
-| DTAM | Regular tree at `dtam/` | Sidecar build reads `dtam/src` |
-| Secrets | Local `dtam/.env` must never ship | User pastes `GOOGLE_API_KEY` in app config (`<config>/google_api_key`) |
+| DTAM | Regular tree at `sidecar/dtam/` | Sidecar build reads `sidecar/dtam/src` |
+| Secrets | Local `sidecar/dtam/.env` must never ship | User pastes `GOOGLE_API_KEY` in app config (`<config>/google_api_key`) |
 | Sidecar packager | PyInstaller vs Nuitka | **PyInstaller onedir**. Safer for scipy, numpy, and ADK native libs. |
 
 ## Service registry
@@ -141,8 +141,8 @@ Do not cross-compile the Python sidecar.
 ## Licensing (read before distributing)
 
 - Adelpha GUI: MIT (`LICENSE`)
-- Imaging console (`console/`): GPL-3. Bundling it in the sidecar makes the
+- Imaging console (`sidecar/console/`): GPL-3. Bundling it in the sidecar makes the
   **distributed Python runtime** a GPL-3 work. Ship corresponding source.
-- DTAM (`dtam/LICENSE`): MIT
+- DTAM (`sidecar/dtam/LICENSE`): MIT
 - FLOCRA interpreter: MIT
 - HalbachMRIDesigner: GPL-3; not bundled

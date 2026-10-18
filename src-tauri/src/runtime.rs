@@ -415,7 +415,7 @@ fn resolve_dev_python(repo: &std::path::Path) -> Result<PathBuf, String> {
         return Ok(PathBuf::from(explicit));
     }
     let runtime_venv = venv_python(repo.join("runtime/python/.venv"));
-    let dtam_venv = venv_python(repo.join("dtam/.venv"));
+    let dtam_venv = venv_python(repo.join("sidecar/dtam/.venv"));
     // DTAM's venv already has numpy/structlog/ADK. Prefer it when present so
     // `tauri-dev` does not depend on a 3.14 runtime venv that lacks those packages.
     for candidate in [dtam_venv, runtime_venv] {
@@ -506,8 +506,8 @@ fn read_user_api_key(config_dir: &std::path::Path) -> Option<String> {
     {
         let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         if let Some(repo) = manifest.parent() {
-            if let Some(key) = parse_dotenv_key(&repo.join("dtam/.env"), "GOOGLE_API_KEY") {
-                log::info!("using GOOGLE_API_KEY from dtam/.env (development)");
+            if let Some(key) = parse_dotenv_key(&repo.join("sidecar/dtam/.env"), "GOOGLE_API_KEY") {
+                log::info!("using GOOGLE_API_KEY from sidecar/dtam/.env (development)");
                 return Some(key);
             }
         }

@@ -11,7 +11,7 @@ The operator workspace. It talks to Adelpha’s MRI FastAPI façade, not the old
 In the desktop app that façade is already running. In the browser you start it yourself:
 
 ```bash
-cd console
+cd sidecar/console
 python -m services.api
 ```
 

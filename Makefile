@@ -8,11 +8,11 @@ install:
 install-python-runtime:
 	@if [ ! -x runtime/python/.venv/bin/python ]; then python3 -m venv runtime/python/.venv; fi
 	runtime/python/.venv/bin/pip install -e "./runtime/python[dev]"
-	@if [ -x dtam/.venv/bin/python ]; then uv pip install --python dtam/.venv/bin/python -e "./runtime/python[dev]"; fi
-	@if [ -f dtam/pyproject.toml ]; then \
+	@if [ -x sidecar/dtam/.venv/bin/python ]; then uv pip install --python sidecar/dtam/.venv/bin/python -e "./runtime/python[dev]"; fi
+	@if [ -f sidecar/dtam/pyproject.toml ]; then \
 	  echo "Installing DTAM into the Python runtime venv…"; \
-	  runtime/python/.venv/bin/pip install -e "./dtam" \
-	    || echo "warning: could not install DTAM into runtime/python/.venv (Python $$(runtime/python/.venv/bin/python -c 'import sys; print(sys.version.split()[0])')). tauri-dev will use dtam/.venv when present."; \
+	  runtime/python/.venv/bin/pip install -e "./sidecar/dtam" \
+	    || echo "warning: could not install DTAM into runtime/python/.venv (Python $$(runtime/python/.venv/bin/python -c 'import sys; print(sys.version.split()[0])')). tauri-dev will use sidecar/dtam/.venv when present."; \
 	fi
 
 docs:

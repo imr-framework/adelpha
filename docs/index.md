@@ -74,7 +74,7 @@ Every live number is labeled **measured**, **estimated**, **predicted**, or **no
     make tauri-dev
     ```
 
-    DTAM lives in this repo at `dtam/`. The supervisor starts with the window. Details: [Getting started](start/index.md).
+    DTAM lives in this repo at `sidecar/dtam/`. The supervisor starts with the window. Details: [Getting started](start/index.md).
 
 Use **⌘K** (Ctrl+K on Windows/Linux) to switch workspaces. Add `?replayIntro=1` to the URL if you want the launch animation again.
 

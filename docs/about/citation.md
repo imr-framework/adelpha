@@ -23,16 +23,16 @@ Also cite upstream when you used it:
 | Component | Cite |
 | --- | --- |
 | Imaging console / sequences / recon | MRI4ALL Zeugmatron Z1 console, [github.com/mri4all/console](https://github.com/mri4all/console) |
-| Board server / FPGA extras | MaRCoS, vendored under `console/external/` |
-| Twin physics / Twin API | DTAM tree at `dtam/` (MIT) |
+| Board server / FPGA extras | MaRCoS, vendored under `sidecar/console/external/` |
+| Twin physics / Twin API | DTAM tree at `sidecar/dtam/` (MIT) |
 
 ## License split
 
 | Path | License | File |
 | --- | --- | --- |
 | Desktop UI, Tauri, most of the repo | MIT | [`LICENSE`](https://github.com/imr-framework/adelpha/blob/main/LICENSE) |
-| `dtam/` | MIT | `dtam/LICENSE` |
-| `console/` | GNU GPL v3 | `console/LICENSE` |
+| `sidecar/dtam/` | MIT | `sidecar/dtam/LICENSE` |
+| `sidecar/console/` | GNU GPL v3 | `sidecar/console/LICENSE` |
 
 Copyright on the MIT `LICENSE` is **iMR Framework** (2026). GPL-3 applies to the MRI4ALL-derived console regardless of the outer MIT file.
 

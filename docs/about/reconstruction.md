@@ -13,14 +13,14 @@ Reconstruction is still the MRI4ALL Python stack. Adelpha MRI runs it **in-proce
 | MRI4ALL | Adelpha desktop |
 | --- | --- |
 | `services.recon.main` as a systemd unit | **Do not import** that module in the sidecar |
-| stdout redirected, Linux-oriented | `console/services/api/pipeline.py` polls the folder queue |
+| stdout redirected, Linux-oriented | `sidecar/console/services/api/pipeline.py` polls the folder queue |
 | Start/Stop on System Status maps to systemd | On Mac, service status stays **Unknown** |
 
 The worker sets `_recon_enabled` and processes tasks whose state is `scheduled_recon` / `recon`. Acquisition is a sibling thread in the same pipeline (`_acq_enabled`). Both share `common.queue` and `ScanTask`.
 
 ## Modes in `run_reconstruction`
 
-`console/services/recon/reconstruction.py` branches on `task.processing`:
+`sidecar/console/services/recon/reconstruction.py` branches on `task.processing`:
 
 | `recon_mode` / trajectory | Behavior |
 | --- | --- |

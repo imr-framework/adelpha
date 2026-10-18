@@ -85,10 +85,11 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-PYTHON_PACKAGE_TESTS = REPO_ROOT / "python" / "tests"
-PYTHON_SRC = REPO_ROOT / "python"
-DTAM_SRC = REPO_ROOT / "dtam" / "src"
-COMMUNICATION_TESTS = REPO_ROOT / "dtam" / "tests" / "communication"
+SIDECAR_ROOT = REPO_ROOT / "sidecar"
+PYTHON_PACKAGE_TESTS = SIDECAR_ROOT / "python" / "tests"
+PYTHON_SRC = SIDECAR_ROOT / "python"
+DTAM_SRC = SIDECAR_ROOT / "dtam" / "src"
+COMMUNICATION_TESTS = SIDECAR_ROOT / "dtam" / "tests" / "communication"
 
 GITHUB_ROOT = REPO_ROOT / ".github"
 WORKFLOW_DIR = GITHUB_ROOT / "workflows"
@@ -150,7 +151,7 @@ def _configure_environment() -> None:
     import_roots = [
         str(PYTHON_SRC),
         str(DTAM_SRC),
-        str(REPO_ROOT),
+        str(SIDECAR_ROOT),
     ]
     current = os.environ.get("PYTHONPATH", "")
     os.environ["PYTHONPATH"] = os.pathsep.join(
@@ -272,11 +273,11 @@ def _package_test_paths() -> list[str]:
     return [
         str(PYTHON_PACKAGE_TESTS),
         str(COMMUNICATION_TESTS / "test_protocol.py"),
-        str(REPO_ROOT / "coil" / "test_coil_sim.py"),
-        str(REPO_ROOT / "rfcoil" / "test_rfcoil_sim.py"),
-        str(REPO_ROOT / "halbach" / "test_halbach_sim.py"),
-        str(REPO_ROOT / "shim" / "test_shim_sim.py"),
-        str(REPO_ROOT / "simulation" / "fem" / "tests"),
+        str(SIDECAR_ROOT / "coil" / "test_coil_sim.py"),
+        str(SIDECAR_ROOT / "rfcoil" / "test_rfcoil_sim.py"),
+        str(SIDECAR_ROOT / "halbach" / "test_halbach_sim.py"),
+        str(SIDECAR_ROOT / "shim" / "test_shim_sim.py"),
+        str(SIDECAR_ROOT / "simulation" / "fem" / "tests"),
     ]
 
 
@@ -285,7 +286,7 @@ def _pytest_base_args() -> list[str]:
 
     return [
         "-o",
-        f"pythonpath={PYTHON_SRC} {DTAM_SRC} {REPO_ROOT}",
+        f"pythonpath={PYTHON_SRC} {DTAM_SRC} {SIDECAR_ROOT}",
         "-o",
         "asyncio_mode=auto",
         "-ra",
@@ -464,8 +465,8 @@ def _run_ruff() -> int:
         "-m",
         "ruff",
         "check",
-        "python/adelpha",
-        "python/tests",
+        "sidecar/python/adelpha",
+        "sidecar/python/tests",
         "tests/run_tests.py",
         "--select",
         "E4,E7,E9,F,I",

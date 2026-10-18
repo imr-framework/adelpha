@@ -54,7 +54,7 @@ If you already have a clone, switch with `git checkout [branch_name]`
 
 ## Contribute workshop notebooks
 
-DELTA DIY MRI workshop notebooks live in [`console/notebooks/`](console/notebooks/) on the **`workshop/delta-2026`** branch. Open pull requests **into that branch**, not `main`.
+DELTA DIY MRI workshop notebooks live in [`sidecar/console/notebooks/`](sidecar/console/notebooks/) on the **`workshop/delta-2026`** branch. Open pull requests **into that branch**, not `main`.
 
 1. Fork the repo with all its branches
 Fork the adelpha repo. While forking, be sure to uncheck `copy the main branch only` so that you get all the branches on your fork.
@@ -81,14 +81,14 @@ Fork the adelpha repo. While forking, be sure to uncheck `copy the main branch o
    git checkout -b workshop/notebooks-your-topic
    ```
 
-4. Add or edit notebooks only under `console/notebooks/`. Name files `NN_short_name.ipynb` so they sort in teaching order (`01_setup_environment.ipynb` is the setup notebook). Use a title cell that states the session goal. Also you can group them in subfolders such as console/notebooks/acq for acquisition notebooks.
+4. Add or edit notebooks only under `sidecar/console/notebooks/`. Name files `NN_short_name.ipynb` so they sort in teaching order (`01_setup_environment.ipynb` is the setup notebook). Use a title cell that states the session goal. Also you can group them in subfolders such as sidecar/console/notebooks/acq for acquisition notebooks.
 
-5. Do not commit the workshop virtualenv, checkpoints, or bulky execution output. `console/notebooks/.diy-mri-workshop/` and `.ipynb_checkpoints/` stay local. Clear cell outputs before you commit if a notebook grew large.
+5. Do not commit the workshop virtualenv, checkpoints, or bulky execution output. `sidecar/console/notebooks/.diy-mri-workshop/` and `.ipynb_checkpoints/` stay local. Clear cell outputs before you commit if a notebook grew large.
 
 6. Commit, push, and open a PR **against `workshop/delta-2026`**.
 
    ```bash
-   git add console/notebooks/
+   git add sidecar/console/notebooks/
    git commit -m "Add workshop notebook: short description"
    git push -u origin HEAD
    ```
@@ -167,7 +167,7 @@ uv sync --group docs && make docs-serve
 | Symptom | Fix |
 | --- | --- |
 | Recovery screen | `<app-log>/supervisor.log`; export diagnostics |
-| Agents offline | Settings → AI & Agents (or `GOOGLE_API_KEY` in `dtam/.env` for browser mode) |
+| Agents offline | Settings → AI & Agents (or `GOOGLE_API_KEY` in `sidecar/dtam/.env` for browser mode) |
 | Imaging Console empty | Console service must be up |
 | Exam vanished after restart | Expected. Register again. |
 | Camera denied (Mac) | System Settings → Camera, or `tccutil reset Camera org.adelpha.digital-twin-ui` |

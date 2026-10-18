@@ -2,7 +2,7 @@
 """Build the platform-specific adelpha-python-runtime onedir bundle.
 
 Never pip-install into Homebrew / PEP 668 interpreters. Freeze with a project
-venv (prefer ``dtam/.venv``, then ``runtime/python/.venv``).
+venv (prefer ``sidecar/dtam/.venv``, then ``runtime/python/.venv``).
 """
 
 from __future__ import annotations
@@ -20,7 +20,8 @@ SPEC = Path(__file__).resolve().parent / "adelpha-python-runtime.spec"
 DIST = REPO / "packaging" / "sidecar" / "dist"
 TAURI_RESOURCES = REPO / "src-tauri" / "resources" / "python-runtime"
 RUNTIME_VENV = REPO / "runtime" / "python" / ".venv"
-DTAM_VENV = REPO / "dtam" / ".venv"
+SIDECAR = REPO / "sidecar"
+DTAM_VENV = SIDECAR / "dtam" / ".venv"
 
 
 def target_triple() -> str:
@@ -110,11 +111,11 @@ def main() -> int:
     parser.add_argument("--skip-install", action="store_true")
     args = parser.parse_args()
 
-    dtam_src = Path(os.environ.get("ADELPHA_DTAM_SRC", REPO / "dtam" / "src"))
+    dtam_src = Path(os.environ.get("ADELPHA_DTAM_SRC", SIDECAR / "dtam" / "src"))
     if not dtam_src.is_dir():
         print(
             "error: DTAM sources not found at "
-            f"{dtam_src}. Clone https://github.com/imr-framework/dtam into dtam/",
+            f"{dtam_src}. Expected sidecar/dtam/ in this repository.",
             file=sys.stderr,
         )
         return 2

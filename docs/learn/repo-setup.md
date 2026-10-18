@@ -6,7 +6,7 @@ icon: lucide/git-fork
 
 # Repo setup
 
-DELTA DIY MRI workshop notebooks live in [`console/notebooks/`](https://github.com/imr-framework/adelpha/tree/workshop/delta-2026/console/notebooks) on the **`workshop/delta-2026`** branch. Open pull requests **into that branch**, not `main`.
+DELTA DIY MRI workshop notebooks live in [`sidecar/console/notebooks/`](https://github.com/imr-framework/adelpha/tree/workshop/delta-2026/sidecar/console/notebooks) on the **`workshop/delta-2026`** branch. Open pull requests **into that branch**, not `main`.
 
 !!! warning "Copy every branch"
     When you fork, uncheck **Copy the `main` branch only**. If that box stays checked, your fork will not have `workshop/delta-2026`.
@@ -49,23 +49,23 @@ Replace `your-topic` with a short name for your session or notebook.
 
 ## 4. Add or edit notebooks
 
-Work only under `console/notebooks/`.
+Work only under `sidecar/console/notebooks/`.
 
 - Name files `NN_short_name.ipynb` so they sort in teaching order. `01_setup_environment.ipynb` is the setup notebook.
 - Put a title cell at the top that states the session goal.
-- You can group notebooks in subfolders, for example `console/notebooks/acq` for acquisition.
+- You can group notebooks in subfolders, for example `sidecar/console/notebooks/acq` for acquisition.
 
 ## 5. Keep the commit small
 
 Do not commit the workshop virtualenv, checkpoints, or bulky execution output.
 
-- `console/notebooks/.diy-mri-workshop/` and `.ipynb_checkpoints/` stay local.
+- `sidecar/console/notebooks/.diy-mri-workshop/` and `.ipynb_checkpoints/` stay local.
 - Clear cell outputs before you commit if a notebook grew large.
 
 ## 6. Commit, push, and open a PR
 
 ```bash
-git add console/notebooks/
+git add sidecar/console/notebooks/
 git commit -m "Add workshop notebook: short description"
 git push -u origin HEAD
 ```

@@ -16,7 +16,7 @@ from fastapi import Body, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from adelpha_runtime.memory import release_simulation_memory
-from adelpha_runtime.paths import RuntimePaths, cors_origins, default_repo_root
+from adelpha_runtime.paths import RuntimePaths, cors_origins, default_repo_root, sidecar_root
 
 
 def _load(name: str, path: Path):
@@ -34,19 +34,30 @@ def _feature_sim(paths: RuntimePaths, name: str) -> Path:
     Tauri sets ``ADELPHA_RESOURCE_DIR`` to the app resource folder, which does
     not contain these feature trees. Fall back to the checkout root.
     """
-    roots = [paths.resource_dir, Path(getattr(sys, "_MEIPASS", paths.resource_dir)), default_repo_root(), Path.cwd(), Path.cwd().parent, Path.cwd().parent.parent]
+    roots = [
+        paths.resource_dir,
+        Path(getattr(sys, "_MEIPASS", paths.resource_dir)),
+        sidecar_root(),
+        default_repo_root(),
+        Path.cwd(),
+        Path.cwd().parent,
+        Path.cwd().parent.parent,
+    ]
     seen: set[str] = set()
     for root in roots:
         try:
-            key = str(root.resolve())
+            resolved = root.resolve()
         except OSError:
-            key = str(root)
-        if key in seen:
-            continue
-        seen.add(key)
-        candidate = root / name / "sim.py"
-        if candidate.is_file():
-            return candidate
+            resolved = root
+        bases = (resolved, resolved / "sidecar")
+        for base in bases:
+            key = str(base)
+            if key in seen:
+                continue
+            seen.add(key)
+            candidate = base / name / "sim.py"
+            if candidate.is_file():
+                return candidate
     raise RuntimeError(f"{name} sources are not available in this install")
 
 

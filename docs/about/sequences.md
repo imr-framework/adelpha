@@ -41,11 +41,11 @@ Optional overlay without converting an attribute to ``param()``:
 parameter_ui = {"N_ITER": {"title": "Iterations", "tab": "adjustments", "minimum": 1}}
 ```
 
-See ``console/sequences/adj_frequency_snr.py`` for a sequence that exposes search controls on the ADJUSTMENTS tab this way.
+See ``sidecar/console/sequences/adj_frequency_snr.py`` for a sequence that exposes search controls on the ADJUSTMENTS tab this way.
 
 ## Catalog the GUI sees
 
-`console/services/api/sequences_api.py` loads `SequenceBase` when the MRI4ALL environment is complete. If numba / numpy pins block that import (the desktop sidecar uses **numpy 2**), the façade serves a **FALLBACK** catalog so the UI still lists sequences:
+`sidecar/console/services/api/sequences_api.py` loads `SequenceBase` when the MRI4ALL environment is complete. If numba / numpy pins block that import (the desktop sidecar uses **numpy 2**), the façade serves a **FALLBACK** catalog so the UI still lists sequences:
 
 | id | Name |
 | --- | --- |
@@ -55,7 +55,7 @@ See ``console/sequences/adj_frequency_snr.py`` for a sequence that exposes searc
 | `gre_3D` | 3D Gradient Echo |
 | `se_2D` | 2D Spin-Echo |
 
-Plugin sources live in `console/sequences/` (for example `se_2D.py`). Parameter schema comes from `common.parameter_schema.schema_for_defaults`. Validate with the façade’s validate route before Prepare.
+Plugin sources live in `sidecar/console/sequences/` (for example `se_2D.py`). Parameter schema comes from `common.parameter_schema.schema_for_defaults`. Validate with the façade’s validate route before Prepare.
 
 !!! warning "Fallback vs hardware"
     A sequence that appears in FALLBACK is a **catalog stub** with defaults. Running it on a board still requires the real `SequenceBase` module and a MaRCoS path. See [Packaging limitations](../packaging/limitations.md).

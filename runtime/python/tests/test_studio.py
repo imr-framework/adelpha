@@ -1,6 +1,18 @@
-from adelpha_runtime.paths import resolve_paths
+from adelpha_runtime.paths import resolve_paths, sidecar_root
 from adelpha_runtime.studio import _feature_sim, create_coil_app, create_magnet_app, create_rf_app, create_shim_app
 from fastapi.testclient import TestClient
+
+
+def test_python_projects_live_in_sidecar():
+    root = sidecar_root()
+    assert root.name == "sidecar"
+    assert (root / "coil" / "sim.py").is_file()
+    paths = resolve_paths()
+    assert paths.dtam_src is not None
+    assert paths.dtam_src.parent.name == "dtam"
+    assert paths.dtam_src.parent.parent.name == "sidecar"
+    assert paths.console_root is not None
+    assert paths.console_root.name == "console"
 
 
 def test_coil_and_shim_apps_are_not_the_console():
@@ -13,8 +25,8 @@ def test_coil_and_shim_apps_are_not_the_console():
     assert rfcoil.get("/health").json() == {"status": "ok", "service": "rf"}
     assert shim.get("/health").json() == {"status": "ok", "service": "shim"}
     assert magnet.get("/health").json() == {"status": "ok", "service": "magnet"}
-    missing = coil.post("/simulate", json={"axis": "y"})
-    assert missing.status_code in {400, 503}
+    bad_axis = coil.post("/simulate", json={"axis": "q"})
+    assert bad_axis.status_code in {400, 503}
     bad = magnet.post("/halbach", json={"inner_radius_mm": "wide"})
     assert bad.status_code == 400
     array = magnet.post("/halbach", json={"rings": 1, "magnets": 8, "outer_ring": False})
