@@ -29,7 +29,7 @@ There is no Start server button. The listener starts when Adelpha finds `devices
 
 1. Open **Settings → Devices**.
 2. Click **Open config folder**. That folder is the DTAM config directory on this computer.
-3. Copy `dtam/src/dtam/communication/devices.example.json` from the repository into that folder as **`devices.json`**.
+3. Copy `sidecar/dtam/src/dtam/communication/devices.example.json` from the repository into that folder as **`devices.json`**.
 4. Replace every placeholder token with a unique random string of at least 24 characters. Set `"host": "0.0.0.0"` if a Pi on Ethernet should reach this PC. Set each device’s `scanner_id` to the hardware profile you will use (for example `halbach_48mt`).
 5. In **Settings → Digital Twin**, select that same hardware profile. Simulation ignores device publications.
 6. Restart Adelpha, or **Settings → Digital Twin → Restart**.
@@ -68,7 +68,7 @@ The client URL is `ws://<this-computer>:8765/ws/pi-01`. Put the token in the `Au
 
 ## Protocol
 
-Messages are JSON-RPC 2.0. One family publishes sensors; the other sets actuators. Structure is defined by `dtam/src/dtam/communication/adelpha-device-v1.schema.json`. Behaviour (timing, retries, quality) is in `dtam/src/dtam/communication/PROTOCOL.md`.
+Messages are JSON-RPC 2.0. One family publishes sensors; the other sets actuators. Structure is defined by `sidecar/dtam/src/dtam/communication/adelpha-device-v1.schema.json`. Behaviour (timing, retries, quality) is in `sidecar/dtam/src/dtam/communication/PROTOCOL.md`.
 
 Include an `id` only when you want a response. Adelpha echoes that `id`. Omit `id` for a continuous stream; those notifications must not be answered. Do not send a separate `requires_response` flag.
 
@@ -158,7 +158,7 @@ export ADELPHA_DEVICE_TOKEN="the-token-from-devices-json"
 python pi_device.py
 ```
 
-A fuller template, including a hardware callback, is `dtam/src/dtam/communication/examples/pi_device.py`.
+A fuller template, including a hardware callback, is `sidecar/dtam/src/dtam/communication/examples/pi_device.py`.
 
 Continuous `publish()` omits JSON-RPC `id`. Pass `acknowledge=True` when you need Adelpha to confirm the sequence number.
 
@@ -219,7 +219,7 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-The checked-in copy is `dtam/src/dtam/communication/examples/arduino_bridge.py`.
+The checked-in copy is `sidecar/dtam/src/dtam/communication/examples/arduino_bridge.py`.
 
 ## After it is connected
 

@@ -9,7 +9,7 @@ icon: lucide/plus
 The desktop app must not learn how each service is launched. Register it in
 the supervisor.
 
-1. Add the module and **pin** dependencies in `dtam/pyproject.toml` or
+1. Add the module and **pin** dependencies in `sidecar/dtam/pyproject.toml` or
    `runtime/python/requirements-runtime.txt` (numpy 2 compatible).
 2. Register a `ServiceDef` in
    `runtime/python/adelpha_runtime/registry.py`:

@@ -32,7 +32,7 @@ build = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = [".", "../../sidecar/dtam/src"]
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]

@@ -10,7 +10,7 @@ Adelpha MRI does not send pulse-sequence payloads from TypeScript. The Imaging C
 
 ## What MaRCoS is here
 
-[MaRCoS](https://github.com/vnegnev/marcos_extras) (Magnetic Resonance Control System) is the FPGA + server stack MRI4ALL used on the Red Pitaya. Adelpha vendors extras and server sources under `console/external/` (`marcos_extras`, `marcos_server`). After every board power-up the MRI4ALL wiki sequence still applies:
+[MaRCoS](https://github.com/vnegnev/marcos_extras) (Magnetic Resonance Control System) is the FPGA + server stack MRI4ALL used on the Red Pitaya. Adelpha vendors extras and server sources under `sidecar/console/external/` (`marcos_extras`, `marcos_server`). After every board power-up the MRI4ALL wiki sequence still applies:
 
 ```text
 ./copy_bitstream.sh <IP> rp-122     # password: root
@@ -18,7 +18,7 @@ ssh root@<IP>                       # password: root
 ~/marcos_server
 ```
 
-Adelpha wraps that in `console/services/ui/marcos_boot.py`: locate `copy_bitstream.sh` or `marcos_fpga_rp-*.bit*`, SSH as `root`, and start `marcos_server`. Override the password with `ADELPHA_MARCOS_SSH_PASSWORD` (default `root`, same as the MRI4ALL docs).
+Adelpha wraps that in `sidecar/console/services/ui/marcos_boot.py`: locate `copy_bitstream.sh` or `marcos_fpga_rp-*.bit*`, SSH as `root`, and start `marcos_server`. Override the password with `ADELPHA_MARCOS_SSH_PASSWORD` (default `root`, same as the MRI4ALL docs).
 
 ## Reachability from the GUI
 
@@ -53,4 +53,4 @@ The packaged app **does not program the FPGA** as a silent installer step. Hardw
 | **False** | Sequences talk to MaRCoS on the configured IP |
 | **True** | Stay in software; no board required |
 
-The façade documents this in `console/services/api/app.py`: it probes `/device/ping`; it does not itself stream sequence payloads to the FPGA.
+The façade documents this in `sidecar/console/services/api/app.py`: it probes `/device/ping`; it does not itself stream sequence payloads to the FPGA.

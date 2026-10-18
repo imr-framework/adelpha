@@ -45,8 +45,8 @@ Adelpha MRI is not a single greenfield codebase. Three trees share the installer
 | Tree | License | Origin |
 | --- | --- | --- |
 | Desktop shell (`src/`, `src-tauri/`) | MIT | Adelpha React/Tauri UI |
-| Digital twin (`dtam/`) | MIT | DTAM twin, Twin HTTP API, optional Google ADK agents |
-| Imaging console (`console/`) | GPL-3 | MRI4ALL Zeugmatron Z1 console (hackathon 2023), adapted behind a FastAPI façade |
+| Digital twin (`sidecar/dtam/`) | MIT | DTAM twin, Twin HTTP API, optional Google ADK agents |
+| Imaging console (`sidecar/console/`) | GPL-3 | MRI4ALL Zeugmatron Z1 console (hackathon 2023), adapted behind a FastAPI façade |
 
 A public installer that bundles the console is a **GPL-3 distribution of that runtime**. DTAM alone remains MIT. Details: [Citation and licensing](citation.md) and [Packaging limitations](../packaging/limitations.md).
 

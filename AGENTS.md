@@ -37,15 +37,16 @@ Adelpha is an MRI engineering and digital-twin application. Its UI combines scan
 | Field-line computation | `src/twin/studio/femStreamlines.ts`, `femStreamlines.worker.ts` |
 | Typed client API | `src/twin/mri/api.ts` |
 | Runtime FEM routes and job supervision | `runtime/python/adelpha_runtime/fem.py` |
-| FEM configuration, meshing, and solving | `simulation/fem/config.py`, `meshgen.py`, `sifgen.py`, `solver.py` |
-| Mesh and VTU preview serialization | `simulation/fem/meshpreview.py`, `fieldpreview.py` |
+| FEM configuration, meshing, and solving | `sidecar/simulation/fem/config.py`, `meshgen.py`, `sifgen.py`, `solver.py` |
+| Mesh and VTU preview serialization | `sidecar/simulation/fem/meshpreview.py`, `fieldpreview.py` |
 | Desktop/browser export helper | `src/desktop/saveFile.ts` |
-| Gradient coil design | `src/twin/studio/GradientCoilStudio.tsx`, `coil/sim.py` |
-| RF coil design | `src/twin/studio/RfCoilStudio.tsx`, `rfcoil/sim.py`, `RFcoilbuilder/` |
-| Halbach magnet design | `src/twin/studio/HalbachMagnetStudio.tsx`, `halbach/sim.py`, `HalbachMRIDesigner/` |
-| Device JSON-RPC protocol | `dtam/src/dtam/communication/`, `docs/guide/devices.md` |
-| Public Python package | `python/adelpha/` (`from adelpha import telemetry, feedback`), `docs/guide/python.md` |
-| Detailed FEM setup and numerical limitations | `simulation/fem/README.md` |
+| Gradient coil design | `src/twin/studio/GradientCoilStudio.tsx`, `sidecar/coil/sim.py` |
+| RF coil design | `src/twin/studio/RfCoilStudio.tsx`, `sidecar/rfcoil/sim.py`, `sidecar/RFcoilbuilder/` |
+| Halbach magnet design | `src/twin/studio/HalbachMagnetStudio.tsx`, `sidecar/halbach/sim.py`, `sidecar/HalbachMRIDesigner/` |
+| Python projects | `sidecar/` (public package, DTAM, imaging console, coil/RF/shim/Halbach/FEM) |
+| Device JSON-RPC protocol | `sidecar/dtam/src/dtam/communication/`, `docs/guide/devices.md` |
+| Public Python package | `sidecar/python/adelpha/` (`from adelpha import telemetry, feedback`), `docs/guide/python.md` |
+| Detailed FEM setup and numerical limitations | `sidecar/simulation/fem/README.md` |
 
 The frontend uses React, TypeScript, Vite, Three.js, React Three Fiber, Drei, and Lucide icons. Use the installed versions and existing conventions. Both Electron and Tauri integration exist: do not assume every browser API behaves identically in every desktop host.
 
@@ -218,7 +219,7 @@ Default field display is solid surfaces with mesh edges. A decorative translucen
 
 - Render real output arrays. Concept images may guide layout but are not a source of computed fields or illustrative field lines to ship as results.
 - Preserve per-body nodes at material interfaces. Coincident coordinates do not imply equal physical fields; do not average them indiscriminately.
-- Read Elmer's body-recovered `magnetic flux density e`, `magnetic field strength e`, and `magnetic vector potential e` arrays when available. `Discontinuous Bodies` duplicates geometry but does not undo cross-interface projection in the plain nodal arrays. Keep the complete-set validation and nodal-only legacy compatibility in `simulation/fem/fieldpreview.py`.
+- Read Elmer's body-recovered `magnetic flux density e`, `magnetic field strength e`, and `magnetic vector potential e` arrays when available. `Discontinuous Bodies` duplicates geometry but does not undo cross-interface projection in the plain nodal arrays. Keep the complete-set validation and nodal-only legacy compatibility in `sidecar/simulation/fem/fieldpreview.py`.
 - Cross-sections interpolate nodal vector components in tetrahedra before computing magnitude. Do not interpolate precomputed magnitudes as if equivalent.
 - Probes must use the displayed geometry's interpolation and report the correct coordinate units.
 - Fixed color limits clip colors, not underlying field/probe values. State the quantity, component, units, range, and whether the range is fixed or automatic.
@@ -244,13 +245,13 @@ The included assembly uses two 10 × 10 × 10 mm magnets. Use it as a dimensiona
 
 Current FEM supports 3D linear magnetostatics with constant isotropic relative permeability and prescribed global remanence. It does not currently implement B-H saturation, hysteresis, irreversible demagnetization, coil/current excitation, eddy currents, transient analysis, mechanical stress, or motion. New controls for those features require corresponding solver/configuration support and verification, not just frontend fields.
 
-The outer air boundary is a finite-domain approximation. Mesh refinement and air-domain convergence require separate checks. Refer to `simulation/fem/README.md` for the numerical assumptions and backend contract. Direct SIF generation is intentional; pyelmer is not a required dependency.
+The outer air boundary is a finite-domain approximation. Mesh refinement and air-domain convergence require separate checks. Refer to `sidecar/simulation/fem/README.md` for the numerical assumptions and backend contract. Direct SIF generation is intentional; pyelmer is not a required dependency.
 
 ### Hardware system profiles
 
 Desktop Twin setup stores custom systems in `dtam_runtime.json` with the runtime preferences. The Python loader reads them through `ADELPHA_DTAM_PREFS`. Custom profiles define identity, architecture, and nominal field strength; they do not implement device transport. Physical profile sessions remain read-only and wait for measured publications. Never force a physical profile into simulation or make missing hardware fatal to API startup.
 
-Boards connect as JSON-RPC WebSocket **clients**. Adelpha is the server. The Twin lifespan starts the listener when `devices.json` is present (`ADELPHA_DEVICE_CONFIG`, then `ADELPHA_CONFIG_DIR` / `DTAM_CONFIG_DIR`). There is no Start-server control. Arduino never talks serial to Adelpha; a user Python process owns the serial port and uses `from adelpha import telemetry` (`telemetry.DeviceClient`). Actuator handlers use `from adelpha import feedback`. Sensor streaming does not require Physical control. `actuators.set` stays rejected until a hardware profile is selected, `allow_control` is true, and **Settings → Devices → Physical control** is on. Device-local interlocks remain authoritative. UI: `DeviceLinkSection.tsx`; HTTP: `/devices`; protocol: `dtam/src/dtam/communication/PROTOCOL.md`.
+Boards connect as JSON-RPC WebSocket **clients**. Adelpha is the server. The Twin lifespan starts the listener when `devices.json` is present (`ADELPHA_DEVICE_CONFIG`, then `ADELPHA_CONFIG_DIR` / `DTAM_CONFIG_DIR`). There is no Start-server control. Arduino never talks serial to Adelpha; a user Python process owns the serial port and uses `from adelpha import telemetry` (`telemetry.DeviceClient`). Actuator handlers use `from adelpha import feedback`. Sensor streaming does not require Physical control. `actuators.set` stays rejected until a hardware profile is selected, `allow_control` is true, and **Settings → Devices → Physical control** is on. Device-local interlocks remain authoritative. UI: `DeviceLinkSection.tsx`; HTTP: `/devices`; protocol: `sidecar/dtam/src/dtam/communication/PROTOCOL.md`.
 
 Scanner and environment changes use the authenticated `/runtime/twin/configuration` gateway endpoint to reconfigure the existing Twin session without restarting the console or agents. Validate the replacement before swapping it, serialize switches, and refresh telemetry immediately while rejecting older in-flight poll responses. Failed preference changes restore the previous configuration, and the frontend refreshes its runtime endpoint after recovery.
 
@@ -292,13 +293,13 @@ python tests/run_tests.py python
 Backend checks when the affected code requires them:
 
 ```sh
-python -m unittest discover -s simulation/fem/tests -v
+python -m unittest discover -s sidecar/simulation/fem/tests -v
 # Requires a working Gmsh Python API and Elmer executables:
-FEM_INTEGRATION=1 python -m unittest discover -s simulation/fem/tests -v
-FEM_INTEGRATION=1 PYTHONPATH=.:runtime/python python -m pytest runtime/python/tests/test_fem_studio.py -q
+FEM_INTEGRATION=1 python -m unittest discover -s sidecar/simulation/fem/tests -v
+FEM_INTEGRATION=1 PYTHONPATH=sidecar:runtime/python python -m pytest runtime/python/tests/test_fem_studio.py -q
 ```
 
-Use an available environment with the required dependencies. Do not install packages or claim real solver validation merely because frontend tests pass. Consult `simulation/fem/README.md` for the demo generator and environment-specific setup; avoid hardcoding one developer's Homebrew paths into portable runtime code.
+Use an available environment with the required dependencies. Do not install packages or claim real solver validation merely because frontend tests pass. Consult `sidecar/simulation/fem/README.md` for the demo generator and environment-specific setup; avoid hardcoding one developer's Homebrew paths into portable runtime code.
 
 Visual checks for affected UI:
 

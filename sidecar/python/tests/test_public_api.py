@@ -92,6 +92,15 @@ def test_version_and_lazy_public_names():
     assert "feedback" in adelpha.__all__
 
 
+def test_impl_root_is_sidecar():
+    from adelpha._paths import repo_root
+
+    root = repo_root()
+    assert root is not None
+    assert root.name == "sidecar"
+    assert (root / "dtam" / "src" / "dtam").is_dir()
+
+
 def test_telemetry_publish_payload_and_feedback_command():
     from adelpha.feedback import Command
     from adelpha.telemetry import Publish

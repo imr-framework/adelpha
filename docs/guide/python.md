@@ -144,4 +144,4 @@ uv build
 uv publish
 ```
 
-Source layout: `python/adelpha/`. Implementation for the device protocol remains under `dtam/src/dtam/communication/`; the public names are `telemetry` and `feedback`.
+Source layout: `sidecar/python/adelpha/`. Implementation for the device protocol remains under `sidecar/dtam/src/dtam/communication/`; the public names are `telemetry` and `feedback`.

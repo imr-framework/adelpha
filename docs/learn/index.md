@@ -10,7 +10,7 @@ This section is for **workshop mentees**. You will work in Jupyter notebooks on 
 
 | What | Where |
 | --- | --- |
-| Notebooks | [`console/notebooks/`](https://github.com/imr-framework/adelpha/tree/workshop/delta-2026/console/notebooks) |
+| Notebooks | [`sidecar/console/notebooks/`](https://github.com/imr-framework/adelpha/tree/workshop/delta-2026/sidecar/console/notebooks) |
 | Branch | `workshop/delta-2026` (not `main`) |
 | First step | [Repo setup](repo-setup.md) |
 

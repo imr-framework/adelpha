@@ -49,7 +49,7 @@ Saved as `dtam_runtime.json` in the app config directory:
 | `environment` | e.g. `development` |
 | `agent_model` / `agent_mode` | Gemini model and mode |
 
-Scanner and environment changes update the Twin session without restarting other services. Agent settings still restart the Python runtime. A complete user configuration under the config `dtam/` folder takes precedence over bundled defaults.
+Scanner and environment changes update the Twin session without restarting other services. Agent settings still restart the Python runtime. A complete user configuration under the app-config `dtam/` folder takes precedence over bundled defaults.
 
 ## Device listener (`devices.json`)
 
@@ -69,7 +69,7 @@ Boards connect to a WebSocket port, not Twin HTTP (`:8080`). The Twin starts the
 | `devices.<id>.scanner_id` | Must match **Settings → Digital Twin** |
 | `devices.<id>.allowed_actuators` | Actuator id → allowed operations |
 
-Example: `dtam/src/dtam/communication/devices.example.json`. Procedure and client scripts: [Device link](devices.md). Board scripts install `pip install adelpha` and `from adelpha import telemetry, feedback`.
+Example: `sidecar/dtam/src/dtam/communication/devices.example.json`. Procedure and client scripts: [Device link](devices.md). Board scripts install `pip install adelpha` and `from adelpha import telemetry, feedback`.
 
 ## MRI working directory
 

@@ -257,7 +257,7 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
         apply_google_api_key(paths)
         if not os.environ.get("GOOGLE_API_KEY", "").strip():
             raise RuntimeError(
-                "Agent service needs GOOGLE_API_KEY. In development put it in dtam/.env; "
+                "Agent service needs GOOGLE_API_KEY. In development put it in sidecar/dtam/.env; "
                 "in the packaged app write it to the google_api_key config file."
             )
         args, cwd = _adk_argv(paths, port)

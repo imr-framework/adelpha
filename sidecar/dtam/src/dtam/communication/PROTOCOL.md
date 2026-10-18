@@ -1,6 +1,6 @@
 # Adelpha device protocol v1
 
-Operator setup and example scripts: Adelpha `docs/guide/devices.md`. Published protocol page: `dtam/docs/platform/devices.md`.
+Operator setup and example scripts: Adelpha `docs/guide/devices.md`. Published protocol page: `sidecar/dtam/docs/platform/devices.md`.
 
 One JSON-RPC 2.0 envelope for two message families: **sensor readings** (`sensors.publish`) and **actuator commands** (`actuators.set`). Structure is validated by `adelpha-device-v1.schema.json`. This document defines timing, acknowledgements, quality, and feedback-operation behaviour.
 

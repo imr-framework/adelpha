@@ -1,45 +1,68 @@
+# Dependencies and frontend build
 node_modules
 dist
-.DS_Store
+public/mediapipe/
+
+# Local design comps (not product source)
+design_reference/
+output/
+
+# Packaging / desktop freeze
 release/
-.cache/
+packaging/sidecar/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/resources/python-runtime/**
+!src-tauri/resources/python-runtime/README.md
+src-tauri/updater.key
+src-tauri/updater.key.pub
 
 # Local env (keep .env.example tracked)
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+
+# Python environments and install metadata
 .venv/
 .venv-docs/
+*.egg-info/
 
 # Documentation (Zensical)
 site/
 .zensical/
-.mri4all/
 
-src-tauri/updater.key
-src-tauri/updater.key.pub
+# Local MRI console data and scratch
+.mri4all/
+.tmp-mri4all-*/
+
+# Test / coverage / linter caches
+.cache/
+.coverage
+.coverage.*
+.coverage_data/
+htmlcov/
+coverage.xml
+coverage.json
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 __pycache__/
 *.pyc
 *.pyo
-src-tauri/target/
-src-tauri/gen/
-packaging/sidecar/
-src-tauri/resources/python-runtime/**
-!src-tauri/resources/python-runtime/README.md
+*.py[cod]
+build/
 
-# Copied from node_modules on Vite start (camera tracking in the DMG)
-public/mediapipe/
+# Workshop notebook artifacts (see sidecar/console/notebooks/)
+sidecar/console/notebooks/seq_runner_output/
+sidecar/console/notebooks/f0_output/
+sidecar/console/notebooks/pulse_design_output/
+sidecar/console/notebooks/.diy-mri-workshop/
+.ipynb_checkpoints/
+*.swp
 
 # IDE / OS
+.DS_Store
+Thumbs.db
 .vscode/
 .idea/
-
-# Coding Editor
 .PROJECT/
-
-# Workshop notebook artifacts (see console/notebooks/)
-console/notebooks/seq_runner_output/
-console/notebooks/f0_output/
-console/notebooks/pulse_design_output/
-console/notebooks/.diy-mri-workshop/
-.ipynb_checkpoints/

@@ -16,9 +16,10 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 SPECDIR = Path(SPECPATH).resolve()
 REPO = SPECDIR.parents[1]
 RUNTIME = REPO / "runtime" / "python"
-DTAM_SRC = Path(os.environ.get("ADELPHA_DTAM_SRC", REPO / "dtam" / "src"))
+SIDECAR = REPO / "sidecar"
+DTAM_SRC = Path(os.environ.get("ADELPHA_DTAM_SRC", SIDECAR / "dtam" / "src"))
 DTAM_ROOT = DTAM_SRC.parent if DTAM_SRC.name == "src" else DTAM_SRC
-CONSOLE = Path(os.environ.get("ADELPHA_CONSOLE_ROOT", REPO / "console"))
+CONSOLE = Path(os.environ.get("ADELPHA_CONSOLE_ROOT", SIDECAR / "console"))
 
 hiddenimports = [
     "adelpha_runtime",
@@ -48,9 +49,17 @@ except Exception:
 
 datas = []
 # Keep FEM source available to the isolated external Python/Gmsh worker.
-datas.append((str(REPO / "simulation" / "fem"), "simulation/fem"))
-datas.append((str(REPO / "magnet" / "sim.py"), "magnet"))
-pathex = [str(RUNTIME)]
+datas.append((str(SIDECAR / "simulation" / "fem"), "simulation/fem"))
+fem_init = SIDECAR / "simulation" / "__init__.py"
+if fem_init.is_file():
+    datas.append((str(fem_init), "simulation"))
+for name in ("coil", "rfcoil", "shim", "halbach", "magnet"):
+    folder = SIDECAR / name
+    for filename in ("sim.py", "__init__.py", "pycoilgen_compat.py"):
+        src = folder / filename
+        if src.is_file():
+            datas.append((str(src), name))
+pathex = [str(RUNTIME), str(SIDECAR)]
 
 if DTAM_SRC.is_dir():
     pathex.append(str(DTAM_SRC))

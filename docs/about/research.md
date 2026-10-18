@@ -15,7 +15,7 @@ Adelpha MRI is an **open research platform**. This page states what you can hone
 | Desktop observer + operator for low-field MRI | Tauri app, three workspaces |
 | Twin state with explicit provenance | DTAM `QuantitySource` on timestamped quantities |
 | Thermal → \(B_0\) model with configurable \(\alpha_T\) | `dtam` models + `configs/models.yaml` |
-| Optional thermal PINN forecast | Artifact in `dtam/data/models/pinn/` when trained |
+| Optional thermal PINN forecast | Artifact in `sidecar/dtam/data/models/pinn/` when trained |
 | MRI4ALL sequence/recon path on desktop | FastAPI façade + in-process pipeline |
 | MaRCoS ping and bitstream helpers | `marcos_boot.py`, TCP 11111 |
 
@@ -36,7 +36,7 @@ Use [`CITATION.cff`](https://github.com/imr-framework/adelpha/blob/main/CITATION
 ## Related public materials
 
 - MRI4ALL console overview (upstream): [YouTube](https://www.youtube.com/watch?v=8GNmocJP-14)
-- DTAM in-tree docs (developer): `dtam/docs/` — twin math, PINN, Twin API
+- DTAM in-tree docs (developer): `sidecar/dtam/docs/` — twin math, PINN, Twin API
 - Adelpha operator docs: this site
 
 When a peer-reviewed Adelpha MRI paper exists, add the DOI here. Until then, cite the software version from GitHub Releases (for example the installer version shown on [Download](../start/download.md)).

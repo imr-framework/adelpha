@@ -9,8 +9,11 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+REPO = Path(__file__).resolve().parents[3]
+DTAM_SRC = REPO / "sidecar" / "dtam" / "src"
+for path in (ROOT, DTAM_SRC):
+    if path.is_dir() and str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
 from adelpha_runtime.gateway import create_gateway_app
 from adelpha_runtime.process import ServiceDef, spawn_child, stop_child

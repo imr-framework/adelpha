@@ -19,7 +19,22 @@ def _env_path(name: str) -> Path | None:
 
 def default_repo_root() -> Path:
     """Adelpha checkout (runtime/python/adelpha_runtime/ → repo)."""
-    return Path(__file__).resolve().parents[3]
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        if (parent / "src-tauri").is_dir() and (parent / "package.json").is_file():
+            return parent
+    return here.parents[3]
+
+
+def sidecar_root(repo: Path | None = None) -> Path:
+    """Directory that holds dtam, console, coil, and the other Python projects."""
+    root = repo or default_repo_root()
+    candidate = root / "sidecar"
+    if candidate.is_dir() and any(
+        (candidate / name).is_dir() for name in ("dtam", "console", "coil", "python")
+    ):
+        return candidate
+    return root
 
 
 def platform_data_dir() -> Path:
@@ -65,6 +80,7 @@ def _frozen_base() -> Path | None:
 
 def resolve_paths() -> RuntimePaths:
     repo = default_repo_root()
+    projects = sidecar_root(repo)
     frozen = _frozen_base()
     data = platform_data_dir()
     config = _env_path("ADELPHA_CONFIG_DIR") or data / "config"
@@ -78,7 +94,14 @@ def resolve_paths() -> RuntimePaths:
         search = []
         if frozen is not None:
             search.append(frozen)
-        search.extend([resource / "dtam" / "src", repo / "dtam" / "src"])
+        search.extend(
+            [
+                resource / "dtam" / "src",
+                resource / "sidecar" / "dtam" / "src",
+                projects / "dtam" / "src",
+                repo / "dtam" / "src",
+            ]
+        )
         for candidate in search:
             # Frozen builds import dtam from the bundled package; src layout is optional.
             if candidate.is_dir() and (candidate / "dtam").is_dir():
@@ -92,7 +115,13 @@ def resolve_paths() -> RuntimePaths:
             candidates.append(frozen / "dtam-configs")
         if dtam_src is not None:
             candidates.append(dtam_src.parent / "configs")
-        candidates.append(resource / "dtam" / "configs")
+        candidates.extend(
+            (
+                resource / "dtam" / "configs",
+                resource / "sidecar" / "dtam" / "configs",
+                projects / "dtam" / "configs",
+            )
+        )
         for cfg in candidates:
             if cfg.is_dir():
                 dtam_configs = cfg
@@ -106,7 +135,14 @@ def resolve_paths() -> RuntimePaths:
         if frozen is not None:
             candidates.append(frozen)
             candidates.append(frozen / "console")
-        candidates.extend((resource / "console", repo / "console"))
+        candidates.extend(
+            (
+                resource / "console",
+                resource / "sidecar" / "console",
+                projects / "console",
+                repo / "console",
+            )
+        )
         for candidate in candidates:
             if candidate.is_dir() and (candidate / "services").is_dir():
                 console = candidate

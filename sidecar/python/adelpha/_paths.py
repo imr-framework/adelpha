@@ -7,10 +7,13 @@ from pathlib import Path
 
 
 def repo_root() -> Path | None:
-    """Return the Adelpha checkout root when this file lives in ``python/adelpha``."""
-    root = Path(__file__).resolve().parents[2]
-    if (root / "halbach" / "sim.py").is_file() and (root / "dtam" / "src" / "dtam").is_dir():
-        return root
+    """Return the Python-projects root (``sidecar/`` in an Adelpha checkout)."""
+    here = Path(__file__).resolve()
+    for candidate in (here.parents[2], here.parents[3] / "sidecar" if len(here.parents) > 3 else None):
+        if candidate is None:
+            continue
+        if (candidate / "halbach" / "sim.py").is_file() and (candidate / "dtam" / "src" / "dtam").is_dir():
+            return candidate
     return None
 
 

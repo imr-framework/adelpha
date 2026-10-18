@@ -303,7 +303,7 @@ export function DtamIntegrationsSection() {
       <DtamRuntimeStatus />
       <SettingsSection
         title="Setup"
-        description="Twin, agents, and console are built into Adelpha. Configure them here rather than editing dtam/.env."
+        description="Twin, agents, and console are built into Adelpha. Configure them here rather than editing sidecar/dtam/.env."
       >
         <div className="settings-key-actions">
           <button

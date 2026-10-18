@@ -32,9 +32,9 @@ type DevBackend = {
 
 const DEV_BACKENDS: DevBackend[] = [
   { prefix: "/api/magnet", port: 8005, name: "Magnet / Elmer API", hint: "Start the Adelpha magnet service with runtime/python/.venv/bin/python -m uvicorn adelpha_runtime.studio:create_dev_magnet_app --factory --app-dir runtime/python --port 8005" },
-  { prefix: "/api/dtam", port: 8080, name: "Twin API", hint: "cd dtam && make twin-api" },
-  { prefix: "/api/agents", port: 8001, name: "Agents API", hint: "cd dtam && make agents-api" },
-  { prefix: "/api/mri", port: 8002, name: "Imaging Console API", hint: "cd console && python -m services.api" },
+  { prefix: "/api/dtam", port: 8080, name: "Twin API", hint: "cd sidecar/dtam && make twin-api" },
+  { prefix: "/api/agents", port: 8001, name: "Agents API", hint: "cd sidecar/dtam && make agents-api" },
+  { prefix: "/api/mri", port: 8002, name: "Imaging Console API", hint: "cd sidecar/console && python -m services.api" },
 ];
 
 function probePort(port: number, host = "127.0.0.1"): Promise<boolean> {
@@ -120,10 +120,20 @@ function ensureTwinApi(): Plugin {
           server.config.logger.info("Twin API already listening on :8080");
           return;
         }
-        const dtam = resolve(root, "dtam");
-        const venvPython = resolve(dtam, ".venv/bin/python");
-        const command = existsSync(venvPython) ? venvPython : "uv";
-        const args = existsSync(venvPython) ? ["-m", "dtam.api"] : ["run", "python", "-m", "dtam.api"];
+        const dtam = existsSync(resolve(root, "sidecar/dtam"))
+          ? resolve(root, "sidecar/dtam")
+          : resolve(root, "dtam");
+        const venvPython = [
+          resolve(dtam, ".venv/bin/python"),
+          resolve(dtam, ".venv/Scripts/python.exe"),
+        ].find((path) => existsSync(path));
+        const hint = DEV_BACKENDS.find((backend) => backend.prefix === "/api/dtam")?.hint;
+        if (!existsSync(dtam)) {
+          server.config.logger.warn(`Twin API sources are missing. ${hint}`);
+          return;
+        }
+        const command = venvPython ?? "uv";
+        const args = venvPython ? ["-m", "dtam.api"] : ["run", "python", "-m", "dtam.api"];
         server.config.logger.info("starting Twin API on :8080 for the Vite proxy");
         const child: ChildProcess = spawn(command, args, {
           cwd: dtam,
@@ -143,9 +153,12 @@ function ensureTwinApi(): Plugin {
           const text = String(buf).trim();
           if (text) server.config.logger.info(`${prefix} ${text}`);
         });
+        child.on("error", (error) => {
+          server.config.logger.warn(`${prefix} could not start (${error.message}). ${hint}`);
+        });
         child.on("exit", (code, signal) => {
           if (code || signal) {
-            server.config.logger.warn(`${prefix} exited (${signal ?? code}). ${DEV_BACKENDS.find(backend => backend.prefix === "/api/dtam")?.hint}`);
+            server.config.logger.warn(`${prefix} exited (${signal ?? code}). ${hint}`);
           }
         });
         server.httpServer?.once("close", () => {

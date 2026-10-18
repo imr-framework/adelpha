@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-from adelpha_runtime.paths import RuntimePaths, default_repo_root
+from adelpha_runtime.paths import RuntimePaths, default_repo_root, sidecar_root
 
 log = logging.getLogger("adelpha.runtime.secrets")
 
@@ -49,7 +49,7 @@ def _read_dotenv_key(path: Path, name: str) -> str | None:
 def apply_google_api_key(paths: RuntimePaths) -> bool:
     """Ensure ``GOOGLE_API_KEY`` is set from env, app config, or a developer ``.env``.
 
-    Packaged (frozen) builds never read ``dtam/.env``. The app-config file
+    Packaged (frozen) builds never read ``sidecar/dtam/.env``. The app-config file
     (Settings) wins over a process environment variable so a saved key is used.
     """
     file_key = _read_plain_file(paths.config_dir / "google_api_key")
@@ -67,6 +67,7 @@ def apply_google_api_key(paths: RuntimePaths) -> bool:
     candidates: list[Path] = []
     if paths.dtam_src is not None:
         candidates.append(paths.dtam_src.parent / ".env")
+    candidates.append(sidecar_root() / "dtam" / ".env")
     candidates.append(default_repo_root() / "dtam" / ".env")
     seen: set[Path] = set()
     for env_file in candidates:

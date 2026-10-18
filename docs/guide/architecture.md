@@ -10,6 +10,8 @@ The GUI is an **observer + operator client** organized into **workspaces**. Twin
 
 In the **desktop app** those three APIs are one supervisor process (dynamic port, session token). Browser-only Vite still uses fixed ports. See [Getting started](../start/index.md).
 
+Python libraries and vendor trees live under `sidecar/` (public `adelpha` package, DTAM, imaging console, coil/RF/shim/Halbach/FEM). The desktop supervisor stays in `runtime/python/`.
+
 <figure class="adelpha-preview">
   <img src="../assets/adelpha_architecture.svg" alt="Adelpha architecture: Tauri shell with workspaces, Python runtime, dtam, and MRI services." width="1470" />
 </figure>
@@ -39,15 +41,15 @@ Alt workspaces keep the Digital Twin WebGL canvas mounted (hidden and paused) so
 | `src/twin/studio/ElmerStepStudio.tsx` | STEP-based FEM setup, jobs, and viewer navigation |
 | `src/twin/studio/FemFieldPreview.tsx` | In-app field surfaces, sections, probes, and exports |
 | `runtime/python/adelpha_runtime/fem.py` | FEM uploads, background jobs, and result routes |
-| `simulation/fem/` | Gmsh meshing, Elmer solving, and preview data |
+| `sidecar/simulation/fem/` | Gmsh meshing, Elmer solving, and preview data |
 | `src/twin/consoleTheme.ts` | Shared Adelpha, MRI4ALL, Porcelain, and Glacier themes |
 | `src/twin/scannerModel.ts` | Bundled + imported scanner profiles |
 | `src/twin/importedModels.ts` | GLB import (IndexedDB) |
 | `src/twin/settings/DtamSetupSection.tsx` | Twin scanner, environment, Agents key |
 | `src/twin/settings/DeviceLinkSection.tsx` | Device listener status and Physical control |
 | `src/twin/dtamApi.ts` | Twin: health, state, forecast, assess, sensors, devices |
-| `python/adelpha/` | Public PyPI package: `telemetry` (sensors), `feedback` (control), twin, magnet, coil, FEM |
-| `dtam/src/dtam/communication/` | JSON-RPC device protocol, WebSocket hub, internal client used by `adelpha.telemetry` |
+| `sidecar/python/adelpha/` | Public PyPI package: `telemetry` (sensors), `feedback` (control), twin, magnet, coil, FEM |
+| `sidecar/dtam/src/dtam/communication/` | JSON-RPC device protocol, WebSocket hub, internal client used by `adelpha.telemetry` |
 | `src/twin/adkApi.ts` | Agents: sessions, SSE / run, list-apps, artifacts |
 | `src/twin/dtamTypes.ts` | TypeScript mirrors of `SystemState` / quantities |
 | `src/twin/telemetryStore.ts` | Poll driver, forecast / assess actions, scene mapping |
@@ -62,7 +64,7 @@ Alt workspaces keep the Digital Twin WebGL canvas mounted (hidden and paused) so
 | `src/twin/shell/` | Topbar, twin viewport, settings overlay, lazy workspace chunks |
 | `src/twin/dashboard/` | Live dashboard grid, expanded charts, noise/DFT maths, series hook |
 | `src/twin/panel/` | Side panel shell, panel layout hook, telemetry cards |
-| `console/services/api/app.py` | MRI FastAPI façade |
+| `sidecar/console/services/api/app.py` | MRI FastAPI façade |
 
 ## FEM simulation
 

@@ -8,16 +8,16 @@ icon: lucide/alert-triangle
 
 - **FEM** requires an external Python interpreter with the Gmsh API and `ElmerGrid` / `ElmerSolver`. The sidecar includes FEM Python sources but does not bundle Elmer or that interpreter. Set `ADELPHA_FEM_PYTHON` if needed; see [FEM simulation](../guide/fem.md).
 
-- **DTAM** is MIT (`dtam/LICENSE`). A public installer that also bundles the
+- **DTAM** is MIT (`sidecar/dtam/LICENSE`). A public installer that also bundles the
   imaging console is still a GPL-3 distribution of that runtime.
 - **GPL-3 console** in the sidecar: corresponding source must ship with any
   distributed runtime.
-- **DTAM** lives in this repo at `dtam/` as a regular tree (not a submodule).
+- **DTAM** lives in this repo at `sidecar/dtam/` as a regular tree (not a submodule).
 - **Numpy**: sidecar is numpy 2. Sequence registry code that needs numba 1.x
   will use the HTTP FALLBACK catalog.
 - **Agents** require a user-provided `GOOGLE_API_KEY` in the app config
   directory (`google_api_key`). The key is never bundled. Rotate any key that
-  lived in a developer `dtam/.env`.
+  lived in a developer `sidecar/dtam/.env`.
 - **No cross-compilation** of the Python sidecar. Each installer is built on
   a matching OS/arch runner.
 - **Universal macOS DMG** is not produced (sidecar native libs).

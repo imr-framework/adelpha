@@ -12,22 +12,22 @@ The Imaging Console in Adelpha MRI is the **MRI4ALL Zeugmatron Z1** console soft
 
 | MRI4ALL piece | Where it lives now |
 | --- | --- |
-| Sequence plugins (`SequenceBase`) | `console/sequences/` |
-| Folder queue (`scan.json`, `PREPARED`) | `console/common/queue.py` and data dirs |
-| Acquisition / reconstruction workers | `console/services/acq`, `console/services/recon` |
-| MaRCoS extras / server | `console/external/marcos_*` |
+| Sequence plugins (`SequenceBase`) | `sidecar/console/sequences/` |
+| Folder queue (`scan.json`, `PREPARED`) | `sidecar/console/common/queue.py` and data dirs |
+| Acquisition / reconstruction workers | `sidecar/console/services/acq`, `sidecar/console/services/recon` |
+| MaRCoS extras / server | `sidecar/console/external/marcos_*` |
 | Operator windows (status, logs, studies) | React in `src/twin/Mri4allWindows.tsx`, same REST/WebSocket contract |
 
 The TypeScript UI does **not** replace Experiment or MaRCoS. It queues work through `scan.json` and `PREPARED`, same as MRI4ALL.
 
 ## What Adelpha changed
 
-MRI4ALL’s standalone `services.acq.main` and `services.recon.main` redirect stdout and assume **systemd**. Adelpha must not import those modules in the desktop sidecar. `console/services/api/pipeline.py` polls the **same folder queue** so **Prepare** in the Imaging Console actually runs `SequenceBase` on macOS and Windows.
+MRI4ALL’s standalone `services.acq.main` and `services.recon.main` redirect stdout and assume **systemd**. Adelpha must not import those modules in the desktop sidecar. `sidecar/console/services/api/pipeline.py` polls the **same folder queue** so **Prepare** in the Imaging Console actually runs `SequenceBase` on macOS and Windows.
 
 ```text
 Imaging Console (React)
         ↓ REST + WebSocket
-FastAPI façade  console/services/api/app.py
+FastAPI façade  sidecar/console/services/api/app.py
         ↓ scan.json / PREPARED
 In-process acq/recon pipeline  (not systemd)
         ↓
@@ -51,6 +51,6 @@ Restarting the API **clears the in-memory exam**. Register the patient again.
 
 ## License and source
 
-`console/` is **GNU GPL version 3**. Upstream project: [github.com/mri4all/console](https://github.com/mri4all/console). Adelpha’s tree includes that console plus the FastAPI façade. Distributing the desktop sidecar with the console inside is a GPL-3 distribution: corresponding source must ship. See [Citation and licensing](citation.md) and [Packaging limitations](../packaging/limitations.md).
+`sidecar/console/` is **GNU GPL version 3**. Upstream project: [github.com/mri4all/console](https://github.com/mri4all/console). Adelpha’s tree includes that console plus the FastAPI façade. Distributing the desktop sidecar with the console inside is a GPL-3 distribution: corresponding source must ship. See [Citation and licensing](citation.md) and [Packaging limitations](../packaging/limitations.md).
 
 MRI4ALL’s own overview video (architecture, custom sequences, reconstruction) is still the best intro to the console internals: [YouTube](https://www.youtube.com/watch?v=8GNmocJP-14).
