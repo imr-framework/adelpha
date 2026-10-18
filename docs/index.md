@@ -84,7 +84,7 @@ Tauri v2, React, Three.js, MediaPipe (camera), and a Python supervisor that moun
 
 ## Learn more
 
-[About Adelpha](about/index.md) · [Learn](learn/index.md) · [Architecture](guide/architecture.md) · [MaRCoS](about/marcos.md) · [Low-field digital twins](about/digital-twins.md) · [Citation](about/citation.md) · [Intended use](about/intended-use.md)
+[About Adelpha](about/index.md) · [Learn](learn/index.md) · [Architecture](guide/architecture.md) · [Python package](guide/python.md) · [MaRCoS](about/marcos.md) · [Low-field digital twins](about/digital-twins.md) · [Citation](about/citation.md) · [Intended use](about/intended-use.md)
 
 ## Where to go next
 

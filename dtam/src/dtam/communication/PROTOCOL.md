@@ -4,7 +4,7 @@ Operator setup and example scripts: Adelpha `docs/guide/devices.md`. Published p
 
 One JSON-RPC 2.0 envelope for two message families: **sensor readings** (`sensors.publish`) and **actuator commands** (`actuators.set`). Structure is validated by `adelpha-device-v1.schema.json`. This document defines timing, acknowledgements, quality, and feedback-operation behaviour.
 
-The Raspberry Pi connects to Adelpha as a WebSocket client. An Arduino does **not** open a serial session to Adelpha. A user Python process owns the serial link and uses `dtam.communication.DeviceClient` to reach the platform.
+The Raspberry Pi connects to Adelpha as a WebSocket client. An Arduino does **not** open a serial session to Adelpha. A user Python process owns the serial link and uses `from adelpha import telemetry` (`telemetry.DeviceClient`) to reach the platform. Actuator handlers use `from adelpha import feedback`.
 
 ## Transports
 
@@ -62,9 +62,9 @@ Rules:
 Copy `devices.example.json` to the Adelpha config directory as `devices.json` (or set `ADELPHA_DEVICE_CONFIG`). Bind `host` to `0.0.0.0` so a Pi on Ethernet can connect. Tokens must be unique, random, and at least 24 characters. Restart the Twin after changing the file.
 
 ```python
-from dtam.communication import DeviceClient
+from adelpha import telemetry
 
-client = DeviceClient(os.environ["ADELPHA_URL"], os.environ["ADELPHA_DEVICE_ID"], os.environ["ADELPHA_DEVICE_TOKEN"])
+client = telemetry.connect(os.environ["ADELPHA_URL"], os.environ["ADELPHA_DEVICE_ID"], os.environ["ADELPHA_DEVICE_TOKEN"])
 await client.run(acquire)
 ```
 

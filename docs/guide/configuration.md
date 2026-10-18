@@ -69,7 +69,7 @@ Boards connect to a WebSocket port, not Twin HTTP (`:8080`). The Twin starts the
 | `devices.<id>.scanner_id` | Must match **Settings → Digital Twin** |
 | `devices.<id>.allowed_actuators` | Actuator id → allowed operations |
 
-Example: `dtam/src/dtam/communication/devices.example.json`. Procedure and client scripts: [Device link](devices.md).
+Example: `dtam/src/dtam/communication/devices.example.json`. Procedure and client scripts: [Device link](devices.md). Board scripts install `pip install adelpha` and `from adelpha import telemetry, feedback`.
 
 ## MRI working directory
 

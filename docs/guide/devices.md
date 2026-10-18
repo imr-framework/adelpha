@@ -8,7 +8,7 @@ icon: lucide/cable
 
 Adelpha is the **server**. Your Raspberry Pi, or a Python process that talks to an Arduino, is the **client**.
 
-Boards do not open the Twin HTTP port. They connect to a WebSocket listener that Adelpha starts with the Twin runtime. Arduino never attaches to Adelpha over USB serial; a small Python program owns the serial port and uses the same client library.
+Boards do not open the Twin HTTP port. They connect to a WebSocket listener that Adelpha starts with the Twin runtime. Arduino never attaches to Adelpha over USB serial; a small Python program owns the serial port and uses `adelpha.telemetry`.
 
 ``` mermaid
 flowchart LR
@@ -86,15 +86,19 @@ A command names an operation such as `set_enabled`. Prefer “set enabled to tru
 
 ## Raspberry Pi client
 
-Install DTAM (or the Adelpha runtime Python that already includes it). Point the client at the URL shown in Settings.
+```bash
+pip install adelpha
+```
+
+Point the client at the URL shown in Settings. Sensors use `telemetry`; actuator handlers use `feedback`. Details: [Python package](python.md).
 
 ```python
 import asyncio
 import os
 
-from dtam.communication import DeviceClient
+from adelpha import feedback, telemetry
 
-client = DeviceClient(
+client = telemetry.connect(
     os.environ["ADELPHA_URL"],
     os.environ["ADELPHA_DEVICE_ID"],
     os.environ["ADELPHA_DEVICE_TOKEN"],
@@ -102,7 +106,8 @@ client = DeviceClient(
 )
 
 
-@client.actuator(
+@feedback.register(
+    client,
     "cooling-01",
     "set_enabled",
     argument_schema={
@@ -120,7 +125,8 @@ async def cooling(enabled):
 async def acquire(device):
     while True:
         temperature = 28.4  # replace with your readout
-        await device.publish(
+        await telemetry.publish(
+            device,
             temperature=[
                 {
                     "sensor_id": 1,
@@ -129,7 +135,7 @@ async def acquire(device):
                     "role": "magnet",
                     "quality": "valid",
                 }
-            ]
+            ],
         )
         await asyncio.sleep(1)
 
@@ -176,7 +182,7 @@ import os
 
 import serial
 
-from dtam.communication import DeviceClient
+from adelpha.telemetry import DeviceClient
 
 
 async def main():

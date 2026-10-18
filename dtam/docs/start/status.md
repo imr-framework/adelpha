@@ -38,7 +38,7 @@ This page describes the repository as implemented, not the full long-term archit
 | Tools | `estimate_twin_state`, EMI/RF reads | ADK agent-facing |
 | Agents | root `sub_agents` + specialists | Google ADK assessment core + skills |
 | Twin HTTP API | `dtam.api` / `make twin-api` | REST for Next.js / dashboards |
-| Device protocol | `dtam.communication` | JSON-RPC WebSocket hub + `DeviceClient` |
+| Device protocol | `dtam.communication` | JSON-RPC WebSocket hub; public client is `adelpha.telemetry` / `adelpha.feedback` |
 | Assessment CLI | `python -m dtam.agents.main` | Deterministic observe/recommend (no LLM) |
 
 ## Scaffolded / deferred

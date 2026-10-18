@@ -12,7 +12,7 @@ import os
 
 import serial
 
-from dtam.communication import DeviceClient
+from adelpha.telemetry import DeviceClient
 
 
 async def main():

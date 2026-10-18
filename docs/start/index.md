@@ -46,7 +46,7 @@ Config, MRI data, and `supervisor.log` live outside the app. An optional Agents 
 | Python 3.10–3.12 | Supervisor and sidecar freeze |
 | [uv](https://docs.astral.sh/uv/) | Optional docs |
 
-DTAM is already in this repository at `dtam/`.
+DTAM is already in this repository at `dtam/`. The public Python library is `python/adelpha/` (`pip install adelpha`; `from adelpha import telemetry, feedback`). [Python package](../guide/python.md).
 
 ```bash
 make install

@@ -46,7 +46,8 @@ Alt workspaces keep the Digital Twin WebGL canvas mounted (hidden and paused) so
 | `src/twin/settings/DtamSetupSection.tsx` | Twin scanner, environment, Agents key |
 | `src/twin/settings/DeviceLinkSection.tsx` | Device listener status and Physical control |
 | `src/twin/dtamApi.ts` | Twin: health, state, forecast, assess, sensors, devices |
-| `dtam/src/dtam/communication/` | JSON-RPC device protocol, WebSocket hub, Python client |
+| `python/adelpha/` | Public PyPI package: `telemetry` (sensors), `feedback` (control), twin, magnet, coil, FEM |
+| `dtam/src/dtam/communication/` | JSON-RPC device protocol, WebSocket hub, internal client used by `adelpha.telemetry` |
 | `src/twin/adkApi.ts` | Agents: sessions, SSE / run, list-apps, artifacts |
 | `src/twin/dtamTypes.ts` | TypeScript mirrors of `SystemState` / quantities |
 | `src/twin/telemetryStore.ts` | Poll driver, forecast / assess actions, scene mapping |

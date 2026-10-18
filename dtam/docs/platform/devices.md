@@ -6,7 +6,7 @@ icon: lucide/cable
 
 Adelpha (the Twin process) is the **WebSocket server**. A Raspberry Pi, or a user Python process that owns an Arduino serial port, is the **client**.
 
-Arduino does not open a serial session to DTAM. The same `DeviceClient` talks JSON-RPC over WebSocket in both cases.
+Arduino does not open a serial session to Adelpha. Install `adelpha` and use `from adelpha import telemetry` (sensors) and `from adelpha import feedback` (actuators). The same `DeviceClient` talks JSON-RPC over WebSocket in both cases.
 
 | Connection | Framing |
 | --- | --- |
@@ -128,20 +128,27 @@ Devices advertise operations and argument JSON Schemas on `device.register`. Mes
 
 ## Python client
 
+```bash
+pip install adelpha
+```
+
+Use `from adelpha import telemetry` for sensors and `from adelpha import feedback` for actuators.
+
 ```python
 import asyncio
 import os
 
-from dtam.communication import DeviceClient
+from adelpha import feedback, telemetry
 
-client = DeviceClient(
+client = telemetry.connect(
     os.environ["ADELPHA_URL"],
     os.environ["ADELPHA_DEVICE_ID"],
     os.environ["ADELPHA_DEVICE_TOKEN"],
     journal_path="./commands.sqlite3",
 )
 
-@client.actuator(
+@feedback.register(
+    client,
     "cooling-01",
     "set_enabled",
     argument_schema={
@@ -156,8 +163,9 @@ async def cooling(enabled):
 
 async def acquire(device):
     while True:
-        await device.publish(
-            temperature=[{"sensor_id": 1, "value": 28.4, "unit": "degC", "role": "magnet"}]
+        await telemetry.publish(
+            device,
+            temperature=[{"sensor_id": 1, "value": 28.4, "unit": "degC", "role": "magnet"}],
         )
         await asyncio.sleep(1)
 

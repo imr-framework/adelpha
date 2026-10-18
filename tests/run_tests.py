@@ -7,11 +7,16 @@ pre-push validation gate:
       ->
     GitHub Actions workflow validation
       ->
-    full pytest suite
+    Adelpha Python package tests
       ->
     branch-aware coverage gate
       ->
     wheel / sdist build
+
+The Python package suite covers public imports (``telemetry``, ``feedback``,
+and the other ``adelpha`` modules), the device JSON-RPC protocol, Engineering
+Studio request builders, and FEM unit checks. Gmsh/Elmer jobs stay opt-in via
+``FEM_INTEGRATION=1``.
 
 Examples
 --------
@@ -26,11 +31,9 @@ Equivalent explicit form::
 Run selected groups::
 
     python tests/run_tests.py test
+    python tests/run_tests.py python
     python tests/run_tests.py unit
     python tests/run_tests.py integration
-    python tests/run_tests.py sequences
-    python tests/run_tests.py semantic
-    python tests/run_tests.py smoke
 
 Run static checks::
 
@@ -50,7 +53,7 @@ Build package artifacts::
 
 Pass additional arguments to pytest after ``--``::
 
-    python tests/run_tests.py sequences -- -x -vv
+    python tests/run_tests.py python -- -x -vv
 
 Notes
 -----
@@ -82,8 +85,10 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-TEST_ROOT = REPO_ROOT / "tests"
-PYTEST_CONFIG = TEST_ROOT / "pytest.ini"
+PYTHON_PACKAGE_TESTS = REPO_ROOT / "python" / "tests"
+PYTHON_SRC = REPO_ROOT / "python"
+DTAM_SRC = REPO_ROOT / "dtam" / "src"
+COMMUNICATION_TESTS = REPO_ROOT / "dtam" / "tests" / "communication"
 
 GITHUB_ROOT = REPO_ROOT / ".github"
 WORKFLOW_DIR = GITHUB_ROOT / "workflows"
@@ -106,11 +111,9 @@ BUILD_DIR = REPO_ROOT / "build"
 VALID_MODES = (
     "ci",
     "test",
+    "python",
     "unit",
     "integration",
-    "sequences",
-    "semantic",
-    "smoke",
     "lint",
     "workflow",
     "coverage",
@@ -143,6 +146,18 @@ def _configure_environment() -> None:
         "MPLBACKEND",
         "Agg",
     )
+
+    import_roots = [
+        str(PYTHON_SRC),
+        str(DTAM_SRC),
+        str(REPO_ROOT),
+    ]
+    current = os.environ.get("PYTHONPATH", "")
+    os.environ["PYTHONPATH"] = os.pathsep.join(
+        import_roots + ([current] if current else [])
+    )
+
+    os.chdir(REPO_ROOT)
 
 
 # =============================================================================
@@ -251,57 +266,60 @@ def _run_command(
 # =============================================================================
 
 
+def _package_test_paths() -> list[str]:
+    """Return Adelpha Python package, protocol, and studio test paths."""
+
+    return [
+        str(PYTHON_PACKAGE_TESTS),
+        str(COMMUNICATION_TESTS / "test_protocol.py"),
+        str(REPO_ROOT / "coil" / "test_coil_sim.py"),
+        str(REPO_ROOT / "rfcoil" / "test_rfcoil_sim.py"),
+        str(REPO_ROOT / "halbach" / "test_halbach_sim.py"),
+        str(REPO_ROOT / "shim" / "test_shim_sim.py"),
+        str(REPO_ROOT / "simulation" / "fem" / "tests"),
+    ]
+
+
 def _pytest_base_args() -> list[str]:
     """Return common pytest arguments."""
 
     return [
-        "-c",
-        str(PYTEST_CONFIG),
-        str(TEST_ROOT),
+        "-o",
+        f"pythonpath={PYTHON_SRC} {DTAM_SRC} {REPO_ROOT}",
+        "-o",
+        "asyncio_mode=auto",
         "-ra",
         "--strict-markers",
+        "--import-mode=importlib",
     ]
 
 
 def _selection_args(
     mode: str,
 ) -> list[str]:
-    """Return marker/path selection arguments for a test mode."""
+    """Return path selection arguments for a test mode."""
 
     if mode == "unit":
         return [
-            "-m",
-            "unit",
+            str(PYTHON_PACKAGE_TESTS),
         ]
 
     if mode == "integration":
         return [
-            "-m",
-            "integration",
+            str(COMMUNICATION_TESTS / "test_transport.py"),
         ]
 
-    if mode == "sequences":
-        return [
-            str(
-                TEST_ROOT / "sequences"
-            ),
-            "-m",
-            "sequence or semantic",
-        ]
+    if mode in {
+        "python",
+        "test",
+        "coverage",
+        "html",
+        "all",
+        "ci",
+    }:
+        return _package_test_paths()
 
-    if mode == "semantic":
-        return [
-            "-m",
-            "semantic",
-        ]
-
-    if mode == "smoke":
-        return [
-            "-m",
-            "smoke",
-        ]
-
-    return []
+    return _package_test_paths()
 
 
 # =============================================================================
@@ -320,7 +338,7 @@ def _coverage_args(
     """Return pytest-cov arguments."""
 
     args = [
-        "--cov=pypulseq_star",
+        "--cov=adelpha",
         "--cov-branch",
     ]
 
@@ -372,22 +390,11 @@ def _run_pytest(
 
     args = _pytest_base_args()
 
-    selection = _selection_args(
-        mode
-    )
-
-    if mode == "sequences":
-        args = [
-            "-c",
-            str(PYTEST_CONFIG),
-            *selection,
-            "-ra",
-            "--strict-markers",
-        ]
-    else:
-        args.extend(
-            selection
+    args.extend(
+        _selection_args(
+            mode
         )
+    )
 
     if mode in {
         "coverage",
@@ -457,9 +464,9 @@ def _run_ruff() -> int:
         "-m",
         "ruff",
         "check",
-        "src",
-        "tests",
-        "examples",
+        "python/adelpha",
+        "python/tests",
+        "tests/run_tests.py",
         "--select",
         "E4,E7,E9,F,I",
         "--ignore",
@@ -702,7 +709,7 @@ def _run_ci(
     """Run the complete local pre-push validation gate."""
 
     _print_header(
-        "PyPulseq-Star complete local validation"
+        "Adelpha complete local validation"
     )
 
     print(
@@ -715,7 +722,7 @@ def _run_ci(
         "  2. GitHub Actions workflow validation"
     )
     print(
-        "  3. Full pytest suite"
+        "  3. Adelpha Python package tests"
     )
     print(
         "  4. Branch-aware coverage gate"
@@ -825,7 +832,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         description=(
-            "Run PyPulseq-Star validation checks. "
+            "Run Adelpha validation checks. "
             "With no mode specified, the complete local CI gate is run."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -837,11 +844,9 @@ def build_parser() -> argparse.ArgumentParser:
 
             Selected checks:
               python tests/run_tests.py test
+              python tests/run_tests.py python
               python tests/run_tests.py unit
               python tests/run_tests.py integration
-              python tests/run_tests.py sequences
-              python tests/run_tests.py semantic
-              python tests/run_tests.py smoke
               python tests/run_tests.py lint
               python tests/run_tests.py workflow
               python tests/run_tests.py build
@@ -856,7 +861,7 @@ def build_parser() -> argparse.ArgumentParser:
               python tests/run_tests.py clean
 
             Forward pytest arguments:
-              python tests/run_tests.py sequences -- -x -vv
+              python tests/run_tests.py python -- -x -vv
 
             HTML report:
               {HTML_DIR / "index.html"}

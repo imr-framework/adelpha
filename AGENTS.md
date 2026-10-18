@@ -44,6 +44,7 @@ Adelpha is an MRI engineering and digital-twin application. Its UI combines scan
 | RF coil design | `src/twin/studio/RfCoilStudio.tsx`, `rfcoil/sim.py`, `RFcoilbuilder/` |
 | Halbach magnet design | `src/twin/studio/HalbachMagnetStudio.tsx`, `halbach/sim.py`, `HalbachMRIDesigner/` |
 | Device JSON-RPC protocol | `dtam/src/dtam/communication/`, `docs/guide/devices.md` |
+| Public Python package | `python/adelpha/` (`from adelpha import telemetry, feedback`), `docs/guide/python.md` |
 | Detailed FEM setup and numerical limitations | `simulation/fem/README.md` |
 
 The frontend uses React, TypeScript, Vite, Three.js, React Three Fiber, Drei, and Lucide icons. Use the installed versions and existing conventions. Both Electron and Tauri integration exist: do not assume every browser API behaves identically in every desktop host.
@@ -249,7 +250,7 @@ The outer air boundary is a finite-domain approximation. Mesh refinement and air
 
 Desktop Twin setup stores custom systems in `dtam_runtime.json` with the runtime preferences. The Python loader reads them through `ADELPHA_DTAM_PREFS`. Custom profiles define identity, architecture, and nominal field strength; they do not implement device transport. Physical profile sessions remain read-only and wait for measured publications. Never force a physical profile into simulation or make missing hardware fatal to API startup.
 
-Boards connect as JSON-RPC WebSocket **clients**. Adelpha is the server. The Twin lifespan starts the listener when `devices.json` is present (`ADELPHA_DEVICE_CONFIG`, then `ADELPHA_CONFIG_DIR` / `DTAM_CONFIG_DIR`). There is no Start-server control. Arduino never talks serial to Adelpha; a user Python process owns the serial port and uses `dtam.communication.DeviceClient`. Sensor streaming does not require Physical control. `actuators.set` stays rejected until a hardware profile is selected, `allow_control` is true, and **Settings → Devices → Physical control** is on. Device-local interlocks remain authoritative. UI: `DeviceLinkSection.tsx`; HTTP: `/devices`; protocol: `dtam/src/dtam/communication/PROTOCOL.md`.
+Boards connect as JSON-RPC WebSocket **clients**. Adelpha is the server. The Twin lifespan starts the listener when `devices.json` is present (`ADELPHA_DEVICE_CONFIG`, then `ADELPHA_CONFIG_DIR` / `DTAM_CONFIG_DIR`). There is no Start-server control. Arduino never talks serial to Adelpha; a user Python process owns the serial port and uses `from adelpha import telemetry` (`telemetry.DeviceClient`). Actuator handlers use `from adelpha import feedback`. Sensor streaming does not require Physical control. `actuators.set` stays rejected until a hardware profile is selected, `allow_control` is true, and **Settings → Devices → Physical control** is on. Device-local interlocks remain authoritative. UI: `DeviceLinkSection.tsx`; HTTP: `/devices`; protocol: `dtam/src/dtam/communication/PROTOCOL.md`.
 
 Scanner and environment changes use the authenticated `/runtime/twin/configuration` gateway endpoint to reconfigure the existing Twin session without restarting the console or agents. Validate the replacement before swapping it, serialize switches, and refresh telemetry immediately while rejecting older in-flight poll responses. Failed preference changes restore the previous configuration, and the frontend refreshes its runtime endpoint after recovery.
 
@@ -280,6 +281,12 @@ Frontend baseline:
 ```sh
 npm run build
 npm test -- --run src/twin/studio/ElmerStepStudio.test.tsx src/twin/studio/FemFieldPreview.test.tsx src/twin/studio/FemStudio.test.tsx src/twin/studio/femFieldGeometry.test.ts src/twin/studio/femStreamlines.test.ts
+```
+
+Public Python package (`telemetry`, `feedback`, studio APIs). CI: `.github/workflows/python.yml`.
+
+```sh
+python tests/run_tests.py python
 ```
 
 Backend checks when the affected code requires them:

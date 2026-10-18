@@ -5,9 +5,9 @@ import os
 
 from hardware import read_temperature, set_cooling_and_verify
 
-from dtam.communication import DeviceClient
+from adelpha import feedback, telemetry
 
-client = DeviceClient(
+client = telemetry.connect(
     os.environ["ADELPHA_URL"],
     os.environ["ADELPHA_DEVICE_ID"],
     os.environ["ADELPHA_DEVICE_TOKEN"],
@@ -15,7 +15,8 @@ client = DeviceClient(
 )
 
 
-@client.actuator(
+@feedback.register(
+    client,
     "cooling-01",
     "set_enabled",
     argument_schema={
