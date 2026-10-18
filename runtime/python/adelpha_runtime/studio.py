@@ -1,8 +1,8 @@
 """Engineering Studio HTTP apps: gradient coils, RF coils, passive shimming, and magnets.
 
 These are Adelpha features. They are not part of the imaging console. Coil, RF,
-and shim workers live next to their isolated venvs. Magnet field and Elmer FEM
-use the runtime NumPy stack and optional ElmerSolver.
+and shim workers live next to their isolated venvs. The magnet service hosts the
+Halbach array designer and Elmer FEM.
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ def _load(name: str, path: Path):
 
 
 def _feature_sim(paths: RuntimePaths, name: str) -> Path:
-    """Find ``coil/sim.py``, ``rfcoil/sim.py``, ``shim/sim.py``, or ``magnet/sim.py``.
+    """Find ``coil/sim.py``, ``rfcoil/sim.py``, ``shim/sim.py``, ``halbach/sim.py``, or ``magnet/sim.py``.
 
     Tauri sets ``ADELPHA_RESOURCE_DIR`` to the app resource folder, which does
     not contain these feature trees. Fall back to the checkout root.
@@ -119,20 +119,8 @@ def create_shim_app(paths: RuntimePaths) -> FastAPI:
 
 
 def create_magnet_app(paths: RuntimePaths) -> FastAPI:
-    sim = _load("adelpha_magnet_sim", _feature_sim(paths, "magnet"))
-
-    def simulate(body):
-        if isinstance(body, dict) and body.get("study") == "fem":
-            raise ValueError("FEM requires an imported STEP file. Upload geometry and start a FEM job from the FEM workspace.")
-        return sim.run_study(body)
-
-    app = _studio_app(
-        "magnet",
-        [
-            ("/simulate", simulate),
-            ("/validate", sim.run_validate),
-        ],
-    )
+    halbach = _load("adelpha_halbach_sim", _feature_sim(paths, "halbach"))
+    app = _studio_app("magnet", [("/halbach", halbach.design), ("/halbach/export", halbach.export_cad)])
 
     from adelpha_runtime.fem import register_fem_routes
     register_fem_routes(app, _feature_sim(paths, "magnet").parent.parent, paths.data_dir)

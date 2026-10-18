@@ -376,6 +376,129 @@ export async function simulateRfCoil(request: RfCoilRequest): Promise<RfCoilSimu
   });
 }
 
+export type HalbachRingSpec = {
+  id: number;
+  radius: number;
+  numMagnets: number;
+};
+
+export type HalbachSliceSpec = {
+  position: number;
+  innerRadius: number;
+  outerRadius: number;
+  rings: number[];
+  standWidth?: number;
+  standHeight?: number;
+};
+
+export type HalbachGeometry = {
+  rings: HalbachRingSpec[];
+  slices: HalbachSliceSpec[];
+  mirrorSlices: boolean;
+  standWidth: number;
+  standHeight: number;
+  numConnectionRods: number;
+  connectionRodsArcRadius: number;
+  connectionRodsDiameter: number;
+  shimTrayHeight: number;
+  shimTrayAngle: number;
+  shimTrayRadius: number;
+};
+
+export type HalbachRequest = {
+  inner_radius_mm: number;
+  magnet_mm: number;
+  br_t: number;
+  mur?: number;
+  magnets: number;
+  rings: number;
+  ring_sep_mm: number;
+  outer_ring: boolean;
+  outer_offset_mm: number;
+  outer_extra: number;
+  geometry?: HalbachGeometry | null;
+};
+
+export type HalbachCube = {
+  x: number;
+  y: number;
+  z: number;
+  angle: number;
+  size: number;
+};
+
+export type HalbachPlate = {
+  index: number;
+  z: number;
+  inner_radius: number;
+  outer_radius: number;
+  height: number;
+  stand_width: number;
+  stand_height: number;
+};
+
+export type HalbachRod = {
+  x: number;
+  y: number;
+  radius: number;
+  z0: number;
+  z1: number;
+};
+
+export type HalbachDesign = {
+  ok: true;
+  title: string;
+  summary: string;
+  inner_radius_mm: number;
+  length_mm: number;
+  magnet_mm: number;
+  br_t: number;
+  mur: number;
+  magnets: number;
+  rings: number;
+  ring_sep_mm: number;
+  outer_ring: boolean;
+  outer_offset_mm: number;
+  outer_extra: number;
+  ring_count: number;
+  magnet_count: number;
+  slice_count?: number;
+  geometry_mode?: "uniform" | "catalog";
+  cubes: HalbachCube[];
+  plates?: HalbachPlate[];
+  rods?: HalbachRod[];
+  geometry?: HalbachGeometry;
+  elapsed_s: number;
+};
+
+export async function designHalbach(request: HalbachRequest): Promise<HalbachDesign> {
+  return studioFetch(magnetBaseUrl(), "/halbach", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export type HalbachCadExport = {
+  ok: true;
+  filename: string;
+  media_type: string;
+  data_b64: string;
+  bytes: number;
+  target: "assembly" | "ring";
+  format: "stl" | "step";
+};
+
+export async function exportHalbachCad(
+  request: HalbachRequest & { target: "assembly" | "ring"; format: "stl" | "step"; slice_index?: number },
+): Promise<HalbachCadExport> {
+  return studioFetch(magnetBaseUrl(), "/halbach/export", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
 export type MagnetStudyRequest = {
   study: "magnet" | "fem";
   parts?: unknown[];

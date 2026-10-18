@@ -100,10 +100,18 @@ describe("hardware sensor connection states", () => {
   });
   it("does not offer synthetic spectra for partial hardware connections", async () => {
     const onExpand = vi.fn();
-    const series = { ...seriesFixture(), simulation: false, emiSpectrum: [], johnsonNoise: [] };
+    const series = { ...seriesFixture(), simulation: false, temperatureAvailable: true, emiAvailable: false, emiSpectrum: [], johnsonNoise: [] };
     const { container } = render(<LiveDashboard series={series} stageMode="magnet" cameraPreviewStream={null} telemetry={telemetryFixture()} onExpand={onExpand} />);
     await userEvent.click(screen.getByText("EMI sensor spectrum"));
     expect(onExpand).not.toHaveBeenCalled();
     expect(container.querySelector(".dash-emi-marker")).toBeNull();
+    expect(screen.getByText("EMI sensor not connected")).toBeInTheDocument();
+    expect(screen.getAllByText("Johnson noise is simulated only; it is not measured in hardware")).toHaveLength(2);
+  });
+  it("keeps EMI RMS honest when temperature is missing", () => {
+    const series = { ...seriesFixture(), simulation: false, temperatureAvailable: false, emiAvailable: true, emiRms: 0.012, emiSpectrum: [], johnsonNoise: [], tempHistory: [] };
+    render(<LiveDashboard series={series} stageMode="magnet" cameraPreviewStream={null} telemetry={telemetryFixture()} onExpand={vi.fn()} />);
+    expect(screen.getByText("Temperature sensor not connected")).toBeInTheDocument();
+    expect(screen.getByText("EMI RMS is on Telemetry; this protocol does not publish a spectrum")).toBeInTheDocument();
   });
 });

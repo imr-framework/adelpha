@@ -14,6 +14,7 @@ import { ViewCard } from "../ViewCard";
 export function TelemetryPanel({
   waitingForSensors = false,
   sensorMode = "hardware",
+  sensorNotes,
   systemState,
   lastError,
   connected,
@@ -31,6 +32,7 @@ export function TelemetryPanel({
 }: {
   waitingForSensors?: boolean;
   sensorMode?: string;
+  sensorNotes?: string[];
   systemState: SystemState | null;
   lastError: string | null;
   connected: boolean;
@@ -54,7 +56,7 @@ export function TelemetryPanel({
         </div>
       ) : null}
 
-      {waitingForSensors ? <SensorWaiting compact mode={sensorMode} /> : <div className="info-card-stack">
+      {waitingForSensors ? <SensorWaiting compact mode={sensorMode} notes={sensorNotes ?? systemState?.notes ?? []} /> : <div className="info-card-stack">
         <ThermalCard thermal={systemState?.thermal ?? null} />
         <MagneticCard magnetic={systemState?.magnetic ?? null} />
         <EmiCard emi={systemState?.emi ?? null} />

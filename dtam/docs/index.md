@@ -17,7 +17,8 @@ DTAM is at **Phase 1: Foundation**. You can:
 
 - load layered YAML configuration and scanner capability profiles
 - instantiate a **simulated scanner** that emits typed temperature measurements
-- inspect a profile-backed **48 mT Halbach** adapter (physical I/O not enabled)
+- inspect a profile-backed **48 mT Halbach** adapter (adapter `connect()` still refused; boards use the JSON-RPC device listener)
+- run a WebSocket device hub so a Raspberry Pi or Arduino bridge can publish sensors
 - bootstrap logging, settings, and an adapter from one call
 - run unit and foundation integration tests
 
@@ -67,5 +68,6 @@ Advisory mode recommends actions without changing hardware. Closed-loop and auto
 | [Status](start/status.md) | Implemented vs scaffolded packages |
 | [Architecture](architecture/index.md) | System identity and boundaries |
 | [Adapters](scanner_adapters/index.md) | Simulated and Halbach profiles |
+| [Device protocol](platform/devices.md) | JSON-RPC WebSocket, `devices.json`, client examples |
 | [Roadmap](project/roadmap.md) | Phased development plan |
 | [GitHub](https://github.com/LeoMcBills/dtam/tree/main) | Source code on `main` |

@@ -8,8 +8,9 @@ export function MagneticCard({ magnetic }: { magnetic: SystemState["magnetic"] |
       title="Magnetic / B₀"
       footer={
         <p className="physics-note">
-          Thermal → B₀: ΔB₀ ≈ α<sub>T</sub> · ΔT (default α<sub>T</sub> ≈ −5×10⁻⁵ T/°C).
-          Frequency in MHz.
+          {magnetic
+            ? <>Thermal → B₀: ΔB₀ ≈ α<sub>T</sub> · ΔT (default α<sub>T</sub> ≈ −5×10⁻⁵ T/°C). Frequency in MHz.</>
+            : "B₀ is estimated from magnet temperature. No usable magnet temperature."}
         </p>
       }
     >

@@ -1,0 +1,19 @@
+{
+  "host": "0.0.0.0",
+  "port": 8765,
+  "allow_control": false,
+  "devices": {
+    "pi-01": {
+      "token": "REPLACE_WITH_A_RANDOM_DEVICE_TOKEN",
+      "scanner_id": "halbach_48mt",
+      "allowed_actuators": {
+        "cooling-01": ["set_enabled"]
+      }
+    },
+    "arduino-bridge-01": {
+      "token": "REPLACE_WITH_ANOTHER_RANDOM_TOKEN",
+      "scanner_id": "halbach_48mt",
+      "allowed_actuators": {}
+    }
+  }
+}

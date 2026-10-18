@@ -3,7 +3,7 @@ import { BookOpen, Cable, Settings, ArrowRight } from "lucide-react";
 import { requestOpenSettings } from "../settingsOpen";
 import "./sensorWaiting.css";
 
-const configure = () => requestOpenSettings({ section: "digital-twin" });
+const configure = () => requestOpenSettings({ section: "devices" });
 
 export function SensorIllustration() {
   return <svg className="sensor-illustration" viewBox="0 0 680 230" fill="none" aria-hidden="true">
@@ -18,13 +18,33 @@ export function SensorIllustration() {
   </svg>;
 }
 
-export function SensorWaiting({ compact = false, mode = "hardware" }: { compact?: boolean; mode?: string }) {
+function ConnectionNotes({ notes }: { notes: string[] }) {
+  if (!notes.length) return null;
+  return (
+    <ul className="sensor-notes">
+      {notes.map((note) => (
+        <li key={note}>{note}</li>
+      ))}
+    </ul>
+  );
+}
+
+export function SensorWaiting({
+  compact = false,
+  mode = "hardware",
+  notes = [],
+}: {
+  compact?: boolean;
+  mode?: string;
+  notes?: string[];
+}) {
   const [guide, setGuide] = useState(false);
+  const connectionNotes = notes.filter((note) => !note.startsWith("Hardware measurements"));
   return <section className={`sensor-waiting${compact ? " is-compact" : ""}`} aria-label="Sensor connection status">
     {compact ? <Cable className="sensor-waiting-icon" size={38} strokeWidth={1.25} aria-hidden="true" /> : <SensorIllustration />}
     <h2>{compact ? "Waiting for sensor data" : "Ready when your sensors are"}</h2>
-    <p>{compact ? "Measurements will appear when sensors connect." : <>Your scanner is in {mode === "hardware" ? "hardware" : "live"} mode.<br />Connect sensors to start receiving measurements.</>}</p>
-    {compact ? <><dl><div><dt>Mode</dt><dd>{mode === "hardware" ? "Hardware" : mode}</dd></div><div><dt>Sensor data</dt><dd>Not received</dd></div><div><dt>Last sample</dt><dd>—</dd></div></dl><button className="sensor-check" onClick={configure}>Check connections <ArrowRight size={16} /></button></> : <div className="sensor-waiting-actions"><button className="sensor-configure" onClick={configure}><Settings size={17} />Configure sensors</button><button onClick={() => setGuide(v => !v)} aria-expanded={guide}><BookOpen size={17} />Connection guide</button></div>}
-    {guide && <div className="sensor-guide"><h3>Connect your sensors</h3><ol><li>Connect and power the sensor acquisition hardware.</li><li>Open Digital Twin settings and check the scanner and runtime configuration.</li><li>Confirm the sensor channels are configured for the selected scanner. Measurements appear automatically when valid data arrives.</li></ol><button onClick={configure}>Open Digital Twin settings</button></div>}
+    <p>{compact ? "Connected channels appear as they publish. Missing sensors stay blank." : <>Your scanner is in {mode === "hardware" ? "hardware" : "live"} mode.<br />Connect sensors to start receiving measurements. Unpublished or missing channels are not drawn as zero.</>}</p>
+    {compact ? <><dl><div><dt>Mode</dt><dd>{mode === "hardware" ? "Hardware" : mode}</dd></div><div><dt>Sensor data</dt><dd>Not received</dd></div><div><dt>Last sample</dt><dd>—</dd></div></dl><ConnectionNotes notes={connectionNotes} /><button className="sensor-check" onClick={configure}>Check connections <ArrowRight size={16} /></button></> : <div className="sensor-waiting-actions"><button className="sensor-configure" onClick={configure}><Settings size={17} />Configure sensors</button><button onClick={() => setGuide(v => !v)} aria-expanded={guide}><BookOpen size={17} />Connection guide</button></div>}
+    {guide && <div className="sensor-guide"><h3>Connect your sensors</h3><ol><li>Open Settings → Devices, copy <code>devices.json</code>, and restart Adelpha.</li><li>Connect the Raspberry Pi or Arduino bridge. Idle device rows stay idle until that board publishes.</li><li>Publish only the sensors you have. Channels reported missing or omitted stay unavailable; they are never shown as zero.</li></ol><ConnectionNotes notes={connectionNotes} /><button onClick={configure}>Open device settings</button></div>}
   </section>;
 }

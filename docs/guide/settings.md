@@ -1,6 +1,6 @@
 ---
 title: Adelpha MRI settings
-description: Import GLB scanner models, choose a twin profile, add a Google API key for Agents, and manage camera and in-app updates in Adelpha MRI.
+description: Import GLB scanner models, choose a twin profile, connect JSON-RPC devices, add a Google API key for Agents, and manage camera and in-app updates in Adelpha MRI.
 icon: lucide/settings
 ---
 
@@ -64,6 +64,18 @@ If a file is too heavy or damaged, Adelpha falls back to the bundled Halbach ins
 
 Twin and Imaging Console start automatically. Agents start after you save a Google API key.
 
+To stream sensors from a Raspberry Pi or Arduino bridge, select a hardware scanner profile here, then follow [Device link](devices.md). Simulation ignores those publications.
+
+## Devices
+
+**Settings → Devices** holds the motion-tracking camera, the Adelpha device link, and a compact Red Pitaya / MaRCoS row.
+
+**Adelpha device link** is the WebSocket listener for JSON-RPC boards. There is no Start server button. Copy `devices.json` into the folder from **Open config folder**, then **Restart**. The row shows the listen URL, or **Not configured** if the file is missing.
+
+**Physical control** stays off until a hardware profile is selected and `allow_control` is true in `devices.json`. Sensor streaming does not need that switch.
+
+A board may publish only some sensors. Connected channels appear on the dashboard; omitted or `missing` channels stay labelled and are never shown as zero. See [Device link](devices.md) for the protocol, `devices.json` fields, and example Pi and Arduino scripts.
+
 ## Study data folder
 
 **Settings → Imaging Console → Study data** (desktop app).
@@ -104,3 +116,5 @@ tccutil reset Camera org.adelpha.digital-twin-ui
 ```
 
 Then open Adelpha and select the Camera tool again. The live picture should appear first; face tracking loads next (one download of the vision models).
+
+Choose which camera under **Settings → Devices**.

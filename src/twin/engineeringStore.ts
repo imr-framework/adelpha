@@ -90,7 +90,7 @@ export const useEngineeringStore = create<EngineeringStore>((set) => ({
       },
       modelLabel: project.name,
       hardwareView,
-      setupIntent: Boolean(options?.setup) && (hardwareView === "magnet" || hardwareView === "fem"),
+      setupIntent: Boolean(options?.setup) && hardwareView === "fem",
     });
   },
   closeProject: () =>

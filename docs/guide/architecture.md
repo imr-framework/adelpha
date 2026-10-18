@@ -6,7 +6,7 @@ icon: lucide/waypoints
 
 # Architecture
 
-The GUI is an **observer + operator client** organized into **workspaces**. Twin telemetry is read-only from the Twin HTTP API. Agents chat uses Google ADK’s API server. The Imaging Console uses a FastAPI façade in this repo; closed-loop hardware I/O stays in Python (FLOCRA / MaRCoS), not in TypeScript.
+The GUI is an **observer + operator client** organized into **workspaces**. Twin telemetry is read from the Twin HTTP API. Sensor boards are WebSocket **clients** of Adelpha; they do not call that HTTP port. Agents chat uses Google ADK’s API server. The Imaging Console uses a FastAPI façade in this repo; closed-loop imaging I/O stays in Python (FLOCRA / MaRCoS), not in TypeScript. Arduino serial stays in a user Python bridge.
 
 In the **desktop app** those three APIs are one supervisor process (dynamic port, session token). Browser-only Vite still uses fixed ports. See [Getting started](../start/index.md).
 
@@ -44,7 +44,9 @@ Alt workspaces keep the Digital Twin WebGL canvas mounted (hidden and paused) so
 | `src/twin/scannerModel.ts` | Bundled + imported scanner profiles |
 | `src/twin/importedModels.ts` | GLB import (IndexedDB) |
 | `src/twin/settings/DtamSetupSection.tsx` | Twin scanner, environment, Agents key |
-| `src/twin/dtamApi.ts` | Twin: health, state, forecast, assess, sensors |
+| `src/twin/settings/DeviceLinkSection.tsx` | Device listener status and Physical control |
+| `src/twin/dtamApi.ts` | Twin: health, state, forecast, assess, sensors, devices |
+| `dtam/src/dtam/communication/` | JSON-RPC device protocol, WebSocket hub, Python client |
 | `src/twin/adkApi.ts` | Agents: sessions, SSE / run, list-apps, artifacts |
 | `src/twin/dtamTypes.ts` | TypeScript mirrors of `SystemState` / quantities |
 | `src/twin/telemetryStore.ts` | Poll driver, forecast / assess actions, scene mapping |
@@ -81,4 +83,4 @@ Tauri v2 (`src-tauri/`) loads the Vite UI, spawns `adelpha-python-runtime`, and 
 
 ## Related
 
-[MaRCoS](../about/marcos.md) · [MRI4ALL](../about/mri4all.md) · [Digital twins](../about/digital-twins.md) · [Sequences](../about/sequences.md) · [Reconstruction](../about/reconstruction.md)
+[MaRCoS](../about/marcos.md) · [MRI4ALL](../about/mri4all.md) · [Digital twins](../about/digital-twins.md) · [Device link](devices.md) · [Sequences](../about/sequences.md) · [Reconstruction](../about/reconstruction.md)

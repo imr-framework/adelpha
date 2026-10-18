@@ -12,7 +12,10 @@ from dtam.api.app import create_app
 
 
 @pytest.fixture
-def client(config_root: Path) -> TestClient:
+def client(config_root: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
+    monkeypatch.delenv("ADELPHA_DEVICE_CONFIG", raising=False)
+    monkeypatch.setenv("ADELPHA_CONFIG_DIR", str(config_root))
+    monkeypatch.setenv("DTAM_CONFIG_DIR", str(config_root))
     app = create_app(
         scanner_id="simulated_scanner",
         environment="testing",
@@ -58,6 +61,15 @@ def test_twin_forecast(client: TestClient) -> None:
     assert body["thermal"]["predicted_mean_magnet_temperature_c"] is not None
     assert body["magnetic"]["predicted_b0_t"] is not None
     assert any("horizon_s=60" in note for note in body["notes"])
+
+
+def test_devices_endpoint_without_listener(client: TestClient) -> None:
+    response = client.get("/devices")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["devices"] == []
+    assert body["port"] is None
+    assert body["control_enabled"] is False
 
 
 def test_sensors_batch(client: TestClient) -> None:

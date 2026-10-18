@@ -8,9 +8,10 @@ Maps each box in the [architecture diagram](index.md) to packages and status.
 
 | Diagram box | Package / path | Status |
 | --- | --- | --- |
-| Physical MRI | `scanner_adapters/` (Halbach profile) | Profile only; no physical I/O |
-| Temperature sensors | `acquisition/temperature`, simulated adapter | **Done** (simulation) |
-| EMI sensors | `acquisition/emi`, simulated adapter | **Done** (simulation) |
+| Physical MRI | `scanner_adapters/` (Halbach profile) | Profile only; adapter `connect()` refused |
+| Device boards | `dtam.communication` | **Done** (JSON-RPC WebSocket; Pi client / Arduino bridge) |
+| Temperature sensors | `acquisition/temperature`, simulated adapter or device hub | **Done** (simulation); hardware via device protocol |
+| EMI sensors | `acquisition/emi`, simulated adapter or device hub | **Done** (simulation); hardware via device protocol |
 | RF noise | `acquisition/rf`, simulated adapter | **Done** (simulation) |
 | Gradient / IQ / mapping | `acquisition/gradients`, `image_quality` | Scaffold |
 | Thermal state \(x_T\) | `digital_twin.state.thermal_state` | **Done** |

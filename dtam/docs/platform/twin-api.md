@@ -25,6 +25,9 @@ Default: `http://127.0.0.1:8080` (OpenAPI at `/docs`).
 | `DTAM_SCANNER_ID` | `simulated_scanner` | Adapter profile |
 | `DTAM_ENVIRONMENT` | `development` | Config environment |
 | `DTAM_CORS_ORIGINS` | `http://localhost:3000`, `:5173` (and 127.0.0.1 variants) | Comma-separated CORS allowlist |
+| `ADELPHA_DEVICE_CONFIG` | unset | Path to `devices.json`. If unset, looked up under `ADELPHA_CONFIG_DIR` / `DTAM_CONFIG_DIR`. |
+
+Hardware boards do not use this HTTP port. They connect to a dedicated WebSocket listener (`host`/`port` in `devices.json`, default `8765`). See [Device protocol](devices.md).
 
 Default CORS covers Next.js (`:3000`) and Vite (`:5173`). Override with `DTAM_CORS_ORIGINS` if the GUI uses another origin.
 
@@ -43,6 +46,11 @@ make agents-api
 | `GET` | `/twin/state` | Read sensors → twin snapshot (optional `predict_horizon_s`) |
 | `POST` | `/twin/forecast` | Twin update with required horizon (PINN / linear fallback) |
 | `GET` | `/sensors/batch` | Raw `MeasurementBatch` from the adapter |
+| `GET` | `/devices` | Device listener status, connected boards, and control flag |
+| `GET` | `/devices/{id}/readings` | Last accepted publication from a connected board |
+| `POST` | `/devices/control` | Enable or disable physical actuator commands |
+| `POST` | `/devices/commands` | Send `actuators.set` to a connected board |
+| `GET` | `/devices/{id}/commands/{command_id}` | Query command outcome when the acknowledgement timed out |
 | `POST` | `/assess` | Deterministic multi-agent assessment on observation JSON |
 | `POST` | `/assess/from-twin` | Live twin update → assessment (no LLM) |
 

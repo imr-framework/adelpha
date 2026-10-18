@@ -25,7 +25,7 @@ File: `configs/scanner_profiles/halbach_48mt.yaml`
 - defaults to `READ_ONLY` mode
 - **raises `ConfigurationError` on `connect()` and `read_measurements()`**
 
-This is intentional. Use `SimulatedScannerAdapter` until Phase 6 physical acquisition work lands.
+This is intentional. The adapter is still a profile, not a GPIO driver. Hardware temperature and EMI reach the Twin through the [device protocol](../platform/devices.md) when a hardware profile is selected. Use `SimulatedScannerAdapter` when you want generated telemetry without boards.
 
 ## Helpers
 

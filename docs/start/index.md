@@ -20,6 +20,7 @@ Adelpha is a desktop app. Most people only need the installer. Developers use th
     | **3D Model** | Bundled scanner, or import GLB. [Settings](../guide/settings.md). |
     | **AI & Agents** | Google AI key if you want Agents. |
     | **Digital Twin** | Simulated or 48 mT Halbach. Restart after a change. |
+    | **Devices** | Camera, and `devices.json` for a Pi or Arduino bridge. [Device link](../guide/devices.md). |
 
 5. Switch workspace with the top-bar pill, or **⌘K** / **Ctrl+K**.
 
@@ -56,7 +57,7 @@ That starts Vite, the Tauri window, and `python -m adelpha_runtime`. You do not 
 
 ### Passive shimming
 
-Hardware → **Passive shimming** is an Adelpha service at `/api/shim`, not part of the imaging console. It runs [passive_shimming](https://github.com/imr-framework/passive_shimming/tree/dev_ws_2026) from `shim/.venv`. That package needs NumPy 2. The venv is gitignored. The solver commit is pinned in `shim/requirements.txt`. Gradient coils are the same idea at `/api/coil` with `coil/.venv`. Magnet field uses the parts added to simulation through `/api/magnet`. [FEM](../guide/fem.md) imports its own STEP file and uses `/api/magnet/fem`; it requires Python with Gmsh and Elmer installed.
+Hardware → **Passive shimming** is an Adelpha service at `/api/shim`, not part of the imaging console. It runs [passive_shimming](https://github.com/imr-framework/passive_shimming/tree/dev_ws_2026) from `shim/.venv`. That package needs NumPy 2. The venv is gitignored. The solver commit is pinned in `shim/requirements.txt`. Gradient coils are the same idea at `/api/coil` with `coil/.venv`. The Magnet workspace designs Halbach arrays through `/api/magnet/halbach`. [FEM](../guide/fem.md) imports its own STEP file and uses `/api/magnet/fem`; it requires Python with Gmsh and Elmer installed.
 
 ```bash
 uv venv shim/.venv --python 3.10
@@ -132,6 +133,8 @@ Unsigned Mac builds: **Right-click → Open**, or see [Signing](../packaging/sig
 | Imaging Console empty | Console service must be healthy; in Vite mode start `python -m services.api` |
 | Exam disappeared | Expected after an API restart. Register again. |
 | Camera blocked (Mac) | System Settings → Camera, or `tccutil reset Camera org.adelpha.digital-twin-ui` |
+| Device listener not configured | Put `devices.json` in **Settings → Devices → Open config folder**, then Restart. [Device link](../guide/devices.md). |
+| Hardware dashboard empty | Twin must not be in simulation; `scanner_id` must match; the device row should read **Connected**. Partial boards still show Notes for missing families. [Device link](../guide/devices.md). |
 | CAD import missing in an old DMG | Rebuild the installer; older packages blocked WASM and `blob:` URLs |
 | Terminal has no shell | Use the desktop app, not `npm run dev` |
 | Gatekeeper warning | Unsigned local build. **Right-click → Open**, or `xattr -cr` as in [If macOS blocks the DMG](download.md#if-macos-blocks-the-dmg). |

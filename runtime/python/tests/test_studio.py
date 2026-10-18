@@ -15,8 +15,14 @@ def test_coil_and_shim_apps_are_not_the_console():
     assert magnet.get("/health").json() == {"status": "ok", "service": "magnet"}
     missing = coil.post("/simulate", json={"axis": "y"})
     assert missing.status_code in {400, 503}
-    empty = magnet.post("/simulate", json={"study": "magnet", "parts": []})
-    assert empty.status_code == 400
+    bad = magnet.post("/halbach", json={"inner_radius_mm": "wide"})
+    assert bad.status_code == 400
+    array = magnet.post("/halbach", json={"rings": 1, "magnets": 8, "outer_ring": False})
+    assert array.status_code == 200
+    assert array.json()["magnet_count"] == 8
+    stl = magnet.post("/halbach/export", json={"rings": 1, "magnets": 8, "outer_ring": False, "target": "ring", "format": "stl"})
+    assert stl.status_code == 200
+    assert stl.json()["filename"] == "halbach-slice-00.stl"
 
 
 def test_feature_sim_finds_the_repo_when_resource_dir_is_empty(tmp_path):
@@ -36,3 +42,4 @@ def test_feature_sim_finds_the_repo_when_resource_dir_is_empty(tmp_path):
     assert _feature_sim(empty, "coil").name == "sim.py"
     assert _feature_sim(empty, "rfcoil").name == "sim.py"
     assert _feature_sim(empty, "magnet").name == "sim.py"
+    assert _feature_sim(empty, "halbach").name == "sim.py"

@@ -14,7 +14,7 @@ import { AcquisitionStudio } from "./studio/StudioApplication";
 import { GradientCoilStudio } from "./studio/GradientCoilStudio";
 import { RfCoilStudio } from "./studio/RfCoilStudio";
 import { FemStudio } from "./studio/FemStudio";
-import { HardwareStudyStudio } from "./studio/HardwareStudyStudio";
+import { HalbachMagnetStudio } from "./studio/HalbachMagnetStudio";
 import { PassiveShimStudio } from "./studio/PassiveShimStudio";
 import { useHardwareStudyStore } from "./studio/hardwareStudyStore";
 import { rememberProjectView, syncProjectAssembly } from "./studio/library";
@@ -56,7 +56,7 @@ export function EngineeringStudio() {
 
   useEffect(() => {
     if (!setupIntent || !activeProject) return;
-    if (hardwareView !== "magnet" && hardwareView !== "fem") {
+    if (hardwareView !== "fem") {
       clearSetupIntent();
       return;
     }
@@ -114,7 +114,7 @@ export function EngineeringStudio() {
 
   const contents = (
     <section className="engineering-studio" aria-label="Engineering Studio">
-      <div className={`engineering-stage${activeProject && (hardwareView === "magnet" || hardwareView === "fem") ? " is-hardware-study" : ""}`}>
+      <div className={`engineering-stage${activeProject && hardwareView === "fem" ? " is-hardware-study" : ""}`}>
         {activeProject && activeProject.application !== "acquisition" && hardwareView !== "gradients" && hardwareView !== "rf" && hardwareView !== "shimming" && hardwareView !== "magnet" && hardwareView !== "fem" ? (
           <button type="button" className="studio-close-project" onClick={closeProject}>
             Close project
@@ -137,13 +137,18 @@ export function EngineeringStudio() {
             projectName={activeProject.name}
             onClose={closeProject}
           />
+        ) : activeProject && hardwareView === "magnet" ? (
+          <HalbachMagnetStudio
+            key={activeProject.id}
+            projectName={activeProject.name}
+            onAssembly={() => useEngineeringStore.getState().setHardwareView("assembly")}
+            onClose={closeProject}
+          />
         ) : activeProject && hardwareView === "fem" ? (
           <FemStudio key={activeProject.id} projectId={activeProject.id} projectName={activeProject.name} onClose={closeProject} />
         ) : activeProject ? (
           <>
-            {hardwareView === "magnet" ? (
-              <HardwareStudyStudio key={`${activeProject.id}:${hardwareView}`} projectId={activeProject.id} projectName={activeProject.name} study={hardwareView} viewport={viewport} onClose={closeProject} />
-            ) : viewport}
+            {viewport}
             {empty && hardwareView === "assembly" ? (
               <div className="eng-empty" role="status">
                 <strong>Nothing in simulation yet</strong>

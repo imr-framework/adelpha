@@ -42,6 +42,8 @@ Adelpha is an MRI engineering and digital-twin application. Its UI combines scan
 | Desktop/browser export helper | `src/desktop/saveFile.ts` |
 | Gradient coil design | `src/twin/studio/GradientCoilStudio.tsx`, `coil/sim.py` |
 | RF coil design | `src/twin/studio/RfCoilStudio.tsx`, `rfcoil/sim.py`, `RFcoilbuilder/` |
+| Halbach magnet design | `src/twin/studio/HalbachMagnetStudio.tsx`, `halbach/sim.py`, `HalbachMRIDesigner/` |
+| Device JSON-RPC protocol | `dtam/src/dtam/communication/`, `docs/guide/devices.md` |
 | Detailed FEM setup and numerical limitations | `simulation/fem/README.md` |
 
 The frontend uses React, TypeScript, Vite, Three.js, React Three Fiber, Drei, and Lucide icons. Use the installed versions and existing conventions. Both Electron and Tauri integration exist: do not assume every browser API behaves identically in every desktop host.
@@ -81,7 +83,7 @@ Current sizing reference, not a universal requirement for all workspaces:
 
 Use `min-width: 0`, `min-height: 0`, bounded overflow, and flexible grid tracks where needed. Preserve the model's aspect ratio when panels resize. Do not shrink the whole application with CSS transforms to fit a viewport.
 
-Gradient coil, RF coil, passive shimming, and acquisition workspaces also omit the full-width project header. Their project name, workspace identity, status, and project actions belong in a compact `ProjectPanel` inside the right inspector. Place a direct Close project icon at the far right of the project-name row, without a Project dropdown. Preserve View assembly where supported. Omit routine completed-result badges and duplicate run-button captions; retain actionable failure and stale-result warnings. Gradient and shimming viewport controls and captions float over the scene without full-width gradient scrims; retain the key-results footer. Acquisition uses a clean “A Bloch simulator” empty state and an image-focused result area without a bottom echo plot.
+Gradient coil, RF coil, Halbach magnet, passive shimming, and acquisition workspaces also omit the full-width project header. Their project name, workspace identity, status, and project actions belong in a compact `ProjectPanel` inside the right inspector. Place a direct Close project icon at the far right of the project-name row, without a Project dropdown. Preserve View assembly where supported. Omit routine completed-result badges and duplicate run-button captions; retain actionable failure and stale-result warnings. Gradient and shimming viewport controls and captions float over the scene without full-width gradient scrims; retain the key-results footer. Acquisition uses a clean “A Bloch simulator” empty state and an image-focused result area without a bottom echo plot. **Use parameters** opens Imaging Console with the current MRZero sequence and imaging fields (`acquisitionHandoff.ts`); it inserts a queue item and does not run the scan.
 
 ### Visual hierarchy and interaction
 
@@ -187,7 +189,7 @@ The runtime currently supervises one solve at a time and uses worker processes. 
 
 ### Integration boundary
 
-Use typed helpers in `src/twin/mri/api.ts`. Gradient coils use `/api/coil`, RF coils use `/api/rf`, and shimming uses `/api/shim`. FEM client routes are under `/api/magnet/fem`:
+Use typed helpers in `src/twin/mri/api.ts`. Gradient coils use `/api/coil`, RF coils use `/api/rf`, and shimming uses `/api/shim`. Halbach array design uses `POST /api/magnet/halbach`. FEM client routes are under `/api/magnet/fem`:
 
 - `POST /uploads`: inspect/store the STEP input.
 - `GET /uploads/{id}/file`: restore a previously imported STEP file.
@@ -245,7 +247,11 @@ The outer air boundary is a finite-domain approximation. Mesh refinement and air
 
 ### Hardware system profiles
 
-Desktop Twin setup stores custom systems in `dtam_runtime.json` with the runtime preferences. The Python loader reads them through `ADELPHA_DTAM_PREFS`. Custom profiles define identity, architecture, and nominal field strength; they do not implement device transport. Physical profile sessions remain read-only and return an empty state until acquisition is implemented. Never force a physical profile into simulation or make missing hardware fatal to API startup. Scanner and environment changes use the authenticated `/runtime/twin/configuration` gateway endpoint to reconfigure the existing Twin session without restarting the console or agents. Validate the replacement before swapping it, serialize switches, and refresh telemetry immediately while rejecting older in-flight poll responses. Failed preference changes restore the previous configuration, and the frontend refreshes its runtime endpoint after recovery.
+Desktop Twin setup stores custom systems in `dtam_runtime.json` with the runtime preferences. The Python loader reads them through `ADELPHA_DTAM_PREFS`. Custom profiles define identity, architecture, and nominal field strength; they do not implement device transport. Physical profile sessions remain read-only and wait for measured publications. Never force a physical profile into simulation or make missing hardware fatal to API startup.
+
+Boards connect as JSON-RPC WebSocket **clients**. Adelpha is the server. The Twin lifespan starts the listener when `devices.json` is present (`ADELPHA_DEVICE_CONFIG`, then `ADELPHA_CONFIG_DIR` / `DTAM_CONFIG_DIR`). There is no Start-server control. Arduino never talks serial to Adelpha; a user Python process owns the serial port and uses `dtam.communication.DeviceClient`. Sensor streaming does not require Physical control. `actuators.set` stays rejected until a hardware profile is selected, `allow_control` is true, and **Settings → Devices → Physical control** is on. Device-local interlocks remain authoritative. UI: `DeviceLinkSection.tsx`; HTTP: `/devices`; protocol: `dtam/src/dtam/communication/PROTOCOL.md`.
+
+Scanner and environment changes use the authenticated `/runtime/twin/configuration` gateway endpoint to reconfigure the existing Twin session without restarting the console or agents. Validate the replacement before swapping it, serialize switches, and refresh telemetry immediately while rejecting older in-flight poll responses. Failed preference changes restore the previous configuration, and the frontend refreshes its runtime endpoint after recovery.
 
 ### Dashboard sensor states
 
@@ -253,7 +259,7 @@ Camera inputs are configured under Settings → Devices using `CameraInputSelect
 
 Camera motion export recording is opt-in through the HUD's Track / Stop control (`MotionRecordingControl.tsx`). Live webcam rendering, inference, overlays, and dashboard pose updates continue independently. `headMotionLog.ts` records real detected poses only: JSON includes `t_wall_ms` (local inference-completion wall time) and `t_recording_ms` (monotonic elapsed milliseconds from the first Track click, including pauses), plus recording metadata. Millisecond timestamp resolution does not imply a 1 kHz measurement rate; actual throughput is bounded by the selected 15/30/60 Hz target, available camera frames, and inference speed. Stop and unmount pause saving, Track resumes appending, and Clear log stops recording and resets its clock while preserving the reference pose. Recording stops 30 minutes after the first Track click (including pauses), with a 120,000-sample memory guard above the 108,000 samples expected at 60 Hz. A timer enforces the duration even without face detections; no earlier samples are dropped; export and clear before continuing.
 
-Keep the real header, floating viewport navigation, and Logging / Terminal strip. In non-simulation mode with no recent measured sensor values, use `dashboard/SensorWaiting.tsx` for dashboard and telemetry empty states. Do not add a lower sensor-summary bar. Settings actions open Digital Twin settings; the guide is inline. `sensorAvailability.ts` checks measured provenance, finite values, and a 30-second freshness window. Nominal values, estimates alone, and API health do not prove sensor reception.
+Keep the real header, floating viewport navigation, and Logging / Terminal strip. In non-simulation mode with no recent measured sensor values, use `dashboard/SensorWaiting.tsx` for dashboard and telemetry empty states. Do not add a lower sensor-summary bar. Settings actions open Devices; the guide is inline. Partial hardware connections show the families that arrived and keep explicit not-connected / reported-missing copy for the rest; never plot missing values as zero or synthesize an EMI spectrum from RMS. `sensorAvailability.ts` checks measured provenance, finite values, a 30-second freshness window, and usable batch readings. Nominal values, estimates alone, and API health do not prove sensor reception.
 
 The EMI dashboard is an environmental sensor spectrum, not an MRI phantom signal. Simulation uses a white-noise floor plus narrow interference peaks, labeled simulated and in arbitrary units. Hardware summaries do not contain spectral arrays; never synthesize a measured spectrum from RMS/peak values. Keep hardware unavailable states honest, including partial connections and mode transitions.
 

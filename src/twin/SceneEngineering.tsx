@@ -194,7 +194,7 @@ export function SceneEngineering() {
   const hardwareView = useEngineeringStore((s) => s.hardwareView);
   const activeProject = useEngineeringStore((s) => s.activeProject);
   const studyRecord = useHardwareStudyStore((s) => {
-    if (!activeProject || (hardwareView !== "magnet" && hardwareView !== "fem")) return null;
+    if (!activeProject || hardwareView !== "fem") return null;
     return s.projects[activeProject.id]?.[hardwareView] ?? null;
   });
   const studyRun = studyRecord?.section === "results" && !studyRecord.editingSetup

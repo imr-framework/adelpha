@@ -215,6 +215,7 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
         config_root = user_configs if (user_configs / "scanner_profiles" / "simulated_scanner.yaml").is_file() else paths.dtam_configs
         if config_root is not None:
             os.environ.setdefault("DTAM_CONFIG_DIR", str(config_root))
+        os.environ.setdefault("ADELPHA_CONFIG_DIR", str(paths.config_dir))
         try:
             from dtam.api.app import create_app
         except ImportError as exc:
@@ -360,12 +361,12 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
         ),
         ServiceDef(
             id="magnet",
-            title="Magnet field",
+            title="Magnet",
             required=False,
             start="always",
             restart="never",
             version="0.1.0",
-            description="Assembly magnetostatics and Elmer FEM for Engineering Studio. Isolated from the imaging console.",
+            description="Halbach array designer and Elmer FEM for Engineering Studio. Isolated from the imaging console.",
             mount_factory=magnet_factory,
             health_path="/health",
         ),

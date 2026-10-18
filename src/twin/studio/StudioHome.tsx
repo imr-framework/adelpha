@@ -187,7 +187,7 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
     const project = saveNewProject(name, { application, ...(application === "hardware" ? { lastView: hardwareChoice } : {}) });
     setProjects(readProjects());
     closeModes();
-    if (application === "hardware") onOpenProject(project, { view: hardwareChoice, setup: hardwareChoice === "magnet" || hardwareChoice === "fem" });
+    if (application === "hardware") onOpenProject(project, { view: hardwareChoice, setup: hardwareChoice === "fem" });
     else onOpenProject(project);
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Could not create the project.");
@@ -309,7 +309,7 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
             </fieldset>
             {application === "hardware" ? <label className="compact-workspace">Hardware workspace
               <select value={hardwareChoice} onChange={(event) => setHardwareChoice(event.target.value as typeof hardwareChoice)}>
-                <option value="assembly">Assembly</option><option value="magnet">Magnet field</option><option value="fem">FEM</option><option value="gradients">Gradient coils</option><option value="rf">RF coils</option><option value="shimming">Passive shimming</option>
+                <option value="assembly">Assembly</option><option value="magnet">Halbach array</option><option value="fem">FEM</option><option value="gradients">Gradient coils</option><option value="rf">RF coils</option><option value="shimming">Passive shimming</option>
               </select>
             </label> : null}
             <div className="studio-create-actions">
@@ -325,7 +325,7 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
                 <p className="studio-create-hint">
                   {!application
                     ? "Choose hardware or acquisition."
-                    : application === "hardware" ? `Opens directly in ${{ assembly: "Assembly", magnet: "Magnet field", fem: "FEM", gradients: "Gradient coils", rf: "RF coils", shimming: "Passive shimming" }[hardwareChoice]}.` : "Opens directly in Acquisition."}
+                    : application === "hardware" ? `Opens directly in ${{ assembly: "Assembly", magnet: "Halbach array", fem: "FEM", gradients: "Gradient coils", rf: "RF coils", shimming: "Passive shimming" }[hardwareChoice]}.` : "Opens directly in Acquisition."}
                 </p>
               )}
             </div>
@@ -513,7 +513,7 @@ function ProjectRow({
   onMenu: () => void;
   onDelete: () => void;
 }) {
-  const labels: Record<string, string> = { assembly: "Assembly", magnet: "Magnet field", fem: "FEM", gradients: "Gradient coils", rf: "RF coils", shimming: "Passive shimming" };
+  const labels: Record<string, string> = { assembly: "Assembly", magnet: "Halbach array", fem: "FEM", gradients: "Gradient coils", rf: "RF coils", shimming: "Passive shimming" };
   const workspace = project.application === "acquisition" ? "Acquisition · MRZero" : project.application === "reconstruction" ? "Reconstruction" : labels[project.lastView ?? "assembly"] ?? projectClassMeta(project).label;
   return <tr>
     <td><button type="button" className="compact-project-open" aria-label={project.name} onClick={onOpen}><Box size={17} aria-hidden /><span>{project.name}</span></button></td>

@@ -89,8 +89,7 @@ def test_legacy_assembly_fem_is_rejected(isolated_data):
     from adelpha_runtime.studio import create_magnet_app
     client = TestClient(create_magnet_app(resolve_paths()))
     response = client.post('/simulate', json={"study": "fem", "example_id": "example-halbach-8"})
-    assert response.status_code == 400
-    assert 'imported STEP file' in response.json()['detail']
+    assert response.status_code == 404
 
 
 def test_saved_step_can_be_reopened_after_runtime_restart(tmp_path):

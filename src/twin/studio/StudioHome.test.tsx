@@ -106,13 +106,13 @@ describe("StudioHome", () => {
         application: "hardware",
         discipline: "Hardware",
       }),
-      { view: "magnet", setup: true },
+      { view: "magnet", setup: false },
     );
   });
 
   it.each([
     ["Assembly", "assembly", false],
-    ["Magnet field", "magnet", true],
+    ["Halbach array", "magnet", false],
     ["FEM", "fem", true],
     ["Gradient coils", "gradients", false],
     ["RF coils", "rf", false],
@@ -246,12 +246,9 @@ describe("StudioHome", () => {
     await user.click(screen.getByRole("button", { name: "Delta v2 actions" }));
     expect(onOpenProject).not.toHaveBeenCalled();
     expect(screen.getByRole("menuitem", { name: "Open" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Open setup" })).toBeInTheDocument();
-    await user.click(screen.getByRole("menuitem", { name: "Open setup" }));
-    expect(onOpenProject).toHaveBeenCalledWith(expect.objectContaining({ name: "Delta v2" }), {
-      view: "magnet",
-      setup: true,
-    });
+    expect(screen.queryByRole("menuitem", { name: "Open setup" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("menuitem", { name: "Open" }));
+    expect(onOpenProject.mock.calls[0]?.[0]).toEqual(expect.objectContaining({ name: "Delta v2" }));
   });
 
   it("deletes only the confirmed project and preserves it when cancelled", async () => {

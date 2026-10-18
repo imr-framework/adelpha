@@ -1,0 +1,661 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Adelpha device protocol v1 \u2014 JSON-RPC 2.0",
+  "$defs": {
+    "Actuator": {
+      "additionalProperties": false,
+      "properties": {
+        "actuator_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Actuator Id",
+          "type": "string"
+        },
+        "operations": {
+          "maxProperties": 16,
+          "patternProperties": {
+            "^[A-Za-z0-9_.:-]+$": {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          },
+          "propertyNames": {
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "title": "Operations",
+          "type": "object"
+        }
+      },
+      "required": [
+        "actuator_id",
+        "operations"
+      ],
+      "title": "Actuator",
+      "type": "object"
+    },
+    "Registration": {
+      "additionalProperties": false,
+      "properties": {
+        "protocol_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Protocol Version",
+          "type": "string"
+        },
+        "device_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Device Id",
+          "type": "string"
+        },
+        "boot_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Boot Id",
+          "type": "string"
+        },
+        "actuators": {
+          "items": {
+            "$ref": "#/$defs/Actuator"
+          },
+          "maxItems": 32,
+          "title": "Actuators",
+          "type": "array"
+        }
+      },
+      "required": [
+        "device_id",
+        "boot_id"
+      ],
+      "title": "Registration",
+      "type": "object"
+    },
+    "Reading": {
+      "additionalProperties": false,
+      "properties": {
+        "sensor_id": {
+          "maximum": 2147483647,
+          "minimum": 0,
+          "title": "Sensor Id",
+          "type": "integer"
+        },
+        "sample_time_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Sample Time Ms",
+          "type": "integer"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Value"
+        },
+        "unit": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "quality": {
+          "default": "valid",
+          "enum": [
+            "valid",
+            "suspect",
+            "invalid",
+            "missing"
+          ],
+          "title": "Quality",
+          "type": "string"
+        },
+        "quantity": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quantity"
+        },
+        "role": {
+          "default": "other",
+          "enum": [
+            "magnet",
+            "room",
+            "other"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "dashboard_id": {
+          "anyOf": [
+            {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dashboard Id"
+        },
+        "calibration_version": {
+          "anyOf": [
+            {
+              "maxLength": 100,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Calibration Version"
+        }
+      },
+      "required": [
+        "sensor_id",
+        "sample_time_ms",
+        "value",
+        "unit"
+      ],
+      "title": "Reading",
+      "type": "object"
+    },
+    "SensorGroups": {
+      "additionalProperties": false,
+      "properties": {
+        "temperature": {
+          "items": {
+            "$ref": "#/$defs/Reading"
+          },
+          "maxItems": 128,
+          "title": "Temperature",
+          "type": "array"
+        },
+        "emi": {
+          "items": {
+            "$ref": "#/$defs/Reading"
+          },
+          "maxItems": 128,
+          "title": "Emi",
+          "type": "array"
+        },
+        "custom": {
+          "items": {
+            "$ref": "#/$defs/Reading"
+          },
+          "maxItems": 128,
+          "title": "Custom",
+          "type": "array"
+        }
+      },
+      "title": "SensorGroups",
+      "type": "object"
+    },
+    "Publish": {
+      "additionalProperties": false,
+      "properties": {
+        "protocol_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Protocol Version",
+          "type": "string"
+        },
+        "device_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Device Id",
+          "type": "string"
+        },
+        "boot_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Boot Id",
+          "type": "string"
+        },
+        "sequence": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "sent_time_ms": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "title": "Sent Time Ms",
+          "type": "integer"
+        },
+        "sensors": {
+          "$ref": "#/$defs/SensorGroups"
+        }
+      },
+      "required": [
+        "device_id",
+        "boot_id",
+        "sequence",
+        "sent_time_ms",
+        "sensors"
+      ],
+      "title": "Publish",
+      "type": "object"
+    },
+    "Command": {
+      "additionalProperties": false,
+      "properties": {
+        "protocol_version": {
+          "const": "1.0",
+          "default": "1.0",
+          "title": "Protocol Version",
+          "type": "string"
+        },
+        "device_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Device Id",
+          "type": "string"
+        },
+        "command_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Command Id",
+          "type": "string"
+        },
+        "actuator_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Actuator Id",
+          "type": "string"
+        },
+        "operation": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Operation",
+          "type": "string"
+        },
+        "arguments": {
+          "additionalProperties": true,
+          "title": "Arguments",
+          "type": "object"
+        }
+      },
+      "required": [
+        "device_id",
+        "command_id",
+        "actuator_id",
+        "operation"
+      ],
+      "title": "Command",
+      "type": "object"
+    },
+    "CommandStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "device_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Device Id",
+          "type": "string"
+        },
+        "command_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Command Id",
+          "type": "string"
+        },
+        "actuator_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Actuator Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "accepted",
+            "completed",
+            "failed",
+            "unknown"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "applied_state": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Applied State"
+        },
+        "detail": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Detail"
+        }
+      },
+      "required": [
+        "device_id",
+        "command_id",
+        "actuator_id",
+        "status"
+      ],
+      "title": "CommandStatus",
+      "type": "object"
+    },
+    "Message": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "jsonrpc",
+            "method",
+            "params",
+            "id"
+          ],
+          "properties": {
+            "jsonrpc": {
+              "const": "2.0"
+            },
+            "method": {
+              "const": "device.register"
+            },
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "params": {
+              "$ref": "#/$defs/Registration"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "jsonrpc",
+            "method",
+            "params"
+          ],
+          "properties": {
+            "jsonrpc": {
+              "const": "2.0"
+            },
+            "method": {
+              "const": "sensors.publish"
+            },
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "params": {
+              "$ref": "#/$defs/Publish"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "jsonrpc",
+            "method",
+            "params",
+            "id"
+          ],
+          "properties": {
+            "jsonrpc": {
+              "const": "2.0"
+            },
+            "method": {
+              "const": "actuators.set"
+            },
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "params": {
+              "$ref": "#/$defs/Command"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "jsonrpc",
+            "method",
+            "params"
+          ],
+          "properties": {
+            "jsonrpc": {
+              "const": "2.0"
+            },
+            "method": {
+              "const": "actuators.status"
+            },
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "params": {
+              "$ref": "#/$defs/CommandStatus"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "jsonrpc",
+            "method"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "jsonrpc": {
+              "const": "2.0"
+            },
+            "method": {
+              "const": "device.ping"
+            },
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "params": {
+              "type": "object",
+              "maxProperties": 0
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "jsonrpc",
+            "method"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "jsonrpc": {
+              "const": "2.0"
+            },
+            "method": {
+              "const": "device.describe"
+            },
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "params": {
+              "type": "object",
+              "maxProperties": 0
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "jsonrpc",
+            "method"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "jsonrpc": {
+              "const": "2.0"
+            },
+            "method": {
+              "const": "actuators.get_status"
+            },
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "params": {
+              "type": "object",
+              "required": [
+                "command_id"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "command_id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "jsonrpc",
+            "id",
+            "result"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "jsonrpc": {
+              "const": "2.0"
+            },
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "result": {}
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "jsonrpc",
+            "id",
+            "error"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "jsonrpc": {
+              "const": "2.0"
+            },
+            "id": {
+              "type": [
+                "string",
+                "integer",
+                "null"
+              ]
+            },
+            "error": {
+              "type": "object",
+              "required": [
+                "code",
+                "message"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {}
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Message"
+    },
+    {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {
+        "$ref": "#/$defs/Message"
+      }
+    }
+  ]
+}

@@ -467,6 +467,7 @@ export function engineLabel(project: StudioProject): string | undefined {
   const view = inferLastView(project);
   if (view === "gradients" || project.discipline === "Gradients") return "PyCoilGen";
   if (view === "rf" || project.discipline === "RF") return "RFcoilbuilder";
+  if (view === "magnet") return "HalbachMRIDesigner";
   if (view === "fem") return "Elmer";
   return undefined;
 }
@@ -478,17 +479,16 @@ export function studyTypeLabel(project: StudioProject): string {
 export function isStandaloneProject(project: StudioProject): boolean {
   if (project.application !== "hardware") return true;
   const view = inferLastView(project);
-  return view === "gradients" || view === "rf" || view === "shimming";
+  return view === "gradients" || view === "rf" || view === "shimming" || view === "magnet";
 }
 
 export function hasSetupDestination(project: StudioProject): boolean {
   if (project.application !== "hardware") return false;
-  const view = inferLastView(project);
-  return view === "assembly" || view === "magnet" || view === "fem";
+  return inferLastView(project) === "fem";
 }
 
 export function setupViewFor(project: StudioProject): StudioLastView {
-  return inferLastView(project) === "fem" ? "fem" : "magnet";
+  return "fem";
 }
 
 export function projectDetail(project: StudioProject): string {
@@ -499,6 +499,7 @@ export function projectDetail(project: StudioProject): string {
   const view = inferLastView(project);
   if (view === "gradients") return withEngine(project.summary ?? "Standalone design");
   if (view === "rf") return withEngine(project.summary ?? "Standalone design");
+  if (view === "magnet") return withEngine(project.summary ?? "Halbach array");
   if (view === "shimming") return withEngine(project.summary ?? "Optimization study");
   const catalog = project.catalogParts ?? (project.includedParts == null ? undefined : project.parts);
   const included = project.includedParts ?? (project.catalogParts == null ? project.parts : undefined);
@@ -508,7 +509,7 @@ export function projectDetail(project: StudioProject): string {
   if (included != null && included > 0) return withEngine(`${included} included`);
   if (catalog != null && catalog > 0) return withEngine(formatParts(catalog));
   if (project.parts > 0) return withEngine(formatParts(project.parts));
-  return withEngine(project.summary ?? (projectClass(project) === "fem" ? "FEM study" : projectClass(project) === "magnet" ? "Magnet field study" : "Assembly study"));
+  return withEngine(project.summary ?? (projectClass(project) === "fem" ? "FEM study" : projectClass(project) === "magnet" ? "Halbach array" : "Assembly study"));
 }
 
 export function matchesQuery(project: StudioProject, query: string): boolean {

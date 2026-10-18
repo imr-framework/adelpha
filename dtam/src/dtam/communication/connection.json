@@ -1,19 +1,17 @@
 {
-    "message_id": "float32",
-    "requires_response": "bool",
+  "jsonrpc": "2.0",
+  "id": "pi-01:sample:1042",
+  "method": "sensors.publish",
+  "params": {
+    "protocol_version": "1.0",
+    "device_id": "pi-01",
+    "boot_id": "boot-7",
+    "sequence": 1042,
+    "sent_time_ms": 125000,
     "sensors": {
-      "temperature": {
-        "sensor_id": "int32",
-        "value": "float32/null"
-      },
-      "emi": {
-        "sensor_id": "int32",
-        "value": "float32/null"
-      },
-      "custom": {
-        "sensor_id": "int32",
-        "dashboard_id": "int32",
-        "value": "float32/null"
-      }
+      "temperature": [{"sensor_id": 1, "sample_time_ms": 125000, "value": 28.4, "unit": "degC", "role": "magnet", "quality": "valid"}],
+      "emi": [{"sensor_id": 2, "sample_time_ms": 125000, "quantity": "voltage_rms", "value": 0.012, "unit": "V", "quality": "valid"}],
+      "custom": [{"sensor_id": 3, "dashboard_id": 12, "sample_time_ms": 125000, "quantity": "humidity", "value": null, "unit": "%", "quality": "missing"}]
     }
   }
+}

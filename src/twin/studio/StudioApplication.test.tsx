@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AcquisitionStudio, sliceSourceIndex } from "./StudioApplication";
+import { requestUseAcquisitionParameters } from "../acquisitionHandoff";
 
 const simulateMr0 = vi.fn();
 
@@ -11,9 +12,14 @@ vi.mock("../mri/api", () => ({
   simulateMr0: (...args: unknown[]) => simulateMr0(...args),
 }));
 
+vi.mock("../acquisitionHandoff", () => ({
+  requestUseAcquisitionParameters: vi.fn(),
+}));
+
 describe("AcquisitionStudio MRZero suite", () => {
   beforeEach(() => {
     simulateMr0.mockReset();
+    vi.mocked(requestUseAcquisitionParameters).mockReset();
   });
 
   it("runs the 2D spin echo through MRZero and shows the image", async () => {
@@ -86,6 +92,16 @@ describe("AcquisitionStudio MRZero suite", () => {
     expect(sliceSourceIndex(1, 0, 2, 2)).toBe(3);
     expect(sliceSourceIndex(0, 1, 2, 2)).toBe(0);
     expect(sliceSourceIndex(1, 1, 2, 2)).toBe(1);
+  });
+
+  it("sends the simulated sequence to Imaging Console", async () => {
+    render(<AcquisitionStudio projectName="Ace_demo" />);
+    await userEvent.click(screen.getByRole("button", { name: "Use parameters" }));
+    expect(requestUseAcquisitionParameters).toHaveBeenCalledWith({
+      sequence: "se_2D",
+      protocol_name: "Ace_demo",
+      parameters: expect.objectContaining({ TE: 5, TR: 100, FOV: 64, Orientation: "Axial" }),
+    });
   });
 
   it("shows a failure when MRZero cannot run", async () => {

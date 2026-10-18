@@ -19,6 +19,7 @@ import {
 import type { ViewportToolId } from "./twin/ViewportToolRail";
 import { useHeadMotionStore } from "./twin/headMotionStore";
 import { persistWorkspace, type WorkspaceId } from "./twin/TopbarControls";
+import { subscribeOpenImagingConsole } from "./twin/acquisitionHandoff";
 import { cadForScanner, useScannerCatalog, useScannerModel } from "./twin/scannerModel";
 import { useCadPerfStore } from "./twin/cadPerf";
 import { usePolishedFinish } from "./twin/useModelColors";
@@ -78,6 +79,8 @@ export default function App() {
     persistWorkspace(workspace);
   }, [workspace]);
 
+  useEffect(() => subscribeOpenImagingConsole(() => setWorkspace("imaging-console")), []);
+
   useEffect(() => {
     if (workspacePrefs.restoreLayout) return;
     setWorkspace(workspacePrefs.startupWorkspace);
@@ -104,7 +107,7 @@ export default function App() {
 
   useEffect(() => attachDtamTelemetryDriver(1500), []);
   const sensorMode = health?.mode ?? systemState?.mode ?? "unknown";
-  const waitingForSensors = sensorMode !== "simulation" && (!hasSensorMeasurements(systemState) || systemState?.mode !== sensorMode || connection !== "connected");
+  const waitingForSensors = sensorMode !== "simulation" && (!hasSensorMeasurements(systemState, Date.now(), sensorsBatch) || systemState?.mode !== sensorMode || connection !== "connected");
   const series = useDashboardSeries({
     mode: sensorMode,
     telemetry,
@@ -172,6 +175,7 @@ export default function App() {
           setCameraPreviewStream={setCameraPreviewStream}
           waitingForSensors={waitingForSensors}
           sensorMode={sensorMode}
+          sensorNotes={systemState?.notes ?? []}
           series={series}
           telemetry={telemetry}
           scannerId={scannerId}

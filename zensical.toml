@@ -35,6 +35,7 @@ nav = [
       { Workspaces = "guide/workspaces.md" },
       { "FEM simulation" = "guide/fem.md" },
       { Settings = "guide/settings.md" },
+      { "Device link" = "guide/devices.md" },
       { Dashboard = "guide/dashboard.md" },
       { "Imaging Console" = "guide/imaging-console.md" },
       { "Twin API" = "guide/twin-api.md" },

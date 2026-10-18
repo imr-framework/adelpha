@@ -67,7 +67,22 @@ describe("TelemetryPanel", () => {
 });
 
 it("shows the waiting state instead of default telemetry for missing hardware sensors", () => {
-  renderPanel({ waitingForSensors: true, sensorMode: "hardware" });
+  renderPanel({ waitingForSensors: true, sensorMode: "hardware", systemState: { notes: ["EMI RMS reported missing."] } as SystemState });
   expect(screen.getByText("Waiting for sensor data")).toBeInTheDocument();
+  expect(screen.getByText("EMI RMS reported missing.")).toBeInTheDocument();
   expect(screen.queryByRole("heading", { name: "Thermal" })).not.toBeInTheDocument();
+});
+
+it("keeps connected telemetry visible when other families are missing", () => {
+  renderPanel({
+    systemState: {
+      thermal: null,
+      emi: { rms_v: { value: 0.01, source: "estimated", timestamp: new Date().toISOString() }, channels: [] },
+      notes: ["Magnet temperature not connected.", "EMI RMS received."],
+    } as never,
+  });
+  expect(screen.getByRole("heading", { name: "Thermal" })).toBeInTheDocument();
+  expect(screen.getByText("No usable temperature measurements.")).toBeInTheDocument();
+  expect(screen.getByText("Magnet temperature not connected.")).toBeInTheDocument();
+  expect(screen.getByText("EMI RMS received.")).toBeInTheDocument();
 });

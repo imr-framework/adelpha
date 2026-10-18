@@ -26,13 +26,13 @@ flowchart LR
 | # | Layer | Role | Status today |
 | --- | --- | --- | --- |
 | 0 | Physical / virtual MRI | Magnet, gradients, RF, coils, environment, cooling | Adapter boundary; simulated Halbach profile |
-| 1 | Data acquisition | Temperature, EMI, RF noise, … | **Simulated** temp + EMI + RF noise via adapter + thin `acquisition/` facades |
+| 1 | Data acquisition | Temperature, EMI, RF noise, … | Simulated adapter, plus JSON-RPC device listener for hardware boards |
 | 2 | Physics-informed twin | Hidden state \(x(t)\): \(x_T\), \(x_B\), \(x_{\mathrm{EMI}}\), \(x_{\mathrm{RF}}\) | Thermal + B₀ + EMI + RF noise estimates; thermal PINN model |
 | 3 | Multi-agent reasoning | Google ADK specialists + orchestrator | Thermal, magnet, EMI, RF/B1, gradient; root with `sub_agents` |
 | 4 | Prediction / opt / control | Forecast, optimize, command | **Thermal PINN forecast** live; optimization/control deferred |
 | 5 | Action and feedback | Apply → monitor → learn | Scaffold only; closed-loop off by default |
 
-See [System map](system-map.md) for package paths, [Why a state system?](why-state-system.md) for the rationale behind \(x(t)\), and [Mathematical models](../digital_twin/mathematical-models.md) for the governing equations.
+See [System map](system-map.md) for package paths, [Why a state system?](why-state-system.md) for the rationale behind \(x(t)\), [Device protocol](../platform/devices.md) for hardware boards, and [Mathematical models](../digital_twin/mathematical-models.md) for the governing equations.
 
 ## Critical rules
 

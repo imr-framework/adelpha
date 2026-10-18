@@ -1,6 +1,7 @@
 import { ProjectPanel } from "./workspace";
 import { useProjectState, useProjectRun, useProjectBusy } from "./ProjectPersistence";
 import { useEffect, useRef, useState } from "react";
+import { requestUseAcquisitionParameters } from "../acquisitionHandoff";
 import { fetchSequences, simulateMr0, type Mr0Request, type Mr0Simulation } from "../mri/api";
 import type { ParameterProperty, SequenceInfo, SeqTab } from "../mri/types";
 import "./studioWork.css";
@@ -226,7 +227,18 @@ export function AcquisitionStudio({ projectName, onClose }: { projectName: strin
             </fieldset>
             <section className="mrzero-context"><h3>Simulation context <span>(read-only)</span></h3><dl><div><dt>Main field strength</dt><dd>{request.b0_t} T</dd></div><div><dt>Field error</dt><dd>{request.inhomogeneity_ppm} ppm</dd></div><div><dt>Gradient amplitude limit</dt><dd>{request.gmax_mt_m} mT/m</dd></div></dl></section>
           </div>
-          <div className="mrzero-actions">{error ? <p className="mr0-error" role="alert">{error}</p> : null}<button type="submit" className="mr0-run" disabled={running}>{running ? "Simulating…" : "Run simulation"}</button></div>
+          <div className="mrzero-actions">
+            {error ? <p className="mr0-error" role="alert">{error}</p> : null}
+            <button
+              type="button"
+              className="mrzero-secondary"
+              disabled={running}
+              onClick={() => requestUseAcquisitionParameters({ sequence: sequence.id, protocol_name: projectName, parameters: { ...draft } })}
+            >
+              Use parameters
+            </button>
+            <button type="submit" className="mr0-run" disabled={running}>{running ? "Simulating…" : "Run simulation"}</button>
+          </div>
         </form>
       </div>
     </section>

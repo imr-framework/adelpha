@@ -25,6 +25,7 @@ const CameraFeed = lazy(() =>
 export function TwinViewport({
   waitingForSensors = false,
   sensorMode = "hardware",
+  sensorNotes = [],
   viewportTool,
   onViewportToolChange,
   stageMode,
@@ -41,6 +42,7 @@ export function TwinViewport({
 }: {
   waitingForSensors?: boolean;
   sensorMode?: string;
+  sensorNotes?: string[];
   viewportTool: ViewportToolId;
   onViewportToolChange: (id: ViewportToolId) => void;
   stageMode: "magnet" | "camera";
@@ -104,6 +106,7 @@ export function TwinViewport({
       <LiveDashboard
         waitingForSensors={waitingForSensors}
         sensorMode={sensorMode}
+        sensorNotes={sensorNotes}
         series={series}
         stageMode={stageMode}
         cameraPreviewStream={cameraPreviewStream}

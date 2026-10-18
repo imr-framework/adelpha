@@ -20,6 +20,9 @@
 .sensor-waiting button.sensor-check { color: var(--m4-accent); border: 0; }
 .sensor-guide { max-width: 500px; margin-top: 24px; text-align: left; color: var(--m4-muted); font-size: 13px; line-height: 1.7; }
 .sensor-guide h3 { color: var(--m4-text); }
+.sensor-notes { max-width: 520px; margin: 18px auto 0; padding: 0; list-style: none; text-align: left; color: var(--m4-muted); font-size: 12px; line-height: 1.6; }
+.sensor-notes li { padding: 4px 0; }
+.sensor-waiting.is-compact .sensor-notes { width: 100%; margin: 0 0 16px; }
 .dash-unavailable { margin: auto; color: var(--m4-muted); font-size: 13px; line-height: 1.6; text-align: center; padding: 24px; }
 @media (max-width: 750px) { .sensor-waiting { padding: 40px 24px 30px 54px; } .sensor-illustration { width: 100%; } .sensor-waiting.is-compact { padding: 30px 18px; } }
 

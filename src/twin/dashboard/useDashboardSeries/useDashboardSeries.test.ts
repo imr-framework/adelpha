@@ -156,6 +156,21 @@ describe("hardware mode", () => {
     expect(result.current.emiSpectrum).toEqual([]);
     expect(result.current.johnsonNoise).toEqual([]);
     expect(result.current.tempHistory).toEqual([]);
+    expect(result.current.emiAvailable).toBe(false);
+    expect(result.current.temperatureAvailable).toBe(false);
+  });
+  it("marks EMI available from a measured channel without synthesizing a spectrum", () => {
+    const { result } = setup({
+      mode: "hardware",
+      systemState: systemStateFixture({
+        mode: "hardware",
+        thermal: null,
+        emi: { channels: [{ value: 0.012, source: "measured", timestamp: new Date().toISOString() }] },
+      } as never),
+    });
+    expect(result.current.emiAvailable).toBe(true);
+    expect(result.current.emiSpectrum).toEqual([]);
+    expect(result.current.temperatureAvailable).toBe(false);
   });
   it("clears simulated temperature history when switching to hardware", () => {
     const { result, rerender } = setup();

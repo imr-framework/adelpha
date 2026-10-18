@@ -44,10 +44,12 @@
 .mrzero-context dl div {display:flex;justify-content:space-between;gap:14px;font-size:12px;}
 .mrzero-context dt {color:var(--theme-muted, #9d9da9);}
 .mrzero-context dd {margin:0;white-space:nowrap;}
-.mrzero-actions {padding:16px 20px;border-top:1px solid var(--theme-border, #25252d);}
+.mrzero-actions {padding:16px 20px;border-top:1px solid var(--theme-border, #25252d);display:grid;gap:10px;}
 .mrzero-workspace .mr0-run {background:var(--theme-accent, #d5c4fa);color:var(--theme-on-accent, #24212e);border:1px solid var(--theme-accent, #d5c4fa);border-radius:7px;height:42px;width:100%;font-size:14px;}
 .mrzero-workspace .mr0-run:hover:not(:disabled) {background:var(--theme-accent, #e1d4fb);}
-.mrzero-secondary {background:transparent;color:var(--theme-text, #d3d2dc);border:1px solid var(--theme-border, #393941);border-radius:7px;padding:9px 12px;cursor:pointer;font:inherit;font-size:12px;}
+.mrzero-secondary {background:transparent;color:var(--theme-text, #d3d2dc);border:1px solid var(--theme-border, #393941);border-radius:7px;height:42px;width:100%;cursor:pointer;font:inherit;font-size:14px;}
+.mrzero-secondary:hover:not(:disabled) {background:var(--theme-hover, var(--theme-surface, #16161a));}
+.mrzero-secondary:disabled {opacity:0.7;cursor:progress;}
 .mrzero-workspace :is(button,input,select,summary):focus-visible {outline:2px solid var(--theme-border, #ddd8ed);outline-offset:3px;}
 .mrzero-sr-only {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
 .mrzero-workspace .mr0-error {font-size:12px;line-height:1.5;margin:0 0 12px;}

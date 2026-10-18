@@ -4,7 +4,10 @@ import { InfoCard, MetricRow, QuantityRow } from "../metrics";
 
 export function EmiCard({ emi }: { emi: SystemState["emi"] | null }) {
   return (
-    <InfoCard title="EMI">
+    <InfoCard
+      title="EMI"
+      footer={!emi ? <p className="physics-note">No usable EMI RMS.</p> : undefined}
+    >
       <QuantityRow label="RMS" q={emi?.rms_v} format={(v) => formatRmsV(v)} />
       <QuantityRow
         label="Peak freq"

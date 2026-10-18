@@ -19,7 +19,7 @@ Adelpha  ·  health  ·  scanner / mode  ·  workspace  ·  Settings  ·  Menu
 | **Health** | Twin, Console, and Agents at a glance |
 | **System Context** | `scanner_id / mode`, plus twin version in the dropdown |
 | **Workspace** | **Digital Twin**, **Imaging Console**, or **Engineering Studio** |
-| **Settings** | Models, twin runtime, Agents key, updates. [Settings](settings.md). |
+| **Settings** | Models, twin runtime, Agents key, devices, updates. [Settings](settings.md). |
 | **Menu** | Changes with the workspace (especially Imaging Console) |
 
 ## How to switch
@@ -64,8 +64,10 @@ Project workspaces for assembly design and simulation.
 | Area | Contents |
 | --- | --- |
 | **3D viewport** | Assembly view shows parts marked **Add to simulation**, in the same void as Digital Twin |
-| **Hardware studies** | Magnet field uses the simulation assembly. FEM imports its own STEP file. Gradient coils and passive shimming have separate workspaces. |
+| **Hardware studies** | The Magnet workspace is a Halbach array designer. FEM imports its own STEP file. Gradient coils, RF coils, and passive shimming have separate workspaces. |
 | **Assembly controls** | Orbit / pan / inspect rail, Front / Right / Top / Iso, view cube, fit (F) |
+
+Acquisition is an MRZero Bloch simulator. **Use parameters** opens [Imaging Console](imaging-console.md) with that sequence and its imaging fields in the queue.
 
 [FEM simulation](fem.md) uses a collapsible project drawer, CAD / Mesh / Results views, and a right-hand inspector. The study name stays at the bottom of the drawer.
 

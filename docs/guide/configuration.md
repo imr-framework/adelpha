@@ -51,6 +51,26 @@ Saved as `dtam_runtime.json` in the app config directory:
 
 Scanner and environment changes update the Twin session without restarting other services. Agent settings still restart the Python runtime. A complete user configuration under the config `dtam/` folder takes precedence over bundled defaults.
 
+## Device listener (`devices.json`)
+
+Boards connect to a WebSocket port, not Twin HTTP (`:8080`). The Twin starts the listener when it finds `devices.json`. There is no UI Start control; restart after changing the file.
+
+| Lookup | Path |
+| --- | --- |
+| Explicit | `ADELPHA_DEVICE_CONFIG` |
+| Desktop | `<app-config>/dtam/devices.json` (**Settings → Devices → Open config folder**) |
+| Also tried | `<ADELPHA_CONFIG_DIR>/devices.json`, `<DTAM_CONFIG_DIR>/devices.json` |
+
+| Field | Role |
+| --- | --- |
+| `host` / `port` | Bind address. Use `0.0.0.0` so a Pi on Ethernet can connect. Default port `8765`. |
+| `allow_control` | File-level gate for `actuators.set`. Default `false`. |
+| `devices.<id>.token` | Unique random Bearer token, at least 24 characters |
+| `devices.<id>.scanner_id` | Must match **Settings → Digital Twin** |
+| `devices.<id>.allowed_actuators` | Actuator id → allowed operations |
+
+Example: `dtam/src/dtam/communication/devices.example.json`. Procedure and client scripts: [Device link](devices.md).
+
 ## MRI working directory
 
 The Imaging Console stores exams under **MRI4ALL_BASE**:
@@ -117,12 +137,13 @@ Software version in About and Status comes from `src/twin/adelphaVersion.ts`. Th
 | --- | --- |
 | `DTAM_API_HOST` / `DTAM_API_PORT` | `127.0.0.1` / `8080` |
 | `DTAM_SCANNER_ID` | `simulated_scanner` |
+| `ADELPHA_DEVICE_CONFIG` | Path to `devices.json` (otherwise looked up under the config dirs) |
 | `GOOGLE_API_KEY` | Agents API only |
 
 ### Custom hardware systems
 
 In **Settings → Digital Twin → Twin setup**, choose **Define new system**. Enter a name, architecture, and nominal field strength in tesla, then select **Save and use system**. Profiles are saved locally and remain available in the scanner selector. This does not change the viewport's CAD model.
 
-Hardware profiles use read-only mode and can open without connected sensors. Until a compatible acquisition driver is configured, the dashboard shows its sensor waiting screen. A profile alone does not provide device connectivity. Select **Simulated scanner** to return to simulated telemetry; environment selection controls configuration overlays, not hardware connectivity.
+Hardware profiles stay read-only until Physical control is enabled. They can open without connected sensors; the dashboard waits until measured publications arrive. A profile alone does not open a board connection — see [Device link](devices.md). Select **Simulated scanner** to return to simulated telemetry; environment selection controls configuration overlays, not hardware connectivity.
 
 Switching scanner profiles or environments updates only the Twin session; the console and agents stay running. **Restart runtime** remains available for recovery and changes that need a full restart.

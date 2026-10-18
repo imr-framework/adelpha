@@ -117,6 +117,7 @@ const HEAVY_RESULT_KEYS = new Set([
   "noisy_image",
   "inhomogeneous_image",
   "echo",
+  "cubes",
 ]);
 
 function isHeavyArchiveKey(key: string) {

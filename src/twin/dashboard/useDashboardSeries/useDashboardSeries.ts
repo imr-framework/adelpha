@@ -40,6 +40,8 @@ export function useDashboardSeries({
     meanTemperature?.source === "estimated" && Number.isFinite(meanTemperature.value) &&
     (systemState?.thermal?.channels ?? []).some(q => q.channel_id?.includes("magnet") && isRecentMeasurement(q))
   );
+  const emiAvailable = simulation || (systemState?.emi?.channels ?? []).some(q => isRecentMeasurement(q));
+  const emiRmsValue = systemState?.emi?.rms_v?.value ?? 0.01;
   const [yawHistory, setYawHistory] = useState<number[]>([]);
   const [pitchHistory, setPitchHistory] = useState<number[]>([]);
   const [rollHistory, setRollHistory] = useState<number[]>([]);
@@ -64,7 +66,7 @@ export function useDashboardSeries({
   const rangeEnd = timeHistory[timeHistory.length - 1] ?? telemetry.device_time_ms;
 
   const peakHz = systemState?.emi?.peak_frequency_hz?.value ?? 50_000;
-  const emiRms = systemState?.emi?.rms_v?.value ?? 0.01;
+  const emiRms = emiRmsValue;
 
   const johnsonTempC =
     systemState?.thermal?.mean_magnet_temperature_c?.value ?? telemetry.magnet_temp_C;
@@ -135,6 +137,8 @@ export function useDashboardSeries({
   return {
     simulation,
     temperatureAvailable,
+    emiAvailable,
+    emiRms,
     tempHistory,
     tempMin,
     tempMax,

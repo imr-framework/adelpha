@@ -12,6 +12,16 @@ describe("hardware sensor availability", () => {
   it("accepts a recent measured channel, including partial connections", () => {
     expect(hasSensorMeasurements(state("measured", 1000), now)).toBe(true);
   });
+  it("treats a recent custom batch reading as reception", () => {
+    expect(hasSensorMeasurements(null, now, {
+      measurements: [{ value: 1.2, timestamp: new Date(now - 1000).toISOString(), validity: "valid" } as never],
+    })).toBe(true);
+  });
+  it("ignores missing batch readings", () => {
+    expect(hasSensorMeasurements(null, now, {
+      measurements: [{ value: 0, timestamp: new Date(now - 1000).toISOString(), validity: "missing" } as never],
+    })).toBe(false);
+  });
   it("rejects stale or future measurements", () => {
     expect(hasSensorMeasurements(state("measured", 60000), now)).toBe(false);
     expect(hasSensorMeasurements(state("measured", -60000), now)).toBe(false);

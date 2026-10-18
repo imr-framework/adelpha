@@ -4,7 +4,10 @@ import { InfoCard, MetricRow, QuantityRow } from "../metrics";
 
 export function RfNoiseCard({ rf }: { rf: SystemState["rf"] | null }) {
   return (
-    <InfoCard title="RF noise">
+    <InfoCard
+      title="RF noise"
+      footer={!rf ? <p className="physics-note">No usable RF noise measurements.</p> : undefined}
+    >
       <QuantityRow
         label="Noise floor"
         q={rf?.noise_floor_dbm_per_hz}

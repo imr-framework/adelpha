@@ -67,6 +67,7 @@ describe("studio project library", () => {
     expect(projectDetail(project({ catalogParts: 12, includedParts: 9 }))).toBe("12 parts · 9 included");
     expect(projectDetail(project({ lastView: "gradients" }))).toBe("Standalone design · PyCoilGen");
     expect(projectDetail(project({ lastView: "rf" }))).toBe("Standalone design · RFcoilbuilder");
+    expect(projectDetail(project({ lastView: "magnet", parts: 0 }))).toBe("Halbach array · HalbachMRIDesigner");
     expect(projectDetail(project({ application: "acquisition" }))).toBe("Acquisition simulation · MRzero");
     expect(projectDetail(project({ lastView: "shimming" }))).toBe("Optimization study");
     expect(projectDetail(project({ lastView: "fem" }))).toBe("FEM study · Elmer");
@@ -117,10 +118,12 @@ describe("studio project library", () => {
     const later = project({ id: "acq", application: "acquisition", openedAt: 50 });
     expect(featuredProject([hardware, later])?.id).toBe("acq");
     expect(featuredProject(seedProjects())).toBeNull();
-    expect(hasSetupDestination(hardware)).toBe(true);
+    expect(hasSetupDestination(hardware)).toBe(false);
+    expect(hasSetupDestination(project({ lastView: "fem" }))).toBe(true);
     expect(hasSetupDestination(later)).toBe(false);
     expect(hasSetupDestination(project({ lastView: "gradients" }))).toBe(false);
     expect(hasSetupDestination(project({ lastView: "rf" }))).toBe(false);
+    expect(hasSetupDestination(project({ lastView: "magnet" }))).toBe(false);
   });
 
   it("copies an example into a separate user project", () => {
