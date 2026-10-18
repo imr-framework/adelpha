@@ -10,6 +10,7 @@ import { saveBlob } from "../../desktop/saveFile";
 import { fetchFemFields, type FemFields } from "../mri/api";
 import { bounds, fieldColor, fieldTriangles, scalar, type Component, type Sample } from "./femFieldGeometry";
 import "./femFieldPreview.css";
+import { useFemDsv } from "./FemDsvControls";
 const format = (n: number) => n === 0 ? "0" : Math.abs(n) < .001 || Math.abs(n) >= 10000 ? n.toExponential(3) : n.toPrecision(4);
 type Probe = { point: number[]; vector: number[] };
 function FieldSurface({ samples, component, range, wireframe, onProbe }: { samples: Sample[]; component: Component; range: number[]; wireframe: boolean; onProbe: (p: Probe) => void }) {
@@ -80,6 +81,7 @@ export default function FemFieldPreview({ jobId, controlsHost }: { jobId: string
   const background = lightThemePalette(theme)?.bg ?? (theme === "mri4all" ? "#040919" : "#0a0b0e");
   const [data, setData] = useState<FemFields | null>(null), [error, setError] = useState("");
   const [exportError, setExportError] = useState("");
+  const dsv = useFemDsv(data, jobId);
   const [attempt, setAttempt] = useState(0);
   const [field, setField] = useProjectState<"B" | "H" | "A">(`fem.field.${jobId}.field`, "B"), [component, setComponent] = useProjectState<Component>(`fem.field.${jobId}.component`, "magnitude");
   const [mode, setMode] = useProjectState<"surface" | "slice">(`fem.field.${jobId}.mode`, "surface"), [axis, setAxis] = useProjectState(`fem.field.${jobId}.axis`, 1), [position, setPosition] = useProjectState(`fem.field.${jobId}.position`, 50);
@@ -143,18 +145,20 @@ export default function FemFieldPreview({ jobId, controlsHost }: { jobId: string
       <label className="fem-check-label"><input type="checkbox" checked={manual} onChange={e => { setManual(e.target.checked); setLow(String(stats[0])); setHigh(String(stats[1] || 1)); }} /> Fixed color range</label>
       {manual ? <><div className="fem-range-inputs"><label>Minimum<input aria-label="Color minimum" type="number" step="any" value={low} onChange={e => setLow(e.target.value)} /></label><label>Maximum<input aria-label="Color maximum" type="number" step="any" value={high} onChange={e => setHigh(e.target.value)} /></label></div>{!validRange && <small role="alert">Enter a maximum greater than the minimum. Using auto scale.</small>}</> : <small>Auto scale · displayed geometry</small>}
     </details>
+    {dsv.controls}
     <section className="fem-control-section fem-probe-readout"><h3><Crosshair size={14} />Probe {probe && <button type="button" aria-label="Clear point inspection" onClick={() => setProbe(null)}>×</button>}</h3>
       <div className="fem-probe-value"><span>{field}{component === "magnitude" ? " magnitude" : component.toUpperCase()}</span><output>{probe ? format(scalar(probe.vector, component)) : "—"} <small>{unit}</small></output></div>
       <dl>{["X", "Y", "Z"].map((label, i) => <div key={label}><dt>{label}</dt><dd>{probe ? (probe.point[i] * 1000).toFixed(3) : "—"} <small>mm</small></dd></div>)}</dl>
       {probe ? <small>{field} XYZ: {probe.vector.map(format).join(", ")} {unit}</small> : <p>Click a colored surface to inspect the field.</p>}
     </section>
-    <section className="fem-control-section"><h3>Export</h3><button type="button" className="fem-export-image" onClick={() => { setExportError(""); setCapture({ name: `elmer-${jobId.slice(0, 8)}-${field}-${component}.png`, label: `${field} · ${component} (${unit}) · ${mode === "slice" ? `${"XYZ"[axis]} = ${(offset * 1000).toFixed(2)} mm` : "Body surfaces"} · ${data.source}`, min: range[0], max: range[1] }); }}><Download size={15} />Export image<span>PNG</span></button><small>Nodal field interpolation · {data.source}</small></section>
+    <section className="fem-control-section"><h3>Export</h3><button type="button" className="fem-export-image" onClick={() => { setExportError(""); setCapture({ name: `elmer-${jobId.slice(0, 8)}-${field}-${component}.png`, label: `${field} · ${component} (${unit}) · ${mode === "slice" ? `${"XYZ"[axis]} = ${(offset * 1000).toFixed(2)} mm` : "Body surfaces"} · ${data.source}${dsv.annotation}`, min: range[0], max: range[1] }); }}><Download size={15} />Export image<span>PNG</span></button><small>Nodal field interpolation · {data.source}</small></section>
   </div>;
   return <div className={`fem-field-view ${controlsHost ? "is-docked" : "has-local-controls"}`} aria-label="Magnetic field visualization">
     <div className="fem-field-canvas"><Canvas key={`${camera}:${mode}:${axis}:${air}`} gl={{ preserveDrawingBuffer: true }} camera={{ position: mode === "surface" ? [1, -1, .6] : axis === 0 ? [1, 0, 0] : axis === 1 ? [0, 1, 0] : [0, 0, 1], up: mode === "surface" || axis !== 2 ? [0, 0, 1] : [0, 1, 0], near: .00001, far: 10000 }}>
       <color attach="background" args={[background]} />
       <Bounds margin={1.2}><FieldFraming data={data} focus={focus} slice={mode === "slice"} /><FieldSurface samples={samples} component={component} range={range} wireframe={wireframe} onProbe={setProbe} /></Bounds>
       {showLines && mode === "surface" && <FieldLines lines={lines} />}
+      {dsv.overlay}
       <OrbitControls makeDefault />
       <GizmoHelper alignment="bottom-left" margin={[52, 52]}><GizmoViewport axisColors={["#ec8da1", "#8ed9ba", "#a9abfa"]} labelColor="black" /></GizmoHelper>
       <Capture request={capture} done={setCapture} onError={setExportError} />

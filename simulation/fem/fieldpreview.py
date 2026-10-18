@@ -41,9 +41,21 @@ def read_field_preview(directory):
 
     points = array(piece.find('./Points/DataArray'), count * 3)
     fields = {}
+    # CalcFields' plain nodal arrays are projected across material interfaces.
+    # ResultOutput's Discontinuous Bodies separates geometry, but only the
+    # elemental (* e) arrays are recovered separately within each body.
+    # Prefer that complete set; retain compatibility with older nodal-only VTUs.
+    elemental = [piece.find(f'./PointData/DataArray[@Name="{name} e"]')
+                 for name, _ in FIELDS.values()]
+    if any(node is not None for node in elemental) and not all(node is not None for node in elemental):
+        raise ValueError('Incomplete body-specific magnetic fields. Download the VTU and solver logs.')
+    suffix = ' e' if all(node is not None for node in elemental) else ''
     for symbol, (name, unit) in FIELDS.items():
+        node = piece.find(f'./PointData/DataArray[@Name="{name}{suffix}"]')
+        if node is not None and node.get('NumberOfComponents', '1') != '3':
+            raise ValueError('Unsupported magnetic field component count')
         fields[symbol] = {'name': name, 'unit': unit,
-                          'values': array(piece.find(f'./PointData/DataArray[@Name="{name}"]'), count * 3)}
+                          'values': array(node, count * 3)}
     connectivity = array(piece.find('./Cells/DataArray[@Name="connectivity"]'), integer=True)
     offsets = array(piece.find('./Cells/DataArray[@Name="offsets"]'), cells, True)
     types = array(piece.find('./Cells/DataArray[@Name="types"]'), cells, True)

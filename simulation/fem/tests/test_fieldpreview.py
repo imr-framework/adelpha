@@ -49,3 +49,34 @@ def test_refuses_binary_or_nonfinite_data(tmp_path):
     ET.ElementTree(root).write(path)
     with pytest.raises(ValueError, match='unsupported'):
         read_field_preview(tmp_path)
+
+
+def test_prefers_body_specific_fields_over_continuous_projection(tmp_path):
+    path, root = fixture_result(tmp_path)
+    for name, _ in FIELDS.values():
+        ET.SubElement(root.find('.//PointData'), 'DataArray', Name=name + ' e',
+                      NumberOfComponents='3', format='ascii').text = ' '.join(str(-i) for i in range(15))
+    ET.ElementTree(root).write(path)
+    data = read_field_preview(tmp_path)
+    for field in data['fields'].values():
+        assert field['values'] == [-i for i in range(15)]
+
+
+@pytest.mark.parametrize('values,components', [('NaN ' * 15, '3'), ('0 ' * 12, '3'), ('0 ' * 15, '1')])
+def test_corrupt_elemental_fields_do_not_fall_back_to_averaged_values(tmp_path, values, components):
+    path, root = fixture_result(tmp_path)
+    for name, _ in FIELDS.values():
+        ET.SubElement(root.find('.//PointData'), 'DataArray', Name=name + ' e',
+                      NumberOfComponents=components, format='ascii').text = values
+    ET.ElementTree(root).write(path)
+    with pytest.raises(ValueError):
+        read_field_preview(tmp_path)
+
+
+def test_rejects_partial_body_specific_field_set(tmp_path):
+    path, root = fixture_result(tmp_path)
+    ET.SubElement(root.find('.//PointData'), 'DataArray', Name='magnetic flux density e',
+                  NumberOfComponents='3', format='ascii').text = '0 ' * 15
+    ET.ElementTree(root).write(path)
+    with pytest.raises(ValueError, match='Incomplete body-specific'):
+        read_field_preview(tmp_path)

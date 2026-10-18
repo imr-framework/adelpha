@@ -332,6 +332,11 @@ function displayWindow(values: number[]) {
   return { lo, hi: Math.max(hi, lo + 1e-6) };
 }
 
+/** Canvas y=0 is the top; MRZero / numpy row 0 is the inferior edge (`origin='lower'`). */
+export function sliceSourceIndex(x: number, y: number, width: number, height: number) {
+  return (height - 1 - y) * width + x;
+}
+
 function Mr0Image({
   image,
   range,
@@ -355,13 +360,17 @@ function Mr0Image({
     const pixels = sourceContext.createImageData(image.width, image.height);
     const span = Math.max(range.hi - range.lo, 1e-6);
     const count = Math.min(image.values.length, image.width * image.height);
-    for (let index = 0; index < count; index += 1) {
-      const shade = Math.max(0, Math.min(255, Math.round(((image.values[index] - range.lo) / span) * 255)));
-      const offset = index * 4;
-      pixels.data[offset] = shade;
-      pixels.data[offset + 1] = shade;
-      pixels.data[offset + 2] = shade;
-      pixels.data[offset + 3] = 255;
+    for (let y = 0; y < image.height; y += 1) {
+      for (let x = 0; x < image.width; x += 1) {
+        const src = sliceSourceIndex(x, y, image.width, image.height);
+        if (src >= count) continue;
+        const shade = Math.max(0, Math.min(255, Math.round(((image.values[src] - range.lo) / span) * 255)));
+        const offset = (y * image.width + x) * 4;
+        pixels.data[offset] = shade;
+        pixels.data[offset + 1] = shade;
+        pixels.data[offset + 2] = shade;
+        pixels.data[offset + 3] = 255;
+      }
     }
     sourceContext.putImageData(pixels, 0, 0);
 

@@ -7,17 +7,43 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-import xml.etree.ElementTree as ET
 
 from simulation.fem import Material, MeshOptions, Region, SimulationConfig, SolverOptions, inspect_step, run
 from simulation.fem.meshgen import generate_mesh, gmsh_session
 from simulation.fem.sifgen import generate_sif
 from simulation.fem.solver import _execute, _validate_results
+from simulation.fem.fieldpreview import read_field_preview
+from simulation.fem.config import MU0
 
 
 def config(path="magnet.step", **kwargs):
     return SimulationConfig(str(path), {"pm": Material(remanence=(0, 0, 1))},
                             (Region("magnet", (1,), "pm"),), **kwargs)
+
+
+def sample_air_b(preview, point):
+    """Probe the exported linear tetrahedra without a scientific-Python dependency."""
+    def sub(a, b):
+        return [x - y for x, y in zip(a, b)]
+    def dot(a, b):
+        return sum(x * y for x, y in zip(a, b))
+    def cross(a, b):
+        return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]
+    for group in preview['groups']:
+        if group['name'] != 'air':
+            continue
+        for i in range(0, len(group['tetrahedra']), 4):
+            ids = group['tetrahedra'][i:i+4]
+            nodes = [preview['points'][3*n:3*n+3] for n in ids]
+            a, b, c = [sub(n, nodes[0]) for n in nodes[1:]]
+            det = dot(a, cross(b, c))
+            delta = sub(point, nodes[0])
+            weights = [dot(delta, row) / det for row in (cross(b, c), cross(c, a), cross(a, b))]
+            weights.insert(0, 1 - sum(weights))
+            if min(weights) >= -1e-8:
+                return [sum(w * preview['fields']['B']['values'][3*n+axis]
+                            for w, n in zip(weights, ids)) for axis in range(3)]
+    raise AssertionError('Probe is outside the air mesh')
 
 
 class ValidationTests(unittest.TestCase):
@@ -112,10 +138,9 @@ class IntegrationTests(unittest.TestCase):
         for size in (.003, .0015):
             c = config(path, mesh=MeshOptions(size=size, air_size=.012, air_padding=.06, transition=.02))
             result = run(c, self.directory / f"run-{size}")
-            root = ET.parse(result["results"][0]).getroot()
-            points = list(map(float, root.find(".//Points/DataArray").text.split()))
-            array = next(a for a in root.findall(".//PointData/DataArray") if a.get("Name") == "magnetic flux density")
-            field = list(map(float, array.text.split()))
+            preview = read_field_preview(self.directory / f"run-{size}")
+            points = preview['points']
+            field = preview['fields']['B']['values']
             interior = [field[i+2] for i in range(0, len(points), 3) if sum(x*x for x in points[i:i+3]) < .005**2]
             self.assertTrue(interior)
             mean = sum(interior) / len(interior)
@@ -135,12 +160,47 @@ class IntegrationTests(unittest.TestCase):
                              (Region("magnet", (1,), "pm"), Region("yoke", (2,), "iron")),
                              MeshOptions(size=.004, air_size=.015, air_padding=.03), SolverOptions(quadratic=True))
         result = run(c, self.directory / "assembly-run")
-        from simulation.fem.fieldpreview import read_field_preview
         preview = read_field_preview(self.directory / "assembly-run")
         self.assertEqual({g['name'] for g in preview['groups']}, {'air', 'magnet', 'yoke'})
         self.assertEqual(sum(len(g['tetrahedra']) // 4 for g in preview['groups']), result['mesh']['tetrahedra'])
         self.assertEqual(len(result["mesh"]["bodies"]), 3)
         self.assertEqual(result["status"], "completed")
+        # The exported vectors must obey B = mu0*mu_r*H + Br in EACH body,
+        # including duplicated interface vertices. Continuous nodal projection
+        # violates this by order-one tesla even though the solve converges.
+        regions = {r.name: r for r in c.regions}
+        for group in preview['groups']:
+            material = Material() if group['name'] == 'air' else c.materials[regions[group['name']].material]
+            for node in set(group['tetrahedra']):
+                for axis in range(3):
+                    i = 3 * node + axis
+                    expected = MU0 * material.relative_permeability * preview['fields']['H']['values'][i] + material.remanence[axis]
+                    self.assertAlmostEqual(preview['fields']['B']['values'][i], expected, delta=2e-6)
+
+    def test_two_cube_gap_field_converges_to_analytical_solution(self):
+        def build(occ):
+            for z in (-.015, .005):
+                occ.addBox(-.005, -.005, z, .01, .01, .01)
+        path = self.step('two-cubes', build)
+        # For mu_r=1 magnetization is uniform. Each square pole face has
+        # solid angle 4*atan(a*b/(d*sqrt(d*d+a*a+b*b))) on its axis.
+        # Superpose the four charged faces of the two parallel magnets.
+        a, br = .005, 1.2
+        face = lambda d: math.atan(a*a / (d * math.sqrt(d*d + 2*a*a)))
+        expected = 2 * br / math.pi * (face(.005) - face(.015))
+        errors = []
+        for size in (.003, .0015):
+            c = SimulationConfig(str(path), {'pm': Material(1, (0, 0, br))},
+                                 (Region('lower', (1,), 'pm'), Region('upper', (2,), 'pm')),
+                                 MeshOptions(size=size, air_size=.012, air_padding=.06, transition=.02))
+            directory = self.directory / f'gap-{size}'
+            run(c, directory)
+            field = sample_air_b(read_field_preview(directory), (0, 0, 0))
+            errors.append(abs(field[2] - expected) / expected)
+        self.assertLess(errors[1], .05)
+        self.assertLess(errors[1], errors[0])
+        self.assertLess(math.hypot(field[0], field[1]) / expected, .05)
+        print('Two-cube gap Bz relative errors (coarse, fine):', errors)
 
     def test_overlap_and_unassigned_solid_rejected(self):
         def build(occ):

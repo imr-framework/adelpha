@@ -1,0 +1,19 @@
+{
+    "message_id": "float32",
+    "requires_response": "bool",
+    "sensors": {
+      "temperature": {
+        "sensor_id": "int32",
+        "value": "float32/null"
+      },
+      "emi": {
+        "sensor_id": "int32",
+        "value": "float32/null"
+      },
+      "custom": {
+        "sensor_id": "int32",
+        "dashboard_id": "int32",
+        "value": "float32/null"
+      }
+    }
+  }

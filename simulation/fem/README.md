@@ -169,6 +169,9 @@ failed-job status, and mesh refinement against a uniformly magnetized sphere. Fo
 `mu_r = 1`, its analytical internal field is `B = 2 Br / 3`. The fine regression mesh
 must be within 5% and improve on the coarse mesh. These small fixtures do not certify
 accuracy for an arbitrary imported assembly; do a convergence study for each design.
+The suite also checks the two-cube center-gap field against the analytical square
+pole-face solid-angle solution at `mu_r = 1`, and verifies `B = mu0*mu_r*H + Br`
+at every exported volume node, including both sides of material interfaces.
 
 Implementation references: [Gmsh API manual](https://gmsh.info/doc/texinfo/),
 [Elmer Models Manual, Computation of Magnetic Fields in 3D](https://www.nic.funet.fi/pub/org/net/CSC/software/elmer/doc/ElmerModelsManual.pdf),
@@ -263,7 +266,14 @@ Elmer's discontinuous body nodes. Surfaces are extracted separately per body;
 sections interpolate the nodal vectors within each linear tetrahedron before
 computing magnitude. This displays the exported nodal solution, including when
 quadratic field approximation was used; it does not reevaluate the solver basis.
-No field smoothing or geometry decimation is applied. Interactive results are
+The reader selects Elmer's `magnetic flux density e`, `magnetic field strength e`,
+and `magnetic vector potential e` arrays. With `Discontinuous Bodies`, Elmer recovers
+these elemental fields within each body. The plain arrays are globally projected
+nodal fields: duplicating their geometry does not undo averaging across interfaces.
+Nodal-only legacy files remain readable; incomplete or corrupt elemental sets are
+rejected rather than silently replaced with the global projection. Existing job
+archives containing the elemental arrays benefit when the result is reloaded,
+without a new solve. No additional viewer smoothing or geometry decimation is applied. Interactive results are
 limited to 100 MB VTU files, 200,000 points and 250,000 cells; larger or unsupported
 results give a download instruction instead of an incomplete visualization.
 
@@ -280,7 +290,12 @@ Adelpha, MRI4ALL, Porcelain, and Glacier themes; scientific field colors are unc
 The default result view shows colored solid surfaces and mesh edges, without a
 section plane. Cross-sections remain available explicitly. Optional **B field
 lines** trace the exported B vectors using barycentric interpolation in tetrahedra
-and midpoint integration, with up to 24 surface seeds and bounded path lengths.
+and adaptive midpoint integration, with up to 24 seeds and bounded path lengths.
+Seeds use a balanced grid through each body's middle plane, perpendicular to its
+dominant mean B component, instead of arbitrary surface-triangle numbering. Hollow
+or off-center bodies with no valid grid seeds use a coordinate-ordered surface fallback.
+Step doubling checks local integration error; this does not estimate FEM field error.
+Seed placement does not mirror trajectories or enforce symmetry on the computed field.
 Computation runs in a cancellable worker. These trajectories are qualitative;
 mesh refinement and the nodal field quality determine their accuracy. They are
 available in surface mode and are off by default. No illustrative curves from

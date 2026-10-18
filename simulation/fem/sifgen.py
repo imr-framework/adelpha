@@ -51,6 +51,8 @@ Solver 2
   Calculate Magnetic Flux Density = Logical True
   Calculate Magnetic Field Strength = Logical True
   Calculate Magnetic Vector Potential = Logical True
+  ! Required for body-specific interface values in the interactive preview.
+  Calculate Elemental Fields = Logical True
   Linear System Solver = Iterative
   Linear System Iterative Method = CG
   Linear System Preconditioning = ILU0

@@ -48,3 +48,10 @@
 .fem-local-controls { position: absolute; right: 0; top: 0; bottom: 0; width: 270px; box-sizing: border-box; overflow: auto; padding: 20px; background: var(--m4-panel); border-left: 1px solid var(--theme-border, var(--border)); }
 .has-local-controls .fem-field-canvas { right: 270px; }
 .has-local-controls .fem-field-legend { right: 290px; }
+.fem-dsv-center { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; color: var(--m4-muted); }
+.fem-dsv-center input { min-width: 0; }
+.fem-dsv-stats { display: grid; gap: 8px; }
+.fem-dsv-stats > div { display: flex; justify-content: space-between; gap: 8px; }
+.fem-dsv-stats dt { color: var(--m4-muted); }
+.fem-dsv-stats dd { margin: 0; font-variant-numeric: tabular-nums; }
+.fem-dsv-settings > small { display: block; }

@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AcquisitionStudio } from "./StudioApplication";
+import { AcquisitionStudio, sliceSourceIndex } from "./StudioApplication";
 
 const simulateMr0 = vi.fn();
 
@@ -79,6 +79,13 @@ describe("AcquisitionStudio MRZero suite", () => {
     expect(screen.getByLabelText("ETL")).toHaveValue(8);
     expect(screen.getByLabelText("Slices")).toHaveValue(8);
     expect(screen.queryByLabelText("PE Ordering")).not.toBeInTheDocument();
+  });
+
+  it("places numpy row 0 at the bottom of the slice canvas", () => {
+    expect(sliceSourceIndex(0, 0, 2, 2)).toBe(2);
+    expect(sliceSourceIndex(1, 0, 2, 2)).toBe(3);
+    expect(sliceSourceIndex(0, 1, 2, 2)).toBe(0);
+    expect(sliceSourceIndex(1, 1, 2, 2)).toBe(1);
   });
 
   it("shows a failure when MRZero cannot run", async () => {

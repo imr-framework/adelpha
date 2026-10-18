@@ -213,6 +213,7 @@ Default field display is solid surfaces with mesh edges. A decorative translucen
 
 - Render real output arrays. Concept images may guide layout but are not a source of computed fields or illustrative field lines to ship as results.
 - Preserve per-body nodes at material interfaces. Coincident coordinates do not imply equal physical fields; do not average them indiscriminately.
+- Read Elmer's body-recovered `magnetic flux density e`, `magnetic field strength e`, and `magnetic vector potential e` arrays when available. `Discontinuous Bodies` duplicates geometry but does not undo cross-interface projection in the plain nodal arrays. Keep the complete-set validation and nodal-only legacy compatibility in `simulation/fem/fieldpreview.py`.
 - Cross-sections interpolate nodal vector components in tetrahedra before computing magnitude. Do not interpolate precomputed magnitudes as if equivalent.
 - Probes must use the displayed geometry's interpolation and report the correct coordinate units.
 - Fixed color limits clip colors, not underlying field/probe values. State the quantity, component, units, range, and whether the range is fixed or automatic.
@@ -221,7 +222,7 @@ Default field display is solid surfaces with mesh edges. A decorative translucen
 
 The current explorer reads supported ASCII VTU output and displays exported nodal values. It does not reevaluate Elmer's quadratic basis. Limits currently include 100 MB VTU files, 200,000 points, 250,000 cells, and a separate mesh-preview cap of 250,000 surface triangles. Verify constants before changing or documenting them. Oversized/unsupported data should produce an explicit download path, not an incomplete scene presented as complete.
 
-B field lines use tetrahedral interpolation and bounded midpoint integration in a cancellable Web Worker, with up to 24 seeds. They are qualitative trajectories whose quality depends on the underlying mesh and nodal solution. Keep expensive computation off the main interaction thread and dispose obsolete workers/resources.
+B field lines use tetrahedral interpolation and bounded adaptive midpoint integration in a cancellable Web Worker, with up to 24 spatially balanced seeds per scene (surface fallback for bodies without valid interior seeds). Do not seed by arbitrary mesh-triangle order or force symmetry by mirroring computed paths. They are qualitative trajectories whose quality depends on the underlying mesh and nodal solution; local integration error control does not certify FEM accuracy. Keep expensive computation off the main interaction thread and dispose obsolete workers/resources.
 
 ### Camera and resizing lessons
 
