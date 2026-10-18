@@ -1,3 +1,4 @@
+import { lightThemePalette, useConsoleTheme, type ConsoleTheme } from "./consoleTheme";
 import { useEffect, useRef } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
@@ -149,11 +150,30 @@ const TERM_THEME = {
   brightWhite: "#ffffff",
 } as const;
 
+function terminalTheme(theme: ConsoleTheme) {
+  const palette = lightThemePalette(theme);
+  if (!palette) return TERM_THEME;
+  return {
+    background: palette.surface, foreground: palette.text,
+    cursor: palette.accent, cursorAccent: palette.surface,
+    selectionBackground: palette["accent-soft"],
+    black: palette.text, white: palette.text, brightWhite: palette.text,
+    brightBlack: palette.muted,
+    red: palette.danger, brightRed: palette.danger,
+    green: palette.success, brightGreen: palette.success,
+    yellow: palette.warning, brightYellow: palette.warning,
+    blue: palette.accent, brightBlue: palette.accent,
+    cyan: palette.accent, brightCyan: palette.accent,
+    magenta: "#7552ab", brightMagenta: "#7552ab",
+  };
+}
+
 type TwinTerminalProps = {
   active: boolean;
 };
 
 export function TwinTerminal({ active }: TwinTerminalProps) {
+  const [theme] = useConsoleTheme();
   const hostRef = useRef<HTMLDivElement | null>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
@@ -178,7 +198,7 @@ export function TwinTerminal({ active }: TwinTerminalProps) {
       lineHeight: 1.35,
       scrollback: 5000,
       convertEol: true,
-      theme: TERM_THEME,
+      theme: terminalTheme(theme),
     });
 
     const fit = new FitAddon();
@@ -385,6 +405,10 @@ export function TwinTerminal({ active }: TwinTerminalProps) {
       fitRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (termRef.current) termRef.current.options.theme = terminalTheme(theme);
+  }, [theme]);
 
   useEffect(() => {
     if (!active) return;

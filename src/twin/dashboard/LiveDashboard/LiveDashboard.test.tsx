@@ -34,7 +34,7 @@ describe("magnet stage", () => {
     expect(screen.getByText("Magnet temperature (time)")).toBeInTheDocument();
     expect(screen.getByText(/Johnson noise spectrum/)).toBeInTheDocument();
     expect(screen.getByText(/Johnson noise \(time\)/)).toBeInTheDocument();
-    expect(screen.getByText(/MRI signal spectrum/)).toBeInTheDocument();
+    expect(screen.getByText(/EMI sensor spectrum/)).toBeInTheDocument();
   });
 
   it("does not render the camera cards", () => {
@@ -43,7 +43,7 @@ describe("magnet stage", () => {
     expect(container.querySelector(".dash-camera-preview")).toBeNull();
   });
 
-  it("draws the EMI marker on the MRI card", () => {
+  it("draws the EMI marker on the EMI card", () => {
     const { container } = renderDashboard("magnet");
     expect(container.querySelector(".dash-emi-marker")).not.toBeNull();
   });
@@ -54,10 +54,10 @@ describe("magnet stage", () => {
     expect(onExpand).toHaveBeenCalledWith("temp");
   });
 
-  it("expands the MRI card on click", async () => {
+  it("expands the EMI card on click", async () => {
     const { onExpand } = renderDashboard("magnet");
-    await userEvent.click(screen.getByText(/MRI signal spectrum/));
-    expect(onExpand).toHaveBeenCalledWith("mriSpec");
+    await userEvent.click(screen.getByText(/EMI sensor spectrum/));
+    expect(onExpand).toHaveBeenCalledWith("emiSpec");
   });
 });
 
@@ -84,5 +84,34 @@ describe("camera stage", () => {
     const { onExpand } = renderDashboard("camera");
     await userEvent.click(screen.getByText("Yaw"));
     expect(onExpand).toHaveBeenCalledWith("yaw");
+  });
+});
+
+describe("hardware sensor connection states", () => {
+  it("replaces plots with the approved waiting view", () => {
+    const { container } = render(<LiveDashboard series={seriesFixture()} stageMode="magnet" cameraPreviewStream={null} telemetry={telemetryFixture()} onExpand={vi.fn()} waitingForSensors />);
+    expect(screen.getByText("Ready when your sensors are")).toBeInTheDocument();
+    expect(container.querySelector(".dash-grid")).toBeNull();
+  });
+  it("does not replace the independent camera dashboard", () => {
+    render(<LiveDashboard series={seriesFixture()} stageMode="camera" cameraPreviewStream={null} telemetry={telemetryFixture()} onExpand={vi.fn()} waitingForSensors />);
+    expect(screen.getByText("Yaw")).toBeInTheDocument();
+    expect(screen.queryByText("Ready when your sensors are")).not.toBeInTheDocument();
+  });
+  it("does not offer synthetic spectra for partial hardware connections", async () => {
+    const onExpand = vi.fn();
+    const series = { ...seriesFixture(), simulation: false, temperatureAvailable: true, emiAvailable: false, emiSpectrum: [], johnsonNoise: [] };
+    const { container } = render(<LiveDashboard series={series} stageMode="magnet" cameraPreviewStream={null} telemetry={telemetryFixture()} onExpand={onExpand} />);
+    await userEvent.click(screen.getByText("EMI sensor spectrum"));
+    expect(onExpand).not.toHaveBeenCalled();
+    expect(container.querySelector(".dash-emi-marker")).toBeNull();
+    expect(screen.getByText("EMI sensor not connected")).toBeInTheDocument();
+    expect(screen.getAllByText("Johnson noise is simulated only; it is not measured in hardware")).toHaveLength(2);
+  });
+  it("keeps EMI RMS honest when temperature is missing", () => {
+    const series = { ...seriesFixture(), simulation: false, temperatureAvailable: false, emiAvailable: true, emiRms: 0.012, emiSpectrum: [], johnsonNoise: [], tempHistory: [] };
+    render(<LiveDashboard series={series} stageMode="magnet" cameraPreviewStream={null} telemetry={telemetryFixture()} onExpand={vi.fn()} />);
+    expect(screen.getByText("Temperature sensor not connected")).toBeInTheDocument();
+    expect(screen.getByText("EMI RMS is on Telemetry; this protocol does not publish a spectrum")).toBeInTheDocument();
   });
 });

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
+import json
 from typing import Any
 
 import yaml
@@ -77,6 +79,12 @@ def load_scanner_profile(
     *,
     include_base: bool = True,
 ) -> ScannerProfile:
+    custom_path = os.environ.get("ADELPHA_DTAM_PREFS")
+    if custom_path and scanner_id not in {"simulated_scanner", "halbach_48mt"}:
+        prefs = json.loads(Path(custom_path).read_text(encoding="utf-8"))
+        for profile in prefs.get("custom_systems", []):
+            if profile["id"] == scanner_id:
+                return ScannerProfile.model_validate({**profile, "metadata": {"adapter": "profile_hardware"}})
     profiles_dir = config_root / "scanner_profiles"
     specific = load_yaml(profiles_dir / f"{scanner_id}.yaml")
 

@@ -56,7 +56,7 @@ Details: [Twin HTTP API](docs/platform/twin-api.md), [Getting started](docs/star
 ## Tests and checks
 
 ```bash
-uv run pytest tests/unit tests/integration/test_foundation_bootstrap.py -q
+uv run pytest tests/unit tests/communication tests/integration/test_foundation_bootstrap.py -q
 make test
 make lint
 make typecheck

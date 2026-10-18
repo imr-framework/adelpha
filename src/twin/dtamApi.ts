@@ -86,3 +86,35 @@ export async function fetchSensorsBatch(): Promise<MeasurementBatch> {
   if (!res.ok) throw new Error(await readError(res));
   return res.json() as Promise<MeasurementBatch>;
 }
+
+export type DeviceListenerStatus = {
+  devices: Array<{
+    device_id: string;
+    scanner_id: string;
+    connected: boolean;
+    last_received: string | null;
+    capabilities: unknown;
+  }>;
+  host: string | null;
+  port: number | null;
+  allow_control: boolean;
+  control_enabled: boolean;
+  error: string | null;
+};
+
+export async function fetchDevices(): Promise<DeviceListenerStatus> {
+  const res = await runtimeFetch(`${dtamBaseUrl()}/devices`, { cache: "no-store" });
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json() as Promise<DeviceListenerStatus>;
+}
+
+export async function setDeviceControl(enabled: boolean): Promise<{ enabled: boolean }> {
+  const res = await runtimeFetch(`${dtamBaseUrl()}/devices/control`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ enabled }),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json() as Promise<{ enabled: boolean }>;
+}

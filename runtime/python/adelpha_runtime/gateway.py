@@ -21,6 +21,11 @@ from adelpha_runtime.registry import ServiceRegistry
 log = logging.getLogger("adelpha.runtime.gateway")
 
 
+class TwinConfigurationBody(BaseModel):
+    scanner_id: str
+    environment: str
+
+
 class GoogleApiKeyBody(BaseModel):
     api_key: str | None = None
 
@@ -93,13 +98,14 @@ def create_gateway_app(
         expose_headers=["Content-Disposition"],
     )
 
+    aliases = {"twin": "/api/dtam", "console": "/api/mri"}
     for state in registry.states.values():
         if state.mount is None:
             continue
-        if state.definition.id == "twin":
-            app.mount("/api/dtam", state.mount)
-        elif state.definition.id == "console":
-            app.mount("/api/mri", state.mount)
+        prefix = state.definition.proxy_prefix or aliases.get(state.definition.id, f"/api/{state.definition.id}")
+        if state.definition.child_factory is not None:
+            continue
+        app.mount(prefix, state.mount)
 
     @app.get("/runtime/health")
     def runtime_health() -> dict[str, Any]:
@@ -141,6 +147,20 @@ def create_gateway_app(
         os.environ.pop("GOOGLE_API_KEY", None)
         registry.stop("agents")
         return {"ok": True, "agents": registry.snapshot()["agents"]}
+
+    @app.post("/runtime/twin/configuration")
+    def configure_twin(payload: TwinConfigurationBody) -> dict[str, Any]:
+        state = registry.states.get("twin")
+        reconfigure = getattr(getattr(state.mount, "state", None), "reconfigure", None) if state else None
+        if reconfigure is None:
+            raise HTTPException(status_code=503, detail="Twin is not ready; restart the runtime.")
+        try:
+            reconfigure(payload.scanner_id, payload.environment)
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        os.environ["DTAM_SCANNER_ID"] = payload.scanner_id
+        os.environ["DTAM_ENVIRONMENT"] = payload.environment
+        return {"ok": True}
 
     @app.get("/runtime/diagnostics")
     def diagnostics() -> dict[str, Any]:

@@ -6,7 +6,7 @@ icon: lucide/waypoints
 
 # Architecture
 
-The GUI is an **observer + operator client** organized into **workspaces**. Twin telemetry is read-only from the Twin HTTP API. Agents chat uses Google ADK’s API server. The Imaging Console uses a FastAPI façade in this repo; closed-loop hardware I/O stays in Python (FLOCRA / MaRCoS), not in TypeScript.
+The GUI is an **observer + operator client** organized into **workspaces**. Twin telemetry is read from the Twin HTTP API. Sensor boards are WebSocket **clients** of Adelpha; they do not call that HTTP port. Agents chat uses Google ADK’s API server. The Imaging Console uses a FastAPI façade in this repo; closed-loop imaging I/O stays in Python (FLOCRA / MaRCoS), not in TypeScript. Arduino serial stays in a user Python bridge.
 
 In the **desktop app** those three APIs are one supervisor process (dynamic port, session token). Browser-only Vite still uses fixed ports. See [Getting started](../start/index.md).
 
@@ -22,7 +22,7 @@ In the **desktop app** those three APIs are one supervisor process (dynamic port
 | --- | --- |
 | `digital-twin` | Viewport + resizable side panel + bottom console |
 | `imaging-console` | Full-width `ImagingConsole` |
-| `engineering-studio` | Full-width Engineering Studio viewport (simulation parts in the same void as Digital Twin) |
+| `engineering-studio` | Project workspaces for assemblies, magnet fields, STEP-based FEM, coils, and shimming |
 
 Alt workspaces keep the Digital Twin WebGL canvas mounted (hidden and paused) so orbit and CAD view survive a switch. The telemetry panel is hidden.
 
@@ -35,12 +35,19 @@ Alt workspaces keep the Digital Twin WebGL canvas mounted (hidden and paused) so
 | `src/twin/ImagingConsole.tsx` | Imaging Console shell (viewers + sequence editor) |
 | `src/twin/EngineeringStudio.tsx` | Engineering Studio shell, CAD viewport, and view controls |
 | `src/twin/Mri4allWindows.tsx` | Status, Log, Config, Study Viewer, Flex |
-| `src/twin/mri/api.ts` | MRI console REST + WebSocket client |
-| `src/twin/consoleTheme.ts` | Adelpha vs MRI4ALL console colors |
+| `src/twin/mri/api.ts` | Console and engineering API clients |
+| `src/twin/studio/ElmerStepStudio.tsx` | STEP-based FEM setup, jobs, and viewer navigation |
+| `src/twin/studio/FemFieldPreview.tsx` | In-app field surfaces, sections, probes, and exports |
+| `runtime/python/adelpha_runtime/fem.py` | FEM uploads, background jobs, and result routes |
+| `simulation/fem/` | Gmsh meshing, Elmer solving, and preview data |
+| `src/twin/consoleTheme.ts` | Shared Adelpha, MRI4ALL, Porcelain, and Glacier themes |
 | `src/twin/scannerModel.ts` | Bundled + imported scanner profiles |
 | `src/twin/importedModels.ts` | GLB import (IndexedDB) |
 | `src/twin/settings/DtamSetupSection.tsx` | Twin scanner, environment, Agents key |
-| `src/twin/dtamApi.ts` | Twin: health, state, forecast, assess, sensors |
+| `src/twin/settings/DeviceLinkSection.tsx` | Device listener status and Physical control |
+| `src/twin/dtamApi.ts` | Twin: health, state, forecast, assess, sensors, devices |
+| `python/adelpha/` | Public PyPI package: `telemetry` (sensors), `feedback` (control), twin, magnet, coil, FEM |
+| `dtam/src/dtam/communication/` | JSON-RPC device protocol, WebSocket hub, internal client used by `adelpha.telemetry` |
 | `src/twin/adkApi.ts` | Agents: sessions, SSE / run, list-apps, artifacts |
 | `src/twin/dtamTypes.ts` | TypeScript mirrors of `SystemState` / quantities |
 | `src/twin/telemetryStore.ts` | Poll driver, forecast / assess actions, scene mapping |
@@ -56,6 +63,10 @@ Alt workspaces keep the Digital Twin WebGL canvas mounted (hidden and paused) so
 | `src/twin/dashboard/` | Live dashboard grid, expanded charts, noise/DFT maths, series hook |
 | `src/twin/panel/` | Side panel shell, panel layout hook, telemetry cards |
 | `console/services/api/app.py` | MRI FastAPI façade |
+
+## FEM simulation
+
+[FEM projects](fem.md) use their own imported STEP solids. The client submits jobs through `/api/magnet/fem`; worker processes run Gmsh and Elmer. Mesh and field previews are served separately from the downloadable result archive. The UI polls job status and opens Results after a successful solve.
 
 ## Polling vs forecast
 
@@ -73,4 +84,4 @@ Tauri v2 (`src-tauri/`) loads the Vite UI, spawns `adelpha-python-runtime`, and 
 
 ## Related
 
-[MaRCoS](../about/marcos.md) · [MRI4ALL](../about/mri4all.md) · [Digital twins](../about/digital-twins.md) · [Sequences](../about/sequences.md) · [Reconstruction](../about/reconstruction.md)
+[MaRCoS](../about/marcos.md) · [MRI4ALL](../about/mri4all.md) · [Digital twins](../about/digital-twins.md) · [Device link](devices.md) · [Sequences](../about/sequences.md) · [Reconstruction](../about/reconstruction.md)

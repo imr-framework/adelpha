@@ -1,30 +1,30 @@
 :root {
-  color-scheme: dark;
-  --bg: #050505;
-  --bg-deep: #000000;
-  --bg-glow-a: rgba(255, 255, 255, 0.04);
-  --bg-glow-b: rgba(160, 160, 160, 0.03);
-  --panel: rgba(12, 12, 13, 0.88);
-  --border: rgba(255, 255, 255, 0.1);
-  --text: #f1f3f5;
-  --muted: #9ba0a8;
-  --accent: #b9c0ca;
-  --ok: #3ee4a4;
-  --bad: #ff6b6b;
-  --m4-bg: #0a0b0e;
-  --m4-panel: #0e1014;
-  --m4-chrome: #1c1c1c;
-  --m4-accent: #8260fb;
-  --m4-accent-soft: rgba(130, 96, 251, 0.45);
-  --m4-ok: #3ee4a4;
-  --m4-warn: #e8c547;
-  --m4-bad: #ff6b6b;
-  --m4-dbg: #6eb6ff;
-  --m4-muted: #8b919c;
-  --m4-text: #eef0f3;
-  --m4-scrim: rgba(0, 0, 0, 0.45);
-  --m4-row: rgba(255, 255, 255, 0.04);
-  --m4-input: #161618;
+  color-scheme: var(--theme-color-scheme, dark);
+  --bg: var(--theme-bg, #050505);
+  --bg-deep: var(--theme-bg, #000000);
+  --bg-glow-a: var(--theme-glow, rgba(255, 255, 255, 0.04));
+  --bg-glow-b: var(--theme-glow, rgba(160, 160, 160, 0.03));
+  --panel: var(--theme-surface, rgba(12, 12, 13, 0.88));
+  --border: var(--theme-border, rgba(255, 255, 255, 0.1));
+  --text: var(--theme-text, #f1f3f5);
+  --muted: var(--theme-muted, #9ba0a8);
+  --accent: var(--theme-accent, #b9c0ca);
+  --ok: var(--theme-success, #3ee4a4);
+  --bad: var(--theme-danger, #ff6b6b);
+  --m4-bg: var(--theme-bg, #0a0b0e);
+  --m4-panel: var(--theme-surface, #0e1014);
+  --m4-chrome: var(--theme-raised, #1c1c1c);
+  --m4-accent: var(--theme-accent, #8260fb);
+  --m4-accent-soft: var(--theme-accent-soft, rgba(130, 96, 251, 0.45));
+  --m4-ok: var(--theme-success, #3ee4a4);
+  --m4-warn: var(--theme-warning, #e8c547);
+  --m4-bad: var(--theme-danger, #ff6b6b);
+  --m4-dbg: var(--theme-accent, #6eb6ff);
+  --m4-muted: var(--theme-muted, #8b919c);
+  --m4-text: var(--theme-text, #eef0f3);
+  --m4-scrim: var(--theme-scrim, rgba(0, 0, 0, 0.45));
+  --m4-row: var(--theme-hover, rgba(255, 255, 255, 0.04));
+  --m4-input: var(--theme-surface, #161618);
   --font-sans: "Geist Variable", "Geist", "Inter", system-ui, -apple-system, Segoe UI, Roboto,
     sans-serif;
   --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
@@ -80,7 +80,7 @@ body,
   padding: 10px 20px;
   border-bottom: 1px solid var(--border);
   gap: 16px;
-  background: linear-gradient(180deg, rgba(10, 10, 11, 0.9) 0%, rgba(10, 10, 11, 0.65) 100%);
+  background: linear-gradient(180deg, var(--theme-bg, rgba(10, 10, 11, 0.9)) 0%, var(--theme-bg, rgba(10, 10, 11, 0.65)) 100%);
   backdrop-filter: blur(4px);
   overflow: visible;
 }
@@ -168,8 +168,8 @@ body,
 }
 
 .topbar-icon-btn.is-open {
-  border-color: rgba(110, 182, 255, 0.55);
-  background: #1c1c1c;
+  border-color: var(--theme-accent, rgba(110, 182, 255, 0.55));
+  background: var(--theme-surface, #1c1c1c);
 }
 
 .topbar-icon-btn {
@@ -179,16 +179,16 @@ body,
   display: inline-grid;
   place-items: center;
   border-radius: 9px;
-  border: 1px solid #343434;
-  background: #161616;
-  color: #f2f2f2;
+  border: 1px solid var(--theme-border, #343434);
+  background: var(--theme-surface, #161616);
+  color: var(--theme-text, #f2f2f2);
   cursor: pointer;
   padding: 0;
 }
 
 .topbar-icon-btn:hover {
-  background: #212121;
-  border-color: #4a4a4a;
+  background: var(--theme-raised, #212121);
+  border-color: var(--theme-border, #4a4a4a);
 }
 
 .topbar-icon-btn:active {
@@ -199,7 +199,7 @@ body,
 .topbar-icon-btn:focus-visible,
 .system-context-btn:focus-visible,
 .workspace-switcher:focus-visible {
-  outline: 2px solid rgba(157, 130, 255, 0.85);
+  outline: 2px solid var(--theme-accent, rgba(157, 130, 255, 0.85));
   outline-offset: 2px;
 }
 
@@ -219,7 +219,7 @@ body,
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: rgba(20, 20, 21, 0.92);
+  background: var(--theme-surface, rgba(20, 20, 21, 0.92));
   color: var(--text);
   cursor: pointer;
   font-size: 12px;
@@ -252,8 +252,8 @@ body,
   justify-content: flex-start;
   border-color: transparent;
   background:
-    linear-gradient(rgba(12, 12, 14, 0.96), rgba(12, 12, 14, 0.96)) padding-box,
-    linear-gradient(135deg, rgba(130, 96, 251, 0.55), rgba(110, 182, 255, 0.28)) border-box;
+    linear-gradient(var(--theme-surface, rgba(12, 12, 14, 0.96)), var(--theme-surface, rgba(12, 12, 14, 0.96))) padding-box,
+    linear-gradient(135deg, var(--theme-accent-soft, rgba(130, 96, 251, 0.55)), var(--theme-accent-soft, rgba(110, 182, 255, 0.28))) border-box;
 }
 
 .workspace-switcher-label {
@@ -271,11 +271,11 @@ body,
 
 .system-context-btn:hover,
 .workspace-switcher:hover {
-  color: #e8deff;
+  color: var(--theme-text, #e8deff);
   border-color: transparent;
   background:
-    linear-gradient(rgba(16, 16, 18, 0.98), rgba(16, 16, 18, 0.98)) padding-box,
-    linear-gradient(135deg, rgba(130, 96, 251, 0.95), rgba(110, 182, 255, 0.55)) border-box;
+    linear-gradient(var(--theme-surface, rgba(16, 16, 18, 0.98)), var(--theme-surface, rgba(16, 16, 18, 0.98))) padding-box,
+    linear-gradient(135deg, var(--theme-accent-soft, rgba(130, 96, 251, 0.95)), var(--theme-accent-soft, rgba(110, 182, 255, 0.55))) border-box;
   box-shadow: none;
 }
 
@@ -284,8 +284,8 @@ body,
   color: var(--text);
   border-color: transparent;
   background:
-    linear-gradient(rgba(12, 12, 14, 0.98), rgba(12, 12, 14, 0.98)) padding-box,
-    linear-gradient(135deg, rgba(130, 96, 251, 0.95), rgba(110, 182, 255, 0.65)) border-box;
+    linear-gradient(var(--theme-surface, rgba(12, 12, 14, 0.98)), var(--theme-surface, rgba(12, 12, 14, 0.98))) padding-box,
+    linear-gradient(135deg, var(--theme-accent-soft, rgba(130, 96, 251, 0.95)), var(--theme-accent-soft, rgba(110, 182, 255, 0.65))) border-box;
   box-shadow: none;
 }
 
@@ -299,9 +299,9 @@ body,
   border-radius: 12px;
   border: 1px solid transparent;
   background:
-    linear-gradient(rgba(12, 12, 14, 0.98), rgba(12, 12, 14, 0.98)) padding-box,
-    linear-gradient(135deg, rgba(130, 96, 251, 0.85), rgba(110, 182, 255, 0.45)) border-box;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    linear-gradient(var(--theme-surface, rgba(12, 12, 14, 0.98)), var(--theme-surface, rgba(12, 12, 14, 0.98))) padding-box,
+    linear-gradient(135deg, var(--theme-accent-soft, rgba(130, 96, 251, 0.85)), var(--theme-accent-soft, rgba(110, 182, 255, 0.45))) border-box;
+  box-shadow: 0 16px 40px var(--theme-shadow, rgba(0, 0, 0, 0.45));
   backdrop-filter: blur(10px);
 }
 
@@ -309,7 +309,7 @@ body,
 .workspace-menu,
 .app-menu {
   border: 1px solid var(--border);
-  background: rgba(12, 12, 14, 0.98);
+  background: var(--theme-surface, rgba(12, 12, 14, 0.98));
   isolation: isolate;
   overflow: hidden;
 }
@@ -328,8 +328,8 @@ body,
   padding: 1px;
   background: linear-gradient(
     135deg,
-    rgba(130, 96, 251, 0.95),
-    rgba(110, 182, 255, 0.65)
+    var(--theme-accent-soft, rgba(130, 96, 251, 0.95)),
+    var(--theme-accent-soft, rgba(110, 182, 255, 0.65))
   );
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
@@ -420,21 +420,21 @@ body,
 .topbar-menu-item:hover {
   border-color: transparent;
   background:
-    linear-gradient(rgba(16, 16, 18, 0.98), rgba(16, 16, 18, 0.98)) padding-box,
-    linear-gradient(135deg, rgba(130, 96, 251, 0.55), rgba(110, 182, 255, 0.28)) border-box;
+    linear-gradient(var(--theme-surface, rgba(16, 16, 18, 0.98)), var(--theme-surface, rgba(16, 16, 18, 0.98))) padding-box,
+    linear-gradient(135deg, var(--theme-accent-soft, rgba(130, 96, 251, 0.55)), var(--theme-accent-soft, rgba(110, 182, 255, 0.28))) border-box;
 }
 
 .topbar-menu-item.is-selected {
   border-color: transparent;
   background:
-    linear-gradient(rgba(12, 12, 14, 0.98), rgba(12, 12, 14, 0.98)) padding-box,
-    linear-gradient(135deg, rgba(130, 96, 251, 0.95), rgba(110, 182, 255, 0.55)) border-box;
+    linear-gradient(var(--theme-surface, rgba(12, 12, 14, 0.98)), var(--theme-surface, rgba(12, 12, 14, 0.98))) padding-box,
+    linear-gradient(135deg, var(--theme-accent-soft, rgba(130, 96, 251, 0.95)), var(--theme-accent-soft, rgba(110, 182, 255, 0.55))) border-box;
 }
 
 .topbar-menu-item.is-selected:hover {
   background:
-    linear-gradient(rgba(14, 14, 16, 0.98), rgba(14, 14, 16, 0.98)) padding-box,
-    linear-gradient(135deg, rgba(130, 96, 251, 1), rgba(110, 182, 255, 0.7)) border-box;
+    linear-gradient(var(--theme-surface, rgba(14, 14, 16, 0.98)), var(--theme-surface, rgba(14, 14, 16, 0.98))) padding-box,
+    linear-gradient(135deg, var(--theme-accent-soft, rgba(130, 96, 251, 1)), var(--theme-accent-soft, rgba(110, 182, 255, 0.7))) border-box;
 }
 
 .topbar-menu-hint {
@@ -448,7 +448,7 @@ body,
 .topbar-menu-divider {
   height: 1px;
   margin: 8px 4px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--theme-hover, rgba(255, 255, 255, 0.1));
 }
 
 .main-alt-workspace {
@@ -486,17 +486,17 @@ body,
   place-items: center;
   padding: 32px 20px;
   background:
-    radial-gradient(circle at 20% 20%, rgba(130, 96, 251, 0.12), transparent 42%),
-    radial-gradient(circle at 80% 70%, rgba(110, 182, 255, 0.08), transparent 40%),
-    #050505;
+    radial-gradient(circle at 20% 20%, var(--theme-accent-soft, rgba(130, 96, 251, 0.12)), transparent 42%),
+    radial-gradient(circle at 80% 70%, var(--theme-accent-soft, rgba(110, 182, 255, 0.08)), transparent 40%),
+    var(--theme-bg, #050505);
 }
 
 .workspace-placeholder-card {
   max-width: 420px;
   padding: 28px 28px 24px;
   border-radius: 16px;
-  border: 1px solid rgba(130, 96, 251, 0.35);
-  background: rgba(14, 12, 20, 0.92);
+  border: 1px solid var(--theme-accent, rgba(130, 96, 251, 0.35));
+  background: var(--theme-surface, rgba(14, 12, 20, 0.92));
 }
 
 .workspace-placeholder-card h2 {
@@ -516,7 +516,7 @@ body,
   appearance: none;
   border: none;
   background: none;
-  color: #c4b0ff;
+  color: var(--theme-accent, #c4b0ff);
   text-decoration: underline;
   text-underline-offset: 2px;
   cursor: pointer;
@@ -530,23 +530,31 @@ body,
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: #030303;
+  background: var(--theme-bg, #030303);
+  font-family: var(--font-sans);
+}
+
+.engineering-studio button,
+.engineering-studio input,
+.engineering-studio select,
+.engineering-studio textarea {
+  font-family: inherit;
 }
 
 .engineering-stage {
-  --inspect-surface: linear-gradient(165deg, #0e0f12 0%, #08090b 58%, #050607 100%);
-  --inspect-edge: rgba(255, 255, 255, 0.09);
-  --inspect-hairline: rgba(255, 255, 255, 0.07);
-  --inspect-row: rgba(255, 255, 255, 0.04);
-  --inspect-accent: rgba(130, 96, 251, 0.55);
-  --inspect-title: #f5f6f8;
-  --inspect-label: rgba(160, 166, 176, 0.82);
-  --inspect-value: rgba(238, 240, 243, 0.94);
+  --inspect-surface: linear-gradient(165deg, var(--theme-surface, #0e0f12) 0%, var(--theme-surface, #08090b) 58%, var(--theme-surface, #050607) 100%);
+  --inspect-edge: var(--theme-border, rgba(255, 255, 255, 0.09));
+  --inspect-hairline: var(--theme-border, rgba(255, 255, 255, 0.07));
+  --inspect-row: var(--theme-hover, rgba(255, 255, 255, 0.04));
+  --inspect-accent: var(--theme-accent, rgba(130, 96, 251, 0.55));
+  --inspect-title: var(--theme-text, #f5f6f8);
+  --inspect-label: var(--theme-muted, rgba(160, 166, 176, 0.82));
+  --inspect-value: var(--theme-text, rgba(238, 240, 243, 0.94));
   --inspect-lift:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 1px 2px rgba(0, 0, 0, 0.4),
-    0 18px 40px -20px rgba(0, 0, 0, 0.9),
-    0 0 0 1px rgba(0, 0, 0, 0.45);
+    inset 0 1px 0 var(--theme-hover, rgba(255, 255, 255, 0.06)),
+    0 1px 2px var(--theme-hover, rgba(0, 0, 0, 0.4)),
+    0 18px 40px -20px var(--theme-hover, rgba(0, 0, 0, 0.9)),
+    0 0 0 1px var(--theme-hover, rgba(0, 0, 0, 0.45));
   position: relative;
   flex: 1;
   min-height: 0;
@@ -566,7 +574,7 @@ body,
   flex: 1;
   display: grid;
   place-items: center;
-  color: rgba(238, 240, 243, 0.7);
+  color: var(--theme-text, rgba(238, 240, 243, 0.7));
   font-size: 13px;
   letter-spacing: 0.04em;
 }
@@ -668,7 +676,7 @@ body,
   border-radius: 12px;
   border: 1px solid transparent;
   background: transparent;
-  color: #f2f2f2;
+  color: var(--theme-text, #f2f2f2);
   cursor: pointer;
   padding: 0;
   transition:
@@ -678,8 +686,8 @@ body,
 }
 
 .eng-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: #343434;
+  background: var(--theme-hover, rgba(255, 255, 255, 0.06));
+  border-color: var(--theme-border, #343434);
 }
 
 .eng-nav-btn:active {
@@ -687,9 +695,9 @@ body,
 }
 
 .eng-nav-btn.is-active {
-  background: rgba(130, 96, 251, 0.22);
-  border-color: rgba(130, 96, 251, 0.45);
-  color: #efe9ff;
+  background: var(--theme-accent-soft, rgba(130, 96, 251, 0.22));
+  border-color: var(--theme-accent, rgba(130, 96, 251, 0.45));
+  color: var(--theme-text, #efe9ff);
 }
 
 .eng-nav-tag {
@@ -728,7 +736,7 @@ body,
   width: 18px;
   height: 1px;
   margin: 4px 0;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--theme-hover, rgba(255, 255, 255, 0.12));
 }
 
 .eng-view-bar {
@@ -755,7 +763,7 @@ body,
   border-radius: 999px;
   border: 1px solid transparent;
   background: transparent;
-  color: #d7dbe2;
+  color: var(--theme-text, #d7dbe2);
   font: inherit;
   font-size: 12px;
   font-weight: 550;
@@ -764,14 +772,14 @@ body,
 }
 
 .eng-view-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: #343434;
+  background: var(--theme-hover, rgba(255, 255, 255, 0.06));
+  border-color: var(--theme-border, #343434);
 }
 
 .eng-view-btn.is-active {
-  background: rgba(130, 96, 251, 0.22);
-  border-color: rgba(130, 96, 251, 0.45);
-  color: #f5f6f8;
+  background: var(--theme-accent-soft, rgba(130, 96, 251, 0.22));
+  border-color: var(--theme-accent, rgba(130, 96, 251, 0.45));
+  color: var(--theme-text, #f5f6f8);
 }
 
 .eng-hint {
@@ -805,21 +813,21 @@ body,
 
 /* —— Imaging Console workspace —— */
 .imaging-console {
-  --ic-bg: #050507;
-  --ic-panel: #0a0b0e;
-  --ic-panel-2: #0e1014;
-  --ic-border: rgba(255, 255, 255, 0.1);
-  --ic-muted: #8b919c;
-  --ic-accent: #c4a5ff;
-  --ic-accent-hot: #8260fb;
-  --ic-text: #eef0f3;
-  --ic-footer: #090a0d;
-  --ic-status-bg: #07080a;
-  --ic-btn: #14161b;
-  --ic-accent-ring: rgba(130, 96, 251, 0.5);
-  --ic-accent-focus: rgba(130, 96, 251, 0.7);
-  --ic-accent-wash: rgba(130, 96, 251, 0.2);
-  --ic-accent-wash-2: rgba(130, 96, 251, 0.18);
+  --ic-bg: var(--theme-bg, #050507);
+  --ic-panel: var(--theme-surface, #0a0b0e);
+  --ic-panel-2: var(--theme-surface, #0e1014);
+  --ic-border: var(--theme-border, rgba(255, 255, 255, 0.1));
+  --ic-muted: var(--theme-muted, #8b919c);
+  --ic-accent: var(--theme-accent, #c4a5ff);
+  --ic-accent-hot: var(--theme-accent, #8260fb);
+  --ic-text: var(--theme-text, #eef0f3);
+  --ic-footer: var(--theme-bg, #090a0d);
+  --ic-status-bg: var(--theme-bg, #07080a);
+  --ic-btn: var(--theme-raised, #14161b);
+  --ic-accent-ring: var(--theme-accent, rgba(130, 96, 251, 0.5));
+  --ic-accent-focus: var(--theme-accent, rgba(130, 96, 251, 0.7));
+  --ic-accent-wash: var(--theme-accent-soft, rgba(130, 96, 251, 0.2));
+  --ic-accent-wash-2: var(--theme-accent-soft, rgba(130, 96, 251, 0.18));
   grid-column: 1 / -1;
   min-height: 0;
   display: grid;
@@ -868,7 +876,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   gap: 3px;
   min-height: 0;
   padding: 3px;
-  background: #000;
+  background: var(--theme-bg, #000);
   border-bottom: 1px solid var(--ic-border);
 }
 
@@ -892,8 +900,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: #000;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--theme-bg, #000);
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.06));
   overflow: hidden;
 }
 
@@ -905,7 +913,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ic-accent);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--theme-border, rgba(255, 255, 255, 0.06));
   background: var(--ic-panel);
 }
 
@@ -913,7 +921,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   position: relative;
   flex: 1;
   min-height: 0;
-  background: #000;
+  background: var(--theme-bg, #000);
 }
 
 .ic-viewer-stage .m4-view-stage {
@@ -932,8 +940,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .ic-viewer-stage .m4-view-meta {
-  color: #ffffff;
-  text-shadow: 0 0 8px #000, 0 1px 2px #000;
+  color: var(--theme-text, #ffffff);
+  text-shadow: 0 0 8px var(--theme-shadow, #000), 0 1px 2px var(--theme-shadow, #000);
 }
 
 .ic-muted {
@@ -945,7 +953,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   grid-template-columns: minmax(180px, 220px) minmax(0, 1fr) 44px;
   min-height: 0;
   border-top: 1px solid var(--ic-border);
-  background: #000;
+  background: var(--theme-bg, #000);
 }
 
 .ic-seq-list {
@@ -1009,27 +1017,27 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .ic-seq-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--theme-hover, rgba(255, 255, 255, 0.04));
 }
 
 .ic-seq-item.is-acq:not(.is-selected) {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: var(--theme-hover, rgba(255, 255, 255, 0.12));
+  color: var(--theme-text, #fff);
 }
 
 .ic-seq-item.is-complete:not(.is-selected),
 .ic-seq-item.is-recon:not(.is-selected),
 .ic-seq-item.is-scheduled_recon:not(.is-selected) {
-  color: #a1a1aa;
+  color: var(--theme-muted, #a1a1aa);
 }
 
 .ic-seq-item.is-failure:not(.is-selected) {
-  color: #f87171;
+  color: var(--theme-danger, #f87171);
 }
 
 .ic-seq-item.is-selected {
   background: var(--ic-accent-hot);
-  color: #fff;
+  color: var(--theme-on-accent, #fff);
 }
 
 .ic-seq-name {
@@ -1091,12 +1099,12 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .ic-seq-tool:hover:not(:disabled) {
   background: var(--ic-accent-wash);
-  color: #fff;
+  color: var(--theme-text, #fff);
 }
 
 .ic-seq-tool.is-active {
   background: var(--ic-accent-hot);
-  color: #fff;
+  color: var(--theme-text, #fff);
 }
 
 .ic-seq-tool:disabled {
@@ -1117,7 +1125,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border-bottom: 1px solid var(--ic-border);
   border-radius: 0;
   background: var(--ic-panel);
-  box-shadow: 0 -10px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 -10px 24px var(--theme-shadow, rgba(0, 0, 0, 0.35));
 }
 
 .ic-seq-add-sep {
@@ -1154,7 +1162,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .ic-seq-add-menu button:hover,
 .ic-seq-add-menu button:focus-visible {
   background: var(--ic-accent-hot);
-  color: #fff;
+  color: var(--theme-text, #fff);
   outline: none;
 }
 
@@ -1280,11 +1288,11 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .ic-acq-summary-state.is-ok {
-  color: #3ee4a4;
+  color: var(--theme-success, #3ee4a4);
 }
 
 .ic-acq-summary-state.is-bad {
-  color: #f87171;
+  color: var(--theme-danger, #f87171);
 }
 
 .ic-acq-table {
@@ -1387,9 +1395,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   min-width: 0;
   height: 26px;
   padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.12));
   border-radius: 4px;
-  background: #07080b;
+  background: var(--theme-bg, #07080b);
   color: var(--ic-text);
   font: inherit;
   font-variant-numeric: tabular-nums;
@@ -1404,9 +1412,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   height: 26px;
   line-height: 24px;
   padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.12));
   border-radius: 4px;
-  background: #07080b;
+  background: var(--theme-bg, #07080b);
   color: var(--ic-text);
 }
 
@@ -1421,7 +1429,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .ic-file-error {
   margin: 0;
-  color: #f0a8a8;
+  color: var(--theme-danger, #f0a8a8);
   font-size: 12px;
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -1432,7 +1440,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   flex: 0 0 auto;
   height: 26px;
   padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.12));
   border-radius: 4px;
   background: var(--ic-btn);
   color: var(--ic-text);
@@ -1462,10 +1470,10 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   min-width: 0;
   height: 34px;
   padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.12));
   border-radius: 8px;
-  background: rgba(8, 9, 12, 0.9);
-  color: #f4f4f5;
+  background: var(--theme-bg, rgba(8, 9, 12, 0.9));
+  color: var(--theme-text, #f4f4f5);
   font: inherit;
 }
 
@@ -1517,7 +1525,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   gap: 6px;
   padding: 8px 0;
   border-left: 1px solid var(--ic-border);
-  background: #08090c;
+  background: var(--theme-bg, #08090c);
 }
 
 .ic-rail button {
@@ -1529,7 +1537,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: #d7dbe3;
+  color: var(--theme-text, #d7dbe3);
   cursor: pointer;
   padding: 0;
 }
@@ -1537,7 +1545,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .ic-rail button:hover,
 .ic-rail button.is-active {
   background: var(--ic-accent-wash);
-  color: #fff;
+  color: var(--theme-text, #fff);
 }
 
 .ic-rail-spacer {
@@ -1585,8 +1593,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   height: 6px;
   overflow: hidden;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--ic-btn) 78%, #000);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+  background: color-mix(in srgb, var(--ic-btn) 78%, var(--theme-bg, #000));
+  box-shadow: inset 0 1px 2px var(--theme-shadow, rgba(0, 0, 0, 0.5));
 }
 
 .ic-scan-progress-fill {
@@ -1632,7 +1640,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   z-index: 90;
   display: grid;
   place-items: center;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--theme-scrim, rgba(0, 0, 0, 0.45));
 }
 
 .ic-register-card,
@@ -1644,8 +1652,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border-radius: 14px;
   border: 1px solid transparent;
   background:
-    linear-gradient(rgba(12, 12, 14, 0.98), rgba(12, 12, 14, 0.98)) padding-box,
-    linear-gradient(135deg, rgba(130, 96, 251, 0.85), rgba(110, 182, 255, 0.45)) border-box;
+    linear-gradient(var(--theme-surface, rgba(12, 12, 14, 0.98)), var(--theme-surface, rgba(12, 12, 14, 0.98))) padding-box,
+    linear-gradient(135deg, var(--theme-accent-soft, rgba(130, 96, 251, 0.85)), var(--theme-accent-soft, rgba(110, 182, 255, 0.45))) border-box;
 }
 
 .ic-register-card h2,
@@ -1671,21 +1679,21 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   flex-direction: column;
   gap: 4px;
   font-size: 12px;
-  color: #a1a1aa;
+  color: var(--theme-muted, #a1a1aa);
 }
 
 .ic-register-grid input {
   height: 34px;
   padding: 0 10px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(8, 9, 12, 0.9);
-  color: #f4f4f5;
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.12));
+  background: var(--theme-bg, rgba(8, 9, 12, 0.9));
+  color: var(--theme-text, #f4f4f5);
   font: inherit;
 }
 
 .ic-register-error {
-  color: #f87171;
+  color: var(--theme-danger, #f87171);
   font-size: 12px;
 }
 
@@ -1712,7 +1720,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #f4f4f5;
+  color: var(--theme-text, #f4f4f5);
   cursor: pointer;
 }
 
@@ -1733,7 +1741,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border-radius: 8px;
   border: 1px solid transparent;
   background: transparent;
-  color: #f4f4f5;
+  color: var(--theme-text, #f4f4f5);
   cursor: pointer;
 }
 
@@ -1745,13 +1753,13 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .ic-protocols-card li button span {
   display: block;
   font-size: 11px;
-  color: #a1a1aa;
+  color: var(--theme-muted, #a1a1aa);
 }
 
 .ic-protocols-card li button:hover {
   background:
-    linear-gradient(rgba(16, 16, 18, 0.98), rgba(16, 16, 18, 0.98)) padding-box,
-    linear-gradient(135deg, rgba(130, 96, 251, 0.55), rgba(110, 182, 255, 0.28)) border-box;
+    linear-gradient(var(--theme-surface, rgba(16, 16, 18, 0.98)), var(--theme-surface, rgba(16, 16, 18, 0.98))) padding-box,
+    linear-gradient(135deg, var(--theme-accent-soft, rgba(130, 96, 251, 0.55)), var(--theme-accent-soft, rgba(110, 182, 255, 0.28))) border-box;
 }
 
 .ic-sparkline-wrap {
@@ -1759,7 +1767,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   inset: 0;
   min-width: 0;
   min-height: 0;
-  background: var(--ic-plot-bg, #090a0d);
+  background: var(--ic-plot-bg, var(--theme-bg, #090a0d));
   border: 0;
 }
 
@@ -1807,7 +1815,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #f4f4f5;
+  color: var(--theme-text, #f4f4f5);
   cursor: pointer;
 }
 
@@ -1823,8 +1831,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   overflow: auto;
   padding: 10px 12px;
   border-radius: 8px;
-  background: rgba(8, 9, 12, 0.9);
-  color: #d4d4d8;
+  background: var(--theme-bg, rgba(8, 9, 12, 0.9));
+  color: var(--theme-text, #d4d4d8);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
   line-height: 1.45;
@@ -1832,11 +1840,11 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .ic-log .is-err {
-  color: #f87171;
+  color: var(--theme-danger, #f87171);
 }
 
 .ic-log .is-wrn {
-  color: #fbbf24;
+  color: var(--theme-warning, #fbbf24);
 }
 
 .ic-study-layout {
@@ -1852,7 +1860,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   padding: 0;
   overflow: auto;
   max-height: min(50vh, 420px);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid var(--theme-border, rgba(255, 255, 255, 0.08));
   padding-right: 8px;
 }
 
@@ -1864,7 +1872,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
-  color: #f4f4f5;
+  color: var(--theme-text, #f4f4f5);
   cursor: pointer;
 }
 
@@ -1875,14 +1883,14 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .ic-study-list button span {
   font-size: 11px;
-  color: #a1a1aa;
+  color: var(--theme-muted, #a1a1aa);
 }
 
 .ic-study-list button.is-active,
 .ic-study-list button:hover {
   background:
-    linear-gradient(rgba(16, 16, 18, 0.98), rgba(16, 16, 18, 0.98)) padding-box,
-    linear-gradient(135deg, rgba(130, 96, 251, 0.55), rgba(110, 182, 255, 0.28)) border-box;
+    linear-gradient(var(--theme-surface, rgba(16, 16, 18, 0.98)), var(--theme-surface, rgba(16, 16, 18, 0.98))) padding-box,
+    linear-gradient(135deg, var(--theme-accent-soft, rgba(130, 96, 251, 0.55)), var(--theme-accent-soft, rgba(110, 182, 255, 0.28))) border-box;
 }
 
 .ic-status-grid {
@@ -1896,9 +1904,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   height: 34px;
   padding: 0 10px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(8, 9, 12, 0.9);
-  color: #f4f4f5;
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.12));
+  background: var(--theme-bg, rgba(8, 9, 12, 0.9));
+  color: var(--theme-text, #f4f4f5);
   font: inherit;
 }
 
@@ -1915,9 +1923,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: 1px solid transparent;
   pointer-events: auto;
   background:
-    linear-gradient(rgba(12, 12, 14, 0.98), rgba(12, 12, 14, 0.98)) padding-box,
-    linear-gradient(135deg, rgba(130, 96, 251, 0.85), rgba(110, 182, 255, 0.45)) border-box;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    linear-gradient(var(--theme-surface, rgba(12, 12, 14, 0.98)), var(--theme-surface, rgba(12, 12, 14, 0.98))) padding-box,
+    linear-gradient(135deg, var(--theme-accent-soft, rgba(130, 96, 251, 0.85)), var(--theme-accent-soft, rgba(110, 182, 255, 0.45))) border-box;
+  box-shadow: 0 16px 40px var(--theme-shadow, rgba(0, 0, 0, 0.45));
 }
 
 .ic-ctx button {
@@ -1928,7 +1936,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #f4f4f5;
+  color: var(--theme-text, #f4f4f5);
   text-align: left;
   font: inherit;
   font-size: 13px;
@@ -2028,22 +2036,22 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border-radius: 999px;
   border: 1px solid var(--border);
   color: var(--muted);
-  background: rgba(20, 20, 21, 0.82);
+  background: var(--theme-surface, rgba(20, 20, 21, 0.82));
 }
 
 .pill-on {
-  border-color: rgba(255, 255, 255, 0.28);
+  border-color: var(--theme-border, rgba(255, 255, 255, 0.28));
   color: var(--text);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  box-shadow: 0 0 0 1px var(--theme-shadow, rgba(255, 255, 255, 0.08)) inset;
 }
 
 .pill-ok {
-  border-color: rgba(62, 228, 164, 0.45);
+  border-color: var(--theme-success, rgba(62, 228, 164, 0.45));
   color: var(--ok);
 }
 
 .pill-bad {
-  border-color: rgba(255, 107, 107, 0.45);
+  border-color: var(--theme-danger, rgba(255, 107, 107, 0.45));
   color: var(--bad);
 }
 
@@ -2062,38 +2070,38 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   text-transform: uppercase;
   vertical-align: middle;
   border: 1px solid transparent;
-  background: #000000;
+  background: var(--theme-bg, #000000);
   flex-shrink: 0;
   box-sizing: border-box;
 }
 
 .src-measured {
-  color: #3ee4a4;
-  border-color: #3ee4a4;
+  color: var(--theme-success, #3ee4a4);
+  border-color: var(--theme-success, #3ee4a4);
 }
 
 .src-estimated {
-  color: #6eb6ff;
-  border-color: #6eb6ff;
+  color: var(--theme-accent, #6eb6ff);
+  border-color: var(--theme-accent, #6eb6ff);
 }
 
 .src-predicted {
-  color: #e6b35a;
-  border-color: #e6b35a;
+  color: var(--theme-warning, #e6b35a);
+  border-color: var(--theme-warning, #e6b35a);
 }
 
 .src-nominal {
-  color: #c5cdd8;
-  border-color: #c5cdd8;
+  color: var(--theme-muted, #c5cdd8);
+  border-color: var(--theme-border, #c5cdd8);
 }
 
 .error-banner {
   margin: 0 0 12px;
   padding: 8px 10px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 107, 107, 0.35);
-  background: rgba(255, 107, 107, 0.08);
-  color: #ffb4b4;
+  border: 1px solid var(--theme-danger, rgba(255, 107, 107, 0.35));
+  background: var(--theme-danger-soft, rgba(255, 107, 107, 0.08));
+  color: var(--theme-danger, #ffb4b4);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -2111,7 +2119,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   align-items: center;
   gap: 8px;
   padding: 4px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--theme-border, rgba(255, 255, 255, 0.06));
   color: var(--text);
 }
 
@@ -2131,7 +2139,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   height: var(--console-open-height);
   max-height: var(--console-open-height);
   border-top: 1px solid var(--border);
-  background: #000000;
+  background: var(--theme-bg, #000000);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
 
@@ -2146,8 +2154,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   justify-content: space-between;
   gap: 10px;
   padding: 7px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(8, 8, 9, 0.96);
+  border-bottom: 1px solid var(--theme-border, rgba(255, 255, 255, 0.08));
+  background: var(--theme-bg, rgba(8, 8, 9, 0.96));
 }
 
 .system-console-head-left {
@@ -2192,8 +2200,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .system-console-tab-active {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: var(--theme-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--theme-border, rgba(255, 255, 255, 0.08));
 }
 
 .system-console-title {
@@ -2206,7 +2214,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .system-console-clear {
   appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.12));
   background: transparent;
   color: var(--muted);
   border-radius: 6px;
@@ -2217,7 +2225,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .system-console-clear:hover {
   color: var(--text);
-  border-color: rgba(255, 255, 255, 0.22);
+  border-color: var(--theme-border, rgba(255, 255, 255, 0.22));
 }
 
 .console-live {
@@ -2235,20 +2243,20 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #ff4d4d;
-  border: 1px solid #ff6b6b;
+  background: var(--theme-danger-soft, #ff4d4d);
+  border: 1px solid var(--theme-danger, #ff6b6b);
   box-sizing: border-box;
 }
 
 .console-live-on .console-live-dot {
-  background: #3ee4a4;
-  border-color: #6aefc0;
+  background: var(--theme-success-soft, #3ee4a4);
+  border-color: var(--theme-success, #6aefc0);
   animation: console-live-blink 1s steps(1, end) infinite;
 }
 
 .console-live-off .console-live-dot {
-  background: #ff4d4d;
-  border-color: #ff6b6b;
+  background: var(--theme-danger-soft, #ff4d4d);
+  border-color: var(--theme-danger, #ff6b6b);
   animation: none;
 }
 
@@ -2328,7 +2336,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .system-console-xterm-host {
   padding: 6px 8px 8px;
-  background: #000000;
+  background: var(--theme-bg, #000000);
 }
 
 .twin-xterm {
@@ -2353,31 +2361,31 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .console-ts {
-  color: #6b7280;
+  color: var(--theme-muted, #6b7280);
 }
 
 .console-level-info {
-  color: #6eb6ff;
+  color: var(--theme-accent, #6eb6ff);
 }
 
 .console-level-success {
-  color: #3ee4a4;
+  color: var(--theme-success, #3ee4a4);
 }
 
 .console-level-warn {
-  color: #e6b35a;
+  color: var(--theme-warning, #e6b35a);
 }
 
 .console-level-error {
-  color: #ff6b6b;
+  color: var(--theme-danger, #ff6b6b);
 }
 
 .console-level-cmd {
-  color: #c5cdd8;
+  color: var(--theme-muted, #c5cdd8);
 }
 
 .console-msg {
-  color: #e8eaed;
+  color: var(--theme-text, #e8eaed);
 }
 
 .console-prompt-line {
@@ -2400,8 +2408,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   align-items: center;
   gap: 8px;
   padding: 6px 12px 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  background: #000000;
+  border-top: 1px solid var(--theme-border, rgba(255, 255, 255, 0.06));
+  background: var(--theme-bg, #000000);
 }
 
 .system-console-input-row-static {
@@ -2409,16 +2417,16 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .console-output-out .console-msg {
-  color: #d7e4f0;
+  color: var(--theme-text, #d7e4f0);
 }
 
 .console-output-err .console-msg {
-  color: #ff8a98;
+  color: var(--theme-danger, #ff8a98);
 }
 
 .console-output-meta,
 .console-output-meta .console-msg {
-  color: #7f8b99;
+  color: var(--theme-muted, #7f8b99);
 }
 
 .console-prompt-prefix {
@@ -2439,13 +2447,13 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .system-console-input::placeholder {
-  color: #5c6370;
+  color: var(--theme-muted, #5c6370);
 }
 
 .notes-list li {
   padding: 4px 0;
   color: var(--muted);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--theme-border, rgba(255, 255, 255, 0.05));
   word-break: break-word;
 }
 
@@ -2462,7 +2470,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   padding: 7px 9px;
   border-radius: 6px;
   border: 1px solid var(--border);
-  background: rgba(8, 8, 9, 0.9);
+  background: var(--theme-bg, rgba(8, 8, 9, 0.9));
   color: var(--text);
   font-size: 13px;
 }
@@ -2501,7 +2509,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .raw-table td {
   padding: 6px 8px;
   text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--theme-border, rgba(255, 255, 255, 0.06));
 }
 
 .raw-table th {
@@ -2509,7 +2517,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-weight: 550;
   position: sticky;
   top: 0;
-  background: rgba(12, 12, 13, 0.95);
+  background: var(--theme-bg, rgba(12, 12, 13, 0.95));
 }
 
 .raw-table .num {
@@ -2545,8 +2553,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.03), transparent 36%),
-    linear-gradient(180deg, rgba(6, 6, 7, 0.88), rgba(2, 2, 3, 0.95));
+    radial-gradient(circle at 18% 18%, var(--theme-hover, rgba(255, 255, 255, 0.03)), transparent 36%),
+    linear-gradient(180deg, var(--theme-bg, rgba(6, 6, 7, 0.88)), var(--theme-bg, rgba(2, 2, 3, 0.95)));
 }
 
 .viewport-stage {
@@ -2554,19 +2562,19 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
    * Shared look for floating viewport panels: an opaque polished panel rather
    * than frosted glass, so labels read the same over every viewport preset.
    */
-  --inspect-surface: linear-gradient(165deg, #0e0f12 0%, #08090b 58%, #050607 100%);
-  --inspect-edge: rgba(255, 255, 255, 0.09);
-  --inspect-hairline: rgba(255, 255, 255, 0.07);
-  --inspect-row: rgba(255, 255, 255, 0.04);
-  --inspect-accent: rgba(130, 96, 251, 0.55);
-  --inspect-title: #f5f6f8;
-  --inspect-label: rgba(160, 166, 176, 0.82);
-  --inspect-value: rgba(238, 240, 243, 0.94);
+  --inspect-surface: linear-gradient(165deg, var(--theme-surface, #0e0f12) 0%, var(--theme-surface, #08090b) 58%, var(--theme-surface, #050607) 100%);
+  --inspect-edge: var(--theme-border, rgba(255, 255, 255, 0.09));
+  --inspect-hairline: var(--theme-border, rgba(255, 255, 255, 0.07));
+  --inspect-row: var(--theme-hover, rgba(255, 255, 255, 0.04));
+  --inspect-accent: var(--theme-accent, rgba(130, 96, 251, 0.55));
+  --inspect-title: var(--theme-text, #f5f6f8);
+  --inspect-label: var(--theme-muted, rgba(160, 166, 176, 0.82));
+  --inspect-value: var(--theme-text, rgba(238, 240, 243, 0.94));
   --inspect-lift:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 1px 2px rgba(0, 0, 0, 0.4),
-    0 18px 40px -20px rgba(0, 0, 0, 0.9),
-    0 0 0 1px rgba(0, 0, 0, 0.45);
+    inset 0 1px 0 var(--theme-hover, rgba(255, 255, 255, 0.06)),
+    0 1px 2px var(--theme-hover, rgba(0, 0, 0, 0.4)),
+    0 18px 40px -20px var(--theme-hover, rgba(0, 0, 0, 0.9)),
+    0 0 0 1px var(--theme-hover, rgba(0, 0, 0, 0.45));
   position: relative;
   flex: 1;
   min-height: 0;
@@ -2586,7 +2594,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   flex: 1;
   min-height: 0;
   width: 100%;
-  background: #000000;
+  background: var(--theme-bg, #000000);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -2597,7 +2605,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   position: absolute;
   inset: 0;
   transform: scaleX(-1);
-  background: #000000;
+  background: var(--theme-bg, #000000);
 }
 
 .camera-feed-video-source {
@@ -2627,7 +2635,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .camera-feed-person {
-  background: #000000;
+  background: var(--theme-bg, #000000);
   z-index: 0;
 }
 
@@ -2641,9 +2649,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   margin: 0;
   padding: 10px 14px;
   border-radius: 10px;
-  border: 1px solid #343434;
-  background: #212121;
-  color: #f2f2f2;
+  border: 1px solid var(--theme-border, #343434);
+  background: var(--theme-raised, #212121);
+  color: var(--theme-text, #f2f2f2);
   font-size: 13px;
   max-width: min(28rem, 90%);
   text-align: center;
@@ -2651,8 +2659,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .camera-feed-error {
-  color: #ffb4b4;
-  border-color: rgba(255, 107, 107, 0.45);
+  color: var(--theme-danger, #ffb4b4);
+  border-color: var(--theme-danger, rgba(255, 107, 107, 0.45));
 }
 
 .camera-head-hud-stack {
@@ -2678,9 +2686,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   overflow-y: auto;
   padding: 10px 12px;
   border-radius: 12px;
-  border: 1px solid #343434;
-  background: rgba(0, 0, 0, 0.72);
-  color: #f2f2f2;
+  border: 1px solid var(--theme-border, #343434);
+  background: var(--theme-bg, rgba(0, 0, 0, 0.72));
+  color: var(--theme-text, #f2f2f2);
   font-size: 12px;
   backdrop-filter: blur(6px);
   pointer-events: auto;
@@ -2692,8 +2700,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .camera-mask-btn-active {
-  border-color: #4a4a4a;
-  background: #161616;
+  border-color: var(--theme-border, #4a4a4a);
+  background: var(--theme-surface, #161616);
 }
 
 .camera-head-hud-title {
@@ -2706,21 +2714,21 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-weight: 650;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #f2f2f2;
+  color: var(--theme-text, #f2f2f2);
 }
 
 .camera-head-dot {
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: #ff4d4d;
-  border: 1px solid #ff6b6b;
+  background: var(--theme-danger-soft, #ff4d4d);
+  border: 1px solid var(--theme-danger, #ff6b6b);
   box-sizing: border-box;
 }
 
 .camera-head-dot-on {
-  background: #3ee4a4;
-  border-color: #6aefc0;
+  background: var(--theme-success-soft, #3ee4a4);
+  border-color: var(--theme-success, #6aefc0);
   animation: console-live-blink 1s steps(1, end) infinite;
 }
 
@@ -2730,19 +2738,19 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   justify-content: space-between;
   gap: 16px;
   padding: 2px 0;
-  color: #a6a6a6;
+  color: var(--theme-muted, #a6a6a6);
 }
 
 .camera-head-row strong {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  color: #f2f2f2;
+  color: var(--theme-text, #f2f2f2);
 }
 
 .camera-head-hint {
   margin: 8px 0 0;
   font-size: 11px;
-  color: #a6a6a6;
+  color: var(--theme-muted, #a6a6a6);
 }
 
 .camera-mask-btn {
@@ -2751,9 +2759,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   margin-top: 10px;
   padding: 7px 8px;
   border-radius: 8px;
-  border: 1px solid #343434;
-  background: #000000;
-  color: #f2f2f2;
+  border: 1px solid var(--theme-border, #343434);
+  background: var(--theme-bg, #000000);
+  color: var(--theme-text, #f2f2f2);
   font-size: 11px;
   letter-spacing: 0.03em;
   cursor: pointer;
@@ -2765,8 +2773,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .camera-mask-btn:hover:not(:disabled) {
-  border-color: #4a4a4a;
-  background: #161616;
+  border-color: var(--theme-border, #4a4a4a);
+  background: var(--theme-surface, #161616);
 }
 
 .camera-mask-btn:disabled {
@@ -2787,7 +2795,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   align-items: center;
   justify-content: center;
   padding: 24px;
-  color: rgba(232, 232, 232, 0.7);
+  color: var(--theme-text, rgba(232, 232, 232, 0.7));
   text-align: center;
 }
 
@@ -2798,8 +2806,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   z-index: 6;
   padding: 8px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(18, 18, 20, 0.42);
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.25));
+  background: var(--theme-surface, rgba(18, 18, 20, 0.42));
   color: var(--text);
   cursor: pointer;
   backdrop-filter: blur(6px);
@@ -2857,11 +2865,11 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   text-transform: none;
   text-align: right;
   white-space: nowrap;
-  color: rgba(185, 192, 202, 0.46);
+  color: var(--theme-muted, rgba(185, 192, 202, 0.46));
 }
 
 .viewport-context-item:hover .viewport-context-keys {
-  color: rgba(214, 220, 228, 0.7);
+  color: var(--theme-text, rgba(214, 220, 228, 0.7));
 }
 
 /*
@@ -2898,7 +2906,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: rgba(241, 243, 245, 0.88);
+  color: var(--theme-text, rgba(241, 243, 245, 0.88));
   cursor: pointer;
   font-size: 13px;
   letter-spacing: 0.01em;
@@ -2907,7 +2915,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .viewport-context-item svg:first-child {
   flex-shrink: 0;
-  color: rgba(185, 192, 202, 0.78);
+  color: var(--theme-muted, rgba(185, 192, 202, 0.78));
 }
 
 .viewport-context-item span {
@@ -2915,29 +2923,29 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .viewport-context-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--theme-hover, rgba(255, 255, 255, 0.06));
 }
 
 /* Emphasis without a resting fill, which reads as "already chosen". */
 .viewport-context-item.is-primary {
   min-height: 36px;
   background: transparent;
-  color: #fff;
+  color: var(--theme-text, #fff);
   font-weight: 550;
 }
 
 .viewport-context-item.is-primary svg {
-  color: #c4b5fd;
+  color: var(--theme-accent, #c4b5fd);
 }
 
 .viewport-context-item.is-primary:hover {
-  background: rgba(130, 96, 251, 0.16);
+  background: var(--theme-accent-soft, rgba(130, 96, 251, 0.16));
 }
 
 .viewport-context-tick {
   margin-left: auto;
   opacity: 0;
-  color: #c4b5fd;
+  color: var(--theme-accent, #c4b5fd);
 }
 
 .viewport-context-item.is-active .viewport-context-tick {
@@ -3008,7 +3016,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: 1px solid var(--inspect-hairline);
   border-radius: 999px;
   background: var(--inspect-row);
-  color: rgba(238, 240, 243, 0.8);
+  color: var(--theme-text, rgba(238, 240, 243, 0.8));
   font-size: 11px;
   letter-spacing: 0.01em;
   cursor: pointer;
@@ -3019,9 +3027,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .part-hidden-all:hover {
-  background: rgba(130, 96, 251, 0.2);
+  background: var(--theme-accent-soft, rgba(130, 96, 251, 0.2));
   border-color: var(--inspect-accent);
-  color: #fff;
+  color: var(--theme-text, #fff);
 }
 
 .part-hidden-list {
@@ -3040,10 +3048,10 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   gap: 8px;
   width: 100%;
   padding: 7px 9px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.05));
   border-radius: 10px;
   background: var(--inspect-row);
-  color: rgba(238, 240, 243, 0.72);
+  color: var(--theme-text, rgba(238, 240, 243, 0.72));
   font-size: 12px;
   text-align: left;
   cursor: pointer;
@@ -3055,8 +3063,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .part-hidden-chip:hover {
   border-color: var(--inspect-accent);
-  background: rgba(130, 96, 251, 0.14);
-  color: #fff;
+  background: var(--theme-accent-soft, rgba(130, 96, 251, 0.14));
+  color: var(--theme-text, #fff);
 }
 
 .part-hidden-name {
@@ -3113,7 +3121,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: rgba(238, 240, 243, 0.62);
+  color: var(--theme-muted, rgba(238, 240, 243, 0.62));
   cursor: pointer;
   transition:
     background 120ms ease,
@@ -3122,8 +3130,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .part-inspect-icon:hover,
 .part-inspect-icon.is-active {
-  background: rgba(255, 255, 255, 0.07);
-  color: #fff;
+  background: var(--theme-hover, rgba(255, 255, 255, 0.07));
+  color: var(--theme-text, #fff);
 }
 
 .part-inspect-icon:focus-visible {
@@ -3148,7 +3156,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+  box-shadow: inset 0 0 0 1px var(--theme-shadow, rgba(255, 255, 255, 0.28));
 }
 
 .part-inspect-meta {
@@ -3166,7 +3174,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: 0;
   border-radius: 999px;
   background: var(--m4-accent);
-  color: #fff;
+  color: var(--theme-text, #fff);
   font-size: 9.5px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -3218,7 +3226,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   list-style: none;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-  color: rgba(238, 240, 243, 0.76);
+  color: var(--theme-text, rgba(238, 240, 243, 0.76));
 }
 
 .part-inspect-muted {
@@ -3243,7 +3251,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(155, 160, 168, 0.78);
+  color: var(--theme-muted, rgba(155, 160, 168, 0.78));
 }
 
 .part-inspect-color {
@@ -3257,8 +3265,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   height: 36px;
   padding: 0 12px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(12, 12, 14, 0.72);
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.12));
+  background: var(--theme-surface, rgba(12, 12, 14, 0.72));
   color: var(--m4-text);
   font: inherit;
   font-size: 13px;
@@ -3275,7 +3283,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .part-inspect-input:focus,
 .part-inspect-select:focus {
   outline: none;
-  border-color: rgba(130, 96, 251, 0.7);
+  border-color: var(--theme-accent, rgba(130, 96, 251, 0.7));
 }
 
 .part-inspect-select-wrap {
@@ -3297,23 +3305,23 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   justify-content: center;
   gap: 8px;
   height: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.12));
   border-radius: 10px;
-  background: rgba(130, 96, 251, 0.18);
-  color: #e8e2ff;
+  background: var(--theme-accent-soft, rgba(130, 96, 251, 0.18));
+  color: var(--theme-text, #e8e2ff);
   font: inherit;
   font-size: 13px;
   cursor: pointer;
 }
 
 .part-inspect-sim-btn:hover {
-  background: rgba(130, 96, 251, 0.28);
+  background: var(--theme-accent-soft, rgba(130, 96, 251, 0.28));
 }
 
 .part-inspect-sim-btn.is-on {
-  background: rgba(62, 228, 164, 0.14);
-  border-color: rgba(62, 228, 164, 0.28);
-  color: #b7f7dc;
+  background: var(--theme-success-soft, rgba(62, 228, 164, 0.14));
+  border-color: var(--theme-success-soft, rgba(62, 228, 164, 0.28));
+  color: var(--theme-success, #b7f7dc);
 }
 
 .liquid-dashboard {
@@ -3321,16 +3329,16 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   inset: 52px 12px 12px;
   z-index: 5;
   border-radius: 18px;
-  border: 1px solid rgba(180, 210, 245, 0.14);
+  border: 1px solid var(--theme-accent-soft, rgba(180, 210, 245, 0.14));
   background: linear-gradient(
     145deg,
-    rgba(220, 240, 255, 0.05) 0%,
-    rgba(140, 185, 220, 0.03) 40%,
-    rgba(60, 95, 130, 0.05) 100%
+    var(--theme-hover, rgba(220, 240, 255, 0.05)) 0%,
+    var(--theme-accent-soft, rgba(140, 185, 220, 0.03)) 40%,
+    var(--theme-accent-soft, rgba(60, 95, 130, 0.05)) 100%
   );
   box-shadow:
-    0 12px 48px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    0 12px 48px var(--theme-shadow, rgba(0, 0, 0, 0.35)),
+    inset 0 1px 0 var(--theme-shadow, rgba(255, 255, 255, 0.25));
   backdrop-filter: blur(16px) saturate(130%);
   padding: 16px;
   overflow: auto;
@@ -3355,8 +3363,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   text-align: left;
   cursor: pointer;
   border-radius: 14px;
-  border: 1px solid rgba(180, 210, 240, 0.12);
-  background: rgba(9, 14, 22, 0.2);
+  border: 1px solid var(--theme-accent-soft, rgba(180, 210, 240, 0.12));
+  background: var(--theme-hover, rgba(9, 14, 22, 0.2));
   padding: 12px 12px 10px;
   min-height: 0;
   min-width: 0;
@@ -3367,14 +3375,14 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .dash-card:hover {
-  border-color: rgba(210, 230, 250, 0.26);
+  border-color: var(--theme-accent-soft, rgba(210, 230, 250, 0.26));
 }
 
 .dash-title {
   font-size: 13px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #d8e8f8;
+  color: var(--theme-text, #d8e8f8);
   margin-bottom: 10px;
   flex-shrink: 0;
 }
@@ -3383,7 +3391,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-size: 12px;
   letter-spacing: normal;
   text-transform: none;
-  color: #b9cfdf;
+  color: var(--theme-muted, #b9cfdf);
   margin-left: 6px;
 }
 
@@ -3401,7 +3409,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: #b9cfdf;
+  color: var(--theme-muted, #b9cfdf);
   flex-shrink: 0;
 }
 
@@ -3418,35 +3426,35 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .dash-line-temp {
-  stroke: #ffb36b;
+  stroke: var(--theme-warning, #ffb36b);
 }
 
 .dash-line-noise {
-  stroke: #ff4a5f;
+  stroke: var(--theme-danger, #ff4a5f);
 }
 
 .dash-line-mri {
-  stroke: #8ce5ff;
+  stroke: var(--theme-accent, #8ce5ff);
 }
 
 .dash-line-spectrum.dash-line-noise {
-  stroke: #d47884;
+  stroke: var(--theme-danger, #d47884);
 }
 
 .dash-line-spectrum.dash-line-mri {
-  stroke: #8eb6c7;
+  stroke: var(--theme-accent, #8eb6c7);
 }
 
 .dash-line-pose-yaw {
-  stroke: #6eb6ff;
+  stroke: var(--theme-accent, #6eb6ff);
 }
 
 .dash-line-pose-pitch {
-  stroke: #3ee4a4;
+  stroke: var(--theme-success, #3ee4a4);
 }
 
 .dash-line-pose-roll {
-  stroke: #e6b35a;
+  stroke: var(--theme-warning, #e6b35a);
 }
 
 .dash-card-static {
@@ -3454,7 +3462,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .dash-card-static:hover {
-  border-color: rgba(180, 210, 240, 0.12);
+  border-color: var(--theme-accent-soft, rgba(180, 210, 240, 0.12));
 }
 
 .dash-camera-preview {
@@ -3463,7 +3471,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   min-height: 0;
   border-radius: 8px;
   overflow: hidden;
-  background: #000000;
+  background: var(--theme-bg, #000000);
 }
 
 .dash-camera-preview-expanded {
@@ -3483,7 +3491,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   object-fit: cover;
   display: block;
   transform: scaleX(-1);
-  background: #000000;
+  background: var(--theme-bg, #000000);
 }
 
 .dash-camera-waiting {
@@ -3491,13 +3499,13 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   inset: 0;
   display: grid;
   place-items: center;
-  color: #a6a6a6;
+  color: var(--theme-muted, #a6a6a6);
   font-size: 12px;
   pointer-events: none;
 }
 
 .dash-emi-marker {
-  stroke: #c45a66;
+  stroke: var(--theme-danger, #c45a66);
   stroke-width: 1;
   stroke-dasharray: 4 3;
   opacity: 0.75;
@@ -3518,23 +3526,23 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .dash-bar-noise {
-  background: linear-gradient(180deg, #ff6f80 0%, #8f1d2e 100%);
+  background: linear-gradient(180deg, var(--theme-danger-soft, #ff6f80) 0%, var(--theme-danger-soft, #8f1d2e) 100%);
 }
 
 .dash-bar-mri {
-  background: linear-gradient(180deg, #8ce5ff 0%, #2b7f9f 100%);
+  background: linear-gradient(180deg, var(--theme-accent-soft, #8ce5ff) 0%, var(--theme-accent-soft, #2b7f9f) 100%);
 }
 
 .dash-bar-emi {
-  background: linear-gradient(180deg, #ff6c7c 0%, #ff1f3d 100%);
-  box-shadow: 0 0 10px rgba(255, 31, 61, 0.55);
+  background: linear-gradient(180deg, var(--theme-danger-soft, #ff6c7c) 0%, var(--theme-danger-soft, #ff1f3d) 100%);
+  box-shadow: 0 0 10px var(--theme-shadow, rgba(255, 31, 61, 0.55));
 }
 
 .chart-modal-backdrop {
   position: absolute;
   inset: 0;
   z-index: 8;
-  background: rgba(1, 2, 4, 0.58);
+  background: var(--theme-scrim, rgba(1, 2, 4, 0.58));
   display: grid;
   place-items: center;
   padding: 20px;
@@ -3545,10 +3553,10 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   max-height: 90%;
   overflow: auto;
   border-radius: 16px;
-  border: 1px solid rgba(150, 180, 210, 0.22);
-  background: linear-gradient(180deg, rgba(3, 6, 10, 0.94) 0%, rgba(1, 2, 4, 0.96) 100%);
+  border: 1px solid var(--theme-accent-soft, rgba(150, 180, 210, 0.22));
+  background: linear-gradient(180deg, var(--theme-bg, rgba(3, 6, 10, 0.94)) 0%, var(--theme-bg, rgba(1, 2, 4, 0.96)) 100%);
   backdrop-filter: blur(14px);
-  box-shadow: 0 24px 68px rgba(0, 0, 0, 0.62);
+  box-shadow: 0 24px 68px var(--theme-shadow, rgba(0, 0, 0, 0.62));
   padding: 12px 14px 14px;
 }
 
@@ -3563,13 +3571,13 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .chart-modal-title {
   font-size: 14px;
   font-weight: 600;
-  color: #deecf8;
+  color: var(--theme-text, #deecf8);
 }
 
 .chart-modal-close {
-  border: 1px solid rgba(190, 215, 240, 0.3);
-  background: rgba(15, 24, 34, 0.8);
-  color: #e6f0f8;
+  border: 1px solid var(--theme-accent-soft, rgba(190, 215, 240, 0.3));
+  background: var(--theme-surface, rgba(15, 24, 34, 0.8));
+  color: var(--theme-text, #e6f0f8);
   border-radius: 8px;
   padding: 6px 10px;
   cursor: pointer;
@@ -3581,30 +3589,30 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .axis-line {
-  stroke: rgba(200, 220, 240, 0.55);
+  stroke: var(--theme-accent, rgba(200, 220, 240, 0.55));
   stroke-width: 1;
 }
 
 .axis-label {
-  fill: #c5d8eb;
+  fill: var(--theme-text, #c5d8eb);
   font-size: 14px;
 }
 
 .axis-tick {
-  fill: #adc3d8;
+  fill: var(--theme-accent, #adc3d8);
   font-size: 11px;
 }
 
 .bar-modal {
-  fill: #7cd0ff;
+  fill: var(--theme-accent, #7cd0ff);
 }
 
 .bar-modal-noise {
-  fill: #ff4d62;
+  fill: var(--theme-danger, #ff4d62);
 }
 
 .bar-modal-emi {
-  fill: #ff3a52;
+  fill: var(--theme-danger, #ff3a52);
 }
 
 .viewport-hint {
@@ -3649,23 +3657,23 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   display: inline-grid;
   place-items: center;
   border-radius: 999px;
-  border: 1px solid #343434;
-  background: #212121;
-  color: #a6a6a6;
+  border: 1px solid var(--theme-border, #343434);
+  background: var(--theme-raised, #212121);
+  color: var(--theme-muted, #a6a6a6);
   cursor: grab;
   padding: 0;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 8px 20px var(--theme-shadow, rgba(0, 0, 0, 0.35));
 }
 
 .view-tool-rail-grip:hover {
-  background: #2a2a2a;
-  border-color: #4a4a4a;
-  color: #f2f2f2;
+  background: var(--theme-raised, #2a2a2a);
+  border-color: var(--theme-border, #4a4a4a);
+  color: var(--theme-text, #f2f2f2);
 }
 
 .view-tool-rail-dragging .view-tool-rail-grip {
   cursor: grabbing;
-  background: #2a2a2a;
+  background: var(--theme-raised, #2a2a2a);
 }
 
 .view-tool-rail-close,
@@ -3677,12 +3685,12 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   display: inline-grid;
   place-items: center;
   border-radius: 999px;
-  border: 1px solid #343434;
-  background: #212121;
-  color: #f2f2f2;
+  border: 1px solid var(--theme-border, #343434);
+  background: var(--theme-raised, #212121);
+  color: var(--theme-text, #f2f2f2);
   cursor: pointer;
   padding: 0;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 10px 28px var(--theme-shadow, rgba(0, 0, 0, 0.35));
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
@@ -3691,8 +3699,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .view-tool-rail-close:hover,
 .view-tool-rail-fab:hover {
-  background: #2a2a2a;
-  border-color: #4a4a4a;
+  background: var(--theme-raised, #2a2a2a);
+  border-color: var(--theme-border, #4a4a4a);
 }
 
 .view-tool-rail-close:active,
@@ -3707,9 +3715,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   gap: 4px;
   padding: 8px 6px;
   border-radius: 999px;
-  border: 1px solid #343434;
-  background: #212121;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--theme-border, #343434);
+  background: var(--theme-raised, #212121);
+  box-shadow: 0 10px 28px var(--theme-shadow, rgba(0, 0, 0, 0.35));
 }
 
 .view-tool-rail-btn {
@@ -3722,7 +3730,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border-radius: 12px;
   border: 1px solid transparent;
   background: transparent;
-  color: #f2f2f2;
+  color: var(--theme-text, #f2f2f2);
   cursor: pointer;
   padding: 0;
   transition:
@@ -3732,8 +3740,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .view-tool-rail-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: #343434;
+  background: var(--theme-hover, rgba(255, 255, 255, 0.06));
+  border-color: var(--theme-border, #343434);
 }
 
 .view-tool-rail-btn:active {
@@ -3741,8 +3749,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .view-tool-rail-btn-active {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: #343434;
+  background: var(--theme-hover, rgba(255, 255, 255, 0.1));
+  border-color: var(--theme-border, #343434);
 }
 
 .view-tool-rail-tag {
@@ -3753,14 +3761,14 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   z-index: 9;
   padding: 5px 9px;
   border-radius: 8px;
-  border: 1px solid #343434;
-  background: #212121;
-  color: #f2f2f2;
+  border: 1px solid var(--theme-border, #343434);
+  background: var(--theme-raised, #212121);
+  color: var(--theme-text, #f2f2f2);
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.02em;
   white-space: nowrap;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 8px 20px var(--theme-shadow, rgba(0, 0, 0, 0.35));
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -3788,7 +3796,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   padding: 14px 14px 18px;
   overflow: auto;
   backdrop-filter: blur(8px);
-  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.38);
+  box-shadow: -8px 0 24px var(--theme-shadow, rgba(0, 0, 0, 0.38));
   min-width: 0;
   width: 100%;
 }
@@ -3808,7 +3816,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   margin: 0 0 10px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: rgba(8, 8, 9, 0.72);
+  background: var(--theme-bg, rgba(8, 8, 9, 0.72));
   flex-shrink: 0;
 }
 
@@ -3826,13 +3834,20 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .panel-mode-btn:hover {
-  color: var(--text);
+  color: var(--theme-accent, var(--text));
+  background: var(--theme-hover, transparent);
 }
 
-.panel-mode-btn-active {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+.panel-mode-btn:focus-visible {
+  outline: 2px solid var(--theme-accent, var(--accent));
+  outline-offset: 2px;
+}
+
+.panel-mode-btn-active,
+.panel-mode-btn-active:hover {
+  color: var(--theme-accent, var(--text));
+  background: var(--theme-accent-soft, rgba(255, 255, 255, 0.08));
+  box-shadow: inset 0 0 0 1px var(--theme-border, rgba(255, 255, 255, 0.06));
 }
 
 .panel-agents .panel-mode-bar {
@@ -3868,14 +3883,14 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   height: 7px;
   border-radius: 50%;
   background: var(--muted);
-  border: 1px solid rgba(155, 160, 168, 0.85);
+  border: 1px solid var(--theme-border, rgba(155, 160, 168, 0.85));
   box-sizing: border-box;
   flex-shrink: 0;
 }
 
 .agent-dot-on {
   background: var(--ok);
-  border-color: #6aefc0;
+  border-color: var(--theme-success, #6aefc0);
   animation: console-live-blink 1s steps(1, end) infinite;
 }
 
@@ -3898,7 +3913,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .agent-tool-btn {
   border-radius: 7px;
   border: 1px solid var(--border);
-  background: rgba(18, 18, 20, 0.9);
+  background: var(--theme-surface, rgba(18, 18, 20, 0.9));
   color: var(--text);
   font-size: 11px;
   padding: 5px 8px;
@@ -3914,25 +3929,25 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   flex-shrink: 0;
   padding: 10px 11px;
   border-radius: 10px;
-  border: 1px solid rgba(230, 179, 90, 0.35);
-  background: rgba(230, 179, 90, 0.08);
+  border: 1px solid var(--theme-warning, rgba(230, 179, 90, 0.35));
+  background: var(--theme-warning-soft, rgba(230, 179, 90, 0.08));
   font-size: 12px;
   line-height: 1.45;
-  color: #f0d9a8;
+  color: var(--theme-warning, #f0d9a8);
 }
 
 .agent-offline pre {
   margin: 8px 0;
   padding: 8px 10px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--theme-bg, rgba(0, 0, 0, 0.35));
   color: var(--text);
   font-size: 12px;
 }
 
 .agent-offline .muted {
   margin: 0;
-  color: #cbb892;
+  color: var(--theme-warning, #cbb892);
 }
 
 .agent-chat-messages {
@@ -3962,13 +3977,13 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .agent-bubble-user {
   align-self: flex-end;
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--theme-hover, rgba(255, 255, 255, 0.07));
   border-bottom-right-radius: 4px;
 }
 
 .agent-bubble-assistant {
   align-self: flex-start;
-  background: rgba(10, 10, 11, 0.85);
+  background: var(--theme-bg, rgba(10, 10, 11, 0.85));
   border-bottom-left-radius: 4px;
 }
 
@@ -4010,7 +4025,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .agent-md strong {
   font-weight: 650;
-  color: #f2f2f2;
+  color: var(--theme-text, #f2f2f2);
 }
 
 .agent-md em {
@@ -4032,7 +4047,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-size: 0.92em;
   padding: 0.1em 0.35em;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--theme-hover, rgba(255, 255, 255, 0.08));
 }
 
 .agent-md pre {
@@ -4040,7 +4055,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--theme-bg, rgba(0, 0, 0, 0.45));
   overflow-x: auto;
 }
 
@@ -4050,7 +4065,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .agent-md a {
-  color: #9ec5ff;
+  color: var(--theme-accent, #9ec5ff);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -4063,13 +4078,13 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-size: 13px;
   font-weight: 650;
   letter-spacing: 0.02em;
-  color: #f2f2f2;
+  color: var(--theme-text, #f2f2f2);
 }
 
 .agent-md blockquote {
   margin: 0.45em 0;
   padding-left: 0.75em;
-  border-left: 2px solid rgba(158, 197, 255, 0.45);
+  border-left: 2px solid var(--theme-accent, rgba(158, 197, 255, 0.45));
   color: var(--muted);
 }
 
@@ -4098,7 +4113,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   height: auto;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: #0a0a0b;
+  background: var(--theme-bg, #0a0a0b);
 }
 
 .agent-plot-caption {
@@ -4119,9 +4134,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-size: 10px;
   padding: 2px 6px;
   border-radius: 999px;
-  border: 1px solid rgba(158, 197, 255, 0.3);
-  color: #9ec5ff;
-  background: rgba(100, 160, 240, 0.08);
+  border: 1px solid var(--theme-accent-soft, rgba(158, 197, 255, 0.3));
+  color: var(--theme-accent, #9ec5ff);
+  background: var(--theme-accent-soft, rgba(100, 160, 240, 0.08));
 }
 
 .agent-typing {
@@ -4148,7 +4163,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   text-align: left;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: rgba(12, 12, 13, 0.65);
+  background: var(--theme-bg, rgba(12, 12, 13, 0.65));
   color: var(--text);
   font-size: 12px;
   line-height: 1.4;
@@ -4157,7 +4172,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .agent-suggestion:hover:not(:disabled) {
-  border-color: rgba(255, 255, 255, 0.22);
+  border-color: var(--theme-border, rgba(255, 255, 255, 0.22));
 }
 
 .agent-composer {
@@ -4174,9 +4189,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   gap: 6px;
   padding: 10px 12px 8px;
   border-radius: 20px;
-  border: 1px solid #343434;
-  background: #212121;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--theme-border, #343434);
+  background: var(--theme-raised, #212121);
+  box-shadow: 0 10px 28px var(--theme-shadow, rgba(0, 0, 0, 0.35));
 }
 
 .agent-composer-shell-disabled {
@@ -4200,15 +4215,15 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   max-width: 100%;
   padding: 4px 8px;
   border-radius: 999px;
-  border: 1px solid #343434;
-  background: #000000;
-  color: #f2f2f2;
+  border: 1px solid var(--theme-border, #343434);
+  background: var(--theme-bg, #000000);
+  color: var(--theme-text, #f2f2f2);
   font-size: 11px;
   cursor: pointer;
 }
 
 .agent-attach-chip:hover {
-  background: #2a2a2a;
+  background: var(--theme-raised, #2a2a2a);
 }
 
 .agent-attach-chip-name {
@@ -4242,7 +4257,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border-radius: 999px;
   border: 1px solid transparent;
   background: transparent;
-  color: #f2f2f2;
+  color: var(--theme-text, #f2f2f2);
   cursor: pointer;
   padding: 0;
   transition:
@@ -4253,20 +4268,20 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .agent-icon-btn:hover:not(:disabled) {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.06);
-  border-color: #343434;
+  color: var(--theme-text, #ffffff);
+  background: var(--theme-hover, rgba(255, 255, 255, 0.06));
+  border-color: var(--theme-border, #343434);
 }
 
 .agent-icon-btn:active:not(:disabled) {
   transform: scale(0.94);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--theme-hover, rgba(255, 255, 255, 0.1));
 }
 
 .agent-icon-btn-active {
-  color: #f2f2f2;
-  background: rgba(255, 255, 255, 0.08);
-  border-color: #343434;
+  color: var(--theme-text, #f2f2f2);
+  background: var(--theme-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--theme-border, #343434);
 }
 
 .agent-icon-btn:disabled {
@@ -4293,9 +4308,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   max-width: 9.5rem;
   padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid #343434;
-  background: #000000;
-  color: #f2f2f2;
+  border: 1px solid var(--theme-border, #343434);
+  background: var(--theme-bg, #000000);
+  color: var(--theme-text, #f2f2f2);
   font-size: 11px;
   letter-spacing: 0.02em;
   cursor: pointer;
@@ -4307,8 +4322,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .agent-model-pill:hover:not(:disabled),
 .agent-model-pill-open {
-  border-color: #4a4a4a;
-  background: #161616;
+  border-color: var(--theme-border, #4a4a4a);
+  background: var(--theme-surface, #161616);
 }
 
 .agent-model-pill:active:not(:disabled) {
@@ -4324,17 +4339,17 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #f2f2f2;
+  color: var(--theme-text, #f2f2f2);
 }
 
 .agent-model-variant {
-  color: #a6a6a6;
+  color: var(--theme-muted, #a6a6a6);
   flex-shrink: 0;
 }
 
 .agent-model-chevron {
   font-size: 9px;
-  color: #a6a6a6;
+  color: var(--theme-muted, #a6a6a6);
 }
 
 .agent-model-menu {
@@ -4347,9 +4362,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   padding: 6px;
   list-style: none;
   border-radius: 12px;
-  border: 1px solid #343434;
-  background: #212121;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--theme-border, #343434);
+  background: var(--theme-raised, #212121);
+  box-shadow: 0 12px 32px var(--theme-shadow, rgba(0, 0, 0, 0.35));
 }
 
 .agent-model-option {
@@ -4359,18 +4374,18 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: #f2f2f2;
+  color: var(--theme-text, #f2f2f2);
   font-size: 12px;
   padding: 8px 10px;
   cursor: pointer;
 }
 
 .agent-model-option:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--theme-hover, rgba(255, 255, 255, 0.06));
 }
 
 .agent-model-option-active {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--theme-hover, rgba(255, 255, 255, 0.08));
 }
 
 .agent-input {
@@ -4380,7 +4395,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: none;
   outline: none;
   background: transparent;
-  color: #f2f2f2;
+  color: var(--theme-text, #f2f2f2);
   font: inherit;
   font-size: 14px;
   line-height: 1.4;
@@ -4390,7 +4405,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .agent-input::placeholder {
-  color: #a6a6a6;
+  color: var(--theme-muted, #a6a6a6);
 }
 
 .agent-input:disabled {
@@ -4405,8 +4420,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   place-items: center;
   border-radius: 999px;
   border: 1px solid transparent;
-  background: #f7f7f7;
-  color: #111111;
+  background: var(--theme-raised, #f7f7f7);
+  color: var(--theme-muted, #111111);
   cursor: pointer;
   padding: 0;
   transition:
@@ -4416,7 +4431,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .agent-send-round:hover:not(:disabled) {
-  background: #ffffff;
+  background: var(--theme-raised, #ffffff);
 }
 
 .agent-send-round:active:not(:disabled) {
@@ -4446,7 +4461,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .panel-edge:hover,
 .main-resizing .panel-edge {
   /* Brighten the existing border without adding a second strip */
-  box-shadow: inset -1px 0 0 rgba(241, 243, 245, 0.35);
+  box-shadow: inset -1px 0 0 var(--theme-shadow, rgba(241, 243, 245, 0.35));
 }
 
 .panel-edge-rail {
@@ -4463,7 +4478,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .panel-edge-rail:hover {
-  box-shadow: inset 1px 0 0 rgba(241, 243, 245, 0.35);
+  box-shadow: inset 1px 0 0 var(--theme-shadow, rgba(241, 243, 245, 0.35));
 }
 
 .panel-collapse-btn {
@@ -4474,7 +4489,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   padding: 0;
   border-radius: 6px;
   border: 1px solid var(--border);
-  background: rgba(12, 12, 13, 0.92);
+  background: var(--theme-bg, rgba(12, 12, 13, 0.92));
   color: var(--muted);
   font-size: 10px;
   line-height: 1;
@@ -4491,7 +4506,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .panel-collapse-btn:hover {
   color: var(--text);
-  border-color: rgba(255, 255, 255, 0.28);
+  border-color: var(--theme-border, rgba(255, 255, 255, 0.28));
 }
 
 .info-card-stack {
@@ -4503,7 +4518,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .info-card {
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: rgba(10, 10, 11, 0.72);
+  background: var(--theme-bg, rgba(10, 10, 11, 0.72));
   padding: 12px 12px 10px;
 }
 
@@ -4513,7 +4528,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-weight: 650;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #f2f2f2;
+  color: var(--theme-text, #f2f2f2);
 }
 
 .info-card-body {
@@ -4525,7 +4540,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .info-card-footer {
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--theme-border, rgba(255, 255, 255, 0.06));
 }
 
 .metric-row {
@@ -4534,7 +4549,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   justify-content: space-between;
   gap: 10px;
   padding: 5px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+  border-bottom: 1px solid var(--theme-border, rgba(255, 255, 255, 0.045));
 }
 
 .metric-row:last-child {
@@ -4581,7 +4596,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .metric-group {
   margin-top: 4px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--theme-border, rgba(255, 255, 255, 0.06));
   padding-top: 4px;
 }
 
@@ -4595,7 +4610,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #e8eaed;
+  color: var(--theme-text, #e8eaed);
   user-select: none;
 }
 
@@ -4702,13 +4717,13 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   padding: 9px 12px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: rgba(22, 22, 24, 0.9);
+  background: var(--theme-surface, rgba(22, 22, 24, 0.9));
   color: var(--text);
   cursor: pointer;
 }
 
 .action-btn:hover {
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: var(--theme-border, rgba(255, 255, 255, 0.25));
 }
 
 .code-hint {
@@ -4716,7 +4731,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
-  background: rgba(10, 10, 11, 0.85);
+  background: var(--theme-bg, rgba(10, 10, 11, 0.85));
 }
 
 .code-hint-title {
@@ -4731,8 +4746,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   padding: 12px;
   font-size: 12px;
   line-height: 1.45;
-  color: #dfe3e8;
-  background: #09090a;
+  color: var(--theme-text, #dfe3e8);
+  background: var(--theme-bg, #09090a);
   overflow: auto;
 }
 
@@ -4806,7 +4821,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
   .panel-edge:hover,
   .main-resizing .panel-edge {
-    box-shadow: inset 0 -1px 0 rgba(241, 243, 245, 0.35);
+    box-shadow: inset 0 -1px 0 var(--theme-shadow, rgba(241, 243, 245, 0.35));
   }
 
   .panel-edge-rail {
@@ -4904,7 +4919,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   z-index: 10000;
   display: grid;
   place-items: center;
-  background: #050607;
+  background: var(--theme-bg, #050607);
   pointer-events: auto;
   overflow: hidden;
   isolation: isolate;
@@ -4921,8 +4936,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(125, 220, 255, 0.16) 0%,
-    rgba(125, 220, 255, 0.05) 38%,
+    var(--theme-accent-soft, rgba(125, 220, 255, 0.16)) 0%,
+    var(--theme-accent-soft, rgba(125, 220, 255, 0.05)) 38%,
     transparent 68%
   );
   pointer-events: none;
@@ -4977,17 +4992,17 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(125, 220, 255, 0.35) 14%,
-    #ffffff 46%,
-    #7ddcff 54%,
-    rgba(125, 220, 255, 0.35) 86%,
+    var(--theme-accent-soft, rgba(125, 220, 255, 0.35)) 14%,
+    var(--theme-raised, #ffffff) 46%,
+    var(--theme-accent-soft, #7ddcff) 54%,
+    var(--theme-accent-soft, rgba(125, 220, 255, 0.35)) 86%,
     transparent 100%
   );
   box-shadow:
-    0 0 10px rgba(255, 255, 255, 0.85),
-    0 0 28px rgba(125, 220, 255, 0.85),
-    0 0 56px rgba(125, 220, 255, 0.45),
-    0 0 90px rgba(125, 220, 255, 0.22);
+    0 0 10px var(--theme-shadow, rgba(255, 255, 255, 0.85)),
+    0 0 28px var(--theme-shadow, rgba(125, 220, 255, 0.85)),
+    0 0 56px var(--theme-shadow, rgba(125, 220, 255, 0.45)),
+    0 0 90px var(--theme-shadow, rgba(125, 220, 255, 0.22));
   opacity: 0;
   will-change: transform, opacity;
   transform-origin: center center;
@@ -5006,12 +5021,12 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border-radius: 50%;
   background: radial-gradient(
     circle closest-side,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(242, 244, 247, 0.72) 4%,
-    rgba(125, 220, 255, 0.55) 12%,
-    rgba(125, 220, 255, 0.22) 28%,
-    rgba(125, 220, 255, 0.08) 46%,
-    rgba(125, 220, 255, 0.02) 64%,
+    var(--theme-raised, rgba(255, 255, 255, 0.95)) 0%,
+    var(--theme-raised, rgba(242, 244, 247, 0.72)) 4%,
+    var(--theme-accent-soft, rgba(125, 220, 255, 0.55)) 12%,
+    var(--theme-accent-soft, rgba(125, 220, 255, 0.22)) 28%,
+    var(--theme-accent-soft, rgba(125, 220, 255, 0.08)) 46%,
+    var(--theme-accent-soft, rgba(125, 220, 255, 0.02)) 64%,
     transparent 78%
   );
   opacity: 0;
@@ -5039,15 +5054,15 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   height: 3px;
   margin: -1.5px 0 0 -1.5px;
   border-radius: 50%;
-  background: #7ddcff;
-  box-shadow: 0 0 6px rgba(125, 220, 255, 0.7);
+  background: var(--theme-accent-soft, #7ddcff);
+  box-shadow: 0 0 6px var(--theme-shadow, rgba(125, 220, 255, 0.7));
   opacity: 0;
   will-change: transform, opacity;
 }
 
 .launch-particle-emerald {
-  background: #31d89b;
-  box-shadow: 0 0 6px rgba(49, 216, 155, 0.65);
+  background: var(--theme-success-soft, #31d89b);
+  box-shadow: 0 0 6px var(--theme-shadow, rgba(49, 216, 155, 0.65));
 }
 
 .launch-lockup {
@@ -5087,7 +5102,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-weight: 650;
   letter-spacing: 0.04em;
   line-height: 1.05;
-  color: #f2f4f7;
+  color: var(--theme-text, #f2f4f7);
   white-space: nowrap;
   text-shadow: 0 0 0 transparent;
 }
@@ -5103,7 +5118,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-weight: 450;
   letter-spacing: 0.085em;
   line-height: 1.45;
-  color: #9299a4;
+  color: var(--theme-muted, #9299a4);
   text-align: center;
   text-wrap: balance;
 }
@@ -5118,7 +5133,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(125, 220, 255, 0.78);
+  color: var(--theme-accent, rgba(125, 220, 255, 0.78));
   text-align: center;
   animation: launch-status-in 0.45s ease-out;
 }
@@ -5141,10 +5156,10 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 @keyframes launch-hold-glow {
   0%,
   100% {
-    text-shadow: 0 0 12px rgba(125, 220, 255, 0.2);
+    text-shadow: 0 0 12px var(--theme-shadow, rgba(125, 220, 255, 0.2));
   }
   50% {
-    text-shadow: 0 0 22px rgba(125, 220, 255, 0.45);
+    text-shadow: 0 0 22px var(--theme-shadow, rgba(125, 220, 255, 0.45));
   }
 }
 
@@ -5205,11 +5220,11 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border-radius: 0;
   border: 1px solid var(--m4-chrome);
   background: var(--m4-bg);
-  color: #eef0f3;
+  color: var(--theme-text, #eef0f3);
   font-family: inherit;
   font-size: 12px;
   line-height: 1.4;
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 18px 60px var(--theme-shadow, rgba(0, 0, 0, 0.55));
 }
 
 .ic-register-card.is-m4.is-study {
@@ -5269,11 +5284,11 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   font-size: 18px;
   font-weight: 650;
   letter-spacing: 0.01em;
-  color: #eef0f3;
+  color: var(--theme-text, #eef0f3);
 }
 
 .ic-register-card.is-m4 .ic-dialog-head button {
-  color: #ffffff;
+  color: var(--theme-text, #ffffff);
   border-radius: 0;
 }
 
@@ -5323,7 +5338,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: 0;
   border-radius: 0;
   background: var(--m4-chrome);
-  color: #eef0f3;
+  color: var(--theme-text, #eef0f3);
   font: inherit;
   font-size: 12px;
   font-weight: 550;
@@ -5342,7 +5357,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .m4-btn.is-on {
   background: var(--m4-accent-soft);
-  color: #eef0f3;
+  color: var(--theme-text, #eef0f3);
 }
 
 .m4-btn-accent {
@@ -5377,7 +5392,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .m4-notice {
   margin: 0;
   font-size: 13px;
-  color: #8b919c;
+  color: var(--theme-muted, #8b919c);
 }
 
 .m4-notice {
@@ -5410,10 +5425,10 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   height: 34px;
   min-width: 180px;
   padding: 0 10px;
-  border: 1px solid #ffffff22;
+  border: 1px solid var(--theme-border, #ffffff22);
   border-radius: 0;
-  background: #00000022;
-  color: #eef0f3;
+  background: var(--theme-hover, #00000022);
+  color: var(--theme-text, #eef0f3);
   font: inherit;
   font-size: 12px;
 }
@@ -5424,8 +5439,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   margin: 0;
   overflow: auto;
   padding: 10px 12px;
-  background: #00000022;
-  color: rgba(255, 255, 255, 0.86);
+  background: var(--theme-hover, #00000022);
+  color: var(--theme-text, rgba(255, 255, 255, 0.86));
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
   line-height: 1.45;
@@ -5448,8 +5463,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   flex: 1;
   min-height: 0;
   overflow: auto;
-  background: #00000022;
-  border: 1px solid #ffffff12;
+  background: var(--theme-hover, #00000022);
+  border: 1px solid var(--theme-border, #ffffff12);
 }
 
 .m4-log-empty {
@@ -5480,13 +5495,13 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   text-transform: uppercase;
   color: var(--m4-muted);
   background: var(--m4-panel);
-  border-bottom: 1px solid #ffffff18;
+  border-bottom: 1px solid var(--theme-border, #ffffff18);
 }
 
 .m4-log-table td {
   padding: 7px 12px;
   vertical-align: top;
-  border-bottom: 1px solid #ffffff0c;
+  border-bottom: 1px solid var(--theme-border, #ffffff0c);
   color: var(--m4-text);
 }
 
@@ -5506,7 +5521,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .m4-log-source {
   width: 1%;
   white-space: nowrap;
-  color: rgba(238, 240, 243, 0.78);
+  color: var(--theme-text, rgba(238, 240, 243, 0.78));
 }
 
 .m4-log-message {
@@ -5558,7 +5573,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   border: 0;
   border-bottom: 2px solid transparent;
   background: transparent;
-  color: #8b919c;
+  color: var(--theme-muted, #8b919c);
   font: inherit;
   font-size: 11px;
   letter-spacing: 0.06em;
@@ -5566,7 +5581,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .m4-tabs button:hover {
-  color: #eef0f3;
+  color: var(--theme-text, #eef0f3);
 }
 
 .m4-tabs button.is-active {
@@ -5593,7 +5608,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .m4-table td {
   padding: 6px 8px;
-  border-bottom: 1px solid #ffffff10;
+  border-bottom: 1px solid var(--theme-border, #ffffff10);
 }
 
 .m4-table tbody tr:nth-child(even) {
@@ -5603,7 +5618,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .m4-table tbody tr.is-selected,
 .m4-table tbody tr.is-selected:hover {
   background: var(--m4-accent);
-  color: #ffffff;
+  color: var(--theme-text, #ffffff);
 }
 
 .m4-table tbody tr:hover {
@@ -5638,7 +5653,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   padding: 6px 10px;
   border: 0;
   background: transparent;
-  color: #eef0f3;
+  color: var(--theme-text, #eef0f3);
   font: inherit;
   font-size: 12px;
   cursor: pointer;
@@ -5659,7 +5674,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 
 .m4-tree-body label {
   display: contents;
-  color: #8b919c;
+  color: var(--theme-muted, #8b919c);
   font-size: 12px;
 }
 
@@ -5678,7 +5693,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .m4-status-copy p {
   margin: 0 0 6px;
   font-size: 12px;
-  color: #eef0f3;
+  color: var(--theme-text, #eef0f3);
 }
 
 .m4-gold {
@@ -5728,7 +5743,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .m4-mark.is-idle {
-  color: #515669;
+  color: var(--theme-muted, #515669);
 }
 
 .m4-disk {
@@ -5757,7 +5772,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   min-width: 160px;
   font-style: normal;
   font-size: 12px;
-  color: #8b919c;
+  color: var(--theme-muted, #8b919c);
 }
 
 .m4-study {
@@ -5821,7 +5836,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .m4-exam-table tbody tr.is-selected td {
-  border-right-color: rgba(255, 255, 255, 0.28);
+  border-right-color: var(--theme-border, rgba(255, 255, 255, 0.28));
 }
 
 .m4-exam-table tbody tr.is-selected td:last-child {
@@ -5904,7 +5919,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .m4-transfer span {
-  color: #ffffff;
+  color: var(--theme-text, #ffffff);
 }
 
 .m4-view-stage {
@@ -5912,8 +5927,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   flex: 1;
   min-height: 350px;
   min-width: 0;
-  background: var(--ic-plot-bg, #090a0d);
-  border: 1px solid var(--ic-plot-border, #363a43);
+  background: var(--ic-plot-bg, var(--theme-bg, #090a0d));
+  border: 1px solid var(--ic-plot-border, var(--theme-border, #363a43));
   overflow: hidden;
 }
 
@@ -5928,14 +5943,14 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   gap: 0.7em;
   margin: 0;
   padding: 0;
-  color: #ffffff;
+  color: var(--theme-text, #ffffff);
   font-size: 12px;
   font-weight: 400;
   line-height: 1.3;
   pointer-events: none;
   overflow: hidden;
   white-space: nowrap;
-  text-shadow: 0 0 8px #000, 0 1px 2px #000;
+  text-shadow: 0 0 8px var(--theme-shadow, #000), 0 1px 2px var(--theme-shadow, #000);
 }
 
 .m4-view-meta-who {
@@ -5959,7 +5974,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   inset: 0;
   min-height: 0;
   min-width: 0;
-  background: var(--ic-plot-bg, #090a0d);
+  background: var(--ic-plot-bg, var(--theme-bg, #090a0d));
 }
 
 .m4-view-plot {
@@ -5967,7 +5982,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   inset: 0;
   min-width: 0;
   min-height: 0;
-  background: var(--ic-plot-bg, #090a0d);
+  background: var(--ic-plot-bg, var(--theme-bg, #090a0d));
   border: 0;
   overflow: hidden;
   overscroll-behavior: contain;
@@ -6007,7 +6022,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   height: 100%;
   object-fit: contain;
   object-position: center;
-  background: var(--ic-plot-bg, #090a0d);
+  background: var(--ic-plot-bg, var(--theme-bg, #090a0d));
 }
 
 .m4-view-status {
@@ -6016,7 +6031,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   bottom: 12px;
   z-index: 2;
   margin: 0;
-  color: var(--ic-plot-tick, #9ca3af);
+  color: var(--ic-plot-tick, var(--theme-muted, #9ca3af));
   font-size: 12px;
   pointer-events: none;
 }
@@ -6027,12 +6042,12 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   bottom: 28px;
   z-index: 2;
   margin: 0;
-  color: var(--ic-plot-tick, #9ca3af);
+  color: var(--ic-plot-tick, var(--theme-muted, #9ca3af));
   font-size: 12px;
 }
 
 .m4-view-dicom {
-  background: var(--ic-plot-bg, #090a0d);
+  background: var(--ic-plot-bg, var(--theme-bg, #090a0d));
 }
 
 .m4-view-dicom canvas {
@@ -6048,7 +6063,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   gap: 3px;
   padding: 36px 78px 8px 8px;
   overflow: hidden;
-  background: var(--ic-plot-bg, #090a0d);
+  background: var(--ic-plot-bg, var(--theme-bg, #090a0d));
 }
 
 .m4-mosaic-cell {
@@ -6060,8 +6075,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   min-height: 0;
   margin: 0;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: #000;
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.12));
+  background: var(--theme-bg, #000);
   color: inherit;
   cursor: pointer;
   appearance: none;
@@ -6069,12 +6084,12 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .m4-mosaic-cell:hover {
-  border-color: rgba(255, 255, 255, 0.45);
+  border-color: var(--theme-border, rgba(255, 255, 255, 0.45));
 }
 
 .m4-mosaic-cell.is-active {
-  border-color: var(--ic-accent-hot, #e0a526);
-  box-shadow: inset 0 0 0 1px var(--ic-accent-hot, #e0a526);
+  border-color: var(--ic-accent-hot, var(--theme-warning, #e0a526));
+  box-shadow: inset 0 0 0 1px var(--ic-accent-hot, var(--theme-shadow, #e0a526));
 }
 
 .m4-mosaic-cell .m4-view-dicom {
@@ -6087,10 +6102,10 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   left: 5px;
   bottom: 4px;
   z-index: 1;
-  color: #ffffff;
+  color: var(--theme-text, #ffffff);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 6px #000, 0 1px 2px #000;
+  text-shadow: 0 0 6px var(--theme-shadow, #000), 0 1px 2px var(--theme-shadow, #000);
   pointer-events: none;
 }
 
@@ -6109,7 +6124,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   align-items: stretch;
   gap: 2px;
   width: 70px;
-  color: #b8bcc4;
+  color: var(--theme-muted, #b8bcc4);
   font-size: 9px;
   user-select: none;
   touch-action: none;
@@ -6128,12 +6143,12 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   position: absolute;
   right: 3px;
   transform: translateY(-50%);
-  color: #9aa0aa;
+  color: var(--theme-muted, #9aa0aa);
   font-size: 8px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
   pointer-events: none;
-  text-shadow: 0 0 4px #000, 0 1px 2px #000;
+  text-shadow: 0 0 4px var(--theme-shadow, #000), 0 1px 2px var(--theme-shadow, #000);
 }
 
 .m4-hist-scale span::after {
@@ -6143,7 +6158,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   top: 50%;
   width: 6px;
   height: 1px;
-  background: #6a7180;
+  background: var(--theme-raised, #6a7180);
 }
 
 .m4-hist-main {
@@ -6161,8 +6176,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   min-width: 0;
   cursor: ns-resize;
   overflow: hidden;
-  background: rgba(8, 10, 16, 0.55);
-  border: 1px solid #3a3f4d;
+  background: var(--theme-bg, rgba(8, 10, 16, 0.55));
+  border: 1px solid var(--theme-border, #3a3f4d);
 }
 
 .m4-hist-svg {
@@ -6173,21 +6188,21 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .m4-hist-fill {
-  fill: rgba(100, 100, 200, 0.72);
-  stroke: rgba(190, 190, 210, 0.45);
+  fill: var(--theme-accent, rgba(100, 100, 200, 0.72));
+  stroke: var(--theme-muted, rgba(190, 190, 210, 0.45));
   stroke-width: 0.8;
 }
 
 .m4-hist-window {
-  fill: rgba(100, 100, 200, 0.16);
+  fill: var(--theme-accent, rgba(100, 100, 200, 0.16));
   stroke: none;
 }
 
 .m4-hist-lut {
   flex: 0 0 9px;
   width: 9px;
-  background: linear-gradient(to top, #000 0%, #fff 100%);
-  border: 1px solid #4a4f5c;
+  background: linear-gradient(to top, var(--theme-bg, #000) 0%, var(--theme-raised, #fff) 100%);
+  border: 1px solid var(--theme-border, #4a4f5c);
   pointer-events: none;
 }
 
@@ -6201,7 +6216,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .m4-hist-links line {
-  stroke: #e0a526;
+  stroke: var(--theme-warning, #e0a526);
   stroke-width: 1.1;
   vector-effect: non-scaling-stroke;
 }
@@ -6223,7 +6238,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   right: 0;
   top: 5px;
   height: 1px;
-  background: #e0a526;
+  background: var(--theme-warning-soft, #e0a526);
 }
 
 .m4-hist-handle.is-max::after,
@@ -6240,13 +6255,13 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .m4-hist-handle.is-max::after {
   top: -1px;
   border-width: 0 4px 6px 4px;
-  border-color: transparent transparent #e0a526 transparent;
+  border-color: transparent transparent var(--theme-warning, #e0a526) transparent;
 }
 
 .m4-hist-handle.is-min::after {
   top: 6px;
   border-width: 6px 4px 0 4px;
-  border-color: #e0a526 transparent transparent transparent;
+  border-color: var(--theme-warning, #e0a526) transparent transparent transparent;
 }
 
 .m4-view-stage.is-dicom .m4-slice {
@@ -6272,7 +6287,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   top: 50%;
   height: 2px;
   margin-top: -1px;
-  background: rgba(200, 200, 200, 0.28);
+  background: var(--theme-hover, rgba(200, 200, 200, 0.28));
 }
 
 .m4-slice-thumb {
@@ -6281,14 +6296,14 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   bottom: 1px;
   width: 8px;
   margin-left: -4px;
-  background: rgb(200, 200, 200);
+  background: var(--theme-raised, rgb(200, 200, 200));
   pointer-events: none;
 }
 
 .m4-slice:hover .m4-slice-thumb,
 .m4-slice.is-dragging .m4-slice-thumb,
 .m4-slice:focus-visible .m4-slice-thumb {
-  background: #ffffff;
+  background: var(--theme-raised, #ffffff);
 }
 
 .m4-slice-label {
@@ -6297,9 +6312,9 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   top: -11px;
   font-size: 9px;
   line-height: 1;
-  color: #8b919c;
+  color: var(--theme-muted, #8b919c);
   pointer-events: none;
-  text-shadow: 0 0 5px #000, 0 1px 2px #000;
+  text-shadow: 0 0 5px var(--theme-shadow, #000), 0 1px 2px var(--theme-shadow, #000);
   font-variant-numeric: tabular-nums;
 }
 
@@ -6328,7 +6343,7 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   padding: 6px 12px;
   border: 0;
   background: transparent;
-  color: #eef0f3;
+  color: var(--theme-text, #eef0f3);
   font: inherit;
   font-size: 12px;
   text-align: left;
@@ -6403,5 +6418,5 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 .chart-modal-close:hover:not(:disabled),
 .agent-tool-btn:hover:not(:disabled),
 .part-inspect-sim-btn:hover:not(:disabled) {
-  border-color: rgba(255, 255, 255, 0.28);
+  border-color: var(--theme-border, rgba(255, 255, 255, 0.28));
 }

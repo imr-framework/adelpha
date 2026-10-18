@@ -14,7 +14,6 @@ from sequences.common import make_se_2D
 from sequences.common import view_traj
 import common.logger as logger
 from common.types import ResultItem
-import sigpy as sp
 
 log = logger.get_logger()
 
@@ -334,8 +333,7 @@ class SequenceSE_2D(PulseqSequence, registry_key=Path(__file__).stem):
         plt.title(f"Image data")
         # recon = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(data)))
         # recon = np.fft.fftshift(np.fft.fft2(data))
-        recon = sp.fft(data, norm='ortho')
-        # recon = (np.fft.fft2((data)))
+        recon = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(data), norm="ortho"))
 
         
         # plt.grid(True, color="#333")

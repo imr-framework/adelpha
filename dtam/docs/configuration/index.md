@@ -49,7 +49,7 @@ Boolean flags such as `temperature_monitoring`, `frequency_compensation`, and `a
 | `testing.yaml` | Pytest defaults; quieter logs |
 | `production.yaml` | Advisory posture; points at `halbach_48mt` profile |
 
-Production pointing at Halbach does **not** enable Phase 1 physical I/O — the Halbach adapter still refuses hardware connections.
+Production pointing at Halbach does **not** make `Halbach48mTAdapter.connect()` succeed. Hardware samples use the [device protocol](../platform/devices.md), not that adapter.
 
 ## Resolving the config root
 
@@ -58,3 +58,15 @@ Production pointing at Halbach does **not** enable Phase 1 physical I/O — the 
 3. Repository `configs/` directory next to `src/`
 
 Missing directories raise `ConfigurationError`.
+
+## Device listener
+
+Boards do not use Twin HTTP. The Twin lifespan starts a WebSocket listener when `devices.json` is found.
+
+| Lookup | Path |
+| --- | --- |
+| Explicit | `ADELPHA_DEVICE_CONFIG` |
+| Config dir | `devices.json` or `dtam/devices.json` under `ADELPHA_CONFIG_DIR` |
+| DTAM dir | `devices.json` under `DTAM_CONFIG_DIR` |
+
+See [Device protocol](../platform/devices.md). Tokens must be unique, random, and at least 24 characters. Restart the Twin after changing the file.

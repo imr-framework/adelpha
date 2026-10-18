@@ -24,6 +24,8 @@ Vite proxies `/api/mri` → `http://127.0.0.1:8002`.
 
 Restarting the API **clears the in-memory exam**. Register the patient again.
 
+Engineering Studio → Acquisition can send a sequence into this workspace. **Use parameters** on the MRZero inspector opens Imaging Console, inserts the simulated sequence (`se_2D` or `tse_3D`) with those TE, TR, FOV, and related fields, and selects it in the queue. If no exam is open, Adelpha starts a simulation exam so the sequence can be inserted. It does not run the scan.
+
 ## Layout
 
 | Area | Contents |
@@ -75,7 +77,7 @@ Name, serial, and picture follow **Settings → 3D Model**.
 
 ## Theme
 
-**Settings → Appearance** (or Imaging Console): **Adelpha** (violet) or **MRI4ALL** (navy and gold).
+**Settings → Appearance** offers **Adelpha**, **MRI4ALL**, **Porcelain**, and **Glacier**. MRI4ALL keeps the classic navy-and-gold appearance.
 
 ## What stays in Python
 

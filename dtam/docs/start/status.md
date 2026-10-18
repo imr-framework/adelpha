@@ -38,14 +38,14 @@ This page describes the repository as implemented, not the full long-term archit
 | Tools | `estimate_twin_state`, EMI/RF reads | ADK agent-facing |
 | Agents | root `sub_agents` + specialists | Google ADK assessment core + skills |
 | Twin HTTP API | `dtam.api` / `make twin-api` | REST for Next.js / dashboards |
+| Device protocol | `dtam.communication` | JSON-RPC WebSocket hub; public client is `adelpha.telemetry` / `adelpha.feedback` |
 | Assessment CLI | `python -m dtam.agents.main` | Deterministic observe/recommend (no LLM) |
 
 ## Scaffolded / deferred
 
 - Gradient / image-quality twin states and acquisition
-- `control/`, `workflows/`, `feedback/`, full `safety/` closed loop
 - Safety / Sequence / Imaging agents beyond thin shells
-- Physical drivers (Raspberry Pi, Red Pitaya, …)
+- Vendor GPIO / Red Pitaya drivers inside DTAM (boards speak JSON-RPC instead)
 
 !!! warning "Do not assume empty packages are ready"
     Prefer the Phase 1–2b surfaces above until later phases land working code and tests.
@@ -55,4 +55,4 @@ This page describes the repository as implemented, not the full long-term archit
 - Default scanner: **simulated** (`simulated_scanner`)
 - Default mode: **simulation**
 - `automatic_control: false`
-- Physical Halbach adapter **refuses** hardware I/O in Phase 1–2b
+- Physical Halbach adapter **refuses** `connect()` / `read_measurements()`; hardware samples arrive through the device listener, not that adapter

@@ -1,0 +1,50 @@
+.elmer-step { position: relative; width: 100%; height: 100%; overflow: auto; box-sizing: border-box; padding: 24px; background: var(--theme-bg, #09090b); color: var(--theme-text, #eee); font-size: 13px; pointer-events: auto; }
+.elmer-step * { box-sizing: border-box; }
+.elmer-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; }
+.elmer-eyebrow { font-size: 10px; letter-spacing: .13em; color: var(--theme-muted, #a4a4af); }
+.elmer-header h2 { margin: 8px 0 0; font-size: 22px; }
+.elmer-columns { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(260px, 340px); gap: 20px; max-width: 1300px; margin: auto; }
+.elmer-card { padding: 20px; border: 1px solid var(--theme-border, #303039); border-radius: 12px; margin-bottom: 16px; background: var(--theme-surface, #111114); }
+.elmer-card h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: 15px; }
+.elmer-step p, .elmer-step small { color: var(--theme-muted, #a4a4af); line-height: 1.6; }
+.elmer-step small { display: block; margin: 8px 0; }
+.elmer-step button, .elmer-upload { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 14px; border: 1px solid var(--theme-border, #404048); border-radius: 7px; background: var(--theme-raised, #24242a); color: inherit; cursor: pointer; font: inherit; }
+.elmer-step button:disabled { opacity: .5; cursor: not-allowed; }
+.elmer-step :is(input, select, button):focus-visible { outline: 2px solid var(--theme-accent, #cbb7ff); outline-offset: 3px; }
+.elmer-upload { display: block; padding: 24px; border-style: dashed; text-align: center; }
+.elmer-upload input { display: block; max-width: 100%; margin: 14px auto 0; font: inherit; }
+.elmer-file { display: flex; gap: 12px; margin-top: 20px; overflow-wrap: anywhere; }
+.elmer-file span, .elmer-solid span { display: block; color: var(--theme-muted, #a4a4af); margin-top: 5px; overflow-wrap: anywhere; }
+.elmer-step fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.elmer-solid { padding: 18px 0; border-top: 1px solid var(--theme-border, #303039); }
+.elmer-solid > label { display: block; margin: 16px 0; }
+.elmer-step select, .elmer-number input { display: block; width: 100%; min-width: 0; margin-top: 7px; background: var(--theme-bg, #09090b); color: inherit; border: 1px solid var(--theme-border, #404048); border-radius: 6px; padding: 9px; font: inherit; }
+.elmer-properties { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.elmer-number { display: block; margin-bottom: 12px; font-size: 12px; }
+.elmer-check { display: flex; align-items: center; gap: 8px; line-height: 1.5; }
+.elmer-step .elmer-primary { width: 100%; margin-top: 12px; background: var(--theme-accent, #d5c4fa); color: var(--theme-on-accent, #24212e); font-weight: 600; }
+.elmer-empty { padding: 35px 0; text-align: center; color: var(--theme-muted, #a4a4af); }
+.elmer-status { display: flex; align-items: center; gap: 8px; }
+.elmer-step dl { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 14px 0; }
+.elmer-step dd { margin: 0; font-variant-numeric: tabular-nums; }
+.elmer-step dt { color: var(--theme-muted, #a4a4af); }
+.elmer-note { font-size: 12px; padding: 0 8px; }
+.elmer-error { position: sticky; bottom: 0; padding: 16px; border: 1px solid #a85d5d; background: var(--theme-surface, #201416); border-radius: 8px; overflow-wrap: anywhere; }
+@media (max-width: 800px) { .elmer-columns { grid-template-columns: 1fr; } .elmer-step { padding: 14px; } }
+/* STEP uses the original FEM desk grid, tree, viewport, inspector and status bar. */
+.fem-step-workspace .elmer-card { padding: 0; border: 0; background: transparent; }
+.fem-step-workspace .elmer-step-controls { font-size: 12px; }
+.fem-step-workspace .elmer-step-controls p { color: var(--theme-muted, #a4a4af); line-height: 1.6; }
+.fem-step-workspace .elmer-step-controls fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.fem-step-workspace .elmer-step-controls select { width: 100%; margin-top: 8px; padding: 8px; color: var(--theme-text); background: var(--theme-surface); border: 1px solid var(--theme-border); border-radius: 6px; }
+.fem-step-workspace .elmer-step-controls button { padding: 8px; cursor: pointer; }
+.fem-step-workspace .elmer-properties { grid-template-columns: 1fr; }
+.fem-step-workspace .elmer-step-controls dl { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+.fem-step-workspace .elmer-step-controls dd { margin: 0; }
+.fem-step-workspace .elmer-error { position: static; margin-top: 16px; }
+.fem-step-workspace .studio-study-viewport { min-height: 320px; }
+.fem-preview-empty { display: grid; place-items: center; height: 100%; min-height: 250px; padding: 40px; color: var(--theme-muted, #a4a4af); text-align: center; }
+.fem-step-workspace .studio-study-tree strong { overflow-wrap: anywhere; }
+.fem-mesh-controls { position: absolute; bottom: 12px; left: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 10px 16px; padding: 12px; border-radius: 8px; background: var(--theme-surface, #16161c); border: 1px solid var(--theme-border, #333); font-size: 12px; }
+.fem-mesh-controls label { display: flex; align-items: center; gap: 5px; }
+.fem-mesh-controls span { width: 100%; color: var(--theme-muted, #aaa); }

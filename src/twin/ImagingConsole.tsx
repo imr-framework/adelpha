@@ -2,6 +2,12 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { Atom, Check, Image as ImageIcon, LayoutGrid, List, Loader, LogOut, Maximize2, Play, PlusSquare, Square, Wrench, X, Zap } from "lucide-react";
 import { pickSeqFile } from "../desktop/pickSeqFile";
 import {
+  applyAcquisitionHandoff,
+  subscribeAcquisitionHandoff,
+  takeAcquisitionHandoff,
+  type AcquisitionHandoff,
+} from "./acquisitionHandoff";
+import {
   connectMriEvents,
   createScan,
   createScanPsd,
@@ -673,6 +679,35 @@ export function ImagingConsole() {
     }
   }, [autoloadEntry]);
 
+  const applyStudioHandoff = useCallback(async (handoff: AcquisitionHandoff) => {
+    setBusy(true);
+    setProblems([]);
+    setRegisterOpen(false);
+    try {
+      const applied = await applyAcquisitionHandoff(handoff);
+      setExam(applied.exam);
+      setPatient(applied.exam.patient);
+      setAcc(applied.exam.exam.acc);
+      setPosition(applied.exam.exam.patient_position || "HFS");
+      await refreshQueue();
+      setSelectedId(applied.entry.id);
+      setDraft(applied.parameters);
+      const detail = await fetchScan(applied.entry.id);
+      setSelectedTask(detail.task);
+      if (detail.entry.state === "created" || detail.entry.state === "scheduled_acq") {
+        await editScan(applied.entry.id);
+        await refreshQueue();
+      }
+      setStatus(`Loaded ${handoff.protocol_name} from Acquisition`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not load simulation parameters";
+      setProblems([message]);
+      setStatus(message);
+    } finally {
+      setBusy(false);
+    }
+  }, [refreshQueue]);
+
   const loadExam = useCallback(async () => {
     try {
       const health = await fetchMriHealth();
@@ -711,8 +746,21 @@ export function ImagingConsole() {
   }, [refreshQueue]);
 
   useEffect(() => {
-    void loadExam();
-  }, [loadExam]);
+    let cancel = false;
+    void loadExam().then(() => {
+      if (cancel) return;
+      const pending = takeAcquisitionHandoff();
+      if (pending) void applyStudioHandoff(pending);
+    });
+    const off = subscribeAcquisitionHandoff((handoff) => {
+      takeAcquisitionHandoff();
+      void applyStudioHandoff(handoff);
+    });
+    return () => {
+      cancel = true;
+      off();
+    };
+  }, [loadExam, applyStudioHandoff]);
 
   useEffect(() => {
     if (!exam) return;

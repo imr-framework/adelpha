@@ -15,7 +15,7 @@ This page is the Digital Twin workspace: the 3D view, side panel, Agents, and co
 | **Health** | Twin / Console / Agents |
 | **System Context** | `scanner_id / mode` |
 | **Workspace** | Switch rooms with **⌘K** / **Ctrl+K** |
-| **Settings** | Models, runtime, key, updates. [Settings](settings.md). |
+| **Settings** | Models, runtime, key, devices, updates. [Settings](settings.md). |
 | **Menu** | Workspace-specific |
 
 ## Side panel
@@ -66,7 +66,21 @@ See [Settings](settings.md#camera) if permission is denied.
 
 ## Live dashboard
 
-**Open live dashboard** overlays temperature and RF-noise history. These are operator aids, not calibrated spectrum analyzers.
+**Open live dashboard** overlays magnet temperature, Johnson noise, and the **EMI sensor spectrum**.
+
+In **simulation**, Johnson noise is drawn from temperature (\(\sqrt{T}\)), and the EMI plot shows narrow interference spikes over a white-noise floor in arbitrary units on a logarithmic 1–100 kHz axis. That EMI display is illustrative, not a phantom signal or a calibrated analyzer.
+
+In **hardware**, the dashboard and Telemetry panel wait until a recent measured sample arrives. **Configure sensors** and **Check connections** open **Settings → Devices**. The connection guide matches [Device link](devices.md). The header, floating navigation, and terminal stay in place.
+
+A board may publish only some families. Connected channels render; the others keep their own copy:
+
+| Card | Hardware copy |
+| --- | --- |
+| Magnet temperature | Plot when magnet temperature is received; otherwise “Temperature sensor not connected” |
+| Johnson noise | “Johnson noise is simulated only; it is not measured in hardware” |
+| EMI | RMS stamp when `voltage_rms` is received, with no spectrum; otherwise “EMI sensor not connected” |
+
+Telemetry cards that have no usable values say **No usable … measurements**. Twin **Notes** list each family as received, not connected, reported missing, invalid, or stale. Missing or omitted sensors are never drawn as zero. Hardware does not synthesize an EMI spectrum from RMS. Reception uses a 30-second freshness window; API connectivity alone does not count as sensor data.
 
 ## Agents
 

@@ -99,6 +99,18 @@ Fork the adelpha repo. While forking, be sure to uncheck `copy the main branch o
    gh pr create --base workshop/delta-2026 --title "Add workshop notebook: short description" --body "Mentor notebook for the DELTA DIY MRI workshop."
    ```
 
+## Python library
+
+```bash
+pip install adelpha
+```
+
+```python
+from adelpha import telemetry, feedback
+```
+
+Sensors use `telemetry`. Actuator control uses `feedback`. Other engineering modules (`magnet`, `coil`, `fem`, `twin`, …) are documented in [`docs/guide/python.md`](docs/guide/python.md). This repository is not published automatically; maintainers run `uv build` then `uv publish` from the root.
+
 ## Install (developers)
 
 **Requirements:** Node.js 22+, [Rust](https://rustup.rs/) (stable), Python 3.10–3.12, [uv](https://docs.astral.sh/uv/).

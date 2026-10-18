@@ -1,3 +1,4 @@
+import { lightThemePalette, appliedConsoleTheme, type ConsoleTheme } from "./consoleTheme";
 import type { EChartsOption, LineSeriesOption } from "echarts";
 import type { PlotAxes } from "./mri/api";
 
@@ -9,6 +10,19 @@ export const PLOT_GRID = "rgba(35, 38, 45, 0.58)";
 export const PLOT_TICK = "#9CA3AF";
 export const PLOT_TITLE = "#E5E7EB";
 export const PLOT_LINEWIDTH = 1.75;
+
+export function scientificPlotColors(theme: ConsoleTheme) {
+  const palette = lightThemePalette(theme);
+  return palette ? {
+    signal: palette.accent, fill: palette["accent-soft"], bg: palette.surface,
+    border: palette.border, grid: palette.border, tick: palette.muted,
+    title: palette.text, tooltip: palette.surface,
+  } : {
+    signal: PLOT_SIGNAL, fill: PLOT_FILL, bg: PLOT_BG, border: PLOT_BORDER,
+    grid: PLOT_GRID, tick: PLOT_TICK, title: PLOT_TITLE, tooltip: "#12141A",
+  };
+}
+type PlotColors = ReturnType<typeof scientificPlotColors>;
 
 function tickPlaces(value: number, span: number, maxPlaces: number): number {
   const step = Math.abs(span) / 4 || Math.abs(value);
@@ -76,7 +90,7 @@ function lineData(series: PlotAxes["series"][number]): LineSeriesOption["data"] 
   });
 }
 
-function lineSeries(trace: PlotAxes, xAxisIndex = 0, yAxisIndex = 0): LineSeriesOption[] {
+function lineSeries(trace: PlotAxes, colors: PlotColors, xAxisIndex = 0, yAxisIndex = 0): LineSeriesOption[] {
   const fill = trace.series.length === 1;
   return trace.series.map((series, index) => ({
     type: "line",
@@ -89,36 +103,36 @@ function lineSeries(trace: PlotAxes, xAxisIndex = 0, yAxisIndex = 0): LineSeries
     clip: true,
     animation: false,
     lineStyle: {
-      color: index === 0 ? PLOT_SIGNAL : PLOT_TICK,
+      color: index === 0 ? colors.signal : colors.tick,
       width: PLOT_LINEWIDTH,
       cap: "round",
       join: "round",
     },
-    itemStyle: { color: PLOT_SIGNAL },
-    areaStyle: fill ? { color: PLOT_FILL, opacity: 1, origin: 0 } : undefined,
+    itemStyle: { color: colors.signal },
+    areaStyle: fill ? { color: colors.fill, opacity: 1, origin: 0 } : undefined,
     data: lineData(series),
     emphasis: { disabled: true },
   }));
 }
 
-function tooltipConfig(axes: PlotAxes[]): EChartsOption["tooltip"] {
+function tooltipConfig(axes: PlotAxes[], colors: PlotColors): EChartsOption["tooltip"] {
   return {
     trigger: "axis",
     className: "ic-plot-tooltip",
     confine: true,
     renderMode: "html",
-    backgroundColor: "#12141A",
-    borderColor: PLOT_BORDER,
+    backgroundColor: colors.tooltip,
+    borderColor: colors.border,
     borderWidth: 1,
     padding: [6, 8],
-    textStyle: { color: PLOT_TITLE, fontSize: 11, fontFamily: "inherit" },
+    textStyle: { color: colors.title, fontSize: 11, fontFamily: "inherit" },
     extraCssText:
       "width:auto!important;height:auto!important;max-width:220px;box-shadow:none;border-radius:4px;pointer-events:none;white-space:nowrap;line-height:1.35;",
     axisPointer: {
       type: "cross",
       animation: false,
-      lineStyle: { color: PLOT_TICK, width: 1, type: "dashed", opacity: 0.7 },
-      crossStyle: { color: PLOT_TICK, width: 1, type: "dashed", opacity: 0.7 },
+      lineStyle: { color: colors.tick, width: 1, type: "dashed", opacity: 0.7 },
+      crossStyle: { color: colors.tick, width: 1, type: "dashed", opacity: 0.7 },
       label: { show: false },
     },
     formatter: (raw) => {
@@ -135,21 +149,21 @@ function tooltipConfig(axes: PlotAxes[]): EChartsOption["tooltip"] {
   };
 }
 
-function toolboxConfig(visible: boolean): EChartsOption["toolbox"] {
+function toolboxConfig(visible: boolean, colors: PlotColors): EChartsOption["toolbox"] {
   return {
     show: visible,
     itemSize: 13,
     top: 6,
     right: 8,
-    iconStyle: { borderColor: PLOT_TICK },
-    emphasis: { iconStyle: { borderColor: PLOT_TITLE } },
+    iconStyle: { borderColor: colors.tick },
+    emphasis: { iconStyle: { borderColor: colors.title } },
     feature: {
       restore: { title: "Reset view" },
     },
   };
 }
 
-function buildStackedPlotOption(axes: PlotAxes[], toolboxVisible: boolean, fullY: boolean): EChartsOption {
+function buildStackedPlotOption(axes: PlotAxes[], toolboxVisible: boolean, fullY: boolean, colors: PlotColors): EChartsOption {
   const n = axes.length;
   const hasTitle = Boolean(axes[0]?.title);
   const xMin = Math.min(...axes.map((trace) => trace.xmin));
@@ -161,7 +175,7 @@ function buildStackedPlotOption(axes: PlotAxes[], toolboxVisible: boolean, fullY
   const height = (1 - header - footer - gap * (n - 1)) / n;
   const xlabel = [...axes].reverse().find((trace) => trace.xlabel)?.xlabel || "";
   return {
-    backgroundColor: PLOT_BG,
+    backgroundColor: colors.bg,
     animation: false,
     axisPointer: { link: [{ xAxisIndex: "all" }] },
     title: hasTitle
@@ -170,7 +184,7 @@ function buildStackedPlotOption(axes: PlotAxes[], toolboxVisible: boolean, fullY
           left: "center",
           top: 4,
           textStyle: {
-            color: PLOT_TITLE,
+            color: colors.title,
             fontSize: 14,
             fontWeight: 500,
             fontFamily: "inherit",
@@ -184,9 +198,9 @@ function buildStackedPlotOption(axes: PlotAxes[], toolboxVisible: boolean, fullY
       height: `${height * 100}%`,
       containLabel: false,
     })),
-    tooltip: tooltipConfig(axes),
+    tooltip: tooltipConfig(axes, colors),
     legend: { show: false },
-    toolbox: toolboxConfig(toolboxVisible),
+    toolbox: toolboxConfig(toolboxVisible, colors),
     dataZoom: [
       {
         type: "inside",
@@ -205,18 +219,18 @@ function buildStackedPlotOption(axes: PlotAxes[], toolboxVisible: boolean, fullY
       name: i === n - 1 ? xlabel || undefined : undefined,
       nameLocation: "middle" as const,
       nameGap: xlabel ? 18 : 0,
-      nameTextStyle: { color: PLOT_TICK, fontSize: 11 },
-      axisLine: { lineStyle: { color: PLOT_BORDER, width: 1 } },
-      axisTick: { show: i === n - 1, lineStyle: { color: PLOT_TICK, width: 1 } },
+      nameTextStyle: { color: colors.tick, fontSize: 11 },
+      axisLine: { lineStyle: { color: colors.border, width: 1 } },
+      axisTick: { show: i === n - 1, lineStyle: { color: colors.tick, width: 1 } },
       axisLabel: {
         show: i === n - 1,
-        color: PLOT_TICK,
+        color: colors.tick,
         fontSize: 11,
         hideOverlap: true,
         margin: 8,
         formatter: (value: number) => formatAxisTick(value, xSpan),
       },
-      splitLine: { show: true, lineStyle: { color: PLOT_GRID, width: 1 } },
+      splitLine: { show: true, lineStyle: { color: colors.grid, width: 1 } },
     })),
     yAxis: axes.map((trace, i) => {
       const ySpan = Math.abs(trace.ymax - trace.ymin);
@@ -229,21 +243,21 @@ function buildStackedPlotOption(axes: PlotAxes[], toolboxVisible: boolean, fullY
         nameLocation: "middle" as const,
         nameGap: 48,
         nameRotate: 90,
-        nameTextStyle: { color: PLOT_TICK, fontSize: 11, padding: [0, 0, 0, 0] },
+        nameTextStyle: { color: colors.tick, fontSize: 11, padding: [0, 0, 0, 0] },
         scale: false,
-        axisLine: { lineStyle: { color: PLOT_BORDER, width: 1 } },
-        axisTick: { show: true, lineStyle: { color: PLOT_TICK, width: 1 } },
+        axisLine: { lineStyle: { color: colors.border, width: 1 } },
+        axisTick: { show: true, lineStyle: { color: colors.tick, width: 1 } },
         axisLabel: {
-          color: PLOT_TICK,
+          color: colors.tick,
           fontSize: 11,
           hideOverlap: true,
           margin: 8,
           formatter: (value: number) => formatYAxisTick(value, ySpan, fullY),
         },
-        splitLine: { show: true, lineStyle: { color: PLOT_GRID, width: 1 } },
+        splitLine: { show: true, lineStyle: { color: colors.grid, width: 1 } },
       };
     }),
-    series: axes.flatMap((trace, i) => lineSeries(trace, i, i)),
+    series: axes.flatMap((trace, i) => lineSeries(trace, colors, i, i)),
   };
 }
 
@@ -252,10 +266,12 @@ export function buildScientificPlotOption(
   compact = false,
   toolboxVisible = false,
   fullY = false,
+  theme: ConsoleTheme = appliedConsoleTheme(),
 ): EChartsOption {
+  const colors = scientificPlotColors(theme);
   const trace = axes[0];
   if (!trace) return {};
-  if (!compact && axes.length > 1) return buildStackedPlotOption(axes, toolboxVisible, fullY);
+  if (!compact && axes.length > 1) return buildStackedPlotOption(axes, toolboxVisible, fullY, colors);
   const xSpan = Math.abs(trace.xmax - trace.xmin);
   const ySpan = Math.abs(trace.ymax - trace.ymin);
   const named = trace.series.some((s) => {
@@ -266,7 +282,7 @@ export function buildScientificPlotOption(
   const yName = Boolean(!compact && trace.ylabel);
   const xName = Boolean(!compact && trace.xlabel);
   return {
-    backgroundColor: PLOT_BG,
+    backgroundColor: colors.bg,
     animation: false,
     title: hasTitle
       ? {
@@ -274,7 +290,7 @@ export function buildScientificPlotOption(
           left: "center",
           top: 6,
           textStyle: {
-            color: PLOT_TITLE,
+            color: colors.title,
             fontSize: 15,
             fontWeight: 500,
             fontFamily: "inherit",
@@ -288,9 +304,9 @@ export function buildScientificPlotOption(
       bottom: compact ? 6 : xName ? 36 : 28,
       containLabel: false,
     },
-    tooltip: compact ? { show: false } : tooltipConfig([trace]),
-    legend: named && !compact ? { show: true, textStyle: { color: PLOT_TICK }, top: 6, right: 28 } : { show: false },
-    toolbox: compact ? { show: false } : toolboxConfig(toolboxVisible),
+    tooltip: compact ? { show: false } : tooltipConfig([trace], colors),
+    legend: named && !compact ? { show: true, textStyle: { color: colors.tick }, top: 6, right: 28 } : { show: false },
+    toolbox: compact ? { show: false } : toolboxConfig(toolboxVisible, colors),
     dataZoom: compact
       ? []
       : [
@@ -303,17 +319,17 @@ export function buildScientificPlotOption(
       name: compact ? undefined : trace.xlabel || undefined,
       nameLocation: "middle",
       nameGap: trace.xlabel ? 22 : 0,
-      nameTextStyle: { color: PLOT_TICK, fontSize: 11 },
-      axisLine: { lineStyle: { color: PLOT_BORDER, width: 1 } },
-      axisTick: { show: true, lineStyle: { color: PLOT_TICK, width: 1 } },
+      nameTextStyle: { color: colors.tick, fontSize: 11 },
+      axisLine: { lineStyle: { color: colors.border, width: 1 } },
+      axisTick: { show: true, lineStyle: { color: colors.tick, width: 1 } },
       axisLabel: {
-        color: PLOT_TICK,
+        color: colors.tick,
         fontSize: 11,
         hideOverlap: true,
         margin: 8,
         formatter: (value: number) => formatAxisTick(value, xSpan),
       },
-      splitLine: { show: true, lineStyle: { color: PLOT_GRID, width: 1 } },
+      splitLine: { show: true, lineStyle: { color: colors.grid, width: 1 } },
     },
     yAxis: {
       type: "value",
@@ -323,19 +339,19 @@ export function buildScientificPlotOption(
       nameLocation: "middle",
       nameGap: yName ? (fullY ? 72 : 52) : 0,
       nameRotate: 90,
-      nameTextStyle: { color: PLOT_TICK, fontSize: 11, align: "center", verticalAlign: "middle" },
+      nameTextStyle: { color: colors.tick, fontSize: 11, align: "center", verticalAlign: "middle" },
       scale: false,
-      axisLine: { lineStyle: { color: PLOT_BORDER, width: 1 } },
-      axisTick: { show: true, lineStyle: { color: PLOT_TICK, width: 1 } },
+      axisLine: { lineStyle: { color: colors.border, width: 1 } },
+      axisTick: { show: true, lineStyle: { color: colors.tick, width: 1 } },
       axisLabel: {
-        color: PLOT_TICK,
+        color: colors.tick,
         fontSize: 11,
         hideOverlap: true,
         margin: 8,
         formatter: (value: number) => formatYAxisTick(value, ySpan, fullY),
       },
-      splitLine: { show: true, lineStyle: { color: PLOT_GRID, width: 1 } },
+      splitLine: { show: true, lineStyle: { color: colors.grid, width: 1 } },
     },
-    series: lineSeries(trace),
+    series: lineSeries(trace, colors),
   };
 }

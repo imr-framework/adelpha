@@ -212,9 +212,10 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
         if paths.dtam_src is not None:
             _prepend_sys_path(str(paths.dtam_src))
         user_configs = paths.config_dir / "dtam"
-        config_root = user_configs if user_configs.is_dir() else paths.dtam_configs
+        config_root = user_configs if (user_configs / "scanner_profiles" / "simulated_scanner.yaml").is_file() else paths.dtam_configs
         if config_root is not None:
             os.environ.setdefault("DTAM_CONFIG_DIR", str(config_root))
+        os.environ.setdefault("ADELPHA_CONFIG_DIR", str(paths.config_dir))
         try:
             from dtam.api.app import create_app
         except ImportError as exc:
@@ -269,6 +270,26 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
         env["VIRTUAL_ENV"] = str(venv_bin.parent)
         return spawn_child(args, env, cwd=cwd)
 
+    def coil_factory():
+        from adelpha_runtime.studio import create_coil_app
+
+        return create_coil_app(paths)
+
+    def rf_factory():
+        from adelpha_runtime.studio import create_rf_app
+
+        return create_rf_app(paths)
+
+    def shim_factory():
+        from adelpha_runtime.studio import create_shim_app
+
+        return create_shim_app(paths)
+
+    def magnet_factory():
+        from adelpha_runtime.studio import create_magnet_app
+
+        return create_magnet_app(paths)
+
     defs = [
         ServiceDef(
             id="twin",
@@ -304,6 +325,50 @@ def build_registry(paths: RuntimePaths) -> ServiceRegistry:
             health_path="/list-apps",
             proxy_prefix="/api/agents",
             wait_for_listen=True,
+        ),
+        ServiceDef(
+            id="coil",
+            title="Gradient coils",
+            required=False,
+            start="always",
+            restart="never",
+            version="0.1.0",
+            description="pyCoilGen windings for the Engineering Studio. Isolated from the imaging console.",
+            mount_factory=coil_factory,
+            health_path="/health",
+        ),
+        ServiceDef(
+            id="rf",
+            title="RF coils",
+            required=False,
+            start="always",
+            restart="never",
+            version="0.1.0",
+            description="Solenoid RF windings for the Engineering Studio. Isolated from the imaging console.",
+            mount_factory=rf_factory,
+            health_path="/health",
+        ),
+        ServiceDef(
+            id="shim",
+            title="Passive shimming",
+            required=False,
+            start="always",
+            restart="never",
+            version="0.1.0",
+            description="Passive shim trays for the Engineering Studio. Isolated from the imaging console.",
+            mount_factory=shim_factory,
+            health_path="/health",
+        ),
+        ServiceDef(
+            id="magnet",
+            title="Magnet",
+            required=False,
+            start="always",
+            restart="never",
+            version="0.1.0",
+            description="Halbach array designer and Elmer FEM for Engineering Studio. Isolated from the imaging console.",
+            mount_factory=magnet_factory,
+            health_path="/health",
         ),
     ]
     return ServiceRegistry(defs)

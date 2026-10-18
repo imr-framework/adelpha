@@ -1,15 +1,133 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "adelpha"
 version = "0.1.0"
-description = "Adelpha — Intelligent Magnetic Resonance Framework (Tauri/React GUI + Python supervisor)."
-readme = "README.md"
+description = "Python library for Adelpha MRI: device telemetry, actuator feedback, and engineering tools."
+readme = "python/README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Adelpha contributors" },
+]
 requires-python = ">=3.10"
-dependencies = []
+keywords = ["mri", "digital-twin", "telemetry", "halbach", "fem"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "jsonschema>=4.23,<5",
+    "numpy>=1.26",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.2",
+    "pyyaml>=6.0.3",
+    "structlog>=24",
+    "websockets>=12.0",
+]
+
+[project.optional-dependencies]
+twin = [
+    "fastapi>=0.115.0",
+    "httpx>=0.28.1",
+    "matplotlib>=3.9.0",
+    "pandas>=2.2",
+    "scipy>=1.11",
+    "tenacity>=9.1.4",
+    "uvicorn[standard]>=0.32.0",
+]
+agents = [
+    "google-adk>=2.4.0",
+    "google-genai>=2.11.0",
+]
+pinn = [
+    "torch>=2.2",
+    "onnx>=1.16",
+    "onnxruntime>=1.17,<1.21",
+]
+dev = [
+    "fastapi>=0.115.0",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+]
+
+[project.urls]
+Homepage = "https://github.com/imr-framework/adelpha"
+Documentation = "https://imr-framework.github.io/adelpha/"
+Repository = "https://github.com/imr-framework/adelpha"
+Issues = "https://github.com/imr-framework/adelpha/issues"
 
 [dependency-groups]
 docs = [
     "zensical>=0.0.50",
 ]
+dev = [
+    "fastapi>=0.115.0",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+]
 
-[tool.uv]
-package = false
+[tool.hatch.build.targets.wheel]
+packages = ["python/adelpha"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"dtam/src/dtam" = "dtam"
+"dtam/configs" = "adelpha/data/configs"
+"coil/__init__.py" = "coil/__init__.py"
+"coil/sim.py" = "coil/sim.py"
+"coil/pycoilgen_compat.py" = "coil/pycoilgen_compat.py"
+"rfcoil/__init__.py" = "rfcoil/__init__.py"
+"rfcoil/sim.py" = "rfcoil/sim.py"
+"halbach/__init__.py" = "halbach/__init__.py"
+"halbach/sim.py" = "halbach/sim.py"
+"shim/__init__.py" = "shim/__init__.py"
+"shim/sim.py" = "shim/sim.py"
+"simulation/__init__.py" = "simulation/__init__.py"
+"simulation/fem/__init__.py" = "simulation/fem/__init__.py"
+"simulation/fem/__main__.py" = "simulation/fem/__main__.py"
+"simulation/fem/config.py" = "simulation/fem/config.py"
+"simulation/fem/fieldpreview.py" = "simulation/fem/fieldpreview.py"
+"simulation/fem/meshgen.py" = "simulation/fem/meshgen.py"
+"simulation/fem/meshpreview.py" = "simulation/fem/meshpreview.py"
+"simulation/fem/sifgen.py" = "simulation/fem/sifgen.py"
+"simulation/fem/solver.py" = "simulation/fem/solver.py"
+
+[tool.hatch.build.targets.editable]
+dev-mode-dirs = ["python", "dtam/src"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/python",
+    "/dtam/src",
+    "/dtam/configs",
+    "/coil",
+    "/rfcoil",
+    "/halbach",
+    "/shim",
+    "/simulation/fem",
+    "/simulation/__init__.py",
+    "/LICENSE",
+]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "python/tests",
+    "dtam/tests/communication/test_protocol.py",
+    "coil/test_coil_sim.py",
+    "rfcoil/test_rfcoil_sim.py",
+    "halbach/test_halbach_sim.py",
+    "shim/test_shim_sim.py",
+    "simulation/fem/tests",
+]
+pythonpath = ["python", "dtam/src", "."]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]

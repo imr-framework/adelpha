@@ -1,0 +1,1019 @@
+/* Scoped to the shimming and gradient workspaces. Do not restyle the Adelpha top bar. */
+.studio-work.adelpha-simulation-workspace {
+  --workspace-bg: var(--theme-bg, #101114);
+  --workspace-panel: var(--theme-surface, #17181c);
+  --workspace-metrics: var(--theme-surface, #15161b);
+  --workspace-footer: var(--theme-bg, #121317);
+  --workspace-border: var(--theme-border, #2b2d34);
+  --workspace-text: var(--theme-text, #edecf2);
+  --workspace-muted: var(--theme-muted, #a6a7b1);
+  --workspace-input-bg: var(--theme-surface, #101115);
+  --workspace-input-border: var(--theme-border, #373943);
+  --workspace-control-bg: var(--theme-raised, #191b21);
+  --workspace-hover: var(--theme-hover, #26272e);
+  --workspace-selected-bg: var(--theme-accent-soft, #35313f);
+  --workspace-selected-border: var(--theme-accent, #65567e);
+  --workspace-selected-text: var(--theme-accent, #e5d9ff);
+  --workspace-primary: var(--theme-accent, #d6c6ff);
+  --workspace-primary-hover: var(--theme-accent-hover, #e1d5ff);
+  --workspace-primary-text: var(--theme-on-accent, #231b34);
+  --workspace-accent: var(--theme-accent, #baa6f7);
+  --workspace-checkbox: var(--theme-accent, #bda6ed);
+  --workspace-pill-border: var(--theme-border, #3e3a49);
+  --workspace-pill-text: var(--theme-text, #c6b7e5);
+  --workspace-warning: var(--theme-warning, #e6bc90);
+  --workspace-viewer: radial-gradient(ellipse at 45% 40%, var(--theme-stage, #20232b) 0%, var(--theme-stage, #111216) 70%);
+  --workspace-radius: 12px;
+  --workspace-control-radius: 7px;
+  --workspace-input-radius: 6px;
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  color: var(--workspace-text);
+  background: var(--workspace-bg);
+  font: 13px / 1.5 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color-scheme: var(--theme-color-scheme, dark);
+}
+
+.studio-work.adelpha-simulation-workspace *,
+.studio-work.adelpha-simulation-workspace *::before,
+.studio-work.adelpha-simulation-workspace *::after {
+  box-sizing: border-box;
+}
+
+.studio-work.adelpha-simulation-workspace button,
+.studio-work.adelpha-simulation-workspace input,
+.studio-work.adelpha-simulation-workspace select,
+.studio-work.adelpha-simulation-workspace summary {
+  font: inherit;
+}
+
+.studio-work.adelpha-simulation-workspace button,
+.studio-work.adelpha-simulation-workspace summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid var(--workspace-border);
+  border-radius: var(--workspace-control-radius);
+  background: transparent;
+  color: var(--workspace-text);
+  cursor: pointer;
+}
+
+.studio-work.adelpha-simulation-workspace button:hover,
+.studio-work.adelpha-simulation-workspace summary:hover {
+  background: var(--workspace-hover);
+}
+
+.studio-work.adelpha-simulation-workspace button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.studio-work.adelpha-simulation-workspace button[aria-pressed="true"] {
+  background: var(--workspace-selected-bg);
+  border-color: var(--workspace-selected-border);
+  color: var(--workspace-selected-text);
+}
+
+.studio-work.adelpha-simulation-workspace button.ws-primary {
+  width: 100%;
+  background: var(--workspace-primary);
+  border-color: var(--workspace-primary);
+  color: var(--workspace-primary-text);
+  font-weight: 600;
+}
+
+.studio-work.adelpha-simulation-workspace button.ws-primary:hover:not(:disabled) {
+  background: var(--workspace-primary-hover);
+  border-color: var(--workspace-primary-hover);
+}
+
+.studio-work.adelpha-simulation-workspace button.ws-quiet {
+  color: var(--workspace-muted);
+  border-color: transparent;
+}
+
+.studio-work.adelpha-simulation-workspace button:focus-visible,
+.studio-work.adelpha-simulation-workspace input:focus-visible,
+.studio-work.adelpha-simulation-workspace select:focus-visible,
+.studio-work.adelpha-simulation-workspace summary:focus-visible {
+  outline: 2px solid var(--theme-accent, #c6b7e5);
+  outline-offset: 2px;
+}
+
+.studio-work.adelpha-simulation-workspace input[type="number"],
+.studio-work.adelpha-simulation-workspace select {
+  width: 96px;
+  max-width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--workspace-input-border);
+  border-radius: var(--workspace-input-radius);
+  background: var(--workspace-input-bg);
+  color: var(--workspace-text);
+}
+
+.studio-work.adelpha-simulation-workspace input[type="checkbox"] {
+  accent-color: var(--workspace-checkbox);
+}
+
+.ws-muted {
+  color: var(--workspace-muted);
+}
+
+.ws-small {
+  font-size: 11px;
+}
+
+.ws-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ws-between {
+  justify-content: space-between;
+}
+
+.ws-project {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 17px 20px;
+  border-bottom: 1px solid var(--workspace-border);
+}
+
+.ws-project strong {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.ws-slash {
+  margin: 0 8px;
+  color: var(--theme-muted, #686875);
+}
+
+.ws-project-menu {
+  position: relative;
+}
+
+.ws-project-menu summary {
+  list-style: none;
+  padding: 7px 12px;
+}
+
+.ws-project-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.ws-project-menu[open] .ws-menu {
+  position: absolute;
+  right: 0;
+  top: 38px;
+  z-index: 5;
+  width: 175px;
+  padding: 8px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 8px;
+  background: var(--theme-raised, #202126);
+}
+
+.ws-menu button {
+  width: 100%;
+  justify-content: flex-start;
+  margin: 2px 0;
+}
+
+.ws-pill {
+  padding: 2px 7px;
+  border: 1px solid var(--workspace-pill-border);
+  border-radius: 20px;
+  color: var(--workspace-pill-text);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.ws-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 285px;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-body {
+  grid-template-columns: minmax(0, 1fr) 280px;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-project {
+  padding: 10px 16px;
+  gap: 10px;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-project strong {
+  font-size: 15px;
+}
+
+.studio-work.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-project-menu summary {
+  min-height: 30px;
+  padding: 5px 10px;
+}
+
+.ws-viewer {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--workspace-viewer);
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-viewer {
+  position: relative;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-stage .ws-scene,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-stage .mr0-stage,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-stage .coil-stage,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-stage .ws-surface,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-stage .ws-empty,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-stage .ws-quality {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  flex: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-viewbar,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-overlay-bottom {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-viewbar .ws-seg,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-viewbar .ws-scene-tools,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-overlay-bottom button,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-overlay-bottom label,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-overlay-bottom input {
+  pointer-events: auto;
+}
+
+.ws-viewbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 16px;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-viewbar {
+  top: 0;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 14px 18px 28px;
+  border-bottom: 0;
+  background: transparent;
+}
+
+.ws-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 9px;
+  background: var(--workspace-control-bg);
+}
+
+.ws-seg button {
+  min-height: 30px;
+  padding: 5px 10px;
+  border-color: transparent;
+}
+
+.ws-seg.ws-seg-ghost {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-seg-ghost button {
+  min-height: 32px;
+  padding: 6px 10px;
+}
+
+.ws-seg.ws-axis {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.ws-seg.ws-axis button {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-scene-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-left: auto;
+  padding: 0;
+}
+
+.ws-scene {
+  position: relative;
+  flex: 1;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ws-scene .mr0-stage,
+.ws-scene .coil-stage {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.ws-scene .coil-scale,
+.ws-scene .coil-orbit {
+  display: none;
+}
+
+.ws-scene canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ws-slice {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ws-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 18px 15px;
+  color: var(--workspace-muted);
+  font-size: 11px;
+}
+
+.ws-scale {
+  width: 120px;
+  height: 6px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #440154, #3b528b, #21918c, #5ec962, #fde725);
+}
+
+.ws-scenefoot,
+.ws-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 4px 17px 15px;
+  color: var(--workspace-muted);
+  font-size: 11px;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-caption,
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-scenefoot {
+  padding: 8px 22px 10px;
+}
+
+.adelpha-simulation-workspace.is-shim .ws-legend {
+  margin: 8px 18px 0;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-overlay-bottom {
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-overlay-bottom.is-collapsed {
+  background: transparent;
+}
+
+.studio-work.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-overlay-toggle {
+  align-self: flex-end;
+  min-height: 28px;
+  margin: 0 14px 2px;
+  padding: 4px 8px;
+  pointer-events: auto;
+  color: var(--workspace-muted);
+}
+
+.studio-work.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-overlay-bottom.is-collapsed .ws-overlay-toggle {
+  align-self: stretch;
+  justify-content: space-between;
+  margin: 0;
+  padding: 10px 18px 12px;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-overlay-toggle svg {
+  transition: transform 0.15s ease;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-overlay-bottom.is-collapsed .ws-overlay-toggle svg {
+  transform: rotate(180deg);
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-overlay-compact {
+  display: flex;
+  align-items: center;
+  color: var(--workspace-muted);
+  font-size: 11px;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-overlay-sep {
+  margin: 0 8px;
+  color: var(--theme-muted, #686875);
+}
+
+.ws-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: auto;
+  border-top: 1px solid var(--workspace-border);
+  background: var(--workspace-metrics);
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-metrics {
+  margin-top: 0;
+  border-top-color: var(--theme-border, rgba(43, 45, 52, 0.55));
+  background: var(--theme-surface, rgba(21, 22, 27, 0.58));
+  backdrop-filter: blur(12px);
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-metrics {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-metric-note {
+  background: var(--theme-surface, rgba(21, 22, 27, 0.58));
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-notice {
+  border-top-color: var(--theme-border, rgba(43, 45, 52, 0.55));
+  background: var(--theme-surface, rgba(23, 24, 28, 0.68));
+  backdrop-filter: blur(12px);
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-quality {
+  overflow: auto;
+  padding: 76px 25px 168px;
+}
+
+.ws-metric {
+  padding: 17px 20px;
+}
+
+.ws-metric + .ws-metric {
+  border-left: 1px solid var(--workspace-border);
+}
+
+.ws-metric-label {
+  color: var(--workspace-muted);
+  font-size: 11px;
+}
+
+.ws-metric-value {
+  margin-top: 3px;
+  font-size: 23px;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-metric-value {
+  font-size: 25px;
+  margin-top: 4px;
+}
+
+.ws-metric-unit,
+.ws-metric-old {
+  font-size: 12px;
+  letter-spacing: 0;
+  color: var(--workspace-muted);
+}
+
+.ws-metric-old {
+  font-size: 13px;
+}
+
+.ws-metric-value.is-warning,
+.ws-warning {
+  color: var(--workspace-warning);
+}
+
+.ws-metric-note {
+  padding: 8px 20px;
+  background: var(--workspace-metrics);
+  color: var(--workspace-muted);
+  font-size: 11px;
+}
+
+.ws-inspector {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--workspace-border);
+  background: var(--workspace-panel);
+}
+
+.ws-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 19px 18px 13px;
+  font-weight: 600;
+}
+
+.ws-sections {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.ws-section {
+  padding: 16px 18px;
+  border-top: 1px solid var(--workspace-border);
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-section {
+  padding: 18px;
+  border-top: 0;
+  border-bottom: 1px solid var(--workspace-border);
+}
+
+.ws-section h3 {
+  margin: 0 0 12px;
+  font: 600 12px / 1.5 inherit;
+}
+
+.ws-file {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.ws-file svg {
+  width: 16px;
+  height: 16px;
+  color: var(--workspace-accent);
+}
+
+.ws-formrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0;
+}
+
+.ws-formrow:first-child {
+  margin-top: 0;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-formrow {
+  margin: 11px 0;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-formrow input[type="number"] {
+  width: 91px;
+}
+
+.ws-former-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.ws-former-grid button {
+  min-height: 36px;
+  font-size: 12px;
+  background: var(--workspace-control-bg);
+}
+
+.ws-details {
+  margin-top: 12px;
+}
+
+.studio-work.adelpha-simulation-workspace .ws-details summary {
+  justify-content: flex-start;
+  gap: 6px;
+  min-height: 0;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--workspace-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.studio-work.adelpha-simulation-workspace .ws-details summary:hover {
+  background: transparent;
+  color: var(--workspace-text);
+}
+
+.ws-details summary .ws-chevron {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  transition: transform 0.15s ease;
+}
+
+.ws-details[open] summary .ws-chevron {
+  transform: rotate(90deg);
+}
+
+.ws-details .ws-detail {
+  margin-top: 10px;
+}
+
+.ws-details-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 10px;
+  color: var(--workspace-muted);
+  font-size: 12px;
+}
+
+.ws-details-grid span:nth-child(even) {
+  color: var(--workspace-text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.ws-runbar {
+  margin-top: auto;
+  padding: 16px 18px;
+  border-top: 1px solid var(--workspace-border);
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-runbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 17px 18px;
+}
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-runbar .ws-primary,
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-runbar .ws-quiet {
+  width: 100%;
+}
+
+.ws-run-note,
+.ws-stale {
+  margin: 8px 0 0;
+  color: var(--workspace-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.ws-stale {
+  min-height: 17px;
+  text-align: left;
+}
+
+.ws-result-big {
+  margin: 7px 0;
+  font-size: 30px;
+  letter-spacing: -1px;
+}
+
+.ws-result-big span {
+  font-size: 13px;
+  letter-spacing: 0;
+  color: var(--workspace-muted);
+}
+
+.ws-result-note {
+  color: var(--theme-accent, #c8b9e6);
+  font-size: 12px;
+}
+
+.ws-alert {
+  margin: 8px 18px;
+  color: var(--workspace-warning);
+  font-size: 12px;
+}
+
+.ws-quality {
+  flex: 1;
+  min-height: 280px;
+  padding: 30px 25px;
+}
+
+.ws-quality h2 {
+  margin: 0 0 12px;
+  font-size: 23px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+}
+
+.ws-quality p {
+  margin: 0 0 12px;
+  color: var(--workspace-muted);
+  font-size: 12px;
+}
+
+.ws-qrow {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--workspace-border);
+}
+
+.ws-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 20px;
+  border-top: 1px solid var(--workspace-border);
+  background: var(--workspace-panel);
+}
+
+.ws-notice strong {
+  font-weight: 500;
+}
+
+.ws-notice p {
+  margin: 5px 0 0;
+  color: var(--workspace-muted);
+  font-size: 12px;
+}
+
+.ws-surface {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 280px;
+  margin: 0;
+  background: var(--theme-surface, #111216);
+}
+
+.ws-surface img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.ws-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 24px;
+  color: var(--workspace-muted);
+  text-align: center;
+}
+
+.ws-toast {
+  position: absolute;
+  z-index: 10;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(420px, calc(100% - 40px));
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 8px;
+  background: var(--theme-raised, #202126);
+  color: var(--workspace-text);
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.adelpha-simulation-workspace button svg {
+  width: 15px;
+  height: 15px;
+}
+
+@media (max-width: 700px) {
+  .adelpha-simulation-workspace.is-shim .ws-body {
+    grid-template-columns: 1fr;
+  }
+
+  .adelpha-simulation-workspace.is-shim .ws-inspector {
+    border-left: 0;
+    border-top: 1px solid var(--workspace-border);
+  }
+
+  .adelpha-simulation-workspace.is-shim .ws-viewer {
+    min-height: 420px;
+  }
+
+  .adelpha-simulation-workspace.is-shim .ws-project {
+    padding: 10px 14px;
+  }
+
+  .adelpha-simulation-workspace.is-shim .ws-metric {
+    padding: 14px;
+  }
+
+  .adelpha-simulation-workspace.is-shim .ws-metric-value {
+    font-size: 20px;
+  }
+
+  .adelpha-simulation-workspace.is-shim .ws-panel-head {
+    padding-top: 14px;
+  }
+
+  .adelpha-simulation-workspace.is-shim input[type="number"],
+  .adelpha-simulation-workspace.is-shim select {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 720px) {
+  .adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-body {
+    grid-template-columns: 1fr;
+  }
+
+  .adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-inspector {
+    border-left: 0;
+    border-top: 1px solid var(--workspace-border);
+  }
+
+  .adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-viewer {
+    min-height: 420px;
+  }
+
+  .adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-metric {
+    padding: 13px 10px;
+  }
+
+  .adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-metric-value {
+    font-size: 20px;
+  }
+
+  .adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-project {
+    padding: 10px 14px;
+  }
+
+  .adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) input[type="number"] {
+    font-size: 16px;
+  }
+}
+
+@media (pointer: coarse) {
+  .adelpha-simulation-workspace button,
+  .adelpha-simulation-workspace summary,
+  .adelpha-simulation-workspace .ws-key {
+    min-height: 44px;
+  }
+}
+
+/* Project identity lives in the inspector, leaving the viewport uninterrupted. */
+.ws-project-panel { flex: none; padding: 18px; border-bottom: 1px solid var(--theme-border, var(--border)); color: var(--m4-text); }
+.ws-project-caption { display: block; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--m4-muted); }
+.ws-project-panel h2, .mrzero-workspace .ws-project-panel h2 { margin: 5px 0 3px; font-size: 16px; overflow-wrap: anywhere; }
+.ws-project-kind { font-size: 12px; color: var(--m4-muted); }
+.ws-project-panel-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 12px; font-size: 12px; }
+.ws-project-panel-actions .mrzero-status { margin-left: 0; }
+.mrzero-workspace .ws-project-menu summary { cursor: pointer; color: var(--m4-text); }
+.mrzero-workspace .ws-project-menu[open] .ws-menu { background: var(--m4-panel); border: 1px solid var(--theme-border, var(--border)); }
+
+.mrzero-workspace .ws-menu button { padding: 7px 10px; text-align: left; color: var(--m4-text); background: var(--m4-input); border: 1px solid var(--theme-border, var(--border)); border-radius: 4px; cursor: pointer; }
+
+.ws-project-name-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ws-project-name-row h2 { min-width: 0; }
+.ws-project-name-row .ws-project-exit, .studio-work.adelpha-simulation-workspace .ws-project-name-row .ws-project-exit { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; background: transparent; border: 0; color: var(--m4-muted); cursor: pointer; }
+.ws-project-name-row .ws-project-exit:hover { background: var(--m4-accent-soft); color: var(--m4-text); }
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-runbar { border-top: 0; }
+
+.adelpha-simulation-workspace.is-magnet .ws-inspector {
+  overflow: hidden;
+}
+
+.adelpha-simulation-workspace.is-magnet .ws-inspector > .ws-alert {
+  flex: none;
+  margin: 0 18px 8px;
+}
+
+.adelpha-simulation-workspace.is-magnet .ws-runbar {
+  flex: none;
+  border-top: 1px solid var(--workspace-border);
+  background: var(--workspace-panel);
+}
+
+.adelpha-simulation-workspace.is-magnet .ws-export-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.adelpha-simulation-workspace.is-magnet .ws-export-actions .ws-quiet {
+  width: 100%;
+}
+
+/* Overlay chrome has no full-width scrim; the scene remains visible underneath. */
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-viewbar .ws-seg { background: transparent; border-color: transparent; }
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-viewbar button:not([aria-pressed="true"]) { background: transparent; }
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) :is(.ws-caption, .ws-scenefoot, .ws-legend, .ws-scene-tools, .ws-scene-tools .ws-muted, .ws-overlay-toggle) { color: var(--workspace-text); }
+.adelpha-simulation-workspace:is(.is-gradient, .is-shim, .is-rf, .is-magnet) .ws-viewbar .ws-quiet { color: var(--workspace-text); }
+
+.adelpha-simulation-workspace:is(.is-gradient, .is-rf, .is-magnet) .ws-formrow select {
+  width: 160px;
+  max-width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--workspace-input-radius);
+  border: 1px solid var(--workspace-input-border);
+  background: var(--workspace-input-bg);
+  color: var(--workspace-text);
+  font: inherit;
+}
+
+.halbach-geo-heading {
+  margin: 18px 0 0;
+  font-size: 13px;
+}
+
+body > .ic-register {
+  position: fixed;
+}
+
+.halbach-geo-scroll {
+  max-height: 220px;
+  overflow: auto;
+  margin: 8px 0;
+  border: 1px solid var(--theme-border, var(--border));
+  border-radius: 8px;
+}
+
+.halbach-geo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.halbach-geo-table th,
+.halbach-geo-table td {
+  padding: 4px 6px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.halbach-geo-table input {
+  width: 100%;
+  min-width: 52px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.12));
+  background: var(--theme-bg, rgba(8, 9, 12, 0.9));
+  color: var(--theme-text, #f4f4f5);
+  font: inherit;
+}
+
+.halbach-geo-table button {
+  width: auto;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+}
+
+.ws-project-exit svg { width: 17px; height: 17px; flex-shrink: 0; }

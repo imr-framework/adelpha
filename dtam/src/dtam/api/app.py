@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import os
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, AsyncExitStack
 from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import ValidationError
+from pydantic import ValidationError, BaseModel, StrictBool
+from dtam.communication.protocol import Command, RpcError
+from dtam.domain.modes import OperationalMode
 
 from dtam.agents.core.enums import OperatingMode
 from dtam.agents.core.models import DigitalTwinAssessment, DigitalTwinObservation
@@ -20,6 +22,10 @@ from dtam.api.schemas import AssessFromTwinRequest, ForecastRequest, HealthRespo
 from dtam.api.session import TwinApiSession
 from dtam.digital_twin.state.system_state import SystemState
 from dtam.domain.measurements import MeasurementBatch
+
+
+class ControlBody(BaseModel):
+    enabled: StrictBool
 
 
 def _cors_origins() -> list[str]:
@@ -58,10 +64,27 @@ def create_app(
             config_root=config_root,
         )
         app.state.session = session
-        try:
-            yield
-        finally:
-            session.close()
+        app.state.reconfigure = lambda scanner_id, environment: session.reconfigure(
+            scanner_id=scanner_id, environment=environment, config_root=config_root
+        )
+        async with AsyncExitStack() as stack:
+            app.state.device_hub = None
+            app.state.device_error = None
+            try:
+                from dtam.communication.server import DeviceHub, ListenerConfig, device_listener
+                listener_config = ListenerConfig.from_environment()
+                if listener_config is not None:
+                    hub = DeviceHub(session, listener_config)
+                    port = await stack.enter_async_context(device_listener(hub))
+                    session.device_hub = hub
+                    app.state.device_hub = hub
+                    app.state.device_port = port
+            except Exception as exc:
+                app.state.device_error = f'Device listener could not start ({type(exc).__name__}); check devices.json and the listen port.'
+            try:
+                yield
+            finally:
+                session.close()
 
     app = FastAPI(
         title="DTAM Twin API",
@@ -82,6 +105,60 @@ def create_app(
 
     def _session() -> TwinApiSession:
         return app.state.session  # type: ignore[no-any-return]
+
+    def _hub():
+        hub = getattr(app.state, 'device_hub', None)
+        if hub is None:
+            raise HTTPException(503, getattr(app.state, 'device_error', None) or 'Device listener is not configured')
+        return hub
+
+    @app.get('/devices')
+    def devices():
+        hub = getattr(app.state, 'device_hub', None)
+        return {
+            'devices': hub.describe() if hub else [],
+            'host': hub.config.host if hub else None,
+            'port': getattr(app.state, 'device_port', None),
+            'allow_control': bool(hub and hub.config.allow_control),
+            'control_enabled': bool(hub and hub.control_scanner == _session().scanner_id),
+            'error': getattr(app.state, 'device_error', None),
+        }
+
+    @app.get('/devices/{device_id}/readings')
+    def device_readings(device_id: str):
+        hub = _hub()
+        with hub.lock:
+            entry = hub.readings.get(device_id)
+            if entry is None:
+                raise HTTPException(404, 'No readings for this connected device')
+            return {'publication': entry[0].model_dump(), 'received_at': entry[1]}
+
+    @app.post('/devices/control')
+    def device_control(body: ControlBody):
+        hub = _hub()
+        session = _session()
+        with session._lock:
+            if session.mode == OperationalMode.SIMULATION:
+                raise HTTPException(409, 'Select a hardware profile first')
+            if body.enabled and not hub.config.allow_control:
+                raise HTTPException(403, 'Enable allow_control in devices.json first')
+            session._app.adapter.set_mode(OperationalMode.SUPERVISED_CONTROL if body.enabled else OperationalMode.READ_ONLY)
+            hub.control_scanner = session.scanner_id if body.enabled else None
+        return {'enabled': body.enabled}
+
+    @app.post('/devices/commands')
+    async def device_command(body: Command):
+        try:
+            return await _hub().command(body)
+        except RpcError as exc:
+            raise HTTPException(409, exc.response(None)['error']) from exc
+
+    @app.get('/devices/{device_id}/commands/{command_id}')
+    async def device_command_status(device_id: str, command_id: str):
+        try:
+            return await _hub().query_command(device_id, command_id)
+        except (RpcError, TimeoutError, ConnectionError) as exc:
+            raise HTTPException(503, 'Command status unavailable; outcome remains unknown') from exc
 
     @app.get("/health", response_model=HealthResponse)
     def health() -> HealthResponse:
@@ -190,6 +267,9 @@ def create_app(
                 "GET /twin/state",
                 "POST /twin/forecast",
                 "GET /sensors/batch",
+                "GET /devices",
+                "POST /devices/control",
+                "POST /devices/commands",
                 "POST /assess",
                 "POST /assess/from-twin",
             ],

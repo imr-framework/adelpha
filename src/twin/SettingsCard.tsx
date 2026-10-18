@@ -21,6 +21,7 @@ import { ADELPHA_VERSION } from "./adelphaVersion";
 import { useWorkspacePrefs } from "./workspacePrefs";
 import type { WorkspaceId } from "./TopbarControls";
 import type { SettingsLaunch } from "./settingsOpen";
+import { CameraSettings } from "./CameraInputSelector";
 import { ModelSettingsPanel } from "./settings/ModelSettingsPanel";
 import {
   ConsoleThemeRow,
@@ -47,6 +48,7 @@ import {
 import { fetchSequences } from "./mri/api";
 import type { SequenceInfo } from "./mri/types";
 import { ScannerHardwareSection } from "./settings/ScannerHardwareSection";
+import { DeviceLinkSection } from "./settings/DeviceLinkSection";
 import { MriDataDirectorySection } from "./settings/MriDataDirectorySection";
 import { UpdatesSection } from "./settings/UpdatesSection";
 import { INITIAL_DRAFT, type Draft, type PatchDraft } from "./settings/draft";
@@ -143,7 +145,7 @@ const PANEL_COPY: Record<SettingsSectionId, { title: string; subtitle: string }>
   },
   devices: {
     title: "Devices",
-    subtitle: "Red Pitaya / MaRCoS connection, acquisition hardware, and local devices.",
+    subtitle: "Camera, device JSON-RPC link, Red Pitaya / MaRCoS, and local hardware.",
   },
   integrations: {
     title: "Integrations",
@@ -355,18 +357,6 @@ function GenericPanel({
       return (
         <SettingsSection title="Theme">
           <ConsoleThemeRow />
-          <SettingsRow title="Color mode">
-            <Segmented
-              label="Color mode"
-              value={draft.theme}
-              onChange={(v) => patch("theme", v)}
-              options={[
-                { value: "dark", label: "Dark" },
-                { value: "system", label: "System" },
-                { value: "light", label: "Light" },
-              ]}
-            />
-          </SettingsRow>
           <SettingsRow title="Density">
             <Segmented
               label="Density"
@@ -508,6 +498,10 @@ function GenericPanel({
     case "devices":
       return (
         <>
+          <SettingsSection title="Motion tracking camera" description="Choose the camera used in the Camera view. Changes take effect immediately and pause export recording.">
+            <CameraSettings />
+          </SettingsSection>
+          <DeviceLinkSection />
           <ScannerHardwareSection compact />
           <SettingsSection title="Workstation">
             <SettingsRow title="Operator camera">

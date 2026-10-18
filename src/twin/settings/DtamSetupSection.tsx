@@ -35,7 +35,8 @@ function serviceLabel(id: string, status: string | undefined): string {
 
 export function DtamRuntimeStatus() {
   const desktop = isTauri();
-  const [runtime] = useState<RuntimeStatus | null>(desktop ? getRuntime() : null);
+  const [runtime, setRuntime] = useState<RuntimeStatus | null>(desktop ? getRuntime() : null);
+  const [revision, setRevision] = useState(0);
   const [health, setHealth] = useState<{ scanner_id: string; mode: string; connected: boolean } | null>(
     null,
   );
@@ -58,7 +59,13 @@ export function DtamRuntimeStatus() {
     return () => {
       cancelled = true;
     };
-  }, [runtime?.session]);
+  }, [runtime?.session, revision]);
+
+  useEffect(() => {
+    const refresh = () => { setRuntime(getRuntime()); setRevision((value) => value + 1); };
+    window.addEventListener("adelpha:runtime-changed", refresh);
+    return () => window.removeEventListener("adelpha:runtime-changed", refresh);
+  }, []);
 
   const services = runtime?.services ?? {};
 
@@ -67,14 +74,15 @@ export function DtamRuntimeStatus() {
       title="Runtime"
       description="DTAM runs inside Adelpha. Twin and Imaging Console start automatically. Agents start after you save a Google API key."
     >
-      <div className="settings-key-actions" style={{ marginBottom: 12 }}>
-        <StatusBadge tone={serviceTone(services.twin?.status)}>{serviceLabel("twin", services.twin?.status)}</StatusBadge>
-        <StatusBadge tone={serviceTone(services.agents?.status)}>
-          {serviceLabel("agents", services.agents?.status)}
-        </StatusBadge>
-        <StatusBadge tone={serviceTone(services.console?.status)}>
-          {serviceLabel("console", services.console?.status)}
-        </StatusBadge>
+      <div className="settings-runtime-services" aria-label="Runtime services">
+        {(["twin", "agents", "console"] as const).map((id) => {
+          const label = serviceLabel(id, services[id]?.status);
+          const [name, ...state] = label.split(" ");
+          return <StatusBadge key={id} tone={serviceTone(services[id]?.status)}>
+            <span className="settings-runtime-service-name">{name}</span>
+            <span className="settings-runtime-service-state">{state.join(" ")}</span>
+          </StatusBadge>;
+        })}
       </div>
       {health ? (
         <p className="settings-about">
@@ -91,6 +99,10 @@ export function DtamRuntimeStatus() {
 export function DtamTwinSetupSection() {
   const desktop = isTauri();
   const [prefs, setPrefs] = useState<DtamRuntimePrefs>(DEFAULT_DTAM_PREFS);
+  const [creating, setCreating] = useState(false);
+  const [systemName, setSystemName] = useState("");
+  const [architecture, setArchitecture] = useState("Permanent magnet");
+  const [field, setField] = useState("0.048");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -102,7 +114,6 @@ export function DtamTwinSetupSection() {
   }, [desktop]);
 
   async function apply(next: DtamRuntimePrefs) {
-    setPrefs(next);
     if (!desktop) {
       setMessage("These settings apply in the Adelpha desktop app.");
       return;
@@ -112,7 +123,8 @@ export function DtamTwinSetupSection() {
     try {
       const saved = await saveDtamRuntimePrefs(next);
       setPrefs(saved);
-      setMessage("Saved. The twin restarted with these settings.");
+      setCreating(false);
+      setMessage("Saved. The twin is using these settings.");
     } catch (err) {
       setMessage(err instanceof Error ? err.message : String(err));
     } finally {
@@ -137,9 +149,33 @@ export function DtamTwinSetupSection() {
               value={prefs.scanner_id}
               disabled={busy}
               onChange={(value) => void apply({ ...prefs, scanner_id: value })}
-              options={[...DTAM_SCANNERS]}
+              options={[...DTAM_SCANNERS, ...(prefs.custom_systems ?? []).map((system) => ({ value: system.id, label: system.display_name }))]}
             />
           </SettingsRow>
+          <div className="settings-key-actions">
+            <button className="settings-btn" disabled={busy} onClick={() => setCreating(!creating)}>
+              {creating ? "Cancel" : "Define new system"}
+            </button>
+          </div>
+          {creating && <form onSubmit={(event) => {
+            event.preventDefault();
+            const strength = Number(field);
+            if (!systemName.trim() || !architecture.trim() || !Number.isFinite(strength) || strength <= 0) return;
+            const system = { id: `custom_${crypto.randomUUID().replaceAll("-", "_")}`, display_name: systemName.trim(), architecture: architecture.trim(), field_strength_t: strength };
+            void apply({ ...prefs, scanner_id: system.id, custom_systems: [...(prefs.custom_systems ?? []), system] });
+          }}>
+            <SettingsRow title="System name" layout="stack">
+              <input aria-label="System name" className="settings-input" required maxLength={100} value={systemName} onChange={(e) => setSystemName(e.target.value)} />
+            </SettingsRow>
+            <SettingsRow title="Architecture" layout="stack">
+              <input aria-label="Architecture" className="settings-input" required maxLength={100} value={architecture} onChange={(e) => setArchitecture(e.target.value)} />
+            </SettingsRow>
+            <SettingsRow title="Nominal field strength · T" layout="stack">
+              <input aria-label="Nominal field strength in tesla" className="settings-input" type="number" min="0.000001" step="any" required value={field} onChange={(e) => setField(e.target.value)} />
+            </SettingsRow>
+            <p className="settings-about">Hardware profiles open in read-only mode. Sensor readings appear once a compatible acquisition driver is configured; creating a profile does not connect devices.</p>
+            <button className="settings-btn" type="submit" disabled={busy}>Save and use system</button>
+          </form>}
           <SettingsRow
             title="Environment"
             description="Loads development, production, or testing YAML on top of the base config."

@@ -5,6 +5,7 @@ export type DtamRuntimePrefs = {
   environment: string;
   agent_model: string;
   agent_mode: string;
+  custom_systems?: { id: string; display_name: string; architecture: string; field_strength_t: number }[];
 };
 
 export const DEFAULT_DTAM_PREFS: DtamRuntimePrefs = {
@@ -47,9 +48,12 @@ export async function saveDtamRuntimePrefs(prefs: DtamRuntimePrefs): Promise<Dta
     throw new Error("DTAM settings are saved in the Adelpha desktop app.");
   }
   const { invoke } = await import("@tauri-apps/api/core");
-  const next = await invoke<DtamRuntimePrefs>("set_dtam_runtime_prefs", { prefs });
-  await initDesktopRuntime();
-  return next;
+  try {
+    return await invoke<DtamRuntimePrefs>("set_dtam_runtime_prefs", { prefs });
+  } finally {
+    await initDesktopRuntime();
+    window.dispatchEvent(new Event("adelpha:runtime-changed"));
+  }
 }
 
 export async function revealDtamConfigDir(): Promise<string> {

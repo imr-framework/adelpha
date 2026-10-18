@@ -1,0 +1,38 @@
+.liquid-dashboard.sensor-dashboard { inset: 0; padding: 68px 28px 28px; border: 0; border-radius: 0; box-shadow: none; background: var(--m4-bg); backdrop-filter: none; overflow: auto; }
+.sensor-waiting { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 58px; box-sizing: border-box; color: var(--m4-text); text-align: center; }
+.sensor-illustration { width: min(680px, 85%); height: auto; color: var(--m4-muted); margin: 0 0 34px; flex-shrink: 0; }
+.sensor-waiting h2 { font-size: clamp(20px, 2.1vw, 32px); line-height: 1.25; margin: 0 0 16px; letter-spacing: -.025em; }
+.sensor-waiting p { color: var(--m4-muted); line-height: 1.7; margin: 0; font-size: 14px; }
+.sensor-waiting-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 14px; margin-top: 32px; }
+.sensor-waiting button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 11px 17px; border-radius: 8px; border: 1px solid var(--theme-border, var(--border)); background: transparent; color: var(--m4-text); cursor: pointer; font: inherit; font-size: 13px; }
+.sensor-waiting button.sensor-configure { background: var(--m4-accent); color: var(--theme-on-accent, #fff); border-color: transparent; }
+.sensor-waiting button:hover { filter: brightness(1.12); }
+.sensor-waiting button:focus-visible { outline: 2px solid var(--m4-accent); outline-offset: 3px; }
+.panel:has(> .sensor-waiting.is-compact) { display: flex; flex-direction: column; }
+.panel:has(> .sensor-waiting.is-compact) > .panel-mode-bar { flex-shrink: 0; }
+.sensor-waiting.is-compact { flex: 1 0 auto; min-height: min-content; justify-content: center; padding: 44px 20px; margin: 0; border: 0; border-radius: 0; background: transparent; }
+.sensor-waiting-icon { color: var(--m4-accent); margin: 0 0 24px; }
+.sensor-waiting.is-compact h2 { font-size: 19px; }
+.sensor-waiting dl { width: 100%; margin: 32px 0 20px; padding: 14px 0; border-block: 1px solid var(--theme-border, var(--border)); font-size: 12px; }
+.sensor-waiting dl div { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; }
+.sensor-waiting dt { color: var(--m4-muted); }
+.sensor-waiting dd { margin: 0; }
+.sensor-waiting button.sensor-check { color: var(--m4-accent); border: 0; }
+.sensor-guide { max-width: 500px; margin-top: 24px; text-align: left; color: var(--m4-muted); font-size: 13px; line-height: 1.7; }
+.sensor-guide h3 { color: var(--m4-text); }
+.sensor-notes { max-width: 520px; margin: 18px auto 0; padding: 0; list-style: none; text-align: left; color: var(--m4-muted); font-size: 12px; line-height: 1.6; }
+.sensor-notes li { padding: 4px 0; }
+.sensor-waiting.is-compact .sensor-notes { width: 100%; margin: 0 0 16px; }
+.dash-unavailable { margin: auto; color: var(--m4-muted); font-size: 13px; line-height: 1.6; text-align: center; padding: 24px; }
+@media (max-width: 750px) { .sensor-waiting { padding: 40px 24px 30px 54px; } .sensor-illustration { width: 100%; } .sensor-waiting.is-compact { padding: 30px 18px; } }
+
+html[data-console-theme="mri4all"] .sensor-configure { --theme-on-accent: #171405; }
+.sensor-dashboard > .sensor-waiting { flex: 1 0 auto; min-height: min-content; }
+.sensor-dashboard { container-type: size; }
+@container (max-height: 500px) {
+  .sensor-dashboard > .sensor-waiting { padding: 20px 48px; }
+  .sensor-dashboard .sensor-illustration { height: 100px; margin-bottom: 16px; }
+  .sensor-dashboard h2 { font-size: 22px; margin-bottom: 10px; }
+  .sensor-dashboard p { font-size: 12px; }
+  .sensor-dashboard .sensor-waiting-actions { margin-top: 18px; }
+}

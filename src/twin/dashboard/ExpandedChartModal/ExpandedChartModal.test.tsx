@@ -24,7 +24,7 @@ describe("titles", () => {
     ["temp", "Temperature vs Time"],
     ["noiseTime", "Johnson noise spectrum (DFT magnitude)"],
     ["noiseSpec", "Johnson / thermal noise (time domain)"],
-    ["mriSpec", "MRI Signal Frequency Spectrum (EMI Highlighted)"],
+    ["emiSpec", "EMI Sensor Spectrum (simulated)"],
     ["camPreview", "Camera preview"],
     ["yaw", "Head yaw vs time"],
     ["pitch", "Head pitch vs time"],
@@ -52,8 +52,8 @@ describe("structure", () => {
     expect(container.querySelector(".chart-modal-camera .dash-camera-preview-expanded")).not.toBeNull();
   });
 
-  it("draws the EMI marker on the expanded MRI chart", () => {
-    const { container } = renderModal("mriSpec");
+  it("draws the EMI marker on the expanded EMI chart", () => {
+    const { container } = renderModal("emiSpec");
     expect(container.querySelector(".dash-emi-marker")).not.toBeNull();
   });
 });

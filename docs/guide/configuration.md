@@ -49,7 +49,27 @@ Saved as `dtam_runtime.json` in the app config directory:
 | `environment` | e.g. `development` |
 | `agent_model` / `agent_mode` | Gemini model and mode |
 
-Saving these restarts the Python runtime. User YAML under the config `dtam/` folder wins over the bundled copies.
+Scanner and environment changes update the Twin session without restarting other services. Agent settings still restart the Python runtime. A complete user configuration under the config `dtam/` folder takes precedence over bundled defaults.
+
+## Device listener (`devices.json`)
+
+Boards connect to a WebSocket port, not Twin HTTP (`:8080`). The Twin starts the listener when it finds `devices.json`. There is no UI Start control; restart after changing the file.
+
+| Lookup | Path |
+| --- | --- |
+| Explicit | `ADELPHA_DEVICE_CONFIG` |
+| Desktop | `<app-config>/dtam/devices.json` (**Settings → Devices → Open config folder**) |
+| Also tried | `<ADELPHA_CONFIG_DIR>/devices.json`, `<DTAM_CONFIG_DIR>/devices.json` |
+
+| Field | Role |
+| --- | --- |
+| `host` / `port` | Bind address. Use `0.0.0.0` so a Pi on Ethernet can connect. Default port `8765`. |
+| `allow_control` | File-level gate for `actuators.set`. Default `false`. |
+| `devices.<id>.token` | Unique random Bearer token, at least 24 characters |
+| `devices.<id>.scanner_id` | Must match **Settings → Digital Twin** |
+| `devices.<id>.allowed_actuators` | Actuator id → allowed operations |
+
+Example: `dtam/src/dtam/communication/devices.example.json`. Procedure and client scripts: [Device link](devices.md). Board scripts install `pip install adelpha` and `from adelpha import telemetry, feedback`.
 
 ## MRI working directory
 
@@ -97,7 +117,7 @@ Ping always probes the network. Sequences talk to hardware only when simulation 
 | --- | --- |
 | `adelpha.workspacePrefs` | Startup workspace, restore layout, panel width |
 | `adelpha_workspace_id` | Last workspace |
-| `adelpha.consoleTheme` | `adelpha` or `mri4all` |
+| `adelpha.consoleTheme` | `adelpha`, `mri4all`, `porcelain`, or `glacier` |
 | `adelpha.scannerModel` | Active model id (bundled or `imported-…`) |
 | `adelpha.importedModels` | Catalog of imported CAD (blobs are in IndexedDB `adelpha-cad`) |
 | `adelpha.devicePreviews` | Optional device pictures |
@@ -107,6 +127,8 @@ Ping always probes the network. Sequences talk to hardware only when simulation 
 | `twin_adk_model_id` | Agents model (legacy picker) |
 | `twin_face_mask_style` / `twin_camera_bg_mode` | Camera overlay |
 
+Engineering Studio stores project work in IndexedDB (`adelpha-studio`, `projects` store), keyed by project ID. This includes FEM STEP files, setup, and run references; standalone workspace settings/results; and study history. Existing FEM session drafts and magnet-study records are migrated when opened. The project catalog remains in local storage. Closing a project retains it; **Delete project** removes its saved work. FEM solver artifacts remain in the runtime data directory.
+
 Software version in About and Status comes from `src/twin/adelphaVersion.ts`. The installer version is `src-tauri/tauri.conf.json`.
 
 ## DTAM process env (browser / extra terminals)
@@ -115,4 +137,13 @@ Software version in About and Status comes from `src/twin/adelphaVersion.ts`. Th
 | --- | --- |
 | `DTAM_API_HOST` / `DTAM_API_PORT` | `127.0.0.1` / `8080` |
 | `DTAM_SCANNER_ID` | `simulated_scanner` |
+| `ADELPHA_DEVICE_CONFIG` | Path to `devices.json` (otherwise looked up under the config dirs) |
 | `GOOGLE_API_KEY` | Agents API only |
+
+### Custom hardware systems
+
+In **Settings → Digital Twin → Twin setup**, choose **Define new system**. Enter a name, architecture, and nominal field strength in tesla, then select **Save and use system**. Profiles are saved locally and remain available in the scanner selector. This does not change the viewport's CAD model.
+
+Hardware profiles stay read-only until Physical control is enabled. They can open without connected sensors; the dashboard waits until measured publications arrive. A profile alone does not open a board connection — see [Device link](devices.md). Select **Simulated scanner** to return to simulated telemetry; environment selection controls configuration overlays, not hardware connectivity.
+
+Switching scanner profiles or environments updates only the Twin session; the console and agents stay running. **Restart runtime** remains available for recovery and changes that need a full restart.

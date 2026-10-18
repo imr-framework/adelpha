@@ -1,12 +1,25 @@
 ---
 title: Adelpha MRI settings
-description: Import GLB scanner models, choose a twin profile, add a Google API key for Agents, and manage camera and in-app updates in Adelpha MRI.
+description: Import GLB scanner models, choose a twin profile, connect JSON-RPC devices, add a Google API key for Agents, and manage camera and in-app updates in Adelpha MRI.
 icon: lucide/settings
 ---
 
 # Settings
 
 Open **Settings** from the gear in the top-right. Changes that matter to the live app are listed here. A few older rows are still a local draft and do not drive the twin.
+
+## Appearance
+
+Choose a theme in **Settings → Appearance**. The selection applies across the app, including FEM.
+
+| Theme | Colors |
+| --- | --- |
+| **Adelpha** | Dark with violet accents |
+| **MRI4ALL** | Navy with gold accents |
+| **Porcelain** | Light with cobalt accents |
+| **Glacier** | Light with petrol-blue accents |
+
+Scientific field colors and result values stay unchanged when you switch themes.
 
 ## Scanner models
 
@@ -25,7 +38,7 @@ You can also assign a **device picture** so the Devices list and System Status s
 
 ## Import a CAD model
 
-Use **Settings → 3D Model → Files**.
+Use **Settings → 3D Model → Files** for scanner models. To simulate a STEP file, import it inside an [FEM project](fem.md) instead.
 
 1. Click **Choose file**.
 2. Pick a **glTF binary (`.glb`)**, up to 2 GB.
@@ -50,6 +63,18 @@ If a file is too heavy or damaged, Adelpha falls back to the bundled Halbach ins
 | **Restart** | Restarts the Python runtime after you save |
 
 Twin and Imaging Console start automatically. Agents start after you save a Google API key.
+
+To stream sensors from a Raspberry Pi or Arduino bridge, select a hardware scanner profile here, then follow [Device link](devices.md). Simulation ignores those publications.
+
+## Devices
+
+**Settings → Devices** holds the motion-tracking camera, the Adelpha device link, and a compact Red Pitaya / MaRCoS row.
+
+**Adelpha device link** is the WebSocket listener for JSON-RPC boards. There is no Start server button. Copy `devices.json` into the folder from **Open config folder**, then **Restart**. The row shows the listen URL, or **Not configured** if the file is missing.
+
+**Physical control** stays off until a hardware profile is selected and `allow_control` is true in `devices.json`. Sensor streaming does not need that switch.
+
+A board may publish only some sensors. Connected channels appear on the dashboard; omitted or `missing` channels stay labelled and are never shown as zero. See [Device link](devices.md) for the protocol, `devices.json` fields, and example Pi and Arduino scripts.
 
 ## Study data folder
 
@@ -91,3 +116,5 @@ tccutil reset Camera org.adelpha.digital-twin-ui
 ```
 
 Then open Adelpha and select the Camera tool again. The live picture should appear first; face tracking loads next (one download of the vision models).
+
+Choose which camera under **Settings → Devices**.

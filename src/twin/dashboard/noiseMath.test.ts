@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { dftMagnitudeSpectrum, sampleJohnsonNoise } from "./noiseMath";
 
@@ -57,4 +57,16 @@ describe("sampleJohnsonNoise", () => {
     const samples = sampleJohnsonNoise(-500, 128);
     expect(samples.every((v) => Number.isFinite(v))).toBe(true);
   });
+});
+
+it("renders narrow EMI interference above a broadband floor without a carrier envelope", async () => {
+  const { sampleEmiSpectrum } = await import("./noiseMath");
+  const random = vi.spyOn(Math, "random").mockReturnValue(0.5);
+  try {
+    const values = sampleEmiSpectrum(192, 160, 0.01);
+    expect(values[160]).toBeGreaterThan(values[159]! * 5);
+    expect(values[160]).toBeGreaterThan(values[161]! * 5);
+    expect(values[80]).toBeCloseTo(values[120]!);
+    expect(values.every(Number.isFinite)).toBe(true);
+  } finally { random.mockRestore(); }
 });

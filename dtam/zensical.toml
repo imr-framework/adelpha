@@ -60,6 +60,7 @@ nav = [
   { Platform = [
       { Configuration = "configuration/index.md" },
       { "Twin HTTP API" = "platform/twin-api.md" },
+      { "Device protocol" = "platform/devices.md" },
       { Observability = "observability/index.md" },
       { Safety = "safety/index.md" },
     ]
@@ -174,5 +175,6 @@ targets.include = [
   "configuration/*",
   "observability/*",
   "safety/*",
+  "platform/*",
   "project/*",
 ]

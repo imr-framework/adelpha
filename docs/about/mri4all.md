@@ -45,7 +45,7 @@ Restarting the API **clears the in-memory exam**. Register the patient again.
 
 ## Theme and scanner profile
 
-**Settings → Appearance** (or Imaging Console): **Adelpha** (violet) or **MRI4ALL** (navy and gold). Implementation: `src/twin/consoleTheme.ts`.
+**Settings → Appearance** offers **Adelpha**, **MRI4ALL**, **Porcelain**, and **Glacier**. MRI4ALL keeps the classic navy-and-gold appearance. Implementation: `src/twin/consoleTheme.ts`.
 
 **Settings → 3D Model**: **MRI4ALL Zeugmatron Z1** is a console-oriented profile with **no bundled CAD mesh**. Use it when you care about console chrome, not a 3D magnet.
 

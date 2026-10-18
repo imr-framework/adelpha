@@ -1,3 +1,4 @@
+import { SensorWaiting } from "../../dashboard/SensorWaiting";
 import type { MeasurementBatch, SystemState, TwinAssessment } from "../../dtamTypes";
 import type { TwinViewControls } from "../../telemetryStore";
 import { AssessCard } from "../AssessCard";
@@ -11,6 +12,9 @@ import { ThermalCard } from "../ThermalCard";
 import { ViewCard } from "../ViewCard";
 
 export function TelemetryPanel({
+  waitingForSensors = false,
+  sensorMode = "hardware",
+  sensorNotes,
   systemState,
   lastError,
   connected,
@@ -26,6 +30,9 @@ export function TelemetryPanel({
   polishedFinish,
   setPolishedFinish,
 }: {
+  waitingForSensors?: boolean;
+  sensorMode?: string;
+  sensorNotes?: string[];
   systemState: SystemState | null;
   lastError: string | null;
   connected: boolean;
@@ -49,7 +56,7 @@ export function TelemetryPanel({
         </div>
       ) : null}
 
-      <div className="info-card-stack">
+      {waitingForSensors ? <SensorWaiting compact mode={sensorMode} notes={sensorNotes ?? systemState?.notes ?? []} /> : <div className="info-card-stack">
         <ThermalCard thermal={systemState?.thermal ?? null} />
         <MagneticCard magnetic={systemState?.magnetic ?? null} />
         <EmiCard emi={systemState?.emi ?? null} />
@@ -71,7 +78,7 @@ export function TelemetryPanel({
           polishedFinish={polishedFinish}
           setPolishedFinish={setPolishedFinish}
         />
-      </div>
+      </div>}
     </>
   );
 }

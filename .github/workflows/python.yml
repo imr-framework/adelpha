@@ -1,0 +1,61 @@
+name: Python package
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "python/**"
+      - "dtam/**"
+      - "coil/**"
+      - "rfcoil/**"
+      - "halbach/**"
+      - "shim/**"
+      - "simulation/**"
+      - "tests/run_tests.py"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/python.yml"
+  pull_request:
+    paths:
+      - "python/**"
+      - "dtam/**"
+      - "coil/**"
+      - "rfcoil/**"
+      - "halbach/**"
+      - "shim/**"
+      - "simulation/**"
+      - "tests/run_tests.py"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/python.yml"
+
+concurrency:
+  group: python-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
+      - name: Install package and test extras
+        run: uv sync --frozen --group dev
+
+      - name: Adelpha Python tests
+        run: uv run python tests/run_tests.py python

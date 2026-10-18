@@ -18,6 +18,26 @@ export function mriBaseUrl(): string {
   return `${apiRoot()}/api/mri`;
 }
 
+/** Gradient-coil desk — Adelpha service, not the imaging console. */
+export function coilBaseUrl(): string {
+  return `${apiRoot()}/api/coil`;
+}
+
+/** Passive-shimming desk — Adelpha service, not the imaging console. */
+export function shimBaseUrl(): string {
+  return `${apiRoot()}/api/shim`;
+}
+
+/** Assembly magnet / Elmer desk — Adelpha service, not the imaging console. */
+export function magnetBaseUrl(): string {
+  return `${apiRoot()}/api/magnet`;
+}
+
+/** RF-coil desk — Adelpha service, not the imaging console. */
+export function rfBaseUrl(): string {
+  return `${apiRoot()}/api/rf`;
+}
+
 async function readError(res: Response): Promise<string> {
   const text = await res.text();
     try {
@@ -74,6 +94,500 @@ export async function endExam(): Promise<void> {
 export async function fetchSequences(adjustments = false): Promise<SequenceInfo[]> {
   const qs = adjustments ? "?adjustments=true" : "";
   return mriFetch(`/sequences${qs}`);
+}
+
+export type Mr0Image = {
+  width: number;
+  height: number;
+  values: number[];
+};
+
+export type Mr0Simulation = {
+  ok: true;
+  suite: string;
+  title: string;
+  summary: string;
+  phantom: string;
+  spins: number;
+  profiles: number;
+  samples_per_profile: number;
+  scanner_b0_t: number;
+  gmax_mt_m: number;
+  inhomogeneity_ppm: number;
+  sequence: string;
+  sequence_id: string;
+  tr_ms: number;
+  te_ms: number;
+  flip_deg: number;
+  averages: number;
+  voxel_mm: number;
+  fov_mm: number;
+  matrix: number;
+  bandwidth_hz: number;
+  scan_time_s: number;
+  snr: number;
+  elapsed_s: number;
+  echo: number[];
+  image: Mr0Image | null;
+  noisy_image: Mr0Image | null;
+  inhomogeneous_image: Mr0Image | null;
+  reconstruction_error: string;
+};
+
+export type Mr0Request = {
+  sequence: "se_2D" | "tse_3D";
+  b0_t: number;
+  inhomogeneity_ppm: number;
+  gmax_mt_m: number;
+  tr_ms: number;
+  te_ms: number;
+  flip_deg: number;
+  averages: number;
+  voxel_mm: number;
+  bandwidth_hz: number;
+  etl: number;
+};
+
+export type CoilWire = {
+  group: number;
+  closed: boolean;
+  points: number[][];
+};
+
+export type CoilLayout = {
+  vertices: number[][];
+  faces: number[][];
+  colors: number[][];
+  wires: CoilWire[];
+  wire_radius: number;
+  stream_min: number;
+  stream_max: number;
+};
+
+export type CoilShape = "cylinder" | "planar" | "biplanar" | "circular";
+
+export type CoilSimulation = {
+  generator_version?: number;
+  connected_path_count?: number;
+  ok: true;
+  shape: CoilShape;
+  axis: "x" | "y" | "z";
+  title: string;
+  summary: string;
+  radius_mm: number;
+  length_mm: number;
+  width_mm: number;
+  height_mm: number;
+  gap_mm: number;
+  levels: number;
+  gradient_mt_m: number;
+  achieved_mt_m: number | null;
+  /** Percent, as reported by pyCoilGen (not a fraction). */
+  mean_field_error: number | null;
+  error_definition?: string | null;
+  target_region_radius_mm?: number | null;
+  layout: CoilLayout;
+  layout_png: string;
+  surface_png: string;
+  loop_count: number;
+  elapsed_s: number;
+};
+
+export type CoilRequest = {
+  shape: CoilShape;
+  axis: "x" | "y" | "z";
+  radius_mm: number;
+  length_mm: number;
+  width_mm: number;
+  height_mm: number;
+  gap_mm: number;
+  levels: number;
+  gradient_mt_m: number;
+};
+
+export type ShimMagnetPlacement = {
+  position: number[];
+  polarity: -1 | 1;
+};
+
+/** A measured field map as the upstream solver reads it: x, y, z in mm and B in mT. */
+export type ShimFieldMapUpload = {
+  name: string;
+  data_b64: string;
+};
+
+export type ShimFieldSummary = {
+  /** "synthetic" or the attached file name. */
+  source: string;
+  samples: number;
+  mean_mt: number;
+  p2p_mt: number;
+  p2p_khz: number;
+  std_ppm: number;
+  extent_mm: { x: number[]; y: number[]; z: number[] };
+  /** Sample positions in metres, thinned to a few thousand points. */
+  points: number[][];
+  before_mt: number[];
+  after_mt?: number[];
+};
+
+export type ShimFieldInspection = {
+  ok: true;
+  title: string;
+  field: ShimFieldSummary;
+};
+
+export type ShimSimulation = {
+  ok: true;
+  title: string;
+  summary: string;
+  field: ShimFieldSummary;
+  diameter_mm: number;
+  bottom_mm: number;
+  top_mm: number;
+  magnet_mm: number;
+  thickness_mm: number;
+  polarization_t: number;
+  radial_spacing: number;
+  azimuthal_spacing: number;
+  pre_std_ppm: number;
+  post_std_ppm: number;
+  pre_p2p_mt: number;
+  post_p2p_mt: number;
+  n_positive: number;
+  n_negative: number;
+  magnet_size_mm: number[];
+  states: number[];
+  magnets: ShimMagnetPlacement[];
+  elapsed_s: number;
+};
+
+export type ShimExportFile = {
+  name: string;
+  data_b64?: string;
+};
+
+export type ShimExport = {
+  ok: true;
+  title: string;
+  folder: string | null;
+  files: ShimExportFile[];
+};
+
+export type ShimRequest = {
+  diameter_mm: number;
+  bottom_mm: number;
+  top_mm: number;
+  magnet_mm: number;
+  thickness_mm: number;
+  polarization_t: number;
+  radial_spacing: number;
+  azimuthal_spacing: number;
+  /** Shift the map so its bounding box is centred between the trays. */
+  center_map: boolean;
+  field_map?: ShimFieldMapUpload;
+};
+
+async function studioFetch<T>(base: string, path: string, init?: RequestInit): Promise<T> {
+  const res = await runtimeFetch(`${base}${path}`, { cache: "no-store", ...init });
+  if (!res.ok) throw new Error(await readError(res));
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
+}
+
+export async function simulateShim(request: ShimRequest): Promise<ShimSimulation> {
+  return studioFetch(shimBaseUrl(), "/simulate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export async function inspectShimFieldMap(field_map: ShimFieldMapUpload, center_map: boolean): Promise<ShimFieldInspection> {
+  return studioFetch(shimBaseUrl(), "/fieldmap", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ field_map, center_map }),
+  });
+}
+
+export async function exportShimTrays(
+  request: ShimRequest & { states: number[]; destination?: string },
+): Promise<ShimExport> {
+  return studioFetch(shimBaseUrl(), "/export", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export async function simulateCoil(request: CoilRequest): Promise<CoilSimulation> {
+  return studioFetch(coilBaseUrl(), "/simulate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export type RfCoilRequest = {
+  radius_mm: number;
+  length_mm: number;
+  former_mm: number;
+  grooves: number;
+  freq_mhz: number;
+  allow_bucking: boolean;
+  n_max: number;
+};
+
+export type RfCoilSimulation = {
+  ok: true;
+  generator_version?: number;
+  title: string;
+  summary: string;
+  radius_mm: number;
+  length_mm: number;
+  former_mm: number;
+  grooves: number;
+  freq_mhz: number;
+  allow_bucking: boolean;
+  n_max: number;
+  /** Percent, maximum relative on-axis B1 error. */
+  mean_field_error: number | null;
+  error_definition?: string | null;
+  inductance_uh: number | null;
+  q_factor: number | null;
+  tuning_pf: number | null;
+  wire_length_m: number | null;
+  forward_turns: number;
+  bucking_turns: number;
+  layout: CoilLayout;
+  layout_png: string;
+  surface_png: string;
+  field_png?: string;
+  loop_count: number;
+  elapsed_s: number;
+};
+
+export async function simulateRfCoil(request: RfCoilRequest): Promise<RfCoilSimulation> {
+  return studioFetch(rfBaseUrl(), "/simulate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export type HalbachRingSpec = {
+  id: number;
+  radius: number;
+  numMagnets: number;
+};
+
+export type HalbachSliceSpec = {
+  position: number;
+  innerRadius: number;
+  outerRadius: number;
+  rings: number[];
+  standWidth?: number;
+  standHeight?: number;
+};
+
+export type HalbachGeometry = {
+  rings: HalbachRingSpec[];
+  slices: HalbachSliceSpec[];
+  mirrorSlices: boolean;
+  standWidth: number;
+  standHeight: number;
+  numConnectionRods: number;
+  connectionRodsArcRadius: number;
+  connectionRodsDiameter: number;
+  shimTrayHeight: number;
+  shimTrayAngle: number;
+  shimTrayRadius: number;
+};
+
+export type HalbachRequest = {
+  inner_radius_mm: number;
+  magnet_mm: number;
+  br_t: number;
+  mur?: number;
+  magnets: number;
+  rings: number;
+  ring_sep_mm: number;
+  outer_ring: boolean;
+  outer_offset_mm: number;
+  outer_extra: number;
+  geometry?: HalbachGeometry | null;
+};
+
+export type HalbachCube = {
+  x: number;
+  y: number;
+  z: number;
+  angle: number;
+  size: number;
+};
+
+export type HalbachPlate = {
+  index: number;
+  z: number;
+  inner_radius: number;
+  outer_radius: number;
+  height: number;
+  stand_width: number;
+  stand_height: number;
+};
+
+export type HalbachRod = {
+  x: number;
+  y: number;
+  radius: number;
+  z0: number;
+  z1: number;
+};
+
+export type HalbachDesign = {
+  ok: true;
+  title: string;
+  summary: string;
+  inner_radius_mm: number;
+  length_mm: number;
+  magnet_mm: number;
+  br_t: number;
+  mur: number;
+  magnets: number;
+  rings: number;
+  ring_sep_mm: number;
+  outer_ring: boolean;
+  outer_offset_mm: number;
+  outer_extra: number;
+  ring_count: number;
+  magnet_count: number;
+  slice_count?: number;
+  geometry_mode?: "uniform" | "catalog";
+  cubes: HalbachCube[];
+  plates?: HalbachPlate[];
+  rods?: HalbachRod[];
+  geometry?: HalbachGeometry;
+  elapsed_s: number;
+};
+
+export async function designHalbach(request: HalbachRequest): Promise<HalbachDesign> {
+  return studioFetch(magnetBaseUrl(), "/halbach", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export type HalbachCadExport = {
+  ok: true;
+  filename: string;
+  media_type: string;
+  data_b64: string;
+  bytes: number;
+  target: "assembly" | "ring";
+  format: "stl" | "step";
+};
+
+export async function exportHalbachCad(
+  request: HalbachRequest & { target: "assembly" | "ring"; format: "stl" | "step"; slice_index?: number },
+): Promise<HalbachCadExport> {
+  return studioFetch(magnetBaseUrl(), "/halbach/export", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export type MagnetStudyRequest = {
+  study: "magnet" | "fem";
+  parts?: unknown[];
+  example_id?: string | null;
+  roi: { centerM: number[]; sizeM: number[]; samples: number[] };
+  magnet_model?: "dipole" | "cuboid";
+  mesh?: { approximation: "imported_mesh" | "oriented_box"; airPaddingM: number; grid: number[] };
+  reference_field_t?: number | null;
+};
+
+export type MagnetStudyResult = {
+  ok: boolean;
+  completed: boolean;
+  title: string;
+  summary: string;
+  solver: string;
+  approximations: string[];
+  diagnostics: string[];
+  limitation: string;
+  included: string[];
+  included_part_ids: string[];
+  model_key: string;
+  field: {
+    points: number[][];
+    bx: number[];
+    by: number[];
+    bz: number[];
+    magnitude: number[];
+    units: "T";
+  } | null;
+  slice: {
+    axis: "x" | "y" | "z";
+    index: number;
+    width: number;
+    height: number;
+    values: number[];
+    quantity: string;
+    units: string;
+  } | null;
+  vectors: { points: number[][]; components: number[][]; scale: number } | null;
+  probes: { position: number[]; bT: number[]; magnitudeT: number }[];
+  homogeneity: {
+    roi: { centerM: number[]; sizeM: number[]; samples: number[] };
+    referenceT: number;
+    metric: string;
+    meanT: number;
+    peakToPeakT: number;
+    stdT: number;
+    ppmPeakToPeak: number;
+    ppmRms: number;
+  } | null;
+  mesh: { nodes: number; elements: number; regions: { id: string; body: number; name: string }[] } | null;
+  issues?: { code: string; message: string; correction: string; severity: string }[];
+  elapsed_s: number;
+  versions?: Record<string, string>;
+};
+
+export type MagnetValidation = {
+  ok: boolean;
+  study: string;
+  included: string[];
+  included_part_ids: string[];
+  model_key: string;
+  issues: { instanceId: string; partId: string; severity: string; code: string; message: string; correction: string }[];
+  example_id: string | null;
+};
+
+export async function simulateMagnetStudy(request: MagnetStudyRequest): Promise<MagnetStudyResult> {
+  return studioFetch(magnetBaseUrl(), "/simulate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export async function validateMagnetStudy(request: MagnetStudyRequest): Promise<MagnetValidation> {
+  return studioFetch(magnetBaseUrl(), "/validate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(request),
+  });
+}
+
+export async function simulateMr0(request: Mr0Request): Promise<Mr0Simulation> {
+  return mriFetch("/mr0/simulate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ suite: "low-field", ...request }),
+  });
 }
 
 export async function uploadSeqFile(file: File): Promise<{ name: string }> {
@@ -503,4 +1017,66 @@ export function emptyPatient(): PatientInformation {
     height_cm: 0,
     age: 0,
   };
+}
+
+export type FemUpload = {
+  id: string;
+  filename: string;
+  units: "m";
+  solids: { index: number; label: string; bounds_m: number[]; center_m: number[]; volume_m3: number }[];
+};
+export type FemJob = {
+  mesh_available?: boolean;
+  id: string;
+  status: "queued" | "meshing" | "converting" | "prepared" | "solving" | "completed" | "failed";
+  error?: string;
+  mesh?: { nodes: number; tetrahedra: number; quality: { minimum: number; mean: number } };
+  results?: string[];
+};
+export type FemConfig = {
+  materials: Record<string, { relative_permeability: number; remanence: number[] }>;
+  regions: { name: string; solids: number[]; material: string }[];
+  mesh: { size: number; air_size: number; air_padding: number; transition: number };
+  solver: { quadratic: boolean; tolerance: number; max_iterations: number };
+};
+export async function uploadFemStep(file: File): Promise<FemUpload> {
+  return studioFetch(magnetBaseUrl(), `/fem/uploads?filename=${encodeURIComponent(file.name)}`, {
+    method: "POST", headers: { "content-type": "application/octet-stream" }, body: file,
+  });
+}
+export async function startFemJob(uploadId: string, config: FemConfig): Promise<FemJob> {
+  return studioFetch(magnetBaseUrl(), "/fem/jobs", {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ upload_id: uploadId, config }),
+  });
+}
+export async function fetchFemJob(id: string): Promise<FemJob> {
+  return studioFetch(magnetBaseUrl(), `/fem/jobs/${encodeURIComponent(id)}`);
+}
+
+export type FemMeshPreview = { available: false; reason: string } | {
+  available: true; units: "m"; vertices: number[]; triangles: number;
+  groups: { id: number; name: string; triangles: number[] }[];
+};
+export async function fetchFemMesh(id: string): Promise<FemMeshPreview> {
+  return studioFetch(magnetBaseUrl(), `/fem/jobs/${encodeURIComponent(id)}/mesh`);
+}
+export async function downloadFemJob(id: string): Promise<void> {
+  const response = await runtimeFetch(`${magnetBaseUrl()}/fem/jobs/${encodeURIComponent(id)}/download`);
+  if (!response.ok) throw new Error(await readError(response));
+  await saveBlob(`elmer-${id.slice(0, 8)}.zip`, await response.blob());
+}
+
+export type FemFields = {
+  units: "m"; source: string; points: number[];
+  fields: Record<"B" | "H" | "A", { name: string; unit: string; values: number[] }>;
+  groups: { id: number; name: string; triangles: number[]; tetrahedra: number[] }[];
+};
+export async function fetchFemFields(id: string): Promise<FemFields> {
+  return studioFetch(magnetBaseUrl(), `/fem/jobs/${encodeURIComponent(id)}/fields`);
+}
+
+export async function fetchFemStep(upload: FemUpload): Promise<File> {
+  const response = await runtimeFetch(`${magnetBaseUrl()}/fem/uploads/${encodeURIComponent(upload.id)}/file`);
+  if (!response.ok) throw new Error(await readError(response));
+  return new File([await response.blob()], upload.filename, { type: "application/octet-stream" });
 }

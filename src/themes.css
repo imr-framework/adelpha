@@ -1,0 +1,154 @@
+/* Light themes are opt-in; original colors remain as CSS fallbacks. */
+.settings-theme-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; width:100%; }
+.settings-theme-choice { appearance:none; display:flex; flex-direction:column; gap:8px; padding:10px; min-width:0; border:1px solid var(--sw-line); border-radius:10px; background:var(--sw-panel); color:var(--sw-text); text-align:left; cursor:pointer; font:inherit; }
+.settings-theme-choice:hover { background:var(--sw-raised); }
+.settings-theme-choice[aria-pressed="true"] { border-color:var(--sw-violet); box-shadow:0 0 0 1px var(--sw-violet); }
+.settings-theme-choice:focus-visible { outline:2px solid var(--sw-focus); outline-offset:4px; }
+.settings-theme-preview { display:grid; grid-template-columns:24% 1fr; gap:6px; padding:8px; height:70px; width:100%; border-radius:5px; border:1px solid var(--sw-line); }
+.settings-theme-preview>span { border-radius:3px; }
+.settings-theme-preview>span:last-child { padding:9px; display:flex; flex-direction:column; gap:8px; }
+.settings-theme-preview i { height:5px; width:65%; border-radius:2px; }
+.settings-theme-preview i:last-child { width:40%; opacity:.4; }
+.settings-theme-name { display:flex; justify-content:space-between; gap:8px; font-size:13px; font-weight:600; }
+.settings-theme-description { color:var(--sw-text-2); font-size:11px; line-height:1.5; }
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) {
+  color-scheme:light;
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) :is(button,input,select,textarea):focus-visible {
+  outline:2px solid var(--theme-accent); outline-offset:3px;
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) :is(.studio-home,.studio-work,.studio-agent) {
+  --sa-icon-background:var(--theme-bg);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) :is(.studio-project-card,.card,.studio-create,.studio-delete-dialog) {
+  border-radius:var(--theme-radius);
+}
+/* Preserve accent foreground contrast in components whose fills use local variables. */
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) :is(.settings-primary,.ic-primary,.studio-new-btn,.mr0-run,.sa-send) {
+  background:var(--theme-accent); color:var(--theme-on-accent); border-color:var(--theme-accent);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) :is(.settings-primary,.ic-primary,.studio-new-btn,.mr0-run,.sa-send):hover:not(:disabled) {
+  background:var(--theme-accent-hover);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) .studio-delete-confirm {
+  background:var(--theme-danger); color:var(--theme-on-accent); border-color:var(--theme-danger);
+}
+@media(max-width:960px) { .settings-theme-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:420px) { .settings-theme-grid { grid-template-columns:minmax(0,1fr); } }
+/* Image pixels, grayscale lookup ramps, and overlays stay on their original
+   dark surround. Only signal plots and application chrome follow the theme. */
+.m4-view-stage:not(.is-plot), .launch-screen {
+  --theme-bg:initial; --theme-surface:initial; --theme-raised:initial;
+  --theme-hover:initial; --theme-text:initial; --theme-muted:initial;
+  --theme-border:initial; --theme-accent:initial; --theme-accent-soft:initial;
+  --theme-warning:initial; --theme-warning-soft:initial;
+  --theme-success:initial; --theme-success-soft:initial;
+  --theme-danger:initial; --theme-danger-soft:initial;
+  --theme-shadow:initial; --theme-scrim:initial;
+  --theme-color-scheme:dark;
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) :is(.m4-scan-list li.is-selected,.m4-result-list li button.is-selected) {
+  background:var(--theme-accent-soft); color:var(--theme-accent);
+}
+.settings-row.is-stack .settings-row-control:has(.settings-theme-grid) { max-width:760px; }
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) :is(.topbar,.studio-nav,.compact-project-table) {
+  background:var(--theme-surface);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) .settings-switch:not([aria-checked="true"]) {
+  background:var(--theme-border);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) .settings-switch-ui {
+  background:var(--theme-on-accent);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) :is(.hardware-workspace .studio-study-tree,.hardware-workspace .studio-study-inspector,.mrzero-inspector) {
+  background:var(--theme-surface); border-radius:var(--theme-radius);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) .studio-work.adelpha-simulation-workspace {
+  --workspace-radius:var(--theme-radius);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) .panel {
+  background:var(--theme-bg); box-shadow:none;
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) .panel .info-card .action-btn {
+  background:var(--theme-accent);
+  border-color:var(--theme-accent);
+  color:var(--theme-on-accent);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) .panel .info-card .action-btn:hover:not(:disabled) {
+  background:var(--theme-accent-hover);
+  border-color:var(--theme-accent-hover);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) .panel .info-card .action-btn:disabled {
+  background:var(--theme-raised);
+  border-color:var(--theme-border);
+  color:var(--theme-muted);
+  opacity:1;
+  cursor:not-allowed;
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) :is(.info-card,.dash-card) {
+  background:var(--theme-surface); border-color:var(--theme-border); border-radius:var(--theme-radius);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) .liquid-dashboard {
+  background:var(--theme-bg); border-color:var(--theme-border);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) :is(.twin-xterm .xterm-viewport,.system-console-xterm-host) {
+  background:var(--theme-surface);
+}
+/* Logging and xterm share one quiet surface; xterm ships its own black viewport. */
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) :is(.system-console,.system-console-body,.system-console-input-row) {
+  background:var(--theme-surface);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) .system-console-head {
+  background:var(--theme-raised);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) .system-console-tab-active {
+  background:var(--theme-accent-soft); color:var(--theme-accent); border-color:var(--theme-border);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) .system-console-input-row-static {
+  font-size:11px; line-height:1.5; opacity:1; flex-wrap:wrap;
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) .console-live-on .console-live-dot {
+  background:var(--theme-success); border-color:var(--theme-success);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) .console-live-off .console-live-dot {
+  background:var(--theme-danger); border-color:var(--theme-danger);
+}
+/* Imaging dialogs also use the settings button primitive, but live outside
+   .settings-overlay where --sw-* is defined. Give them console-local colors. */
+.imaging-console .settings-btn {
+  background:var(--ic-btn);
+  color:var(--ic-text);
+  border:1px solid var(--ic-border);
+}
+.imaging-console .settings-btn:hover:not(:disabled) {
+  background:var(--ic-accent-wash);
+  border-color:var(--ic-accent-hot);
+}
+.imaging-console .settings-btn.settings-btn-accent {
+  background:var(--ic-accent-hot);
+  color:var(--theme-on-accent, #fff);
+  border-color:var(--ic-accent-hot);
+}
+.imaging-console .settings-btn.settings-btn-accent:hover:not(:disabled) {
+  background:var(--theme-accent-hover, var(--ic-accent-hot));
+}
+.imaging-console .settings-btn:disabled {
+  opacity:1; cursor:not-allowed;
+  background:var(--theme-raised, var(--ic-btn));
+  border-color:var(--ic-border);
+  color:var(--ic-muted);
+}
+.imaging-console .settings-btn:focus-visible {
+  outline:2px solid var(--ic-accent-hot); outline-offset:3px;
+}
+.ic-register-actions { flex-wrap:wrap; }
+.ic-register-grid :is(input,select) { min-width:0; width:100%; }
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) :is(.ic-register-card,.ic-protocols-card) {
+  background:var(--theme-surface);
+  color:var(--theme-text);
+  border:1px solid var(--theme-border);
+  box-shadow:0 18px 60px rgba(25,39,55,.16);
+}
+html:is([data-console-theme="porcelain"],[data-console-theme="glacier"]) :is(.m4-btn,.m4-icon-btn):hover:not(:disabled) {
+  color:var(--theme-on-accent);
+}

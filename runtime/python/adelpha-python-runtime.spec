@@ -47,6 +47,9 @@ except Exception:
     pass
 
 datas = []
+# Keep FEM source available to the isolated external Python/Gmsh worker.
+datas.append((str(REPO / "simulation" / "fem"), "simulation/fem"))
+datas.append((str(REPO / "magnet" / "sim.py"), "magnet"))
 pathex = [str(RUNTIME)]
 
 if DTAM_SRC.is_dir():

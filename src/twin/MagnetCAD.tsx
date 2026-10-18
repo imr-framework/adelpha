@@ -1,5 +1,6 @@
 import type { MutableRefObject, ReactNode } from "react";
-import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { Suspense, useContext, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { CadSelectionColor } from "./cadSelectionTheme";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { isImportedModelId } from "./importedModels";
 import { useFrame, useLoader, useThree, type ThreeEvent } from "@react-three/fiber";
@@ -15,6 +16,8 @@ import {
   type CadPartRef,
   type PartBinding,
 } from "./partInspectorStore";
+import { collectAssemblyInstances } from "./studio/assemblyGeometry";
+import { useAssemblyGeometryStore } from "./studio/assemblyGeometryStore";
 import {
   readScannerModel,
   setScannerModel,
@@ -31,7 +34,7 @@ const CAD_ENGINEERING_COLOR = new THREE.Color("#c5ccd6");
 const CAD_WIREFRAME_COLOR = new THREE.Color("#cfefff");
 const CAD_WIREFRAME_EMISSIVE = new THREE.Color("#8dd8ff");
 const CAD_EDGE_COLOR = new THREE.Color("#e3f6ff");
-const CAD_SELECT_EMISSIVE = new THREE.Color("#8260fb");
+
 const PART_CLICK_PX = 6;
 const PART_COLOR_SCRATCH = new THREE.Color();
 
@@ -558,6 +561,7 @@ function applyPartAppearance(
   scannerBindings: Record<string, PartBinding> | undefined,
   selectedPartIds: Set<string>,
   wireframe: boolean,
+  selectionColor: THREE.Color,
 ) {
   root.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
@@ -579,7 +583,7 @@ function applyPartAppearance(
         mat.color.copy(PART_COLOR_SCRATCH);
       }
       if (selected) {
-        mat.emissive.copy(CAD_SELECT_EMISSIVE);
+        mat.emissive.copy(selectionColor);
         mat.emissiveIntensity = wireframe ? 0.9 : 0.38;
       } else if (hex) {
         mat.emissive.copy(PART_COLOR_SCRATCH);
@@ -680,6 +684,22 @@ function MagnetMotionGroup({
     const s = scale * (scaleExplode ? 1 + exploded * 0.35 : 1);
     root.current.scale.setScalar(s);
   }, [exploded, scale, scaleExplode]);
+
+  useLayoutEffect(() => {
+    if (!root.current) return;
+    const savedPosition = root.current.position.clone();
+    const savedScale = root.current.scale.clone();
+    const explodedParts = explodeParts && explodeRef ? explodeRef.current : null;
+    if (explodedParts) applyExplode(explodedParts.parts, 0, explodedParts.distance);
+    root.current.position.set(0, 0, 0);
+    root.current.scale.setScalar(scale);
+    root.current.updateWorldMatrix(true, true);
+    useAssemblyGeometryStore.getState().setInstances(scannerId, collectAssemblyInstances(root.current, scannerId));
+    root.current.position.copy(savedPosition);
+    root.current.scale.copy(savedScale);
+    if (explodedParts) applyExplode(explodedParts.parts, exploded, explodedParts.distance);
+    root.current.updateWorldMatrix(true, true);
+  }, [explodeParts, explodeRef, exploded, model, scannerId, scale]);
 
   useFrame(() => {
     if (explodeParts && explodeRef) {
@@ -1062,6 +1082,8 @@ function MagnetFromSTL({
     [selectedPartIds],
   );
   const [scannerId] = useScannerModel();
+  const selectionHex = useContext(CadSelectionColor);
+  const selectionColor = useMemo(() => new THREE.Color(selectionHex), [selectionHex]);
   const scannerBindings = usePartInspectorStore((s) => s.bindings[scannerId]);
   const setPartCatalog = usePartInspectorStore((s) => s.setPartCatalog);
   const hiddenIds = usePartInspectorStore((s) => s.hidden[scannerId]);
@@ -1107,7 +1129,7 @@ function MagnetFromSTL({
       uniforms.uTime.value = clock.elapsedTime;
       uniforms.uHeatEnabled.value = showTemperatureMap ? (renderMode === "wireframe" ? 0.85 : 0.65) : 0;
     }
-    applyPartAppearance(object, scannerBindings, selectedIdSet, renderMode === "wireframe");
+    applyPartAppearance(object, scannerBindings, selectedIdSet, renderMode === "wireframe", selectionColor);
     applyPartVisibility(partRootsRef.current, hidden, allowIds, object);
   });
 
@@ -1211,6 +1233,8 @@ function MagnetFromGLTF({
     [selectedPartIds],
   );
   const [scannerId] = useScannerModel();
+  const selectionHex = useContext(CadSelectionColor);
+  const selectionColor = useMemo(() => new THREE.Color(selectionHex), [selectionHex]);
   const scannerBindings = usePartInspectorStore((s) => s.bindings[scannerId]);
   const setPartCatalog = usePartInspectorStore((s) => s.setPartCatalog);
   const hiddenIds = usePartInspectorStore((s) => s.hidden[scannerId]);
@@ -1265,9 +1289,9 @@ function MagnetFromGLTF({
       }
     }
     if (selectedIdSet.size > 0 || tinted) {
-      applyPartAppearance(object, scannerBindings, selectedIdSet, renderMode === "wireframe");
+      applyPartAppearance(object, scannerBindings, selectedIdSet, renderMode === "wireframe", selectionColor);
     }
-  }, [hybridRender, object, polishedFinish, scannerBindings, selectedIdSet, tinted, useModelColors, wireframe]);
+  }, [hybridRender, object, polishedFinish, scannerBindings, selectedIdSet, selectionColor, tinted, useModelColors, wireframe]);
 
   useFrame(({ clock }) => {
     const animated = !heavy || hybridRender || wireframe || showTemperatureMap;

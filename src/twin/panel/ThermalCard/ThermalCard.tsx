@@ -4,7 +4,10 @@ import { InfoCard, MetricRow, QuantityRow } from "../metrics";
 
 export function ThermalCard({ thermal }: { thermal: SystemState["thermal"] | null }) {
   return (
-    <InfoCard title="Thermal">
+    <InfoCard
+      title="Thermal"
+      footer={!thermal ? <p className="physics-note">No usable temperature measurements.</p> : undefined}
+    >
       <QuantityRow
         label="Mean magnet"
         q={thermal?.mean_magnet_temperature_c}

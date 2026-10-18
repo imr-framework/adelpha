@@ -41,6 +41,12 @@ GUI base URLs (env):
 | `POST` | `/twin/forecast` | Forecast form submit |
 | `POST` | `/assess/from-twin` | Deterministic assessment from live twin |
 | `GET` | `/sensors/batch` | Optional raw channels table |
+| `GET` | `/devices` | Device listener, connected boards, control flag |
+| `GET` | `/devices/{id}/readings` | Last accepted publication from a connected board |
+| `POST` | `/devices/control` | Enable or disable Physical control |
+| `POST` | `/devices/commands` | Forward `actuators.set` to a connected board |
+
+Boards do not use this HTTP port. They connect to the WebSocket listener from `devices.json` (default `8765`). See [Device link](devices.md).
 
 ### Live subsystems
 
@@ -48,10 +54,10 @@ GUI base URLs (env):
 | --- | --- |
 | Thermal | Mean magnet °C, room, \(\Delta T\), channels; predicted mean after forecast |
 | Magnetic / \(B_0\) | Nominal vs estimated \(B_0\), \(\Delta B_0\), \(f_0\) in MHz; predicted after forecast |
-| EMI | RMS (V), peak Hz, classification |
-| RF | Noise floor (dBm/Hz), bandwidth |
+| EMI | RMS (V) from hardware `voltage_rms`; peak Hz / classification when present. No hardware spectrum. |
+| RF | Noise floor (dBm/Hz) when a board publishes `rf_noise_floor` |
 
-Gradient, image-quality, and actuators are **not** ready in DTAM. Do not invent control buttons.
+Gradient and image-quality channels are **not** ready in DTAM. Actuator commands exist on `/devices/commands` and stay rejected until a hardware profile, `allow_control`, and Physical control are all enabled.
 
 ### Verify Twin API
 

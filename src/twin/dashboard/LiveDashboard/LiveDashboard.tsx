@@ -1,4 +1,5 @@
-import { formatHz, formatTempC, formatTs } from "../../format";
+import { SensorWaiting } from "../SensorWaiting";
+import { formatHz, formatRmsV, formatTempC, formatTs } from "../../format";
 import type { TwinTelemetry } from "../../types";
 import { linePath } from "../chartPath";
 import { DashCameraPreview } from "../DashCameraPreview";
@@ -6,12 +7,17 @@ import { FFT_BINS, type DashboardSeries } from "../useDashboardSeries";
 import type { DashboardCard } from "../types";
 
 export function LiveDashboard({
+  waitingForSensors = false,
+  sensorMode = "hardware",
+  sensorNotes = [],
   series,
   stageMode,
   cameraPreviewStream,
-  telemetry,
   onExpand,
 }: {
+  waitingForSensors?: boolean;
+  sensorMode?: string;
+  sensorNotes?: string[];
   series: DashboardSeries;
   stageMode: "magnet" | "camera";
   cameraPreviewStream: MediaStream | null;
@@ -32,9 +38,9 @@ export function LiveDashboard({
     johnsonSpectrum,
     johnsonSpecMax,
     emiBin,
-    mriSpectrum,
-    mriSpecMin,
-    mriSpecMax,
+    emiSpectrum,
+    emiSpecMin,
+    emiSpecMax,
     yawHistory,
     yawMin,
     yawMax,
@@ -45,6 +51,8 @@ export function LiveDashboard({
     rollMin,
     rollMax,
   } = series;
+
+  if (waitingForSensors && stageMode !== "camera") return <div className="liquid-dashboard sensor-dashboard"><SensorWaiting mode={sensorMode} notes={sensorNotes} /></div>;
 
   return (
     <div className="liquid-dashboard">
@@ -129,31 +137,31 @@ export function LiveDashboard({
           </>
         ) : (
           <>
-        <button type="button" className="dash-card" onClick={() => onExpand("temp")}>
+        <button type="button" className="dash-card" onClick={() => series.temperatureAvailable && onExpand("temp")}>
           <div className="dash-title">Magnet temperature (time)</div>
-          <svg viewBox="0 0 300 88" className="dash-svg">
+          {series.temperatureAvailable ? <svg viewBox="0 0 300 88" className="dash-svg">
             <path
               d={linePath(tempHistory, tempMin, tempMax, 300, 88)}
               className="dash-line dash-line-temp"
             />
-          </svg>
+          </svg> : <p className="dash-unavailable">Temperature sensor not connected</p>}
           <div className="dash-stamp-row">
-            <span>{formatTs(rangeStart)}</span>
-            <span>{formatTs(rangeEnd)}</span>
+            <span>{series.temperatureAvailable ? formatTs(rangeStart) : "—"}</span>
+            <span>{series.temperatureAvailable ? formatTs(rangeEnd) : "—"}</span>
           </div>
         </button>
 
-        <button type="button" className="dash-card" onClick={() => onExpand("noiseTime")}>
+        <button type="button" className="dash-card" onClick={() => series.simulation && onExpand("noiseTime")}>
           <div className="dash-title">
             Johnson noise spectrum{" "}
-            <span className="dash-stamp-inline">DFT · √T</span>
+            <span className="dash-stamp-inline">{series.simulation ? "Simulated · DFT · √T" : "Not measured"}</span>
           </div>
-          <svg viewBox="0 0 300 88" className="dash-svg" preserveAspectRatio="none">
+          {series.simulation ? <svg viewBox="0 0 300 88" className="dash-svg" preserveAspectRatio="none">
             <path
               d={linePath(johnsonSpectrum, 0, johnsonSpecMax, 300, 88)}
               className="dash-line dash-line-spectrum dash-line-noise"
             />
-          </svg>
+          </svg> : <p className="dash-unavailable">Johnson noise is simulated only; it is not measured in hardware</p>}
           <div className="dash-stamp-row">
             <span>0</span>
             <span>|X(f)|</span>
@@ -161,19 +169,19 @@ export function LiveDashboard({
           </div>
         </button>
 
-        <button type="button" className="dash-card" onClick={() => onExpand("noiseSpec")}>
+        <button type="button" className="dash-card" onClick={() => series.simulation && onExpand("noiseSpec")}>
           <div className="dash-title">
             Johnson noise (time){" "}
             <span className="dash-stamp-inline">
-              √T · {formatTempC(johnsonTempC, 1)}
+              {series.simulation ? `Simulated · √T · ${formatTempC(johnsonTempC, 1)}` : "Not measured"}
             </span>
           </div>
-          <svg viewBox="0 0 300 88" className="dash-svg" preserveAspectRatio="none">
+          {series.simulation ? <svg viewBox="0 0 300 88" className="dash-svg" preserveAspectRatio="none">
             <path
               d={linePath(johnsonNoise, johnsonMin, johnsonMax, 300, 88)}
               className="dash-line dash-line-spectrum dash-line-noise"
             />
-          </svg>
+          </svg> : <p className="dash-unavailable">Johnson noise is simulated only; it is not measured in hardware</p>}
           <div className="dash-stamp-row">
             <span>0</span>
             <span>thermal / Gaussian</span>
@@ -181,12 +189,12 @@ export function LiveDashboard({
           </div>
         </button>
 
-        <button type="button" className="dash-card" onClick={() => onExpand("mriSpec")}>
+        <button type="button" className="dash-card" onClick={() => series.simulation && onExpand("emiSpec")}>
           <div className="dash-title">
-            MRI signal spectrum (EMI @ {formatHz(peakHz)}){" "}
-            <span className="dash-stamp-inline">{formatTs(telemetry.device_time_ms)}</span>
+            EMI sensor spectrum{" "}
+            <span className="dash-stamp-inline">{series.simulation ? "Simulated · a.u." : series.emiAvailable ? `${formatRmsV(series.emiRms)} · no spectrum` : "Not connected"}</span>
           </div>
-          <svg viewBox="0 0 300 88" className="dash-svg" preserveAspectRatio="none">
+          {series.simulation ? <svg viewBox="0 0 300 88" className="dash-svg" preserveAspectRatio="none">
             <line
               x1={(emiBin / Math.max(FFT_BINS - 1, 1)) * 300}
               y1="0"
@@ -195,13 +203,13 @@ export function LiveDashboard({
               className="dash-emi-marker"
             />
             <path
-              d={linePath(mriSpectrum, mriSpecMin, mriSpecMax, 300, 88)}
+              d={linePath(emiSpectrum, emiSpecMin, emiSpecMax, 300, 88)}
               className="dash-line dash-line-spectrum dash-line-mri"
             />
-          </svg>
+          </svg> : <p className="dash-unavailable">{series.emiAvailable ? "EMI RMS is on Telemetry; this protocol does not publish a spectrum" : "EMI sensor not connected"}</p>}
           <div className="dash-stamp-row">
             <span>1 kHz</span>
-            <span>EMI</span>
+            <span>{series.simulation ? `Peak ${formatHz(peakHz)} · log frequency` : series.emiAvailable ? "RMS only" : "No EMI data"}</span>
             <span>100 kHz</span>
           </div>
         </button>

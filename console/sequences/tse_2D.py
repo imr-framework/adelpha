@@ -22,7 +22,11 @@ class SequenceTSE_2D(PulseqSequence, registry_key=Path(__file__).stem):
 
     @classmethod
     def get_readable_name(self) -> str:
-        return "2D Turbo Spin-Echo  [untested]"
+        return "2D Turbo Spin-Echo"
+
+    @classmethod
+    def get_description(self) -> str:
+        return "2D turbo spin-echo acquisition with Cartesian sampling"
 
     def setup_ui(self, widget) -> bool:
         seq_path = os.path.dirname(os.path.abspath(__file__))

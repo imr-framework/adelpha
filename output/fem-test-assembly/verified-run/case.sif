@@ -1,0 +1,106 @@
+Header
+  CHECK KEYWORDS Warn
+  Mesh DB "." "mesh"
+End
+Simulation
+  Coordinate System = Cartesian 3D
+  Simulation Type = Steady State
+  Steady State Max Iterations = 1
+  Output Intervals = 1
+  Max Output Level = 5
+End
+Constants
+  Permeability of Vacuum = 1.256637061435917e-06
+End
+Equation 1
+  Active Solvers(3) = 1 2 3
+End
+Solver 1
+  Equation = "Magnetostatics"
+  Procedure = "MagnetoDynamics" "WhitneyAVSolver"
+  Variable = "AV"
+  Edge Basis = Logical True
+  Use Piola Transform = Logical True
+  Quadratic Approximation = Logical False
+  Linear System Solver = Iterative
+  Linear System Iterative Method = BiCGStabL
+  BiCGStabL Polynomial Degree = 2
+  Linear System Preconditioning = None
+  Linear System Max Iterations = 5000
+  Linear System Convergence Tolerance = 1e-09
+  Linear System Abort Not Converged = Logical True
+  Linear System Residual Output = 50
+  Steady State Convergence Tolerance = 1e-09
+End
+Solver 2
+  Equation = "Magnetic fields"
+  Procedure = "MagnetoDynamics" "MagnetoDynamicsCalcFields"
+  Potential Variable = "AV"
+  Calculate Magnetic Flux Density = Logical True
+  Calculate Magnetic Field Strength = Logical True
+  Calculate Magnetic Vector Potential = Logical True
+  Linear System Solver = Iterative
+  Linear System Iterative Method = CG
+  Linear System Preconditioning = ILU0
+  Linear System Symmetric = Logical True
+  Linear System Max Iterations = 5000
+  Linear System Convergence Tolerance = 1e-09
+  Linear System Abort Not Converged = Logical True
+End
+Solver 3
+  Exec Solver = After Simulation
+  Equation = "VTU output"
+  Procedure = "ResultOutputSolve" "ResultOutputSolver"
+  Output File Name = "fields"
+  Output Directory = "results"
+  Vtu Format = Logical True
+  Binary Output = Logical False
+  Save Geometry IDs = Logical True
+  Discontinuous Bodies = Logical True
+End
+Boundary Condition 1
+  Target Boundaries(1) = 1
+  AV {e} = Real 0
+End
+
+Body 1
+  Target Bodies(1) = 1
+  Equation = 1
+  Material = 1
+End
+Material 1
+  Relative Permeability = Real 1
+  Relative Permittivity = Real 1
+End
+
+Body 2
+  Target Bodies(1) = 2
+  Equation = 1
+  Material = 2
+  Body Force = 1
+End
+Material 2
+  Relative Permeability = Real 1.05
+  Relative Permittivity = Real 1
+End
+Body Force 1
+  Magnetization 1 = Real 0
+  Magnetization 2 = Real 0
+  Magnetization 3 = Real 909456.8176679733
+End
+
+Body 3
+  Target Bodies(1) = 3
+  Equation = 1
+  Material = 3
+  Body Force = 2
+End
+Material 3
+  Relative Permeability = Real 1.05
+  Relative Permittivity = Real 1
+End
+Body Force 2
+  Magnetization 1 = Real 0
+  Magnetization 2 = Real 0
+  Magnetization 3 = Real 909456.8176679733
+End

@@ -76,6 +76,7 @@ make api         # uv run adk api_server src (ADK default port)
 ```
 
 - Twin GUI API: [Twin HTTP API](../platform/twin-api.md)
+- Hardware boards: [Device protocol](../platform/devices.md)
 - Google ADK entry points for agent UIs (`dtam_supervisor` + specialists)
 
 ## Documentation site

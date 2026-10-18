@@ -134,6 +134,8 @@ export async function restartRuntime(): Promise<RuntimeStatus> {
   const { invoke } = await import("@tauri-apps/api/core");
   const raw = await invoke<Record<string, unknown>>("runtime_restart");
   current = mapStatus(raw);
+  window.dispatchEvent(new Event("adelpha:runtime-changed"));
+  if (!current.ok) throw new Error(current.error || "Runtime failed to start.");
   return current;
 }
 
