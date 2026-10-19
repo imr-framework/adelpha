@@ -17,6 +17,9 @@ src-tauri/resources/python-runtime/**
 src-tauri/updater.key
 src-tauri/updater.key.pub
 
+# Agents files
+manuscript.md
+
 # Local env (keep .env.example tracked)
 .env
 .env.*
