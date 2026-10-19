@@ -3,8 +3,17 @@
 from __future__ import annotations
 
 import inspect
+import re
+from pathlib import Path
 
 import pytest
+
+
+def _packaged_version() -> str:
+    pyproject = Path(__file__).resolve().parents[3] / "pyproject.toml"
+    match = re.search(r'(?m)^version = "([^"]+)"', pyproject.read_text(encoding="utf-8"))
+    assert match is not None, "root pyproject.toml is missing version"
+    return match.group(1)
 
 
 def test_import_telemetry_and_feedback_from_adelpha():
@@ -87,7 +96,7 @@ def test_twin_and_scanners_import():
 def test_version_and_lazy_public_names():
     import adelpha
 
-    assert adelpha.__version__ == "0.1.0"
+    assert adelpha.__version__ == _packaged_version()
     assert "telemetry" in adelpha.__all__
     assert "feedback" in adelpha.__all__
 
