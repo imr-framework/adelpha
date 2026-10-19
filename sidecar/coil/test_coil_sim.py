@@ -82,6 +82,27 @@ def test_runner_reads_result_json(monkeypatch):
     assert payload["loop_count"] == 1
 
 
+def test_packaged_runtime_uses_run_script(monkeypatch):
+    coil = _module()
+    seen = {}
+
+    def fake_run(command, **_kwargs):
+        if command and str(command[-1]).endswith("result.json"):
+            seen["command"] = command
+            Path(command[-1]).write_text(json.dumps({"ok": True, "loop_count": 1}), encoding="utf-8")
+        return type("Proc", (), {"returncode": 0, "stdout": "", "stderr": ""})()
+
+    monkeypatch.setattr(coil.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        coil,
+        "coil_python",
+        lambda: "/usr/lib/Adelpha/python-runtime/adelpha-python-runtime",
+    )
+    coil.run_coil({"axis": "y"})
+    assert seen["command"][1] == "run-script"
+    assert seen["command"][2].endswith("sim.py")
+
+
 @pytest.mark.parametrize("axis", ["x", "y", "z"])
 def test_biplanar_profiles_preserve_requested_physics_and_dimensions(axis, tmp_path):
     coil = _module()

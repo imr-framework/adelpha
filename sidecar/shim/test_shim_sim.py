@@ -62,6 +62,26 @@ def test_runner_reads_result_json(monkeypatch):
     assert payload["n_positive"] == 2
 
 
+def test_packaged_runtime_uses_run_script(monkeypatch):
+    shim = _module()
+    seen = {}
+
+    def fake_run(command, **_kwargs):
+        seen["command"] = command
+        Path(command[-1]).write_text(json.dumps({"ok": True, "n_positive": 1}), encoding="utf-8")
+        return type("Proc", (), {"returncode": 0, "stdout": "", "stderr": ""})()
+
+    monkeypatch.setattr(shim.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        shim,
+        "shim_python",
+        lambda: "/usr/lib/Adelpha/python-runtime/adelpha-python-runtime",
+    )
+    shim.run_shim({})
+    assert seen["command"][1] == "run-script"
+    assert seen["command"][2].endswith("sim.py")
+
+
 def _npy_b64(rows: int = 4) -> str:
     import base64
     import struct

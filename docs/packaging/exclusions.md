@@ -44,7 +44,7 @@ explicitly; Adelpha never auto-runs FPGA programming.
 | Item | Action |
 | --- | --- |
 | PyQt5 / `sidecar/console/run_ui.py` | Not bundled |
-| `torch`, ONNX, PINN extra | Not in the default sidecar |
+| ONNX, PINN extra | Not in the default sidecar. **Torch** is collected so MRZero acquisition can run inside the sidecar. |
 | HalbachMRIDesigner vendor tree | Not bundled (`make vendor-halbach` remains a lab workflow) |
 | `sidecar/console/requirements.txt` numpy 1.25 + numba | Not installed in the sidecar interpreter |
 

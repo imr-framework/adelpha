@@ -15,6 +15,7 @@ import signal
 import socket
 import sys
 import threading
+from pathlib import Path
 from typing import Any
 
 import uvicorn
@@ -61,6 +62,36 @@ def run_adk_child(argv: list[str]) -> int:
     return int(result) if result is not None else 0
 
 
+def run_script_child(argv: list[str]) -> int:
+    """Execute a bundled ``.py`` file. The frozen binary is not a Python interpreter."""
+    import runpy
+
+    if not argv:
+        print("usage: adelpha-python-runtime run-script script.py [args ...]", file=sys.stderr)
+        return 2
+    script = Path(argv[0])
+    if not script.is_file():
+        print(f"script not found: {script}", file=sys.stderr)
+        return 2
+    previous_argv = sys.argv[:]
+    sys.argv = [str(script), *argv[1:]]
+    script_dir = str(script.parent)
+    if script_dir not in sys.path:
+        sys.path.insert(0, script_dir)
+    try:
+        runpy.run_path(str(script), run_name="__main__")
+    except SystemExit as exc:
+        code = exc.code
+        if code is None:
+            return 0
+        if isinstance(code, int):
+            return code
+        return 1
+    finally:
+        sys.argv = previous_argv
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     import multiprocessing
 
@@ -68,6 +99,8 @@ def main(argv: list[str] | None = None) -> int:
     raw = list(sys.argv[1:] if argv is None else argv)
     if raw and raw[0] == "adk-child":
         return run_adk_child(raw[1:])
+    if raw and raw[0] == "run-script":
+        return run_script_child(raw[1:])
     args = build_parser().parse_args(raw)
     if args.host not in {"127.0.0.1", "localhost", "::1"}:
         log.error("refusing to bind %s — loopback only", args.host)

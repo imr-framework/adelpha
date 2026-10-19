@@ -19,6 +19,7 @@ dependencies = [
     "Pillow>=10",
     "msgpack>=1.0",
     "paramiko>=3.4",
+    "pulp>=2.7",
 ]
 
 [project.optional-dependencies]

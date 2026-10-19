@@ -8,6 +8,8 @@ icon: lucide/alert-triangle
 
 - **FEM** requires an external Python interpreter with the Gmsh API and `ElmerGrid` / `ElmerSolver`. The sidecar includes FEM Python sources but does not bundle Elmer or that interpreter. Set `ADELPHA_FEM_PYTHON` if needed; see [FEM simulation](../guide/fem.md).
 
+- **Studio workers** (gradient coils, RF coils, passive shimming, MRZero, analytical magnet) run as child processes of `adelpha-python-runtime`. The frozen binary is not a Python interpreter; children use `run-script`. Isolated developer venvs (`coil/.venv`, `shim/.venv`, `RFcoilbuilder/.venv`) are not shipped. The freeze installs those worker packages into the sidecar (pyCoilGen with `--no-deps` so it cannot pin NumPy 1 over DTAM).
+
 - **DTAM** is MIT (`sidecar/dtam/LICENSE`). A public installer that also bundles the
   imaging console is still a GPL-3 distribution of that runtime.
 - **GPL-3 console** in the sidecar: corresponding source must ship with any

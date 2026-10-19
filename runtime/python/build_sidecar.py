@@ -136,6 +136,17 @@ def main() -> int:
                     "the freeze will still collect dtam/src if it is on disk.",
                     file=sys.stderr,
                 )
+        studio_requirements = runtime_root / "requirements-studio.txt"
+        if studio_requirements.is_file():
+            pip_install(python, ["-r", str(studio_requirements)])
+        try:
+            pip_install(python, ["--no-deps", "pycoilgen==0.2.4"])
+        except subprocess.CalledProcessError:
+            print(
+                "warning: could not install pycoilgen into the freeze interpreter; "
+                "gradient-coil runs need that package in the sidecar.",
+                file=sys.stderr,
+            )
 
     DIST.mkdir(parents=True, exist_ok=True)
     subprocess.check_call(

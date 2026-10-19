@@ -65,6 +65,27 @@ def test_runner_reads_result_json(monkeypatch):
     assert payload["loop_count"] == 2
 
 
+def test_packaged_runtime_uses_run_script(monkeypatch):
+    rfcoil = _module()
+    seen = {}
+
+    def fake_run(command, **_kwargs):
+        if command and str(command[-1]).endswith("result.json"):
+            seen["command"] = command
+            Path(command[-1]).write_text(json.dumps({"ok": True, "loop_count": 2}), encoding="utf-8")
+        return type("Proc", (), {"returncode": 0, "stdout": "", "stderr": ""})()
+
+    monkeypatch.setattr(rfcoil.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        rfcoil,
+        "rfcoil_python",
+        lambda: "/usr/lib/Adelpha/python-runtime/adelpha-python-runtime",
+    )
+    rfcoil.run_rfcoil({"radius_mm": 30})
+    assert seen["command"][1] == "run-script"
+    assert seen["command"][2].endswith("sim.py")
+
+
 def test_closed_circular_turns_use_bore_axis_z():
     import numpy as np
 

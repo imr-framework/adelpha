@@ -105,13 +105,29 @@ def field_map_upload(body: dict | None) -> tuple[str, bytes] | None:
 
 
 def shim_python() -> str:
-    override = os.environ.get("SHIM_PYTHON", "").strip()
-    if override:
-        return override
-    candidate = Path(__file__).resolve().parent / ".venv" / "bin" / "python"
-    if candidate.is_file():
-        return str(candidate)
-    return ""
+    try:
+        from adelpha_runtime.workers import resolve_worker_python
+    except ImportError:
+        override = os.environ.get("SHIM_PYTHON", "").strip()
+        if override:
+            return override
+        root = Path(__file__).resolve().parent / ".venv"
+        for candidate in (root / "bin" / "python", root / "bin" / "python3", root / "Scripts" / "python.exe"):
+            if candidate.is_file():
+                return str(candidate)
+        return sys.executable if getattr(sys, "frozen", False) else ""
+    return resolve_worker_python("SHIM_PYTHON", Path(__file__).resolve().parent / ".venv")
+
+
+def _worker_command(python: str, params: Path, result: Path) -> list[str]:
+    script = Path(__file__).resolve()
+    try:
+        from adelpha_runtime.workers import worker_argv
+        return worker_argv(python, script, str(params), str(result))
+    except ImportError:
+        if Path(python.replace("\\", "/")).name.lower().removesuffix(".exe") == "adelpha-python-runtime":
+            return [python, "run-script", str(script), str(params), str(result)]
+        return [python, str(script), str(params), str(result)]
 
 
 def _states(body: dict | None) -> list[int]:
@@ -196,7 +212,7 @@ def _run_worker(request: dict, upload: tuple[str, bytes] | None) -> dict:
             mpl_dir.mkdir(parents=True, exist_ok=True)
             env["MPLCONFIGDIR"] = str(mpl_dir)
             proc = subprocess.run(
-                [python, str(Path(__file__).resolve()), str(params), str(result)],
+                _worker_command(python, params, result),
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.PIPE,
                 text=True,

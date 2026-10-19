@@ -97,17 +97,62 @@ def run_suite(suite: str, body: dict | None = None) -> dict:
         gc.collect()
 
 
+def _worker_command(params: Path, result: Path) -> list[str]:
+    script = Path(__file__).resolve()
+    python = sys.executable
+    try:
+        from adelpha_runtime.workers import worker_argv
+        return worker_argv(python, script, str(params), str(result))
+    except ImportError:
+        if Path(python.replace("\\", "/")).name.lower().removesuffix(".exe") == "adelpha-python-runtime" or getattr(sys, "frozen", False):
+            return [python, "run-script", str(script), str(params), str(result)]
+        return [python, str(script), str(params), str(result)]
+
+
+def _import_pypulseq():
+    """Load PyPI pypulseq, not the MRI4ALL vendor copy.
+
+    MRzeroCore defaults to pulseq-rs, which rejects the vendor's 7-column RF
+    records (``id amp mag_id phase_id delay freq phase``) as an invalid RF
+    event. PyPI pypulseq 1.4+ writes ``time_shape_id``, center, and use.
+    """
+    import importlib
+
+    vendor_root = Path(__file__).resolve().parents[2]
+    vendor = vendor_root / "pypulseq"
+    original = sys.path[:]
+    filtered = []
+    for entry in sys.path:
+        try:
+            resolved = Path(entry).resolve()
+        except OSError:
+            filtered.append(entry)
+            continue
+        if resolved in {vendor_root, vendor}:
+            continue
+        filtered.append(entry)
+    sys.path[:] = filtered
+    try:
+        for name in [key for key in sys.modules if key == "pypulseq" or key.startswith("pypulseq.")]:
+            del sys.modules[name]
+        return importlib.import_module("pypulseq")
+    finally:
+        sys.path[:] = original
+
+
 def _run_mr0_worker(request: dict) -> dict:
     with tempfile.TemporaryDirectory(prefix="adelpha-mr0-") as tmp:
         params = Path(tmp) / "params.json"
         result = Path(tmp) / "result.json"
         params.write_text(json.dumps(request), encoding="utf-8")
         env = os.environ.copy()
+        # Do not put the imaging-console tree first: its vendored pypulseq
+        # writes RF events that pulseq-rs cannot parse.
         env["PYTHONPATH"] = ""
         env["MPLBACKEND"] = "Agg"
         env["MPLCONFIGDIR"] = str(Path(tmp) / "mpl")
         proc = subprocess.run(
-            [sys.executable, str(Path(__file__).resolve()), str(params), str(result)],
+            _worker_command(params, result),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
             text=True,
@@ -181,7 +226,8 @@ def _readout(pp, system, samples: int, fov: float, bandwidth: float, te: float, 
 
 def _build_sequence(request: dict):
     import numpy as np
-    import pypulseq as pp
+
+    pp = _import_pypulseq()
 
     samples = MATRIX
     fov = FOV_M

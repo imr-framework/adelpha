@@ -1179,3 +1179,68 @@ pub async fn clear_google_api_key(
     let runtime = manager.status().await;
     status_from_sources(&app, agents_status_of(&runtime), None)
 }
+
+fn allowed_external_url(url: &str) -> Result<&str, String> {
+    let trimmed = url.trim();
+    if !(trimmed.starts_with("https://") || trimmed.starts_with("http://")) {
+        return Err("Only http(s) URLs can be opened.".into());
+    }
+    if trimmed.chars().any(char::is_control) {
+        return Err("Invalid URL.".into());
+    }
+    Ok(trimmed)
+}
+
+#[tauri::command]
+pub fn open_external_url(url: String) -> Result<(), String> {
+    let url = allowed_external_url(&url)?;
+    #[cfg(target_os = "macos")]
+    {
+        let status = std::process::Command::new("open")
+            .arg(url)
+            .status()
+            .map_err(|e| format!("Could not open URL ({e})"))?;
+        if !status.success() {
+            return Err("Could not open URL.".into());
+        }
+        return Ok(());
+    }
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("cmd")
+            .args(["/C", "start", "", url])
+            .status()
+            .map_err(|e| format!("Could not open URL ({e})"))?;
+        return Ok(());
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        let status = std::process::Command::new("xdg-open")
+            .arg(url)
+            .status()
+            .map_err(|e| format!("Could not open URL ({e}). Install xdg-utils."))?;
+        if !status.success() {
+            return Err("Could not open URL.".into());
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod external_url_tests {
+    use super::allowed_external_url;
+
+    #[test]
+    fn accepts_docs_url() {
+        assert_eq!(
+            allowed_external_url("https://imr-framework.github.io/adelpha/").unwrap(),
+            "https://imr-framework.github.io/adelpha/"
+        );
+    }
+
+    #[test]
+    fn rejects_non_http() {
+        assert!(allowed_external_url("javascript:alert(1)").is_err());
+        assert!(allowed_external_url("file:///etc/passwd").is_err());
+    }
+}

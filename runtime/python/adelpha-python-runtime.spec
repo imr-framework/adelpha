@@ -89,6 +89,56 @@ if CONSOLE.is_dir():
         if src.exists():
             datas.append((str(src), rel.replace("\\", "/")))
 
+# Pip pypulseq must win over sidecar/console/pypulseq (MRI4ALL 7-column RF).
+try:
+    import pypulseq as _pip_pypulseq
+
+    _pypulseq_root = Path(_pip_pypulseq.__file__).resolve().parent.parent
+    if _pypulseq_root.is_dir():
+        pathex.insert(0, str(_pypulseq_root))
+except Exception:
+    pass
+
+def _runtime_submodules(pkg: str) -> list[str]:
+    return [
+        mod
+        for mod in collect_submodules(pkg)
+        if ".tests" not in mod
+        and ".testing" not in mod
+        and ".benchmarks" not in mod
+        and not mod.endswith(".conftest")
+    ]
+
+# Engineering Studio workers run as `run-script` children of this binary.
+for pkg in (
+    "pyCoilGen",
+    "pulp",
+    "magpylib",
+    "pymoo",
+    "MRzeroCore",
+    "pypulseq",
+    "trimesh",
+    "sympy",
+):
+    try:
+        hiddenimports += _runtime_submodules(pkg)
+        datas += collect_data_files(pkg)
+    except Exception:
+        pass
+for name in (
+    "torch",
+    "adelpha_runtime.workers",
+    "services.api.mrzero_sim",
+    "shimming_io",
+    "shimming_geometry",
+    "shimming_basis",
+    "shimming_optimization",
+    "shimming_export",
+    "shimming_reporting",
+    "make_shim_rings",
+):
+    hiddenimports.append(name)
+
 block_cipher = None
 
 a = Analysis(
@@ -106,7 +156,6 @@ a = Analysis(
         "PyQt6",
         "PySide2",
         "PySide6",
-        "torch",
         "onnx",
         "onnxruntime",
         "IPython",

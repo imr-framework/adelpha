@@ -22,16 +22,20 @@ if [[ ! -f "$TAR_GZ" ]]; then
   COPYFILE_DISABLE=1 tar -C "$BUNDLE_DIR" -czf "$TAR_GZ" Adelpha.app
 fi
 
-if [[ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" ]]; then
-  echo "No TAURI_SIGNING_PRIVATE_KEY; left unsigned $TAR_GZ"
-  exit 0
+if [[ -z "${TAURI_SIGNING_PRIVATE_KEY:-}" && -z "${TAURI_SIGNING_PRIVATE_KEY_PATH:-}" ]]; then
+  if [[ -f "$ROOT/src-tauri/updater.key" ]]; then
+    export TAURI_SIGNING_PRIVATE_KEY_PATH="$ROOT/src-tauri/updater.key"
+  else
+    echo "No TAURI_SIGNING_PRIVATE_KEY; left unsigned $TAR_GZ"
+    exit 0
+  fi
 fi
 
-if [[ -f "${TAR_GZ}.sig" ]]; then
+if [[ -f "${TAR_GZ}.sig" && "${TAR_GZ}.sig" -nt "$TAR_GZ" ]]; then
   echo "Updater signature already present: ${TAR_GZ}.sig"
   exit 0
 fi
 
 echo "Signing $TAR_GZ"
-(cd "$ROOT" && npx tauri signer sign "$TAR_GZ")
+(cd "$ROOT" && npx tauri signer sign --password "${TAURI_SIGNING_PRIVATE_KEY_PASSWORD-}" "$TAR_GZ")
 echo "Wrote ${TAR_GZ}.sig"

@@ -967,6 +967,18 @@ def _release_memory() -> None:
     gc.collect()
 
 
+def _worker_command(params: Path, result: Path) -> list[str]:
+    script = Path(__file__).resolve()
+    python = sys.executable
+    try:
+        from adelpha_runtime.workers import worker_argv
+        return worker_argv(python, script, str(params), str(result))
+    except ImportError:
+        if Path(python.replace("\\", "/")).name.lower().removesuffix(".exe") == "adelpha-python-runtime" or getattr(sys, "frozen", False):
+            return [python, "run-script", str(script), str(params), str(result)]
+        return [python, str(script), str(params), str(result)]
+
+
 def _run_magnet_worker(payload: dict) -> dict:
     """Run the analytical magnet study in a child process so NumPy arrays do not stay in the API."""
     with tempfile.TemporaryDirectory(prefix="adelpha-magnet-") as tmp:
@@ -978,7 +990,7 @@ def _run_magnet_worker(payload: dict) -> dict:
         env.setdefault("VECLIB_MAXIMUM_THREADS", "1")
         env.setdefault("OMP_NUM_THREADS", "1")
         proc = subprocess.run(
-            [sys.executable, str(Path(__file__).resolve()), str(params), str(result)],
+            _worker_command(params, result),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
             text=True,

@@ -33,10 +33,9 @@ describe("StudioHome", () => {
     expect(screen.getByRole("button", { name: "Projects" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("button", { name: "Examples" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Tutorials" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Documentation" })).toHaveAttribute(
-      "href",
-      "https://imr-framework.github.io/adelpha/",
-    );
+    const docs = screen.getByRole("link", { name: "Documentation" });
+    expect(docs).toHaveAttribute("href", "https://imr-framework.github.io/adelpha/");
+    expect(docs).toHaveAttribute("target", "_blank");
     expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument();
     expect(screen.queryByRole("article", { name: "Continue working" })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Projects" })).toBeInTheDocument();
@@ -52,6 +51,19 @@ describe("StudioHome", () => {
     expect(screen.queryByRole("button", { name: "Open project" })).not.toBeInTheDocument();
   });
 
+  it("opens the Adelpha docs site from Documentation", async () => {
+    const user = userEvent.setup();
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    render(<StudioHome onOpenProject={vi.fn()} />);
+    await user.click(screen.getByRole("link", { name: "Documentation" }));
+    expect(open).toHaveBeenCalledWith(
+      "https://imr-framework.github.io/adelpha/",
+      "_blank",
+      "noopener,noreferrer",
+    );
+    open.mockRestore();
+  });
+
   it("opens Examples and Tutorials from the workspace nav", async () => {
     const user = userEvent.setup();
     render(<StudioHome onOpenProject={vi.fn()} />);
@@ -63,11 +75,11 @@ describe("StudioHome", () => {
     expect(screen.queryByRole("searchbox", { name: "Search projects" })).not.toBeInTheDocument();
     const examples = screen.getByRole("region", { name: "Examples" });
     expect(within(examples).getByText("4 examples")).toBeInTheDocument();
-    expect(within(examples).getByRole("button", { name: /Halbach 0\.5 T/ })).toBeInTheDocument();
+    expect(within(examples).getByRole("button", { name: /Delta 0\.2 T/ })).toBeInTheDocument();
     expect(within(examples).getByText("Magnet")).toBeInTheDocument();
     expect(within(examples).getByRole("button", { name: /Gradient coil stack/ })).toBeInTheDocument();
     expect(within(examples).getByText("Gradient")).toBeInTheDocument();
-    expect(within(examples).getByRole("button", { name: /Cryostat envelope/ })).toBeInTheDocument();
+    expect(within(examples).getByRole("button", { name: /Magnet inspection/ })).toBeInTheDocument();
     expect(within(examples).getByText("Assembly")).toBeInTheDocument();
     expect(within(examples).getByRole("button", { name: /Solenoid RF coil/ })).toBeInTheDocument();
     expect(within(examples).getByText("RF")).toBeInTheDocument();
@@ -307,12 +319,12 @@ describe("StudioHome", () => {
     expect(screen.getByRole("region", { name: "Engineering Studio start" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Examples" }));
     await user.click(
-      within(screen.getByRole("region", { name: "Examples" })).getByRole("button", { name: /Halbach 0\.5 T/ }),
+      within(screen.getByRole("region", { name: "Examples" })).getByRole("button", { name: /Delta 0\.2 T/ }),
     );
 
     expect(screen.queryByRole("region", { name: "Engineering Studio start" })).not.toBeInTheDocument();
     expect(await screen.findByRole("toolbar", { name: "Viewport navigation" })).toBeInTheDocument();
-    expect(useEngineeringStore.getState().activeProject?.name).toBe("Halbach 0.5 T");
+    expect(useEngineeringStore.getState().activeProject?.name).toBe("Delta 0.2 T");
     expect(useEngineeringStore.getState().activeProject?.id).not.toBe("sample-halbach");
 
     expect(screen.queryByRole("navigation", { name: "Hardware studies" })).not.toBeInTheDocument();

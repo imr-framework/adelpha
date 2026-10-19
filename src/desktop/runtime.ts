@@ -110,6 +110,15 @@ export function withToken(url: string): string {
   return `${url}${join}token=${encodeURIComponent(current.token)}`;
 }
 
+export async function openExternalUrl(url: string): Promise<void> {
+  if (isTauri()) {
+    const { invoke } = await import("@tauri-apps/api/core");
+    await invoke("open_external_url", { url });
+    return;
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 export async function quitApp(): Promise<void> {
   if (isTauri()) {
     const { invoke } = await import("@tauri-apps/api/core");

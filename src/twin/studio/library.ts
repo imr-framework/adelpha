@@ -160,7 +160,7 @@ export function seedProjects(now = Date.now()): StudioProject[] {
   return [
     {
       id: "sample-halbach",
-      name: "Halbach 0.5 T",
+      name: "Delta 0.2 T",
       updatedAt: now - DAY,
       kind: "sample",
       discipline: "Magnet",
@@ -186,7 +186,7 @@ export function seedProjects(now = Date.now()): StudioProject[] {
     },
     {
       id: "sample-cryostat",
-      name: "Cryostat envelope",
+      name: "Magnet inspection",
       updatedAt: now - 12 * DAY,
       kind: "sample",
       discipline: "Cryostat",
