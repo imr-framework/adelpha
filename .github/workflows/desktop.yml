@@ -63,7 +63,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libgtk-3-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libgtk-3-dev libfuse2
 
       - name: Install JS dependencies
         run: npm ci
@@ -90,6 +90,8 @@ jobs:
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+          NO_STRIP: "true"
         run: |
           tauri_build() {
             if [ -n "${TAURI_SIGNING_PRIVATE_KEY}" ]; then
@@ -102,8 +104,24 @@ jobs:
           }
 
           set +e
-          tauri_build
-          status=$?
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            # .deb is the download.md Linux installer. AppImage is optional
+            # (in-app updater). linuxdeploy often dies on FUSE or strip
+            # (.relr.dyn); NO_STRIP / APPIMAGE_EXTRACT_AND_RUN mitigate that.
+            echo "Building Linux .deb."
+            tauri_build --bundles deb
+            deb_status=$?
+            echo "Building Linux AppImage."
+            tauri_build --bundles appimage --verbose
+            appimage_status=$?
+            status=$deb_status
+            if [ "$appimage_status" -ne 0 ]; then
+              echo "AppImage linuxdeploy failed (status=$appimage_status); keeping .deb if present."
+            fi
+          else
+            tauri_build
+            status=$?
+          fi
           set -e
 
           if [ "${{ runner.os }}" = "macOS" ]; then
@@ -139,7 +157,11 @@ jobs:
           \) 2>/dev/null | head -n 1 || true)"
           if [ -z "$installer" ]; then
             echo "No installer in src-tauri/target/**/bundle (tauri status=$status)."
-            find src-tauri/target -path "*/bundle/*" -print | head -n 80 || true
+            find src-tauri/target -path "*/release/bundle" -type d -print || true
+            find src-tauri/target -path "*/bundle/*" \( \
+              -name "*.dmg" -o -name "*.exe" -o -name "*.msi" -o \
+              -name "*.deb" -o -name "*.AppImage" \
+            \) -print || true
             exit 1
           fi
           echo "Installer present: $installer"
