@@ -487,7 +487,7 @@ export function hasSetupDestination(project: StudioProject): boolean {
   return inferLastView(project) === "fem";
 }
 
-export function setupViewFor(project: StudioProject): StudioLastView {
+export function setupViewFor(): StudioLastView {
   return "fem";
 }
 

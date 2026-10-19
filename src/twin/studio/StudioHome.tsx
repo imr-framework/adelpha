@@ -387,7 +387,7 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
             </div>
           ) : (
             <div className="compact-table-wrap"><table className="compact-project-table"><thead><tr><th scope="col">Name</th><th scope="col">Workspace</th><th scope="col">Updated</th><th scope="col"><span className="studio-sr">Actions</span></th></tr></thead><tbody>
-              {shown.map((project) => <ProjectRow key={project.id} onDelete={() => { setOpenMenuId(null); setDeleteError(""); setDeleting(project); }} project={project} menuOpen={openMenuId === project.id} onOpen={() => openSaved(project)} onSetup={hasSetupDestination(project) ? () => openSaved(project, { view: setupViewFor(project), setup: true }) : undefined} onMenu={() => setOpenMenuId((id) => id === project.id ? null : project.id)} />)}
+              {shown.map((project) => <ProjectRow key={project.id} onDelete={() => { setOpenMenuId(null); setDeleteError(""); setDeleting(project); }} project={project} menuOpen={openMenuId === project.id} onOpen={() => openSaved(project)} onSetup={hasSetupDestination(project) ? () => openSaved(project, { view: setupViewFor(), setup: true }) : undefined} onMenu={() => setOpenMenuId((id) => id === project.id ? null : project.id)} />)}
             </tbody></table></div>
           )}
         </section>
