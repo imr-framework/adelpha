@@ -101,14 +101,3 @@ Adelpha rejects actuator commands until a hardware scanner profile is selected, 
 Optional extras: `adelpha[twin]`, `adelpha[agents]`, `adelpha[pinn]`.
 
 The imaging console is not part of this package.
-
-## Publish (maintainers)
-
-From the repository root, after tests pass:
-
-```bash
-uv build
-uv publish
-```
-
-Or `python -m build` and `twine upload dist/*`.

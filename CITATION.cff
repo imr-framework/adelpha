@@ -8,7 +8,7 @@ authors:
     alias: AMRL
 repository-code: "https://github.com/imr-framework/adelpha"
 url: "https://imr-framework.github.io/adelpha/"
-version: 0.5.7",
+version: 0.5.7
 license: MIT
 keywords:
   - low-field MRI

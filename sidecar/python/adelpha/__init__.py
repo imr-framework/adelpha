@@ -24,7 +24,7 @@ from adelpha._paths import ensure_impl_path
 
 ensure_impl_path()
 
-__version__ = "0.1.0"
+__version__ = "0.5.7"
 
 _PUBLIC = {
     "telemetry": "adelpha.telemetry",
