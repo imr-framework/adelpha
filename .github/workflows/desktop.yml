@@ -71,7 +71,7 @@ jobs:
       - name: Supervisor unit tests
         run: |
           python -m pip install -e "./runtime/python[dev]"
-          python -m pytest runtime/python/tests -q
+          python -m pytest -c runtime/python/pyproject.toml runtime/python/tests -q
 
       - name: Build Python sidecar
         run: python runtime/python/build_sidecar.py
