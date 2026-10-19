@@ -11,8 +11,8 @@ hide:
     <h1 id="download-adelpha">Download Adelpha</h1>
     <p class="adelpha-dl__lede">The intelligent digital-twin platform for low-field MRI. For macOS, Windows, and Linux.</p>
     <p class="adelpha-dl__meta">
-      <span>Version <span data-adelpha-version>0.5.4</span></span>
-      <span data-adelpha-released>Released September 24, 2026</span>
+      <span>Version <span data-adelpha-version>0.5.6</span></span>
+      <span data-adelpha-released>Released October 19, 2026</span>
       <span>Open source</span>
     </p>
   </header>
@@ -25,9 +25,9 @@ hide:
       <p class="adelpha-dl-card__rec" data-adelpha-rec hidden></p>
       <h2 data-adelpha-title>Adelpha for Linux</h2>
       <p class="adelpha-dl-card__sub" data-adelpha-sub>Ubuntu 22.04 or later</p>
-      <a class="adelpha-dl-card__cta" data-adelpha-href rel="noopener noreferrer" href="https://github.com/imr-framework/adelpha/releases/download/v0.5.4/Adelpha_0.5.4_amd64.deb">Download for Linux</a>
+      <a class="adelpha-dl-card__cta" data-adelpha-href rel="noopener noreferrer" href="https://github.com/imr-framework/adelpha/releases/download/v0.5.6/Adelpha_0.5.6_amd64.deb">Download for Linux</a>
       <span class="adelpha-dl-card__wait" data-adelpha-wait hidden>In packaging</span>
-      <p class="adelpha-dl-card__fine" data-adelpha-fine>Version 0.5.4 · 166 MB</p>
+      <p class="adelpha-dl-card__fine" data-adelpha-fine>Version 0.5.6 · 196 MB</p>
       <p class="adelpha-dl-card__alt" data-adelpha-alt hidden></p>
     </div>
   </article>
@@ -41,17 +41,17 @@ hide:
   <section class="adelpha-dl__others" data-adelpha-others>
     <h2>Other platforms</h2>
     <div class="adelpha-dl__others-grid" data-adelpha-others-grid>
-      <a class="adelpha-dl-mini" rel="noopener noreferrer" href="https://github.com/imr-framework/adelpha/releases/download/v0.5.4/Adelpha_0.5.4_aarch64.dmg">
+      <a class="adelpha-dl-mini" rel="noopener noreferrer" href="https://github.com/imr-framework/adelpha/releases/download/v0.5.6/Adelpha_0.5.6_aarch64.dmg">
         <span class="adelpha-dl-mini__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect width="18" height="16" x="3" y="4" rx="2.5"/><path d="M3 8.5h18"/><circle cx="7" cy="6.25" r="0.7"/><circle cx="9.5" cy="6.25" r="0.7"/><circle cx="12" cy="6.25" r="0.7"/></svg></span>
         <span class="adelpha-dl-mini__text"><strong>macOS Apple Silicon</strong><span>M1 and later · macOS 12+</span></span>
         <em>Download DMG</em>
       </a>
-      <a class="adelpha-dl-mini" rel="noopener noreferrer" href="https://github.com/imr-framework/adelpha/releases/download/v0.5.4/Adelpha_0.5.4_x86_64.dmg">
+      <a class="adelpha-dl-mini" rel="noopener noreferrer" href="https://github.com/imr-framework/adelpha/releases/download/v0.5.6/Adelpha_0.5.6_x86_64.dmg">
         <span class="adelpha-dl-mini__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect width="18" height="16" x="3" y="4" rx="2.5"/><path d="M3 8.5h18"/><circle cx="7" cy="6.25" r="0.7"/><circle cx="9.5" cy="6.25" r="0.7"/><circle cx="12" cy="6.25" r="0.7"/></svg></span>
         <span class="adelpha-dl-mini__text"><strong>macOS Intel</strong><span>Intel Macs · macOS 12+</span></span>
         <em>Download DMG</em>
       </a>
-      <a class="adelpha-dl-mini" rel="noopener noreferrer" href="https://github.com/imr-framework/adelpha/releases/download/v0.5.4/Adelpha_0.5.4_x64-setup.exe">
+      <a class="adelpha-dl-mini" rel="noopener noreferrer" href="https://github.com/imr-framework/adelpha/releases/download/v0.5.6/Adelpha_0.5.6_x64-setup.exe">
         <span class="adelpha-dl-mini__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect width="8" height="8" x="3" y="3" rx="1"/><rect width="8" height="8" x="13" y="3" rx="1"/><rect width="8" height="8" x="3" y="13" rx="1"/><rect width="8" height="8" x="13" y="13" rx="1"/></svg></span>
         <span class="adelpha-dl-mini__text"><strong>Windows</strong><span>Windows 10/11 · x64</span></span>
         <em>Download EXE</em>
@@ -69,12 +69,12 @@ hide:
     <ul>
       <li class="adelpha-dl-verify__row">
         <span>Filename</span>
-        <code data-adelpha-file>Adelpha_0.5.4_amd64.deb</code>
+        <code data-adelpha-file>Adelpha_0.5.6_amd64.deb</code>
         <button type="button" class="adelpha-copy" data-adelpha-copy="file">Copy</button>
       </li>
       <li class="adelpha-dl-verify__row">
         <span>SHA-256</span>
-        <code data-adelpha-sha title="a0f745d511604e35e9f954303b00b8e4503efabf43a4f721f5ab8811edad722c">a0f745d511604e35…</code>
+        <code data-adelpha-sha title="348f65a4d89d52a01e241bec48a08d534aa7f850cf1e8eba6fe555b28c9a7d0b">348f65a4d89d52a0…</code>
         <button type="button" class="adelpha-copy" data-adelpha-copy="sha">Copy</button>
       </li>
     </ul>
@@ -84,7 +84,7 @@ hide:
 
 ## Before installation
 
-[Getting started](index.md) · [System requirements](#system-requirements) · [Release notes](https://github.com/imr-framework/adelpha/releases/tag/v0.5.4)
+[Getting started](index.md) · [System requirements](#system-requirements) · [Release notes](https://github.com/imr-framework/adelpha/releases/tag/v0.5.6)
 
 Current public installers are **unsigned**. A macOS build will need **Right-click → Open** the first time. If that still fails, [clear the quarantine flag](#if-macos-blocks-the-dmg). Windows may show a SmartScreen warning. See [Signing](../packaging/signing.md).
 

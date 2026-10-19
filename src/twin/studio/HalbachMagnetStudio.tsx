@@ -5,7 +5,7 @@ import { lazy, Suspense, useState } from "react";
 import { designHalbach, exportHalbachCad, type HalbachDesign, type HalbachRequest } from "../mri/api";
 import { HalbachGeometryDialog } from "./HalbachGeometryDialog";
 import { halbachStl, halbachStlName } from "./halbachCad";
-import { cloneGeometry, mri1Geometry, uniformGeometry, type HalbachGeometry } from "./mri1Geometry";
+import { cloneGeometry, uniformGeometry, type HalbachGeometry } from "./mri1Geometry";
 import {
   formatFixed,
   Metric,
