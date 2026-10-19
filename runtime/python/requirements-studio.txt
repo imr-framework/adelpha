@@ -1,0 +1,10 @@
+# Engineering Studio workers frozen into adelpha-python-runtime.
+# Installed during `python runtime/python/build_sidecar.py`.
+# pyCoilGen is installed separately with --no-deps so it cannot pin NumPy 1
+# or trimesh 3 over DTAM / passive-shimming. It imports on NumPy 2.2 and trimesh 4+.
+pulp>=2.7
+trimesh>=4.4
+sympy>=1,<2
+magpylib>=5
+pymoo>=0.6
+passive-shimming @ git+https://github.com/imr-framework/passive_shimming.git@5669ce4cea7b3ab1547d30cc3be8f2b3bc92941a

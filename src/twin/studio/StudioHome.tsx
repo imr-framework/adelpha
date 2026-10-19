@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
+import { openExternalUrl } from "../../desktop/runtime";
 import { requestOpenSettings } from "../settingsOpen";
 import {
   APPLICATIONS,
@@ -222,7 +223,16 @@ export function StudioHome({ onOpenProject }: StudioHomeProps) {
           <NavButton id="agent" label="Agent" active={nav === "agent"} Icon={MessageSquare} onClick={() => goTo("agent")} />
         </div>
         <div className="studio-nav-foot">
-          <a className="studio-nav-item" href={STUDIO_DOCS_URL} target="_blank" rel="noreferrer">
+          <a
+            className="studio-nav-item"
+            href={STUDIO_DOCS_URL}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(event) => {
+              event.preventDefault();
+              void openExternalUrl(STUDIO_DOCS_URL);
+            }}
+          >
             <FileText size={16} strokeWidth={1.75} aria-hidden />
             Documentation
           </a>

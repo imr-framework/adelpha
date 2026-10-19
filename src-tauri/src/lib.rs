@@ -57,6 +57,7 @@ pub fn run() {
             runtime::mri_data_info,
             runtime::set_mri_data_dir,
             runtime::reveal_mri_data_dir,
+            runtime::open_external_url,
             pty::terminal_start,
             pty::terminal_write,
             pty::terminal_resize,

@@ -128,9 +128,9 @@ tarballs are produced even when Apple codesign fails (`packaging/updater/make_ma
 The DMG is still unsigned in that case; Settings trusts the updater
 signature, Gatekeeper does not.
 
-Local `make dist-current` signs updater artifacts when
-`TAURI_SIGNING_PRIVATE_KEY` is set, or when `src-tauri/updater.key` exists
-(the Makefile passes the **file contents**, which is what Tauri reads).
-Otherwise it builds without updater signatures. Apple Developer ID /
+Local `make dist-current` and `npm run tauri:build` sign updater artifacts when
+`TAURI_SIGNING_PRIVATE_KEY` or `TAURI_SIGNING_PRIVATE_KEY_PATH` is set, or when
+`src-tauri/updater.key` exists (`packaging/tauri-build.sh` points Tauri at that
+file). Otherwise they build without updater signatures. Apple Developer ID /
 Authenticode (the tables above) are separate: Gatekeeper trusts the OS
 signature; Settings trusts the updater signature.

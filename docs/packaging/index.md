@@ -70,7 +70,7 @@ signed off.
 | Agents | Separate Google ADK `api_server` on :8001 | Lazy child process; gateway reverse-proxies `/api/agents` |
 | Imaging console | `python -m services.api` on :8002 | Mount at `/api/mri` |
 | Electron | Loopback static server + `/api/*` proxy + `node-pty` | Tauri webview + supervisor gateway + Rust PTY |
-| Numpy | DTAM wants numpy 2; MRI4ALL pins numpy 1.25 + numba | One sidecar uses numpy 2; console HTTP façade does not import numba at boot |
+| Numpy | DTAM wants numpy 2; MRI4ALL pins numpy 1.25 + numba | One sidecar uses numpy 2; console HTTP façade does not import numba at boot. pyCoilGen is frozen `--no-deps` onto that stack. |
 | Torch / PINN | Optional extra | Not in the default sidecar |
 | PyQt5 / `run_ui.py` | Legacy Qt UI | Not bundled |
 | FPGA / `marcos_extras` bitstreams | Red Pitaya deployment | Excluded from the desktop sidecar |
