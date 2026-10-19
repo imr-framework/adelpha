@@ -20,6 +20,12 @@ icon: lucide/alert-triangle
 - **Agents** require a user-provided `GOOGLE_API_KEY` in the app config
   directory (`google_api_key`). The key is never bundled. Rotate any key that
   lived in a developer `sidecar/dtam/.env`.
+- **Linux AppImage** bundling uses `linuxdeploy`, which can fail in GitHub
+  Actions (FUSE, or `strip` on ELF `.relr.dyn` sections). CI builds the `.deb`
+  first (the [download](../start/download.md) installer) with
+  `NO_STRIP=true` and `APPIMAGE_EXTRACT_AND_RUN=1`, then tries AppImage. A
+  missing AppImage omits `linux-x86_64` from `latest.json`; the `.deb` is
+  still the Linux release artifact.
 - **No cross-compilation** of the Python sidecar. Each installer is built on
   a matching OS/arch runner.
 - **Universal macOS DMG** is not produced (sidecar native libs).
