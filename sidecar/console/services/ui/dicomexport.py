@@ -1,4 +1,3 @@
-import shlex
 from pathlib import Path
 import subprocess
 
@@ -23,13 +22,20 @@ DCMSEND_ERROR_CODES = {
 
 
 def _create_command(target: DicomTarget, source_folder: Path):
-    target_ip = target.ip
-    target_port = target.port or 104
-    target_aet_target = target.aet_target or ""
-    target_aet_source = target.aet_source or ""
-    command = shlex.split(
-        f"""dcmsend {target_ip} {target_port} +sd {source_folder} -aet {target_aet_source} -aec {target_aet_target} -nuc +sp '*.dcm' -to 60"""
-    )
+    """dcmsend argument list. Built without shell splitting so folders with spaces work and
+    empty AE titles are omitted instead of swallowing the next option."""
+    command = [
+        "dcmsend",
+        str(target.ip),
+        str(target.port or 104),
+        "+sd",
+        str(source_folder),
+    ]
+    if target.aet_source:
+        command += ["-aet", target.aet_source]
+    if target.aet_target:
+        command += ["-aec", target.aet_target]
+    command += ["-nuc", "+sp", "*.dcm", "-to", "60"]
     return command
 
 
@@ -49,5 +55,9 @@ def send_dicoms(folder: Path, target: DicomTarget):
         result = subprocess.check_output(
             command, encoding="utf-8", stderr=subprocess.STDOUT
         )
+    except FileNotFoundError:
+        raise RuntimeError(
+            "dcmsend (DCMTK) was not found. Install DCMTK and make sure it is on PATH."
+        ) from None
     except subprocess.CalledProcessError as e:
         handle_error(e, command)

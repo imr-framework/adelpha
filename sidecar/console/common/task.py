@@ -140,11 +140,23 @@ def write_task(folder, scan_task: ScanTask) -> bool:
         log.error(f"Unable to create lock file {lock_file}")
         return False
 
+    # Write to a sibling file and swap it in, so readers (e.g. the Study Viewer) never see a
+    # truncated or half-written scan.json.
+    tmp_filename = task_filename.with_name(task_filename.name + ".tmp")
     try:
-        with open(task_filename, "w") as task_file:
+        with open(tmp_filename, "w") as task_file:
             json.dump(scan_task.model_dump(), task_file, indent=4)
+        os.replace(tmp_filename, task_filename)
     except Exception:
         log.error(f"Unable to write task file {task_filename}")
+        try:
+            tmp_filename.unlink()
+        except OSError:
+            pass
+        try:
+            lock.free()
+        except Exception:
+            pass
         return False
 
     try:

@@ -495,95 +495,9 @@ def delete_log(name: str):
 
 @app.get("/studies")
 def list_studies():
-    from common.constants import mri4all_paths
-    import common.task as task_mod
+    from services.api import studies
 
-    roots = (
-        mri4all_paths.DATA_COMPLETE,
-        mri4all_paths.DATA_QUEUE_RECON,
-        mri4all_paths.DATA_RECON,
-        mri4all_paths.DATA_ACQ,
-        mri4all_paths.DATA_QUEUE_ACQ,
-        mri4all_paths.DATA_FAILURE,
-        mri4all_paths.DATA_ARCHIVE,
-    )
-    exams = []
-    seen = {}
-    seen_scans = set()
-    for root in roots:
-        folder = Path(root)
-        if not folder.is_dir():
-            continue
-        for exam_dir in sorted(folder.iterdir(), key=os.path.getmtime, reverse=True):
-            if not exam_dir.is_dir() or "#" not in exam_dir.name:
-                continue
-            if exam_dir.name in seen_scans:
-                continue
-            scan_task = task_mod.read_task(str(exam_dir))
-            payload = None
-            if scan_task:
-                payload = {
-                    "id": scan_task.id,
-                    "folder": exam_dir.name,
-                    "path": str(exam_dir),
-                    "protocol_name": scan_task.protocol_name,
-                    "scan_number": scan_task.scan_number,
-                    "sequence": scan_task.sequence,
-                    "failed": bool(scan_task.journal.failed_at),
-                    "results": [r.model_dump() for r in scan_task.results],
-                    "task": scan_task.model_dump(),
-                }
-                exam_id = scan_task.exam.id or exam_dir.name.split("#", 1)[0]
-                acc = scan_task.exam.acc
-                patient_name = f"{scan_task.patient.last_name}, {scan_task.patient.first_name}"
-                mrn = scan_task.patient.mrn
-                when = (scan_task.exam.registration_time or "").replace("T", " ").split(".")[0]
-            else:
-                task_file = exam_dir / "scan.json"
-                if not task_file.is_file():
-                    continue
-                try:
-                    import json
-
-                    raw = json.loads(task_file.read_text())
-                except Exception:
-                    continue
-                exam_meta = raw.get("exam") or {}
-                patient = raw.get("patient") or {}
-                exam_id = exam_meta.get("id") or exam_dir.name.split("#", 1)[0]
-                acc = exam_meta.get("acc") or ""
-                patient_name = f"{patient.get('last_name', '')}, {patient.get('first_name', '')}"
-                mrn = patient.get("mrn") or ""
-                when = str(exam_meta.get("registration_time") or "").replace("T", " ").split(".")[0]
-                payload = {
-                    "id": raw.get("id") or exam_dir.name,
-                    "folder": exam_dir.name,
-                    "path": str(exam_dir),
-                    "protocol_name": raw.get("protocol_name") or "unknown",
-                    "scan_number": int(raw.get("scan_number") or 0),
-                    "sequence": raw.get("sequence") or "",
-                    "failed": bool((raw.get("journal") or {}).get("failed_at")),
-                    "results": list(raw.get("results") or []),
-                    "task": raw,
-                }
-            seen_scans.add(exam_dir.name)
-            exam = seen.get(exam_id)
-            if exam is None:
-                exam = {
-                    "id": exam_id,
-                    "acc": acc,
-                    "patientName": patient_name,
-                    "mrn": mrn,
-                    "examTime": when,
-                    "scans": [],
-                }
-                seen[exam_id] = exam
-                exams.append(exam)
-            exam["scans"].append(payload)
-    for exam in exams:
-        exam["scans"] = sorted(exam["scans"], key=lambda s: s["scan_number"])
-    exams.sort(key=lambda e: e.get("examTime") or "", reverse=True)
-    return exams
+    return studies.list_studies()
 
 
 @app.get("/device/disk")
@@ -650,25 +564,35 @@ def device_marcos_start() -> DeviceMarcosStartResponse:
 
 @app.post("/studies/clone")
 def clone_study_scan(body: dict):
+    from services.api import studies
+
     folder = str(body.get("path") or "")
     if not folder:
         raise HTTPException(400, "path required")
+    source = studies.resolve_scan_folder(folder)
     try:
-        return session.clone_from_folder(folder)
+        return session.clone_from_folder(str(source))
     except FileNotFoundError:
         raise HTTPException(404, "Scan folder not found")
     except RuntimeError as exc:
         raise HTTPException(409, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 @app.post("/dicom/send")
 def dicom_send(body: dict):
+    from services.api import studies
     from services.ui.dicomexport import send_dicoms
 
     config.load_config()
     cfg = config.get_config()
     name = str(body.get("target") or "")
     folders = body.get("folders") or []
+    if isinstance(folders, str):
+        folders = [folders]
+    if not isinstance(folders, list) or not folders:
+        raise HTTPException(400, "folders required")
     target = next((t for t in cfg.dicom_targets if t.name == name), None)
     if target is None and cfg.dicom_targets:
         target = cfg.dicom_targets[0]
@@ -677,7 +601,9 @@ def dicom_send(body: dict):
     errors = []
     for folder in folders:
         try:
-            send_dicoms(Path(folder) / "dicom", target)
+            send_dicoms(studies.dicom_series_dir(str(folder)), target)
+        except HTTPException as exc:
+            errors.append(f"{folder}: {exc.detail}")
         except Exception as exc:
             errors.append(f"{folder}: {exc}")
     if errors:
@@ -700,87 +626,6 @@ def scanner_asset():
     raise HTTPException(404, "Scanner image not found")
 
 
-def _resolve_scan_folder(folder: str) -> Path:
-    from common.constants import mri4all_paths
-
-    p = Path(folder).expanduser().resolve()
-    roots = [
-        Path(mri4all_paths.DATA_COMPLETE).resolve(),
-        Path(mri4all_paths.DATA_ARCHIVE).resolve(),
-        Path(mri4all_paths.DATA_FAILURE).resolve(),
-        Path(mri4all_paths.DATA_ACQ).resolve(),
-        Path(mri4all_paths.DATA_RECON).resolve(),
-        Path(mri4all_paths.DATA_QUEUE_ACQ).resolve(),
-        Path(mri4all_paths.DATA_QUEUE_RECON).resolve(),
-    ]
-    if not any(root == p or root in p.parents for root in roots):
-        raise HTTPException(403, "Path not allowed")
-    if not p.exists():
-        raise HTTPException(404, "Scan folder not found")
-    return p
-
-
-def _resolve_result_path(folder: str, file_path: str) -> Path:
-    base = _resolve_scan_folder(folder)
-    rel = (file_path or "").lstrip("/\\")
-    target = (base / rel).resolve() if rel else base
-    if target != base and base not in target.parents:
-        raise HTTPException(403, "Path not allowed")
-    return target
-
-
-def _png_data_url(image) -> str:
-    import base64
-    from io import BytesIO
-
-    buf = BytesIO()
-    image.save(buf, format="PNG")
-    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
-
-
-def _load_dicom_array(path):
-    import numpy as np
-    import pydicom
-
-    arr = np.nan_to_num(
-        pydicom.dcmread(str(path)).pixel_array.astype("float32"),
-        nan=0.0,
-        posinf=0.0,
-        neginf=0.0,
-    )
-    if arr.ndim == 3:
-        arr = arr[0]
-    return arr
-
-
-def _encode_f32le(arr) -> str:
-    import base64
-    import numpy as np
-
-    return base64.b64encode(np.ascontiguousarray(arr, dtype="<f4").tobytes()).decode("ascii")
-
-
-def _dicom_window_stats(arr):
-    import numpy as np
-
-    data_min = float(np.min(arr))
-    data_max = float(np.max(arr))
-    if not np.isfinite(data_min) or not np.isfinite(data_max):
-        data_min = 0.0
-        data_max = 0.0
-    lo, hi = np.percentile(arr, (1.0, 99.0))
-    vmin = float(lo)
-    vmax = float(hi)
-    if not np.isfinite(vmin) or not np.isfinite(vmax) or vmax <= vmin:
-        vmin = data_min
-        vmax = data_max
-    if data_max > data_min:
-        hist, _ = np.histogram(arr, bins=64, range=(data_min, data_max))
-    else:
-        hist = np.zeros(64, dtype=np.int64)
-    return data_min, data_max, vmin, vmax, hist
-
-
 @app.get("/studies/preview")
 def study_preview(
     folder: str,
@@ -793,168 +638,26 @@ def study_preview(
     all_slices: bool = False,
 ):
     """Render a DICOM slice or pickled matplotlib plot the way ViewerWidget does."""
-    kind = (result_type or "").lower()
-    target = _resolve_result_path(folder, file_path)
-    empty = {
-        "kind": "empty",
-        "slices": 0,
-        "index": 0,
-        "vmin": 0,
-        "vmax": 0,
-        "data_min": 0,
-        "data_max": 0,
-        "rows": 0,
-        "cols": 0,
-        "pixels": "",
-        "histogram": [],
-        "image": "",
-        "stack": [],
-        "series": None,
-        "error": "",
-    }
-    try:
-        if kind == "dicom":
-            import numpy as np
-            from PIL import Image
+    from services.api import studies
 
-            if target.is_file():
-                files = [target]
-            elif target.is_dir():
-                files = sorted(target.glob("*.dcm"))
-            else:
-                files = sorted(target.parent.glob(target.name + "*.dcm"))
-            if not files:
-                empty["error"] = "No DICOM files found"
-                return empty
-            idx = max(0, min(index, len(files) - 1))
-            stack = []
-            if all_slices and len(files) > 1:
-                arrays = [_load_dicom_array(path) for path in files]
-                flat = np.concatenate([a.ravel() for a in arrays])
-                data_min, data_max, vmin, vmax, hist = _dicom_window_stats(flat)
-                for i, arr in enumerate(arrays):
-                    stack.append(
-                        {
-                            "index": i,
-                            "rows": int(arr.shape[0]),
-                            "cols": int(arr.shape[1]),
-                            "pixels": _encode_f32le(arr),
-                        }
-                    )
-                arr = arrays[idx]
-            else:
-                arr = _load_dicom_array(files[idx])
-                data_min, data_max, vmin, vmax, hist = _dicom_window_stats(arr)
-            if vmax > vmin:
-                scaled = ((arr - vmin) / (vmax - vmin) * 255.0).clip(0, 255).astype("uint8")
-            else:
-                scaled = np.zeros(arr.shape, dtype="uint8")
-            image = Image.fromarray(scaled, mode="L")
-            if not all_slices and width > 0 and height > 0:
-                iw, ih = image.size
-                if iw > 0 and ih > 0:
-                    fit = min(float(width) / iw, float(height) / ih)
-                    tw = max(iw, int(round(iw * fit)))
-                    th = max(ih, int(round(ih * fit)))
-                    resample = getattr(getattr(Image, "Resampling", Image), "BILINEAR", Image.BILINEAR)
-                    image = image.resize((tw, th), resample)
-            return {
-                "kind": "dicom",
-                "slices": len(files),
-                "index": idx,
-                "vmin": vmin,
-                "vmax": vmax,
-                "data_min": data_min,
-                "data_max": data_max,
-                "rows": int(arr.shape[0]),
-                "cols": int(arr.shape[1]),
-                "pixels": _encode_f32le(arr),
-                "histogram": hist.tolist(),
-                "image": "" if all_slices else _png_data_url(image),
-                "stack": stack,
-                "series": None,
-                "error": "",
-            }
-        if kind == "plot":
-            import pickle
-            import matplotlib
-
-            matplotlib.use("Agg")
-            if not target.is_file():
-                empty["error"] = "Plot file not found"
-                return empty
-            with open(target, "rb") as handle:
-                fig = pickle.load(handle)
-            from common.plotting import extract_figure_series, render_figure_png
-
-            payload = extract_figure_series(fig)
-            if payload:
-                try:
-                    import matplotlib.pyplot as plt
-
-                    plt.close(fig)
-                except Exception:
-                    pass
-                return {
-                    "kind": "plot",
-                    "slices": 1,
-                    "index": 0,
-                    "vmin": 0,
-                    "vmax": 0,
-                    "histogram": [],
-                    "image": "",
-                    "series": payload,
-                    "error": "",
-                }
-            png = render_figure_png(fig, width_px=width, height_px=height, scale=scale)
-            try:
-                import matplotlib.pyplot as plt
-
-                plt.close(fig)
-            except Exception:
-                pass
-            import base64
-
-            return {
-                "kind": "plot",
-                "slices": 1,
-                "index": 0,
-                "vmin": 0,
-                "vmax": 0,
-                "histogram": [],
-                "image": "data:image/png;base64," + base64.b64encode(png).decode("ascii"),
-                "series": None,
-                "error": "",
-            }
-        empty["error"] = "Nothing to display"
-        return empty
-    except Exception as exc:
-        empty["error"] = str(exc)
-        return empty
+    return studies.build_preview(folder, file_path, result_type, index, width, height, scale, all_slices)
 
 
 @app.get("/studies/export")
 def study_export(folder: str, file_path: str = ""):
-    from io import BytesIO
-    import zipfile
-    from fastapi.responses import FileResponse, Response
+    from fastapi.responses import FileResponse
+    from starlette.background import BackgroundTask
+    from services.api import studies
 
-    target = _resolve_result_path(folder, file_path)
-    if target.is_dir():
-        buf = BytesIO()
-        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as archive:
-            for item in target.rglob("*"):
-                if item.is_file():
-                    archive.write(item, item.relative_to(target.parent))
-        filename = f"{target.name}.zip"
-        return Response(
-            content=buf.getvalue(),
+    path, filename, temporary = studies.prepare_export(folder, file_path)
+    if temporary:
+        return FileResponse(
+            path,
+            filename=filename,
             media_type="application/zip",
-            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+            background=BackgroundTask(lambda: os.path.exists(path) and os.unlink(path)),
         )
-    if not target.is_file():
-        raise HTTPException(404, "File not found")
-    return FileResponse(target, filename=target.name)
+    return FileResponse(path, filename=filename)
 
 
 @app.post("/events/{event_id}/respond")
