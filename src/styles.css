@@ -5790,7 +5790,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   flex-direction: column;
   min-height: 0;
   gap: 10px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto; /* short windows scroll instead of clipping the lists/actions */
 }
 
 .m4-study > .m4-study-left {
@@ -5814,12 +5815,28 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
   letter-spacing: 0.06em;
 }
 
+/* A <table> ignores max-height/overflow, so every exam rendered at full height and was
+   clipped by .m4-study-left. Make the table a scroll box and keep the header and body as
+   fixed-layout tables so the column widths below still line up. */
 .m4-exam-table {
-  flex: 0 1 34%;
-  min-height: 96px;
-  max-height: 220px;
-  overflow: auto;
+  display: block;
+  flex: 1 1 0; /* exams take the free height; scans below stay compact */
+  min-height: 170px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.m4-exam-table thead,
+.m4-exam-table tbody {
+  display: table;
+  width: 100%;
   table-layout: fixed;
+}
+
+.m4-exam-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .m4-exam-table th,
@@ -5869,8 +5886,8 @@ html[data-console-theme="mri4all"] .imaging-console .ic-study-list button:hover 
 }
 
 .m4-scan-list {
-  flex: 1 1 auto;
-  min-height: 160px;
+  flex: 0 0 auto;
+  height: 142px; /* 4.5 rows: the half row signals more scans; always shorter than the exam list */
 }
 
 .m4-result-list {
