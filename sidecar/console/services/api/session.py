@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -10,6 +11,7 @@ import common.helper as helper
 import common.queue as queue
 import common.task as task
 from common.constants import mri4all_files, mri4all_paths, mri4all_states
+from common.protocols import Protocol, ProtocolSequence, load_protocol, save_protocol
 from common.types import (
     ExamInformation,
     PatientInformation,
@@ -179,11 +181,15 @@ class ConsoleSession:
             raise FileNotFoundError(scan_id)
         if prepared:
             self._snapshot_hardware(scan_id)
-            task.set_task_state(folder, mri4all_files.EDITING, False)
-            task.set_task_state(folder, mri4all_files.PREPARED, True)
+            if not task.set_task_state(folder, mri4all_files.EDITING, False):
+                raise RuntimeError("Failed to finish editing scan")
+            if not task.set_task_state(folder, mri4all_files.PREPARED, True):
+                raise RuntimeError("Failed to prepare scan")
         else:
-            task.set_task_state(folder, mri4all_files.PREPARED, False)
-            task.set_task_state(folder, mri4all_files.EDITING, True)
+            if not task.set_task_state(folder, mri4all_files.PREPARED, False):
+                raise RuntimeError("Failed to unprepare scan")
+            if not task.set_task_state(folder, mri4all_files.EDITING, True):
+                raise RuntimeError("Failed to edit scan")
 
     def _snapshot_hardware(self, scan_id: str) -> None:
         scan_task = self.read_task(scan_id)
@@ -288,6 +294,97 @@ class ConsoleSession:
             scan_task.parameters = parameters
             self.write_task(scan_id, scan_task)
         return scan_task, result
+
+    def save_scan_as_protocol(self, scan_id: str, protocol_name: str) -> Protocol:
+        return self.save_scans_as_protocol([scan_id], protocol_name)
+
+    def save_scans_as_protocol(
+        self, scan_ids: List[str], protocol_name: str
+    ) -> Protocol:
+        if not scan_ids:
+            raise ValueError("Select at least one scan")
+
+        protocol_sequences: List[ProtocolSequence] = []
+        for scan_id in scan_ids:
+            scan_task = self.read_task(scan_id)
+            if scan_task is None:
+                raise FileNotFoundError(scan_id)
+            result = validate_parameters(
+                scan_task.sequence, scan_task.parameters, scan_task
+            )
+            if not result.ok:
+                message = "; ".join(result.problems) or "Invalid parameters"
+                raise ValueError(message)
+            protocol_sequences.append(
+                ProtocolSequence(
+                    name=scan_task.protocol_name or scan_task.sequence,
+                    sequence=scan_task.sequence,
+                    parameters=deepcopy(scan_task.parameters),
+                )
+            )
+
+        protocol = Protocol(
+            id=helper.generate_uid(),
+            name=protocol_name,
+            sequences=protocol_sequences,
+        )
+        save_protocol(protocol)
+        return protocol
+
+    def insert_protocol(
+        self, protocol_id: str, exam_id: str, prepared: bool = False
+    ) -> List[ScanQueueEntry]:
+        if not self.exam_active() or self.exam.id != exam_id:
+            raise FileNotFoundError(exam_id)
+
+        protocol = load_protocol(protocol_id)
+        if protocol is None:
+            raise FileNotFoundError(protocol_id)
+
+        for saved_sequence in protocol.sequences:
+            scan_task = ScanTask(
+                sequence=saved_sequence.sequence,
+                protocol_name=saved_sequence.name,
+                patient=self.patient,
+                exam=self.exam,
+                system=self.system,
+                parameters=deepcopy(saved_sequence.parameters),
+            )
+            result = validate_parameters(
+                saved_sequence.sequence, saved_sequence.parameters, scan_task
+            )
+            if not result.ok:
+                message = "; ".join(result.problems) or "Invalid parameters"
+                raise ValueError(message)
+
+        entries: List[ScanQueueEntry] = []
+        try:
+            for saved_sequence in protocol.sequences:
+                entry = self.create_scan(
+                    saved_sequence.sequence, saved_sequence.name
+                )
+                entries.append(entry)
+                scan_task = self.read_task(entry.id)
+                if scan_task is None:
+                    raise RuntimeError("Failed to read inserted scan")
+                scan_task.parameters = deepcopy(saved_sequence.parameters)
+                if not self.write_task(entry.id, scan_task):
+                    raise RuntimeError("Failed to update inserted scan")
+        except Exception:
+            for entry in reversed(entries):
+                try:
+                    self.delete_scan(entry.id)
+                except Exception:
+                    pass
+            raise
+
+        if prepared:
+            for entry in entries:
+                self.set_prepared(entry.id, True)
+            self.refresh_queue()
+            entries = [self.get_entry(entry.id) or entry for entry in entries]
+
+        return entries
 
 
 session = ConsoleSession()

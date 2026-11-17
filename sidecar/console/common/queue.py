@@ -1,4 +1,5 @@
 import os
+import re
 import time
 from typing import Dict
 from pathlib import Path
@@ -165,10 +166,19 @@ def clear_folders() -> bool:
     return True
 
 
+def _scan_queue_order(entry: Path):
+    match = re.search(r"scan_(\d+)$", entry.name)
+    if match:
+        return 0, int(match.group(1)), entry.name
+    return 1, os.path.getmtime(entry), entry.name
+
+
 def get_scan_ready_for_acq() -> str:
     scanpath_ready_for_acq = ""
 
-    folders = sorted(Path(mri4all_paths.DATA_QUEUE_ACQ).iterdir(), key=os.path.getmtime)
+    folders = sorted(
+        Path(mri4all_paths.DATA_QUEUE_ACQ).iterdir(), key=_scan_queue_order
+    )
     for entry in folders:
         if (
             entry.is_dir()
