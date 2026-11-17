@@ -42,6 +42,18 @@ class ScanValidateRequest(BaseModel):
     parameters: Dict[str, Any] = Field(default_factory=dict)
 
 
+class ProtocolNameRequest(BaseModel):
+    name: str = Field(min_length=1, pattern=r".*\S.*")
+
+
+class ProtocolCreateRequest(ProtocolNameRequest):
+    scan_ids: List[str] = Field(min_length=1)
+
+
+class ProtocolInsertRequest(BaseModel):
+    exam_id: str = Field(min_length=1)
+
+
 class ValidateResponse(BaseModel):
     ok: bool
     problems: List[str] = Field(default_factory=list)

@@ -24,7 +24,15 @@ rt.set_service_name("api")
 
 import common.config as config
 import common.queue as queue
-from common.types import PatientInformation
+from common.protocols import (
+    Protocol,
+    delete_protocol,
+    duplicate_protocol,
+    list_protocols,
+    load_protocol,
+    rename_protocol,
+)
+from common.types import PatientInformation, ScanQueueEntry
 
 from services.api import events
 from services.api.models import (
@@ -34,6 +42,9 @@ from services.api.models import (
     ExamResponse,
     ExamStartRequest,
     HealthResponse,
+    ProtocolCreateRequest,
+    ProtocolInsertRequest,
+    ProtocolNameRequest,
     ScanCreateRequest,
     ScanDetail,
     ScanPsdRequest,
@@ -158,6 +169,88 @@ def sequences(adjustments: bool = False):
     return list_sequences(include_adjustments=adjustments)
 
 
+@app.get("/protocols", response_model=list[Protocol])
+def protocols() -> list[Protocol]:
+    return list_protocols()
+
+
+@app.post("/protocols", response_model=Protocol)
+def create_protocol(body: ProtocolCreateRequest) -> Protocol:
+    try:
+        return session.save_scans_as_protocol(body.scan_ids, body.name)
+    except FileNotFoundError as exc:
+        raise HTTPException(404, "Scan not found") from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.get("/protocols/{protocol_id}", response_model=Protocol)
+def get_protocol(protocol_id: str) -> Protocol:
+    protocol = load_protocol(protocol_id)
+    if protocol is None:
+        raise HTTPException(404, "Protocol not found")
+    return protocol
+
+
+@app.patch("/protocols/{protocol_id}", response_model=Protocol)
+def update_protocol(protocol_id: str, body: ProtocolNameRequest) -> Protocol:
+    try:
+        return rename_protocol(protocol_id, body.name)
+    except ValueError as exc:
+        raise HTTPException(404, "Protocol not found") from exc
+
+
+@app.post("/protocols/{protocol_id}/duplicate", response_model=Protocol)
+def duplicate_saved_protocol(
+    protocol_id: str, body: ProtocolNameRequest
+) -> Protocol:
+    try:
+        return duplicate_protocol(protocol_id, body.name)
+    except ValueError as exc:
+        raise HTTPException(404, "Protocol not found") from exc
+
+
+@app.post(
+    "/protocols/{protocol_id}/insert", response_model=list[ScanQueueEntry]
+)
+def insert_saved_protocol(
+    protocol_id: str, body: ProtocolInsertRequest
+) -> list[ScanQueueEntry]:
+    return _insert_saved_protocol(protocol_id, body.exam_id, prepared=False)
+
+
+@app.post(
+    "/protocols/{protocol_id}/run", response_model=list[ScanQueueEntry]
+)
+def run_saved_protocol(
+    protocol_id: str, body: ProtocolInsertRequest
+) -> list[ScanQueueEntry]:
+    return _insert_saved_protocol(protocol_id, body.exam_id, prepared=True)
+
+
+def _insert_saved_protocol(
+    protocol_id: str, exam_id: str, prepared: bool
+) -> list[ScanQueueEntry]:
+    try:
+        return session.insert_protocol(protocol_id, exam_id, prepared=prepared)
+    except FileNotFoundError as exc:
+        detail = "Protocol not found" if exc.args == (protocol_id,) else "Exam not found"
+        raise HTTPException(404, detail) from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(500, str(exc)) from exc
+
+
+@app.delete("/protocols/{protocol_id}")
+def delete_saved_protocol(protocol_id: str) -> dict:
+    try:
+        delete_protocol(protocol_id)
+    except ValueError as exc:
+        raise HTTPException(404, "Protocol not found") from exc
+    return {"ok": True}
+
+
 @app.post("/sequences/{name}/validate", response_model=ValidateResponse)
 def sequence_validate(name: str, body: ScanValidateRequest) -> ValidateResponse:
     from common.types import ScanTask
@@ -207,6 +300,16 @@ def create_scan(body: ScanCreateRequest):
         session.refresh_queue()
         entry = session.get_entry(entry.id) or entry
     return entry
+
+
+@app.post("/scans/{scan_id}/protocol", response_model=Protocol)
+def save_scan_protocol(scan_id: str, body: ProtocolNameRequest) -> Protocol:
+    try:
+        return session.save_scan_as_protocol(scan_id, body.name)
+    except FileNotFoundError as exc:
+        raise HTTPException(404, "Scan not found") from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 @app.get("/scans/{scan_id}", response_model=ScanDetail)
@@ -260,6 +363,8 @@ def prepare_scan(scan_id: str):
         session.set_prepared(scan_id, True)
     except FileNotFoundError:
         raise HTTPException(404, "Scan not found")
+    except RuntimeError as exc:
+        raise HTTPException(500, str(exc)) from exc
     session.refresh_queue()
     return session.get_entry(scan_id)
 
@@ -270,6 +375,8 @@ def edit_scan(scan_id: str):
         session.set_prepared(scan_id, False)
     except FileNotFoundError:
         raise HTTPException(404, "Scan not found")
+    except RuntimeError as exc:
+        raise HTTPException(500, str(exc)) from exc
     session.refresh_queue()
     return session.get_entry(scan_id)
 
